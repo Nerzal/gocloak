@@ -1,16 +1,20 @@
 package core
 
 import (
-	"fmt"
+	"bytes"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/Nerzal/gocloak/models"
 )
 
 type Admin interface {
-	Login(string, string) error
+	Login(username string, password string, realm string) (*models.JWT, error)
 }
 
 type admin struct {
+	basePath string
 }
 
 type loginData struct {
@@ -20,21 +24,46 @@ type loginData struct {
 	GrantType string `json:"grant_type"`
 }
 
-func Login(username, password, realm string) error {
-	url := "/auth/realms/master/protocol/openid-connect/token"
-	
-	req, _ := http.NewRequest("POST", url, payload)
+const adminClientID string = "admin-cli"
 
+func NewAdminClient(basePath string) Admin {
+	return &admin{
+		basePath: basePath,
+	}
+}
+
+func (client *admin) Login(username, password, realm string) (*models.JWT, error) {
+	firstPart := "/auth/realms/"
+	lastPart := "/protocol/openid-connect/token"
+	loginPath := firstPart + realm + lastPart
+
+	loginData := loginData{
+		ClientID:  adminClientID,
+		UserName:  username,
+		Password:  password,
+		GrantType: "password",
+	}
+
+	payload, err := json.Marshal(loginData)
+	if err != nil {
+		return nil, err
+	}
+
+	req, _ := http.NewRequest("POST", client.basePath+loginPath, bytes.NewReader(payload))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Add("cache-control", "no-cache")
 
-	res, _ := http.DefaultClient.Do(req)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
 
 	defer res.Body.Close()
-	body, _ := ioutil.ReadAll(res.Body)
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
 
-	fmt.Println(res)
-	fmt.Println(string(body))
-
-	return nil
+	jwt := &models.JWT{}
+	err = json.Unmarshal(body, jwt)
+	return jwt, err
 }
