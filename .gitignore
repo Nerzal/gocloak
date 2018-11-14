@@ -1,3 +1,6 @@
+# Other stuff aslong as i'm to lazy to use environment variables
+*.secret.go
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
