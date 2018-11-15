@@ -101,10 +101,10 @@ func (client *admin) Login(username, password, realm string) (*models.JWT, error
  * -
  * This method directly gets you the OIDC Token from keycloak to use in your next requests
  */
-func (client *admin) DirectGrantAuthentication(clientId string, clientSecret string, realm string, username string, password string) (*models.JWT, error) {
+func (client *admin) DirectGrantAuthentication(clientID string, clientSecret string, realm string, username string, password string) (*models.JWT, error) {
 	resp, err := resty.R().
 		SetHeader("Content-Type", "application/x-www-form-urlencoded").
-		SetHeader("Authorization", getBasicAuthForClient(clientId, clientSecret)).
+		SetHeader("Authorization", getBasicAuthForClient(clientID, clientSecret)).
 		SetFormData(map[string]string{
 			"grant_type": "password",
 			"username":   username,
@@ -159,11 +159,11 @@ func (client *admin) GetUserListInRealm(token *models.JWT, realm string) (*[]mod
 /**
  * Get Groups of UserId
  */
-func (client *admin) GetUserGroupsInRealm(token *models.JWT, realm string, userId string) (*[]models.UserGroup, error) {
+func (client *admin) GetUserGroupsInRealm(token *models.JWT, realm string, userID string) (*[]models.UserGroup, error) {
 	resp, err := resty.R().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Authorization", "Bearer "+token.AccessToken).
-		Get(client.basePath + "/auth/admin/realms/" + realm + "/users/" + userId + "/groups")
+		Get(client.basePath + "/auth/admin/realms/" + realm + "/users/" + userID + "/groups")
 	if err != nil {
 		return nil, err
 	}
@@ -180,11 +180,11 @@ func (client *admin) GetUserGroupsInRealm(token *models.JWT, realm string, userI
 /**
  * Get Group Role Mapping
  */
-func (client *admin) GetRoleMappingByGroupId(token *models.JWT, realm string, groupId string) (*[]models.RoleMapping, error) {
+func (client *admin) GetRoleMappingByGroupID(token *models.JWT, realm string, groupID string) (*[]models.RoleMapping, error) {
 	resp, err := resty.R().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Authorization", "Bearer "+token.AccessToken).
-		Get(client.basePath + "/auth/admin/realms/" + realm + "/groups/" + groupId + "/role-mappings")
+		Get(client.basePath + "/auth/admin/realms/" + realm + "/groups/" + groupID + "/role-mappings")
 	if err != nil {
 		return nil, err
 	}
@@ -265,11 +265,11 @@ func (client *admin) GetRolesByRealm(token *models.JWT, realm string) (*[]models
 /**
  * Get Roles by Client and Realm
  */
-func (client *admin) GetRolesByClientId(token *models.JWT, realm string, clientId string) (*[]models.Role, error) {
+func (client *admin) GetRolesByClientId(token *models.JWT, realm string, clientID string) (*[]models.Role, error) {
 	resp, err := resty.R().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Authorization", "Bearer "+token.AccessToken).
-		Get(client.basePath + "/auth/admin/realms/" + realm + "/clients/" + clientId + "/roles")
+		Get(client.basePath + "/auth/admin/realms/" + realm + "/clients/" + clientID + "/roles")
 	if err != nil {
 		return nil, err
 	}
@@ -307,10 +307,10 @@ func (client *admin) GetClientsInRealm(token *models.JWT, realm string) (*[]mode
 /**
  * Function to build the HttpBasicAuth Base64 String
  */
-func getBasicAuthForClient(clientId string, clientSecret string) string {
+func getBasicAuthForClient(clientID string, clientSecret string) string {
 	var httpBasicAuth string
-	if len(clientId) > 0 && len(clientSecret) > 0 {
-		httpBasicAuth = base64.URLEncoding.EncodeToString([]byte(clientId + ":" + clientSecret))
+	if len(clientID) > 0 && len(clientSecret) > 0 {
+		httpBasicAuth = base64.URLEncoding.EncodeToString([]byte(clientID + ":" + clientSecret))
 	}
 
 	return "Basic " + httpBasicAuth
