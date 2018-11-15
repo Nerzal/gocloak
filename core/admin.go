@@ -1,6 +1,7 @@
 package core
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -124,8 +125,8 @@ func (client *admin) DirectGrantAuthentication(clientId string, clientSecret str
 		_ = val
 		return &models.JWT{
 			AccessToken:      result["access_token"].(string),
-			ExpiresIn:        result["expires_in"].(float64),
-			RefreshExpiresIn: result["refresh_expires_in"].(float64),
+			ExpiresIn:        result["expires_in"].(int),
+			RefreshExpiresIn: result["refresh_expires_in"].(int),
 			RefreshToken:     result["refresh_token"].(string),
 			TokenType:        result["token_type"].(string),
 		}, nil
@@ -168,7 +169,7 @@ func (client *admin) GetUserGroupsInRealm(token *models.JWT, realm string, userI
 	}
 
 	// Decode into struct
-	var result []UserGroup
+	var result []models.UserGroup
 	if err := json.Unmarshal(resp.Body(), &result); err != nil {
 		return nil, err
 	}
@@ -268,13 +269,13 @@ func (client *admin) GetRolesByClientId(token *models.JWT, realm string, clientI
 	resp, err := resty.R().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Authorization", "Bearer "+token.AccessToken).
-		Get(client.Server + "/auth/admin/realms/" + realm + "/clients/" + clientId + "/roles")
+		Get(client.basePath + "/auth/admin/realms/" + realm + "/clients/" + clientId + "/roles")
 	if err != nil {
 		return nil, err
 	}
 
 	// Decode into struct
-	var result []KeycloakRole
+	var result []models.Role
 	if err := json.Unmarshal(resp.Body(), &result); err != nil {
 		return nil, err
 	}
@@ -289,13 +290,13 @@ func (client *admin) GetClientsInRealm(token *models.JWT, realm string) (*[]mode
 	resp, err := resty.R().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Authorization", "Bearer "+token.AccessToken).
-		Get(client.Server + "/auth/admin/realms/" + realm + "/clients")
+		Get(client.basePath + "/auth/admin/realms/" + realm + "/clients")
 	if err != nil {
 		return nil, err
 	}
 
 	// Decode into struct
-	var result []RealmClient
+	var result []models.RealmClient
 	if err := json.Unmarshal(resp.Body(), &result); err != nil {
 		return nil, err
 	}
@@ -309,7 +310,7 @@ func (client *admin) GetClientsInRealm(token *models.JWT, realm string) (*[]mode
 func getBasicAuthForClient(clientId string, clientSecret string) string {
 	var httpBasicAuth string
 	if len(clientId) > 0 && len(clientSecret) > 0 {
-		httpBasicAuth = b64.URLEncoding.EncodeToString([]byte(clientId + ":" + clientSecret))
+		httpBasicAuth = base64.URLEncoding.EncodeToString([]byte(clientId + ":" + clientSecret))
 	}
 
 	return "Basic " + httpBasicAuth
