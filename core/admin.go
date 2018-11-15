@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
 
 	"github.com/Nerzal/gocloak/models"
@@ -11,6 +12,7 @@ import (
 
 type Admin interface {
 	Login(username string, password string, realm string) (*models.JWT, error)
+	GetAllUsers(token *models.JWT) error
 }
 
 type admin struct {
@@ -26,10 +28,34 @@ type loginData struct {
 
 const adminClientID string = "admin-cli"
 
+// NewAdminClient creates a new Client
 func NewAdminClient(basePath string) Admin {
 	return &admin{
 		basePath: basePath,
 	}
+}
+
+func (client *admin) GetAllUsers(token *models.JWT) error {
+	lastPart := "/users/"
+	path := "/" + realm + lastPart
+
+	req, _ := http.NewRequest("GET", client.basePath+path, nil)
+	req.Header.Add("Authorization", "bearer "+token.RefreshToken)
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
+
+	log.Println(string(body))
+
+	return nil
 }
 
 func (client *admin) Login(username, password, realm string) (*models.JWT, error) {
@@ -49,6 +75,8 @@ func (client *admin) Login(username, password, realm string) (*models.JWT, error
 		return nil, err
 	}
 
+	log.Println(string(payload))
+
 	req, _ := http.NewRequest("POST", client.basePath+loginPath, bytes.NewReader(payload))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
@@ -61,6 +89,10 @@ func (client *admin) Login(username, password, realm string) (*models.JWT, error
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
+	}
+
+	if res.StatusCode != 200 {
+		log.Println(string(body))
 	}
 
 	jwt := &models.JWT{}
