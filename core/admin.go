@@ -244,8 +244,10 @@ func (client *client) GetRolesByClientID(token *models.JWT, realm string, client
 		return nil, err
 	}
 
+	log.Println(resp.Status())
 	// Decode into struct
 	var result []models.Role
+	ioutil.WriteFile("test.json", resp.Body(), 0644)
 	if err := json.Unmarshal(resp.Body(), &result); err != nil {
 		return nil, err
 	}
