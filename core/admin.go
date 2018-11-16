@@ -32,6 +32,12 @@ type Client interface {
 	UpdateClient(token *models.JWT, realm string, clientID models.Client) error
 	UpdateClientScope(token *models.JWT, realm string, scope models.ClientScope) error
 
+	DeleteUser(token *models.JWT, realm string, user models.User) error
+	DeleteGroup(token *models.JWT, realm string, group models.Group) error
+	DeleteRole(token *models.JWT, realm string, clientID string, role models.Role) error
+	DeleteClient(token *models.JWT, realm string, clientID models.Client) error
+	DeleteClientScope(token *models.JWT, realm string, scope models.ClientScope) error
+
 	GetUsers(token *models.JWT, realm string) (*[]models.User, error)
 	GetUserGroups(token *models.JWT, realm string, userID string) (*[]models.UserGroup, error)
 	GetRoleMappingByGroupID(token *models.JWT, realm string, groupID string) (*[]models.RoleMapping, error)
@@ -356,6 +362,131 @@ func (client *client) UpdateRole(token *models.JWT, realm string, clientID strin
 
 // UpdateClientScope creates a new client scope
 func (client *client) UpdateClientScope(token *models.JWT, realm string, scope models.ClientScope) error {
+	bytes, err := json.Marshal(scope)
+	if err != nil {
+		return err
+	}
+	resp, err := getRequestWithHeader(token).
+		SetHeader("Content-Type", "application/json").
+		SetBody(string(bytes)).
+		Put(client.basePath + "/auth/admin/realms/" + realm + "/client-scopes/" + scope.ID)
+
+	log.Println(string(resp.Body()))
+	log.Println(resp.Status())
+
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode() != 201 {
+		return errors.New(resp.Status())
+	}
+
+	return nil
+}
+
+// DeleteUser creates a new user
+func (client *client) DeleteUser(token *models.JWT, realm string, user models.User) error {
+	bytes, err := json.Marshal(user)
+	if err != nil {
+		return err
+	}
+	resp, err := getRequestWithHeader(token).
+		SetHeader("Content-Type", "application/json").
+		SetBody(string(bytes)).
+		Delete(client.basePath + "/auth/admin/realms/" + realm + "/users/" + user.ID)
+
+	log.Println(string(resp.Body()))
+	log.Println(resp.Status())
+
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode() != 201 {
+		return errors.New(resp.Status())
+	}
+
+	return nil
+}
+
+// DeleteUser creates a new user
+func (client *client) DeleteGroup(token *models.JWT, realm string, group models.Group) error {
+	bytes, err := json.Marshal(group)
+	if err != nil {
+		return err
+	}
+	resp, err := getRequestWithHeader(token).
+		SetHeader("Content-Type", "application/json").
+		SetBody(string(bytes)).
+		Delete(client.basePath + "/auth/admin/realms/" + realm + "/groups/" + group.ID)
+
+	log.Println(string(resp.Body()))
+	log.Println(resp.Status())
+
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode() != 201 {
+		return errors.New(resp.Status())
+	}
+
+	return nil
+}
+
+// DeleteUser creates a new user
+func (client *client) DeleteClient(token *models.JWT, realm string, newClient models.Client) error {
+	bytes, err := json.Marshal(newClient)
+	if err != nil {
+		return err
+	}
+	resp, err := getRequestWithHeader(token).
+		SetHeader("Content-Type", "application/json").
+		SetBody(string(bytes)).
+		Delete(client.basePath + "/auth/admin/realms/" + realm + "/clients")
+
+	log.Println(string(resp.Body()))
+	log.Println(resp.Status())
+
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode() != 201 {
+		return errors.New(resp.Status())
+	}
+
+	return nil
+}
+
+// DeleteUser creates a new user
+func (client *client) DeleteRole(token *models.JWT, realm string, clientID string, role models.Role) error {
+	bytes, err := json.Marshal(role)
+	if err != nil {
+		return err
+	}
+	resp, err := getRequestWithHeader(token).
+		SetHeader("Content-Type", "application/json").
+		SetBody(string(bytes)).
+		Delete(client.basePath + "/auth/admin/realms/" + realm + "clients/" + clientID + "/roles/" + role.Name)
+
+	log.Println(string(resp.Body()))
+	log.Println(resp.Status())
+
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode() != 201 {
+		return errors.New(resp.Status())
+	}
+
+	return nil
+}
+
+// DeleteClientScope creates a new client scope
+func (client *client) DeleteClientScope(token *models.JWT, realm string, scope models.ClientScope) error {
 	bytes, err := json.Marshal(scope)
 	if err != nil {
 		return err

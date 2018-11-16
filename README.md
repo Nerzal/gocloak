@@ -7,7 +7,7 @@ This client is based on : https://github.com/PhilippHeuer/go-keycloak/blob/maste
 
 ```go
 type Client interface {
-  	Login(username string, password string, realm string) (*models.JWT, error)
+Login(username string, password string, realm string) (*models.JWT, error)
 
 	DirectGrantAuthentication(clientID string, clientSecret string, realm string, username string, password string) (*models.JWT, error)
 
@@ -22,6 +22,12 @@ type Client interface {
 	UpdateRole(token *models.JWT, realm string, clientID string, role models.Role) error
 	UpdateClient(token *models.JWT, realm string, clientID models.Client) error
 	UpdateClientScope(token *models.JWT, realm string, scope models.ClientScope) error
+
+	DeleteUser(token *models.JWT, realm string, user models.User) error
+	DeleteGroup(token *models.JWT, realm string, group models.Group) error
+	DeleteRole(token *models.JWT, realm string, clientID string, role models.Role) error
+	DeleteClient(token *models.JWT, realm string, clientID models.Client) error
+	DeleteClientScope(token *models.JWT, realm string, scope models.ClientScope) error
 
 	GetUsers(token *models.JWT, realm string) (*[]models.User, error)
 	GetUserGroups(token *models.JWT, realm string, userID string) (*[]models.UserGroup, error)
