@@ -2,20 +2,20 @@ package models
 
 // User represents the Keycloak User Structure
 type User struct {
-	ID                         string        `json:"id"`
-	CreatedTimestamp           int64         `json:"createdTimestamp"`
-	Username                   string        `json:"username"`
-	Enabled                    bool          `json:"enabled"`
-	Totp                       bool          `json:"totp"`
-	EmailVerified              bool          `json:"emailVerified"`
-	FirstName                  string        `json:"firstName"`
-	LastName                   string        `json:"lastName"`
-	Email                      string        `json:"email"`
-	FederationLink             string        `json:"federationLink"`
-	Attributes                 Attributes    `json:"attributes"`
-	DisableableCredentialTypes []interface{} `json:"disableableCredentialTypes"`
-	RequiredActions            []interface{} `json:"requiredActions"`
-	Access                     Access        `json:"access"`
+	ID                         string        `json:"id,omitempty"`
+	CreatedTimestamp           int64         `json:"createdTimestamp,omitempty"`
+	Username                   string        `json:"username,omitempty"`
+	Enabled                    bool          `json:"enabled,omitempty"`
+	Totp                       bool          `json:"totp,omitempty"`
+	EmailVerified              bool          `json:"emailVerified,omitempty"`
+	FirstName                  string        `json:"firstName,omitempty"`
+	LastName                   string        `json:"lastName,omitempty"`
+	Email                      string        `json:"email,omitempty"`
+	FederationLink             string        `json:"federationLink,omitempty"`
+	Attributes                 Attributes    `json:"attributes,omitempty"`
+	DisableableCredentialTypes []interface{} `json:"disableableCredentialTypes,omitempty"`
+	RequiredActions            []interface{} `json:"requiredActions,omitempty"`
+	Access                     Access        `json:"access,omitempty"`
 }
 
 // Attributes holds Attributes
@@ -35,28 +35,28 @@ type Access struct {
 
 // UserGroup is a UserGroup
 type UserGroup struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-	Path string `json:"path"`
+	ID   string `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
+	Path string `json:"path,omitempty"`
 }
 
 // Group is a Group
 type Group struct {
-	ID        string        `json:"id"`
-	Name      string        `json:"name"`
-	Path      string        `json:"path"`
-	SubGroups []interface{} `json:"subGroups"`
+	ID        string        `json:"id,omitempty"`
+	Name      string        `json:"name,omitempty"`
+	Path      string        `json:"path,omitempty"`
+	SubGroups []interface{} `json:"subGroups,omitempty"`
 }
 
 // Role is a role
 type Role struct {
-	ID                 string `json:"id"`
-	Name               string `json:"name"`
-	ScopeParamRequired bool   `json:"scopeParamRequired"`
-	Composite          bool   `json:"composite"`
-	ClientRole         bool   `json:"clientRole"`
-	ContainerID        string `json:"containerId"`
-	Description        string `json:"description,omitempty"`
+	ID                 string `json:"id,omitempty"`
+	Name               string `json:"name,omitempty"`
+	ScopeParamRequired bool   `json:"scopeParamRequired,omitempty"`
+	Composite          bool   `json:"composite,omitempty"`
+	ClientRole         bool   `json:"clientRole,omitempty"`
+	ContainerID        string `json:"containerId,omitempty"`
+	Description        string `json:"description,omitempty,omitempty"`
 }
 
 // RoleMapping is a role mapping

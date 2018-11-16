@@ -19,6 +19,7 @@ type Client interface {
 	Login(username string, password string, realm string) (*models.JWT, error)
 
 	DirectGrantAuthentication(clientID string, clientSecret string, realm string, username string, password string) (*models.JWT, error)
+	CreateUser(token *models.JWT, realm string, user models.User) error
 	GetUsers(token *models.JWT, realm string) (*[]models.User, error)
 	GetUserGroups(token *models.JWT, realm string, userID string) (*[]models.UserGroup, error)
 	GetRoleMappingByGroupID(token *models.JWT, realm string, groupID string) (*[]models.RoleMapping, error)
@@ -117,15 +118,23 @@ func (client *client) DirectGrantAuthentication(clientID string, clientSecret st
 }
 
 func (client *client) CreateUser(token *models.JWT, realm string, user models.User) error {
+	bytes, err := json.Marshal(user)
+	if err != nil {
+		return err
+	}
 	resp, err := getRequestWithHeader(token).
-		SetBody(user).
+		SetHeader("Content-Type", "application/json").
+		SetBody(string(bytes)).
 		Post(client.basePath + "/auth/admin/realms/" + realm + "/users")
+
+	log.Println(string(resp.Body()))
+	log.Println(resp.Status())
 
 	if err != nil {
 		return err
 	}
 
-	if resp.StatusCode() != 200 {
+	if resp.StatusCode() != 201 {
 		return errors.New(resp.Status())
 	}
 

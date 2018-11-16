@@ -2,6 +2,8 @@ package core
 
 import (
 	"testing"
+
+	"github.com/Nerzal/gocloak/models"
 )
 
 func TestLogin(t *testing.T) {
@@ -9,6 +11,27 @@ func TestLogin(t *testing.T) {
 	_, err := client.Login(username, password, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
+		t.Fail()
+	}
+}
+
+func TestCreateUser(t *testing.T) {
+	client := NewClient(hostname)
+	token, err := client.Login(username, password, realm)
+	if err != nil {
+		t.Log("TestLogin failed", err.Error())
+		t.Fail()
+	}
+
+	user := models.User{}
+	user.FirstName = "Klaus"
+	user.LastName = "Peter"
+	user.Email = "somm@ting.wong"
+	user.Enabled = true
+	user.Username = user.Email
+	err = client.CreateUser(token, realm, user)
+	if err != nil {
+		t.Log("Create User Failed: ", err.Error())
 		t.Fail()
 	}
 }
