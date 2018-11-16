@@ -15,6 +15,13 @@ type Client interface {
 	CreateGroup(token *models.JWT, realm string, group models.Group) error
 	CreateRole(token *models.JWT, realm string, clientID string, role models.Role) error
 	CreateClient(token *models.JWT, realm string, clientID models.Client) error
+	CreateClientScope(token *models.JWT, realm string, scope models.ClientScope) error
+
+	UpdateUser(token *models.JWT, realm string, user models.User) error
+	UpdateGroup(token *models.JWT, realm string, group models.Group) error
+	UpdateRole(token *models.JWT, realm string, clientID string, role models.Role) error
+	UpdateClient(token *models.JWT, realm string, clientID models.Client) error
+	UpdateClientScope(token *models.JWT, realm string, scope models.ClientScope) error
 
 	GetUsers(token *models.JWT, realm string) (*[]models.User, error)
 	GetUserGroups(token *models.JWT, realm string, userID string) (*[]models.UserGroup, error)
