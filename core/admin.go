@@ -24,6 +24,13 @@ type Client interface {
 	CreateGroup(token *models.JWT, realm string, group models.Group) error
 	CreateRole(token *models.JWT, realm string, clientID string, role models.Role) error
 	CreateClient(token *models.JWT, realm string, clientID models.Client) error
+	CreateClientScope(token *models.JWT, realm string, scope models.ClientScope) error
+
+	UpdateUser(token *models.JWT, realm string, user models.User) error
+	UpdateGroup(token *models.JWT, realm string, group models.Group) error
+	UpdateRole(token *models.JWT, realm string, clientID string, role models.Role) error
+	UpdateClient(token *models.JWT, realm string, clientID models.Client) error
+	UpdateClientScope(token *models.JWT, realm string, scope models.ClientScope) error
 
 	GetUsers(token *models.JWT, realm string) (*[]models.User, error)
 	GetUserGroups(token *models.JWT, realm string, userID string) (*[]models.UserGroup, error)
@@ -207,6 +214,156 @@ func (client *client) CreateRole(token *models.JWT, realm string, clientID strin
 		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
 		Post(client.basePath + "/auth/admin/realms/" + realm + "clients/" + clientID + "/roles")
+
+	log.Println(string(resp.Body()))
+	log.Println(resp.Status())
+
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode() != 201 {
+		return errors.New(resp.Status())
+	}
+
+	return nil
+}
+
+// CreateClientScope creates a new client scope
+func (client *client) CreateClientScope(token *models.JWT, realm string, scope models.ClientScope) error {
+	bytes, err := json.Marshal(scope)
+	if err != nil {
+		return err
+	}
+	resp, err := getRequestWithHeader(token).
+		SetHeader("Content-Type", "application/json").
+		SetBody(string(bytes)).
+		Post(client.basePath + "/auth/admin/realms/" + realm + "/client-scopes")
+
+	log.Println(string(resp.Body()))
+	log.Println(resp.Status())
+
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode() != 201 {
+		return errors.New(resp.Status())
+	}
+
+	return nil
+}
+
+// UpdateUser creates a new user
+func (client *client) UpdateUser(token *models.JWT, realm string, user models.User) error {
+	bytes, err := json.Marshal(user)
+	if err != nil {
+		return err
+	}
+	resp, err := getRequestWithHeader(token).
+		SetHeader("Content-Type", "application/json").
+		SetBody(string(bytes)).
+		Put(client.basePath + "/auth/admin/realms/" + realm + "/users/" + user.ID)
+
+	log.Println(string(resp.Body()))
+	log.Println(resp.Status())
+
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode() != 201 {
+		return errors.New(resp.Status())
+	}
+
+	return nil
+}
+
+// UpdateUser creates a new user
+func (client *client) UpdateGroup(token *models.JWT, realm string, group models.Group) error {
+	bytes, err := json.Marshal(group)
+	if err != nil {
+		return err
+	}
+	resp, err := getRequestWithHeader(token).
+		SetHeader("Content-Type", "application/json").
+		SetBody(string(bytes)).
+		Put(client.basePath + "/auth/admin/realms/" + realm + "/groups/" + group.ID)
+
+	log.Println(string(resp.Body()))
+	log.Println(resp.Status())
+
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode() != 201 {
+		return errors.New(resp.Status())
+	}
+
+	return nil
+}
+
+// UpdateUser creates a new user
+func (client *client) UpdateClient(token *models.JWT, realm string, newClient models.Client) error {
+	bytes, err := json.Marshal(newClient)
+	if err != nil {
+		return err
+	}
+	resp, err := getRequestWithHeader(token).
+		SetHeader("Content-Type", "application/json").
+		SetBody(string(bytes)).
+		Put(client.basePath + "/auth/admin/realms/" + realm + "/clients")
+
+	log.Println(string(resp.Body()))
+	log.Println(resp.Status())
+
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode() != 201 {
+		return errors.New(resp.Status())
+	}
+
+	return nil
+}
+
+// UpdateUser creates a new user
+func (client *client) UpdateRole(token *models.JWT, realm string, clientID string, role models.Role) error {
+	bytes, err := json.Marshal(role)
+	if err != nil {
+		return err
+	}
+	resp, err := getRequestWithHeader(token).
+		SetHeader("Content-Type", "application/json").
+		SetBody(string(bytes)).
+		Put(client.basePath + "/auth/admin/realms/" + realm + "clients/" + clientID + "/roles/" + role.Name)
+
+	log.Println(string(resp.Body()))
+	log.Println(resp.Status())
+
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode() != 201 {
+		return errors.New(resp.Status())
+	}
+
+	return nil
+}
+
+// UpdateClientScope creates a new client scope
+func (client *client) UpdateClientScope(token *models.JWT, realm string, scope models.ClientScope) error {
+	bytes, err := json.Marshal(scope)
+	if err != nil {
+		return err
+	}
+	resp, err := getRequestWithHeader(token).
+		SetHeader("Content-Type", "application/json").
+		SetBody(string(bytes)).
+		Put(client.basePath + "/auth/admin/realms/" + realm + "/client-scopes/" + scope.ID)
 
 	log.Println(string(resp.Body()))
 	log.Println(resp.Status())

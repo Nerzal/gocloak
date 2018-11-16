@@ -83,6 +83,42 @@ type ClientRoleMappingRole struct {
 	ContainerID        string `json:"containerId"`
 }
 
+// ClientScope is a ClientScope
+type ClientScope struct {
+	ID                    string                `json:"id"`
+	Name                  string                `json:"name"`
+	Description           string                `json:"description"`
+	Protocol              string                `json:"protocol"`
+	ClientScopeAttributes ClientScopeAttributes `json:"attributes"`
+	ProtocolMappers       ProtocolMappers       `json:"protocolMappers,omitempty"`
+}
+
+// ClientScopeAttributes are attributes of client scopes
+type ClientScopeAttributes struct {
+	ConsentScreenText      string `json:"consent.screen.text"`
+	DisplayOnConsentScreen string `json:"display.on.consent.screen"`
+}
+
+// ProtocolMappers are protocolmappers
+type ProtocolMappers struct {
+	ID                    string                `json:"id"`
+	Name                  string                `json:"name"`
+	Protocol              string                `json:"protocol"`
+	ProtocolMapper        string                `json:"protocolMapper"`
+	ConsentRequired       bool                  `json:"consentRequired"`
+	ProtocolMappersConfig ProtocolMappersConfig `json:"config"`
+}
+
+// ProtocolMappersConfig is a config of a protocol mapper
+type ProtocolMappersConfig struct {
+	UserinfoTokenClaim string `json:"userinfo.token.claim"`
+	UserAttribute      string `json:"user.attribute"`
+	IDTokenClaim       string `json:"id.token.claim"`
+	AccessTokenClaim   string `json:"access.token.claim"`
+	ClaimName          string `json:"claim.name"`
+	JSONTypeLabel      string `json:"jsonType.label"`
+}
+
 // Client is a Client
 type Client struct {
 	ID       string `json:"id"`
