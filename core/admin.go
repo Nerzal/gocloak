@@ -117,11 +117,13 @@ func (client *client) DirectGrantAuthentication(clientID string, clientSecret st
 	return nil, errors.New("Authentication failed")
 }
 
+func (client *client) CreateUser(token *models.JWT, realm string) error {
+	return nil
+}
+
 // GetUsers get all users inr ealm
 func (client *client) GetUsers(token *models.JWT, realm string) (*[]models.User, error) {
-	resp, err := resty.R().
-		SetHeader("Content-Type", "application/json").
-		SetHeader("Authorization", "Bearer "+token.AccessToken).
+	resp, err := getRequestWithHeader(token).
 		Get(client.basePath + "/auth/admin/realms/" + realm + "/users")
 	if err != nil {
 		return nil, err
@@ -138,9 +140,7 @@ func (client *client) GetUsers(token *models.JWT, realm string) (*[]models.User,
 
 // GetUsergroups get all groups for user
 func (client *client) GetUserGroups(token *models.JWT, realm string, userID string) (*[]models.UserGroup, error) {
-	resp, err := resty.R().
-		SetHeader("Content-Type", "application/json").
-		SetHeader("Authorization", "Bearer "+token.AccessToken).
+	resp, err := getRequestWithHeader(token).
 		Get(client.basePath + "/auth/admin/realms/" + realm + "/users/" + userID + "/groups")
 	if err != nil {
 		return nil, err
@@ -157,9 +157,7 @@ func (client *client) GetUserGroups(token *models.JWT, realm string, userID stri
 
 // GetRoleMappingByGroupID gets the role mappings by group
 func (client *client) GetRoleMappingByGroupID(token *models.JWT, realm string, groupID string) (*[]models.RoleMapping, error) {
-	resp, err := resty.R().
-		SetHeader("Content-Type", "application/json").
-		SetHeader("Authorization", "Bearer "+token.AccessToken).
+	resp, err := getRequestWithHeader(token).
 		Get(client.basePath + "/auth/admin/realms/" + realm + "/groups/" + groupID + "/role-mappings")
 	if err != nil {
 		return nil, err
@@ -198,9 +196,7 @@ func (client *client) GetRoleMappingByGroupID(token *models.JWT, realm string, g
 
 // GetGroups get all groups in realm
 func (client *client) GetGroups(token *models.JWT, realm string) (*[]models.Group, error) {
-	resp, err := resty.R().
-		SetHeader("Content-Type", "application/json").
-		SetHeader("Authorization", "Bearer "+token.AccessToken).
+	resp, err := getRequestWithHeader(token).
 		Get(client.basePath + "/auth/admin/realms/" + realm + "/groups")
 	if err != nil {
 		return nil, err
@@ -217,9 +213,7 @@ func (client *client) GetGroups(token *models.JWT, realm string) (*[]models.Grou
 
 // GetRoles get all roles in realm
 func (client *client) GetRoles(token *models.JWT, realm string) (*[]models.Role, error) {
-	resp, err := resty.R().
-		SetHeader("Content-Type", "application/json").
-		SetHeader("Authorization", "Bearer "+token.AccessToken).
+	resp, err := getRequestWithHeader(token).
 		Get(client.basePath + "/auth/admin/realms/" + realm + "/roles")
 	if err != nil {
 		return nil, err
@@ -236,9 +230,7 @@ func (client *client) GetRoles(token *models.JWT, realm string) (*[]models.Role,
 
 // GetRolesByClientID get all roles for the given client in realm
 func (client *client) GetRolesByClientID(token *models.JWT, realm string, clientID string) (*[]models.Role, error) {
-	resp, err := resty.R().
-		SetHeader("Content-Type", "application/json").
-		SetHeader("Authorization", "Bearer "+token.AccessToken).
+	resp, err := getRequestWithHeader(token).
 		Get(client.basePath + "/auth/admin/realms/" + realm + "/clients/" + clientID + "/roles")
 	if err != nil {
 		return nil, err
@@ -257,9 +249,7 @@ func (client *client) GetRolesByClientID(token *models.JWT, realm string, client
 
 // GetClients gets all clients in realm
 func (client *client) GetClients(token *models.JWT, realm string) (*[]models.RealmClient, error) {
-	resp, err := resty.R().
-		SetHeader("Content-Type", "application/json").
-		SetHeader("Authorization", "Bearer "+token.AccessToken).
+	resp, err := getRequestWithHeader(token).
 		Get(client.basePath + "/auth/admin/realms/" + realm + "/clients")
 	if err != nil {
 		return nil, err
@@ -272,6 +262,12 @@ func (client *client) GetClients(token *models.JWT, realm string) (*[]models.Rea
 	}
 
 	return &result, nil
+}
+
+func getRequestWithHeader(token *models.JWT) *resty.Request {
+	return resty.R().
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Authorization", "Bearer "+token.AccessToken)
 }
 
 func getBasicAuthForClient(clientID string, clientSecret string) string {
