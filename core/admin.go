@@ -14,6 +14,7 @@ import (
 	resty "gopkg.in/resty.v1"
 )
 
+// Client holds all methods a client should fullfill
 type Client interface {
 	Login(username string, password string, realm string) (*models.JWT, error)
 
@@ -96,13 +97,11 @@ func (client *client) DirectGrantAuthentication(clientID string, clientSecret st
 		return nil, err
 	}
 
-	// Here’s the actual decoding, and a check for associated errors.
 	var result map[string]interface{}
 	if err := json.Unmarshal(resp.Body(), &result); err != nil {
 		return nil, err
 	}
 
-	// Check for Result
 	if val, ok := result["access_token"]; ok {
 		_ = val
 		return &models.JWT{
@@ -117,7 +116,19 @@ func (client *client) DirectGrantAuthentication(clientID string, clientSecret st
 	return nil, errors.New("Authentication failed")
 }
 
-func (client *client) CreateUser(token *models.JWT, realm string) error {
+func (client *client) CreateUser(token *models.JWT, realm string, user models.User) error {
+	resp, err := getRequestWithHeader(token).
+		SetBody(user).
+		Post(client.basePath + "/auth/admin/realms/" + realm + "/users")
+
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode() != 200 {
+		return errors.New(resp.Status())
+	}
+
 	return nil
 }
 
@@ -129,7 +140,6 @@ func (client *client) GetUsers(token *models.JWT, realm string) (*[]models.User,
 		return nil, err
 	}
 
-	// Decode into struct
 	var result []models.User
 	if err := json.Unmarshal(resp.Body(), &result); err != nil {
 		return nil, err
@@ -146,7 +156,6 @@ func (client *client) GetUserGroups(token *models.JWT, realm string, userID stri
 		return nil, err
 	}
 
-	// Decode into struct
 	var result []models.UserGroup
 	if err := json.Unmarshal(resp.Body(), &result); err != nil {
 		return nil, err
@@ -165,20 +174,15 @@ func (client *client) GetRoleMappingByGroupID(token *models.JWT, realm string, g
 
 	var result []models.RoleMapping
 
-	// Decode into struct
 	var f map[string]interface{}
 	if err := json.Unmarshal(resp.Body(), &f); err != nil {
 		return nil, err
 	}
 
-	// JSON object parses into a map with string keys
 	itemsMap := f["clientMappings"].(map[string]interface{})
 
-	// Loop through the Items; we're not interested in the key, just the values
 	for _, v := range itemsMap {
-		// Use type assertions to ensure that the value's a JSON object
 		switch jsonObj := v.(type) {
-		// The value is an Item, represented as a generic interface
 		case interface{}:
 			jsonClientMapping, _ := json.Marshal(jsonObj)
 			var client models.RoleMapping
@@ -202,7 +206,6 @@ func (client *client) GetGroups(token *models.JWT, realm string) (*[]models.Grou
 		return nil, err
 	}
 
-	// Decode into struct
 	var result []models.Group
 	if err := json.Unmarshal(resp.Body(), &result); err != nil {
 		return nil, err
@@ -219,7 +222,6 @@ func (client *client) GetRoles(token *models.JWT, realm string) (*[]models.Role,
 		return nil, err
 	}
 
-	// Decode into struct
 	var result []models.Role
 	if err := json.Unmarshal(resp.Body(), &result); err != nil {
 		return nil, err
@@ -236,8 +238,6 @@ func (client *client) GetRolesByClientID(token *models.JWT, realm string, client
 		return nil, err
 	}
 
-	log.Println(resp.Status())
-	// Decode into struct
 	var result []models.Role
 	ioutil.WriteFile("test.json", resp.Body(), 0644)
 	if err := json.Unmarshal(resp.Body(), &result); err != nil {
@@ -255,7 +255,6 @@ func (client *client) GetClients(token *models.JWT, realm string) (*[]models.Rea
 		return nil, err
 	}
 
-	// Decode into struct
 	var result []models.RealmClient
 	if err := json.Unmarshal(resp.Body(), &result); err != nil {
 		return nil, err
