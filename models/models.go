@@ -1,5 +1,11 @@
 package models
 
+// APIError represents an api error
+type APIError struct {
+	Code    int
+	Message string
+}
+
 // User represents the Keycloak User Structure
 type User struct {
 	ID                         string        `json:"id,omitempty"`
@@ -77,8 +83,8 @@ type ClientRoleMappingRole struct {
 	ContainerID        string `json:"containerId"`
 }
 
-// RealmClient is a realmClient
-type RealmClient struct {
+// Client is a Client
+type Client struct {
 	ID       string `json:"id"`
 	ClientID string `json:"clientId"`
 }

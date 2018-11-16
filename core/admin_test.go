@@ -36,6 +36,57 @@ func TestCreateUser(t *testing.T) {
 	}
 }
 
+func TestCreateGroup(t *testing.T) {
+	client := NewClient(hostname)
+	token, err := client.Login(username, password, realm)
+	if err != nil {
+		t.Log("TestLogin failed", err.Error())
+		t.Fail()
+	}
+
+	group := models.Group{}
+	group.Name = "MySuperCoolNewGroup"
+	err = client.CreateGroup(token, realm, group)
+	if err != nil {
+		t.Log("Create User Failed: ", err.Error())
+		t.Fail()
+	}
+}
+
+func TestCreateRole(t *testing.T) {
+	client := NewClient(hostname)
+	token, err := client.Login(username, password, realm)
+	if err != nil {
+		t.Log("TestLogin failed", err.Error())
+		t.Fail()
+	}
+
+	role := models.Role{}
+	role.Name = "mySuperCoolRole"
+	err = client.CreateRole(token, realm, "9204c840-f857-4507-8b00-784c9c845e6e", role)
+	if err != nil {
+		t.Log("Create User Failed: ", err.Error())
+		t.Fail()
+	}
+}
+
+func TestCreateClient(t *testing.T) {
+	client := NewClient(hostname)
+	token, err := client.Login(username, password, realm)
+	if err != nil {
+		t.Log("TestLogin failed", err.Error())
+		t.Fail()
+	}
+
+	newClient := models.Client{}
+	newClient.ClientID = "newCoolClientId"
+	err = client.CreateClient(token, realm, newClient)
+	if err != nil {
+		t.Log("Create User Failed: ", err.Error())
+		t.Fail()
+	}
+}
+
 func TestGetUsers(t *testing.T) {
 	client := NewClient(hostname)
 	token, err := client.Login(username, password, realm)

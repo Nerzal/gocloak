@@ -1,5 +1,6 @@
 package models
 
+// JWT is a JWT
 type JWT struct {
 	AccessToken      string `json:"access_token"`
 	ExpiresIn        int    `json:"expires_in"`

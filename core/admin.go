@@ -19,14 +19,19 @@ type Client interface {
 	Login(username string, password string, realm string) (*models.JWT, error)
 
 	DirectGrantAuthentication(clientID string, clientSecret string, realm string, username string, password string) (*models.JWT, error)
+
 	CreateUser(token *models.JWT, realm string, user models.User) error
+	CreateGroup(token *models.JWT, realm string, group models.Group) error
+	CreateRole(token *models.JWT, realm string, clientID string, role models.Role) error
+	CreateClient(token *models.JWT, realm string, clientID models.Client) error
+
 	GetUsers(token *models.JWT, realm string) (*[]models.User, error)
 	GetUserGroups(token *models.JWT, realm string, userID string) (*[]models.UserGroup, error)
 	GetRoleMappingByGroupID(token *models.JWT, realm string, groupID string) (*[]models.RoleMapping, error)
 	GetGroups(token *models.JWT, realm string) (*[]models.Group, error)
 	GetRoles(token *models.JWT, realm string) (*[]models.Role, error)
 	GetRolesByClientID(token *models.JWT, realm string, clientID string) (*[]models.Role, error)
-	GetClients(token *models.JWT, realm string) (*[]models.RealmClient, error)
+	GetClients(token *models.JWT, realm string) (*[]models.Client, error)
 }
 
 type client struct {
@@ -117,6 +122,7 @@ func (client *client) DirectGrantAuthentication(clientID string, clientSecret st
 	return nil, errors.New("Authentication failed")
 }
 
+// CreateUser creates a new user
 func (client *client) CreateUser(token *models.JWT, realm string, user models.User) error {
 	bytes, err := json.Marshal(user)
 	if err != nil {
@@ -126,6 +132,81 @@ func (client *client) CreateUser(token *models.JWT, realm string, user models.Us
 		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
 		Post(client.basePath + "/auth/admin/realms/" + realm + "/users")
+
+	log.Println(string(resp.Body()))
+	log.Println(resp.Status())
+
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode() != 201 {
+		return errors.New(resp.Status())
+	}
+
+	return nil
+}
+
+// CreateUser creates a new user
+func (client *client) CreateGroup(token *models.JWT, realm string, group models.Group) error {
+	bytes, err := json.Marshal(group)
+	if err != nil {
+		return err
+	}
+	resp, err := getRequestWithHeader(token).
+		SetHeader("Content-Type", "application/json").
+		SetBody(string(bytes)).
+		Post(client.basePath + "/auth/admin/realms/" + realm + "/groups")
+
+	log.Println(string(resp.Body()))
+	log.Println(resp.Status())
+
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode() != 201 {
+		return errors.New(resp.Status())
+	}
+
+	return nil
+}
+
+// CreateUser creates a new user
+func (client *client) CreateClient(token *models.JWT, realm string, newClient models.Client) error {
+	bytes, err := json.Marshal(newClient)
+	if err != nil {
+		return err
+	}
+	resp, err := getRequestWithHeader(token).
+		SetHeader("Content-Type", "application/json").
+		SetBody(string(bytes)).
+		Post(client.basePath + "/auth/admin/realms/" + realm + "/clients")
+
+	log.Println(string(resp.Body()))
+	log.Println(resp.Status())
+
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode() != 201 {
+		return errors.New(resp.Status())
+	}
+
+	return nil
+}
+
+// CreateUser creates a new user
+func (client *client) CreateRole(token *models.JWT, realm string, clientID string, role models.Role) error {
+	bytes, err := json.Marshal(role)
+	if err != nil {
+		return err
+	}
+	resp, err := getRequestWithHeader(token).
+		SetHeader("Content-Type", "application/json").
+		SetBody(string(bytes)).
+		Post(client.basePath + "/auth/admin/realms/" + realm + "clients/" + clientID + "/roles")
 
 	log.Println(string(resp.Body()))
 	log.Println(resp.Status())
@@ -257,14 +338,14 @@ func (client *client) GetRolesByClientID(token *models.JWT, realm string, client
 }
 
 // GetClients gets all clients in realm
-func (client *client) GetClients(token *models.JWT, realm string) (*[]models.RealmClient, error) {
+func (client *client) GetClients(token *models.JWT, realm string) (*[]models.Client, error) {
 	resp, err := getRequestWithHeader(token).
 		Get(client.basePath + "/auth/admin/realms/" + realm + "/clients")
 	if err != nil {
 		return nil, err
 	}
 
-	var result []models.RealmClient
+	var result []models.Client
 	if err := json.Unmarshal(resp.Body(), &result); err != nil {
 		return nil, err
 	}
