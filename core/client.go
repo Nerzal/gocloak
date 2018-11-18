@@ -39,12 +39,15 @@ type Client interface {
 	DeleteClient(token *models.JWT, realm string, clientID models.Client) error
 	DeleteClientScope(token *models.JWT, realm string, scope models.ClientScope) error
 
+	GetUser(token *models.JWT, realm, userID string) (*models.User, error)
 	GetUserCount(token *models.JWT, realm string) (int, error)
 	GetUsers(token *models.JWT, realm string) (*[]models.User, error)
 	GetUserGroups(token *models.JWT, realm string, userID string) (*[]models.UserGroup, error)
-	GetRoleMappingByGroupID(token *models.JWT, realm string, groupID string) (*[]models.RoleMapping, error)
+	
 	GetGroups(token *models.JWT, realm string) (*[]models.Group, error)
+	GetGroup(token *models.JWT, realm, groupID string) (*models.Group, error)
 	GetRoles(token *models.JWT, realm string) (*[]models.Role, error)
+	GetRoleMappingByGroupID(token *models.JWT, realm string, groupID string) (*[]models.RoleMapping, error)
 	GetRolesByClientID(token *models.JWT, realm string, clientID string) (*[]models.Role, error)
 	GetClients(token *models.JWT, realm string) (*[]models.Client, error)
 }
@@ -517,6 +520,22 @@ func (client *client) DeleteClientScope(token *models.JWT, realm string, scope m
 	return nil
 }
 
+// GetUser get all users inr ealm
+func (client *client) GetUser(token *models.JWT, realm, userID string) (*models.User, error) {
+	resp, err := getRequestWithHeader(token).
+		Get(client.basePath + "/auth/admin/realms/" + realm + "/user/" + userID)
+	if err != nil {
+		return nil, err
+	}
+
+	var result models.User
+	if err := json.Unmarshal(resp.Body(), &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
 // GetUsers get all users inr ealm
 func (client *client) GetUsers(token *models.JWT, realm string) (*[]models.User, error) {
 	resp, err := getRequestWithHeader(token).
@@ -594,6 +613,22 @@ func (client *client) GetRoleMappingByGroupID(token *models.JWT, realm string, g
 		default:
 			return nil, errors.New("Expecting a JSON object; got something else")
 		}
+	}
+
+	return &result, nil
+}
+
+// GetGroup get group with id in realm
+func (client *client) GetGroup(token *models.JWT, realm, groupID string) (*models.Group, error) {
+	resp, err := getRequestWithHeader(token).
+		Get(client.basePath + "/auth/admin/realms/" + realm + "/group/" + groupID)
+	if err != nil {
+		return nil, err
+	}
+
+	var result models.Group
+	if err := json.Unmarshal(resp.Body(), &result); err != nil {
+		return nil, err
 	}
 
 	return &result, nil

@@ -103,6 +103,24 @@ func TestGetUsers(t *testing.T) {
 	}
 }
 
+func TestGetUser(t *testing.T) {
+	client := NewClient(hostname)
+	token, err := client.LoginAdmin(username, password, realm)
+	if err != nil {
+		t.Log("TestLogin failed", err.Error())
+		t.Fail()
+	}
+
+	users, err := client.GetUsers(token, realm)
+	if err != nil {
+		t.Log("GetUsers failed", err.Error())
+		t.Fail()
+	}
+
+	dereferencedUsers := *users
+	_, err = client.GetUser(token, realm, dereferencedUsers[0].ID)
+}
+
 func TestGetUserCount(t *testing.T) {
 	client := NewClient(hostname)
 	token, err := client.LoginAdmin(username, password, realm)
