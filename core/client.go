@@ -39,6 +39,7 @@ type Client interface {
 	DeleteClient(token *models.JWT, realm string, clientID models.Client) error
 	DeleteClientScope(token *models.JWT, realm string, scope models.ClientScope) error
 
+	GetUserCount(token *models.JWT, realm string) (int, error)
 	GetUsers(token *models.JWT, realm string) (*[]models.User, error)
 	GetUserGroups(token *models.JWT, realm string, userID string) (*[]models.UserGroup, error)
 	GetRoleMappingByGroupID(token *models.JWT, realm string, groupID string) (*[]models.RoleMapping, error)
@@ -530,6 +531,22 @@ func (client *client) GetUsers(token *models.JWT, realm string) (*[]models.User,
 	}
 
 	return &result, nil
+}
+
+// GetUserCount gets the user count in the realm
+func (client *client) GetUserCount(token *models.JWT, realm string) (int, error) {
+	resp, err := getRequestWithHeader(token).
+		Get(client.basePath + "/auth/admin/realms/" + realm + "/users/count")
+	if err != nil {
+		return -1, err
+	}
+
+	var result int
+	if err := json.Unmarshal(resp.Body(), &result); err != nil {
+		return -1, err
+	}
+
+	return result, nil
 }
 
 // GetUsergroups get all groups for user

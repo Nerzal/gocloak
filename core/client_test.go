@@ -1,6 +1,7 @@
 package core
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/Nerzal/gocloak/models"
@@ -8,7 +9,7 @@ import (
 
 func TestLogin(t *testing.T) {
 	client := NewClient(hostname)
-	_, err := client.Login(username, password, realm)
+	_, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
 		t.Fail()
@@ -17,7 +18,7 @@ func TestLogin(t *testing.T) {
 
 func TestCreateUser(t *testing.T) {
 	client := NewClient(hostname)
-	token, err := client.Login(username, password, realm)
+	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
 		t.Fail()
@@ -38,7 +39,7 @@ func TestCreateUser(t *testing.T) {
 
 func TestCreateGroup(t *testing.T) {
 	client := NewClient(hostname)
-	token, err := client.Login(username, password, realm)
+	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
 		t.Fail()
@@ -55,7 +56,7 @@ func TestCreateGroup(t *testing.T) {
 
 func TestCreateRole(t *testing.T) {
 	client := NewClient(hostname)
-	token, err := client.Login(username, password, realm)
+	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
 		t.Fail()
@@ -72,14 +73,14 @@ func TestCreateRole(t *testing.T) {
 
 func TestCreateClient(t *testing.T) {
 	client := NewClient(hostname)
-	token, err := client.Login(username, password, realm)
+	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
 		t.Fail()
 	}
 
 	newClient := models.Client{}
-	newClient.ClientID = "newCoolClientId"
+	newClient.ClientID = "KYCnow"
 	err = client.CreateClient(token, realm, newClient)
 	if err != nil {
 		t.Log("Create User Failed: ", err.Error())
@@ -89,7 +90,7 @@ func TestCreateClient(t *testing.T) {
 
 func TestGetUsers(t *testing.T) {
 	client := NewClient(hostname)
-	token, err := client.Login(username, password, realm)
+	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
 		t.Fail()
@@ -102,9 +103,26 @@ func TestGetUsers(t *testing.T) {
 	}
 }
 
+func TestGetUserCount(t *testing.T) {
+	client := NewClient(hostname)
+	token, err := client.LoginAdmin(username, password, realm)
+	if err != nil {
+		t.Log("TestLogin failed", err.Error())
+		t.Fail()
+	}
+
+	count, err := client.GetUserCount(token, realm)
+	if err != nil {
+		t.Log("GetUsers failed", err.Error())
+		t.Fail()
+	}
+
+	t.Log("Users in Realm: " + strconv.Itoa(count))
+}
+
 func TestGetGroups(t *testing.T) {
 	client := NewClient(hostname)
-	token, err := client.Login(username, password, realm)
+	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
 		t.Fail()
@@ -119,7 +137,7 @@ func TestGetGroups(t *testing.T) {
 
 func TestGetUserGroups(t *testing.T) {
 	client := NewClient(hostname)
-	token, err := client.Login(username, password, realm)
+	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
 		t.Fail()
@@ -142,7 +160,7 @@ func TestGetUserGroups(t *testing.T) {
 
 func TestGetRoles(t *testing.T) {
 	client := NewClient(hostname)
-	token, err := client.Login(username, password, realm)
+	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
 		t.Fail()
@@ -157,7 +175,7 @@ func TestGetRoles(t *testing.T) {
 
 func TestGetClients(t *testing.T) {
 	client := NewClient(hostname)
-	token, err := client.Login(username, password, realm)
+	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
 		t.Fail()
@@ -172,7 +190,7 @@ func TestGetClients(t *testing.T) {
 
 func TestGetRolesByClientId(t *testing.T) {
 	client := NewClient(hostname)
-	token, err := client.Login(username, password, realm)
+	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
 		t.Fail()
@@ -194,7 +212,7 @@ func TestGetRolesByClientId(t *testing.T) {
 
 func TestGetRoleMappingByGroupID(t *testing.T) {
 	client := NewClient(hostname)
-	token, err := client.Login(username, password, realm)
+	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
 		t.Fail()
