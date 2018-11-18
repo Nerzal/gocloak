@@ -18,6 +18,7 @@ Login(username string, password string, realm string, clientID string) (*models.
 	CreateRole(token *models.JWT, realm string, clientID string, role models.Role) error
 	CreateClient(token *models.JWT, realm string, clientID models.Client) error
 	CreateClientScope(token *models.JWT, realm string, scope models.ClientScope) error
+	CreateComponent(token *models.JWT, realm string, component models.Component) error
 
 	UpdateUser(token *models.JWT, realm string, user models.User) error
 	UpdateGroup(token *models.JWT, realm string, group models.Group) error
