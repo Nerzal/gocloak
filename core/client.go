@@ -39,6 +39,7 @@ type Client interface {
 	DeleteClient(token *models.JWT, realm string, clientID models.Client) error
 	DeleteClientScope(token *models.JWT, realm string, scope models.ClientScope) error
 
+	GetKeyStoreConfig(token *models.JWT, realm) (*models.KeyStoreConfig, error)
 	GetUser(token *models.JWT, realm, userID string) (*models.User, error)
 	GetUserCount(token *models.JWT, realm string) (int, error)
 	GetUsers(token *models.JWT, realm string) (*[]models.User, error)
@@ -518,6 +519,22 @@ func (client *client) DeleteClientScope(token *models.JWT, realm string, scope m
 	}
 
 	return nil
+}
+
+// GetKeyStoreConfig get keystoreconfig of the realm
+func (client *client) GetKeyStoreConfig(token *models.JWT, realm string) (*models.KeyStoreConfig, error) {
+	resp, err := getRequestWithHeader(token).
+		Get(client.basePath + "/auth/admin/realms/" + realm + "/keys")
+	if err != nil {
+		return nil, err
+	}
+
+	var result models.KeyStoreConfig
+	if err := json.Unmarshal(resp.Body(), &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }
 
 // GetUser get all users inr ealm

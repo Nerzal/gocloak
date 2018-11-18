@@ -24,6 +24,31 @@ type User struct {
 	Access                     Access        `json:"access,omitempty"`
 }
 
+// KeyStoreConfig holds the keyStoreConfig
+type KeyStoreConfig struct {
+	ActiveKeys ActiveKeys `json:"active"`
+	Key        []Key      `json:"keys"`
+}
+
+// ActiveKeys holds the active keys
+type ActiveKeys struct {
+	HS256 string `json:"HS256"`
+	RS256 string `json:"RS256"`
+	AES   string `json:"AES"`
+}
+
+// Key is a key
+type Key struct {
+	ProviderID       string `json:"providerId"`
+	ProviderPriority int    `json:"providerPriority"`
+	Kid              string `json:"kid"`
+	Status           string `json:"status"`
+	Type             string `json:"type"`
+	Algorithm        string `json:"algorithm"`
+	PublicKey        string `json:"publicKey,omitempty"`
+	Certificate      string `json:"certificate,omitempty"`
+}
+
 // Attributes holds Attributes
 type Attributes struct {
 	LDAPENTRYDN []string `json:"LDAP_ENTRY_DN"`
