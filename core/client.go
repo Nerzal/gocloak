@@ -16,7 +16,8 @@ import (
 
 // Client holds all methods a client should fullfill
 type Client interface {
-	Login(username string, password string, realm string) (*models.JWT, error)
+	Login(username string, password string, realm string, clientID string) (*models.JWT, error)
+	LoginAdmin(username, password, realm string) (*models.JWT, error)
 
 	DirectGrantAuthentication(clientID string, clientSecret string, realm string, username string, password string) (*models.JWT, error)
 
@@ -68,13 +69,18 @@ func NewClient(basePath string) Client {
 }
 
 // Login performs a login
-func (client *client) Login(username, password, realm string) (*models.JWT, error) {
+func (client *client) LoginAdmin(username, password, realm string) (*models.JWT, error) {
+	return client.Login(username, password, realm, adminClientID)
+}
+
+// Login performs a login
+func (client *client) Login(username, password, realm, clientID string) (*models.JWT, error) {
 	firstPart := "/auth/realms/"
 	lastPart := "/protocol/openid-connect/token"
 	loginPath := firstPart + realm + lastPart
 
 	data := url.Values{}
-	data.Set("client_id", adminClientID)
+	data.Set("client_id", clientID)
 	data.Add("grant_type", "password")
 	data.Add("username", username)
 	data.Add("password", password)
