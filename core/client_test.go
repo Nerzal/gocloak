@@ -103,6 +103,21 @@ func TestGetUsers(t *testing.T) {
 	}
 }
 
+func TestGetKeyStoreConfig(t *testing.T) {
+	client := NewClient(hostname)
+	token, err := client.LoginAdmin(username, password, realm)
+	if err != nil {
+		t.Log("TestLogin failed", err.Error())
+		t.Fail()
+	}
+
+	_, err = client.GetKeyStoreConfig(token, realm)
+	if err != nil {
+		t.Log("GetKeyStoreConfig failed", err.Error())
+		t.Fail()
+	}
+}
+
 func TestGetUser(t *testing.T) {
 	client := NewClient(hostname)
 	token, err := client.LoginAdmin(username, password, realm)

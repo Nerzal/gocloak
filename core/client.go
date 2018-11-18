@@ -33,18 +33,20 @@ type Client interface {
 	UpdateClient(token *models.JWT, realm string, clientID models.Client) error
 	UpdateClientScope(token *models.JWT, realm string, scope models.ClientScope) error
 
-	DeleteUser(token *models.JWT, realm string, user models.User) error
-	DeleteGroup(token *models.JWT, realm string, group models.Group) error
-	DeleteRole(token *models.JWT, realm string, clientID string, role models.Role) error
-	DeleteClient(token *models.JWT, realm string, clientID models.Client) error
-	DeleteClientScope(token *models.JWT, realm string, scope models.ClientScope) error
+	DeleteUser(token *models.JWT, realm, userID string) error
+	DeleteComponent(token *models.JWT, realm, componentID string) error
+	DeleteGroup(token *models.JWT, realm, groupID string) error
+	DeleteRole(token *models.JWT, realm, clientID, roleName string) error
+	DeleteClient(token *models.JWT, realm, clientID string) error
+	DeleteClientScope(token *models.JWT, realm, scopeID string) error
 
-	GetKeyStoreConfig(token *models.JWT, realm) (*models.KeyStoreConfig, error)
+	GetKeyStoreConfig(token *models.JWT, realm string) (*models.KeyStoreConfig, error)
 	GetUser(token *models.JWT, realm, userID string) (*models.User, error)
 	GetUserCount(token *models.JWT, realm string) (int, error)
 	GetUsers(token *models.JWT, realm string) (*[]models.User, error)
 	GetUserGroups(token *models.JWT, realm string, userID string) (*[]models.UserGroup, error)
-	
+	GetComponents(token *models.JWT, realm string) (*[]models.Component, error)
+
 	GetGroups(token *models.JWT, realm string) (*[]models.Group, error)
 	GetGroup(token *models.JWT, realm, groupID string) (*models.Group, error)
 	GetRoles(token *models.JWT, realm string) (*[]models.Role, error)
@@ -157,9 +159,6 @@ func (client *client) CreateUser(token *models.JWT, realm string, user models.Us
 		SetBody(string(bytes)).
 		Post(client.basePath + "/auth/admin/realms/" + realm + "/users")
 
-	log.Println(string(resp.Body()))
-	log.Println(resp.Status())
-
 	if err != nil {
 		return err
 	}
@@ -181,9 +180,6 @@ func (client *client) CreateGroup(token *models.JWT, realm string, group models.
 		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
 		Post(client.basePath + "/auth/admin/realms/" + realm + "/groups")
-
-	log.Println(string(resp.Body()))
-	log.Println(resp.Status())
 
 	if err != nil {
 		return err
@@ -207,9 +203,6 @@ func (client *client) CreateClient(token *models.JWT, realm string, newClient mo
 		SetBody(string(bytes)).
 		Post(client.basePath + "/auth/admin/realms/" + realm + "/clients")
 
-	log.Println(string(resp.Body()))
-	log.Println(resp.Status())
-
 	if err != nil {
 		return err
 	}
@@ -231,9 +224,6 @@ func (client *client) CreateRole(token *models.JWT, realm string, clientID strin
 		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
 		Post(client.basePath + "/auth/admin/realms/" + realm + "clients/" + clientID + "/roles")
-
-	log.Println(string(resp.Body()))
-	log.Println(resp.Status())
 
 	if err != nil {
 		return err
@@ -257,9 +247,6 @@ func (client *client) CreateClientScope(token *models.JWT, realm string, scope m
 		SetBody(string(bytes)).
 		Post(client.basePath + "/auth/admin/realms/" + realm + "/client-scopes")
 
-	log.Println(string(resp.Body()))
-	log.Println(resp.Status())
-
 	if err != nil {
 		return err
 	}
@@ -281,9 +268,6 @@ func (client *client) UpdateUser(token *models.JWT, realm string, user models.Us
 		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
 		Put(client.basePath + "/auth/admin/realms/" + realm + "/users/" + user.ID)
-
-	log.Println(string(resp.Body()))
-	log.Println(resp.Status())
 
 	if err != nil {
 		return err
@@ -307,9 +291,6 @@ func (client *client) UpdateGroup(token *models.JWT, realm string, group models.
 		SetBody(string(bytes)).
 		Put(client.basePath + "/auth/admin/realms/" + realm + "/groups/" + group.ID)
 
-	log.Println(string(resp.Body()))
-	log.Println(resp.Status())
-
 	if err != nil {
 		return err
 	}
@@ -331,9 +312,6 @@ func (client *client) UpdateClient(token *models.JWT, realm string, newClient mo
 		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
 		Put(client.basePath + "/auth/admin/realms/" + realm + "/clients")
-
-	log.Println(string(resp.Body()))
-	log.Println(resp.Status())
 
 	if err != nil {
 		return err
@@ -357,9 +335,6 @@ func (client *client) UpdateRole(token *models.JWT, realm string, clientID strin
 		SetBody(string(bytes)).
 		Put(client.basePath + "/auth/admin/realms/" + realm + "clients/" + clientID + "/roles/" + role.Name)
 
-	log.Println(string(resp.Body()))
-	log.Println(resp.Status())
-
 	if err != nil {
 		return err
 	}
@@ -382,8 +357,22 @@ func (client *client) UpdateClientScope(token *models.JWT, realm string, scope m
 		SetBody(string(bytes)).
 		Put(client.basePath + "/auth/admin/realms/" + realm + "/client-scopes/" + scope.ID)
 
-	log.Println(string(resp.Body()))
-	log.Println(resp.Status())
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode() != 201 {
+		return errors.New(resp.Status())
+	}
+
+	return nil
+}
+
+// DeleteUser creates a new user
+func (client *client) DeleteUser(token *models.JWT, realm, userID string) error {
+	resp, err := getRequestWithHeader(token).
+		SetHeader("Content-Type", "application/json").
+		Delete(client.basePath + "/auth/admin/realms/" + realm + "/users/" + userID)
 
 	if err != nil {
 		return err
@@ -397,18 +386,10 @@ func (client *client) UpdateClientScope(token *models.JWT, realm string, scope m
 }
 
 // DeleteUser creates a new user
-func (client *client) DeleteUser(token *models.JWT, realm string, user models.User) error {
-	bytes, err := json.Marshal(user)
-	if err != nil {
-		return err
-	}
+func (client *client) DeleteGroup(token *models.JWT, realm, groupID string) error {
 	resp, err := getRequestWithHeader(token).
 		SetHeader("Content-Type", "application/json").
-		SetBody(string(bytes)).
-		Delete(client.basePath + "/auth/admin/realms/" + realm + "/users/" + user.ID)
-
-	log.Println(string(resp.Body()))
-	log.Println(resp.Status())
+		Delete(client.basePath + "/auth/admin/realms/" + realm + "/groups/" + groupID)
 
 	if err != nil {
 		return err
@@ -422,18 +403,27 @@ func (client *client) DeleteUser(token *models.JWT, realm string, user models.Us
 }
 
 // DeleteUser creates a new user
-func (client *client) DeleteGroup(token *models.JWT, realm string, group models.Group) error {
-	bytes, err := json.Marshal(group)
+func (client *client) DeleteClient(token *models.JWT, realm, clientID string) error {
+	resp, err := getRequestWithHeader(token).
+		SetHeader("Content-Type", "application/json").
+		Delete(client.basePath + "/auth/admin/realms/" + realm + "/clients/" + clientID)
+
 	if err != nil {
 		return err
 	}
+
+	if resp.StatusCode() != 201 {
+		return errors.New(resp.Status())
+	}
+
+	return nil
+}
+
+// DeleteComponent creates a new user
+func (client *client) DeleteComponent(token *models.JWT, realm, componentID string) error {
 	resp, err := getRequestWithHeader(token).
 		SetHeader("Content-Type", "application/json").
-		SetBody(string(bytes)).
-		Delete(client.basePath + "/auth/admin/realms/" + realm + "/groups/" + group.ID)
-
-	log.Println(string(resp.Body()))
-	log.Println(resp.Status())
+		Delete(client.basePath + "/auth/admin/realms/" + realm + "/components/" + componentID)
 
 	if err != nil {
 		return err
@@ -447,43 +437,10 @@ func (client *client) DeleteGroup(token *models.JWT, realm string, group models.
 }
 
 // DeleteUser creates a new user
-func (client *client) DeleteClient(token *models.JWT, realm string, newClient models.Client) error {
-	bytes, err := json.Marshal(newClient)
-	if err != nil {
-		return err
-	}
+func (client *client) DeleteRole(token *models.JWT, realm, clientID, roleName string) error {
 	resp, err := getRequestWithHeader(token).
 		SetHeader("Content-Type", "application/json").
-		SetBody(string(bytes)).
-		Delete(client.basePath + "/auth/admin/realms/" + realm + "/clients")
-
-	log.Println(string(resp.Body()))
-	log.Println(resp.Status())
-
-	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode() != 201 {
-		return errors.New(resp.Status())
-	}
-
-	return nil
-}
-
-// DeleteUser creates a new user
-func (client *client) DeleteRole(token *models.JWT, realm string, clientID string, role models.Role) error {
-	bytes, err := json.Marshal(role)
-	if err != nil {
-		return err
-	}
-	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
-		SetBody(string(bytes)).
-		Delete(client.basePath + "/auth/admin/realms/" + realm + "clients/" + clientID + "/roles/" + role.Name)
-
-	log.Println(string(resp.Body()))
-	log.Println(resp.Status())
+		Delete(client.basePath + "/auth/admin/realms/" + realm + "clients/" + clientID + "/roles/" + roleName)
 
 	if err != nil {
 		return err
@@ -497,18 +454,10 @@ func (client *client) DeleteRole(token *models.JWT, realm string, clientID strin
 }
 
 // DeleteClientScope creates a new client scope
-func (client *client) DeleteClientScope(token *models.JWT, realm string, scope models.ClientScope) error {
-	bytes, err := json.Marshal(scope)
-	if err != nil {
-		return err
-	}
+func (client *client) DeleteClientScope(token *models.JWT, realm, scopeID string) error {
 	resp, err := getRequestWithHeader(token).
 		SetHeader("Content-Type", "application/json").
-		SetBody(string(bytes)).
-		Put(client.basePath + "/auth/admin/realms/" + realm + "/client-scopes/" + scope.ID)
-
-	log.Println(string(resp.Body()))
-	log.Println(resp.Status())
+		Put(client.basePath + "/auth/admin/realms/" + realm + "/client-scopes/" + scopeID)
 
 	if err != nil {
 		return err
@@ -553,7 +502,23 @@ func (client *client) GetUser(token *models.JWT, realm, userID string) (*models.
 	return &result, nil
 }
 
-// GetUsers get all users inr ealm
+// GetComponents get all cimponents in realm
+func (client *client) GetComponents(token *models.JWT, realm string) (*[]models.Component, error) {
+	resp, err := getRequestWithHeader(token).
+		Get(client.basePath + "/auth/admin/realms/" + realm + "/components")
+	if err != nil {
+		return nil, err
+	}
+
+	var result []models.Component
+	if err := json.Unmarshal(resp.Body(), &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// GetUsers get all users in realm
 func (client *client) GetUsers(token *models.JWT, realm string) (*[]models.User, error) {
 	resp, err := getRequestWithHeader(token).
 		Get(client.basePath + "/auth/admin/realms/" + realm + "/users")

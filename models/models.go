@@ -24,6 +24,23 @@ type User struct {
 	Access                     Access        `json:"access,omitempty"`
 }
 
+// Component is a component
+type Component struct {
+	ID              string          `json:"id"`
+	Name            string          `json:"name"`
+	ProviderID      string          `json:"providerId"`
+	ProviderType    string          `json:"providerType"`
+	ParentID        string          `json:"parentId"`
+	ComponentConfig ComponentConfig `json:"config"`
+	SubType         string          `json:"subType,omitempty"`
+}
+
+// ComponentConfig is a componentconfig
+type ComponentConfig struct {
+	Priority  []string `json:"priority"`
+	Algorithm []string `json:"algorithm"`
+}
+
 // KeyStoreConfig holds the keyStoreConfig
 type KeyStoreConfig struct {
 	ActiveKeys ActiveKeys `json:"active"`
