@@ -26,6 +26,7 @@ type Client interface {
 	CreateRole(token *models.JWT, realm string, clientID string, role models.Role) error
 	CreateClient(token *models.JWT, realm string, clientID models.Client) error
 	CreateClientScope(token *models.JWT, realm string, scope models.ClientScope) error
+	CreateComponent(token *models.JWT, realm string, component models.Component) error
 
 	UpdateUser(token *models.JWT, realm string, user models.User) error
 	UpdateGroup(token *models.JWT, realm string, group models.Group) error
@@ -180,6 +181,28 @@ func (client *client) CreateGroup(token *models.JWT, realm string, group models.
 		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
 		Post(client.basePath + "/auth/admin/realms/" + realm + "/groups")
+
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode() != 201 {
+		return errors.New(resp.Status())
+	}
+
+	return nil
+}
+
+// CreateComponent creates a new user
+func (client *client) CreateComponent(token *models.JWT, realm string, component models.Component) error {
+	bytes, err := json.Marshal(component)
+	if err != nil {
+		return err
+	}
+	resp, err := getRequestWithHeader(token).
+		SetHeader("Content-Type", "application/json").
+		SetBody(string(bytes)).
+		Post(client.basePath + "/auth/admin/realms/" + realm + "/components")
 
 	if err != nil {
 		return err
