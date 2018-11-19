@@ -17,6 +17,7 @@ import (
 // Client holds all methods a client should fullfill
 type Client interface {
 	Login(username string, password string, realm string, clientID string) (*models.JWT, error)
+	LoginClient(clientID, clientSecret, realm string) (*models.JWT, error)
 	LoginAdmin(username, password, realm string) (*models.JWT, error)
 
 	DirectGrantAuthentication(clientID string, clientSecret string, realm string, username string, password string) (*models.JWT, error)
@@ -92,6 +93,40 @@ func (client *client) Login(username, password, realm, clientID string) (*models
 	data.Add("grant_type", "password")
 	data.Add("username", username)
 	data.Add("password", password)
+
+	req, _ := http.NewRequest("POST", client.basePath+loginPath, strings.NewReader(data.Encode()))
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if res.StatusCode != 200 {
+		log.Println(string(body))
+	}
+
+	jwt := &models.JWT{}
+	err = json.Unmarshal(body, jwt)
+	return jwt, err
+}
+
+// Login performs a login
+func (client *client) LoginClient(clientID, clientSecret, realm string) (*models.JWT, error) {
+	firstPart := "/auth/realms/"
+	lastPart := "/protocol/openid-connect/token"
+	loginPath := firstPart + realm + lastPart
+
+	data := url.Values{}
+	data.Set("client_id", clientID)
+	data.Add("grant_type", "client_credentials")
+	data.Add("client_secret", clientSecret)
 
 	req, _ := http.NewRequest("POST", client.basePath+loginPath, strings.NewReader(data.Encode()))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")

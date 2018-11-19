@@ -8,7 +8,8 @@ This client is based on : https://github.com/PhilippHeuer/go-keycloak/blob/maste
 ```go
 type Client interface {
 Login(username string, password string, realm string, clientID string) (*models.JWT, error)
-	Login(username string, password string, realm string, clientID string) (*models.JWT, error)
+    Login(username string, password string, realm string, clientID string) (*models.JWT, error)
+    LoginClient(clientID, clientSecret, realm string) (*models.JWT, error)
 	LoginAdmin(username, password, realm string) (*models.JWT, error)
 
 	DirectGrantAuthentication(clientID string, clientSecret string, realm string, username string, password string) (*models.JWT, error)
