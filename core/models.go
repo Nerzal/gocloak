@@ -1,4 +1,4 @@
-package models
+package core
 
 // APIError represents an api error
 type APIError struct {
