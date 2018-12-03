@@ -3,8 +3,6 @@ package core
 import (
 	"strconv"
 	"testing"
-
-	"github.com/Nerzal/gocloak/models"
 )
 
 func TestLogin(t *testing.T) {
@@ -24,7 +22,7 @@ func TestCreateUser(t *testing.T) {
 		t.Fail()
 	}
 
-	user := models.User{}
+	user := User{}
 	user.FirstName = "Klaus"
 	user.LastName = "Peter"
 	user.Email = "somm@ting.wong"
@@ -45,7 +43,7 @@ func TestCreateGroup(t *testing.T) {
 		t.Fail()
 	}
 
-	group := models.Group{}
+	group := Group{}
 	group.Name = "MySuperCoolNewGroup"
 	err = client.CreateGroup(token, realm, group)
 	if err != nil {
@@ -62,7 +60,7 @@ func TestCreateRole(t *testing.T) {
 		t.Fail()
 	}
 
-	role := models.Role{}
+	role := Role{}
 	role.Name = "mySuperCoolRole"
 	err = client.CreateRole(token, realm, "9204c840-f857-4507-8b00-784c9c845e6e", role)
 	if err != nil {
@@ -79,7 +77,7 @@ func TestCreateClient(t *testing.T) {
 		t.Fail()
 	}
 
-	newClient := models.Client{}
+	newClient := Client{}
 	newClient.ClientID = "KYCnow"
 	err = client.CreateClient(token, realm, newClient)
 	if err != nil {
