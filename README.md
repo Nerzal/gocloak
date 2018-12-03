@@ -10,7 +10,7 @@ type Client interface {
 Login(username string, password string, realm string, clientID string) (*models.JWT, error)
 LoginClient(clientID, clientSecret, realm string) (*models.JWT, error)
 LoginAdmin(username, password, realm string) (*models.JWT, error)
-RefreshToken(token *JWT, clientID string) (*JWT, error)
+RefreshToken(token *JWT, clientID, realm string) (*JWT, error)
 DirectGrantAuthentication(clientID string, clientSecret string, realm string, username string, password string) (*models.JWT, error)
 
 CreateUser(token *models.JWT, realm string, user models.User) error

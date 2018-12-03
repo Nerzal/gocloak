@@ -18,7 +18,7 @@ type GoCloak interface {
 	Login(username string, password string, realm string, clientID string) (*JWT, error)
 	LoginClient(clientID, clientSecret, realm string) (*JWT, error)
 	LoginAdmin(username, password, realm string) (*JWT, error)
-	RefreshToken(token *JWT, clientID string) (*JWT, error)
+	RefreshToken(token *JWT, clientID, realm string) (*JWT, error)
 
 	DirectGrantAuthentication(clientID string, clientSecret string, realm string, username string, password string) (*JWT, error)
 
@@ -78,7 +78,7 @@ func NewClient(basePath string) GoCloak {
 	}
 }
 
-func (client *gocloak) RefreshToken(token *JWT, clientID string) (*JWT, error) {
+func (client *gocloak) RefreshToken(token *JWT, clientID, realm string) (*JWT, error) {
 	firstPart := "/auth/realms/"
 	lastPart := "/protocol/openid-connect/token"
 	loginPath := firstPart + realm + lastPart
