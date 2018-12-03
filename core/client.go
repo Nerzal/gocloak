@@ -69,6 +69,7 @@ type loginData struct {
 }
 
 const adminClientID string = "admin-cli"
+const authRealm string = "/auth/admin/realms/"
 
 // NewClient creates a new Client
 func NewClient(basePath string) GoCloak {
@@ -226,7 +227,7 @@ func (client *gocloak) CreateUser(token *JWT, realm string, user User) error {
 	resp, err := getRequestWithHeader(token).
 		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
-		Post(client.basePath + "/auth/admin/realms/" + realm + "/users")
+		Post(client.basePath + authRealm + realm + "/users")
 
 	if err != nil {
 		return err
@@ -248,7 +249,7 @@ func (client *gocloak) CreateGroup(token *JWT, realm string, group Group) error 
 	resp, err := getRequestWithHeader(token).
 		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
-		Post(client.basePath + "/auth/admin/realms/" + realm + "/groups")
+		Post(client.basePath + authRealm + realm + "/groups")
 
 	if err != nil {
 		return err
@@ -270,7 +271,7 @@ func (client *gocloak) CreateComponent(token *JWT, realm string, component Compo
 	resp, err := getRequestWithHeader(token).
 		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
-		Post(client.basePath + "/auth/admin/realms/" + realm + "/components")
+		Post(client.basePath + authRealm + realm + "/components")
 
 	if err != nil {
 		return err
@@ -292,7 +293,7 @@ func (client *gocloak) CreateClient(token *JWT, realm string, newClient Client) 
 	resp, err := getRequestWithHeader(token).
 		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
-		Post(client.basePath + "/auth/admin/realms/" + realm + "/clients")
+		Post(client.basePath + authRealm + realm + "/clients")
 
 	if err != nil {
 		return err
@@ -314,7 +315,7 @@ func (client *gocloak) CreateRole(token *JWT, realm string, clientID string, rol
 	resp, err := getRequestWithHeader(token).
 		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
-		Post(client.basePath + "/auth/admin/realms/" + realm + "clients/" + clientID + "/roles")
+		Post(client.basePath + authRealm + realm + "clients/" + clientID + "/roles")
 
 	if err != nil {
 		return err
@@ -336,7 +337,7 @@ func (client *gocloak) CreateClientScope(token *JWT, realm string, scope ClientS
 	resp, err := getRequestWithHeader(token).
 		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
-		Post(client.basePath + "/auth/admin/realms/" + realm + "/client-scopes")
+		Post(client.basePath + authRealm + realm + "/client-scopes")
 
 	if err != nil {
 		return err
@@ -358,7 +359,7 @@ func (client *gocloak) UpdateUser(token *JWT, realm string, user User) error {
 	resp, err := getRequestWithHeader(token).
 		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
-		Put(client.basePath + "/auth/admin/realms/" + realm + "/users/" + user.ID)
+		Put(client.basePath + authRealm + realm + "/users/" + user.ID)
 
 	if err != nil {
 		return err
@@ -380,7 +381,7 @@ func (client *gocloak) UpdateGroup(token *JWT, realm string, group Group) error 
 	resp, err := getRequestWithHeader(token).
 		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
-		Put(client.basePath + "/auth/admin/realms/" + realm + "/groups/" + group.ID)
+		Put(client.basePath + authRealm + realm + "/groups/" + group.ID)
 
 	if err != nil {
 		return err
@@ -402,7 +403,7 @@ func (client *gocloak) UpdateClient(token *JWT, realm string, newClient Client) 
 	resp, err := getRequestWithHeader(token).
 		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
-		Put(client.basePath + "/auth/admin/realms/" + realm + "/clients")
+		Put(client.basePath + authRealm + realm + "/clients")
 
 	if err != nil {
 		return err
@@ -424,7 +425,7 @@ func (client *gocloak) UpdateRole(token *JWT, realm string, clientID string, rol
 	resp, err := getRequestWithHeader(token).
 		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
-		Put(client.basePath + "/auth/admin/realms/" + realm + "clients/" + clientID + "/roles/" + role.Name)
+		Put(client.basePath + authRealm + realm + "clients/" + clientID + "/roles/" + role.Name)
 
 	if err != nil {
 		return err
@@ -446,7 +447,7 @@ func (client *gocloak) UpdateClientScope(token *JWT, realm string, scope ClientS
 	resp, err := getRequestWithHeader(token).
 		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
-		Put(client.basePath + "/auth/admin/realms/" + realm + "/client-scopes/" + scope.ID)
+		Put(client.basePath + authRealm + realm + "/client-scopes/" + scope.ID)
 
 	if err != nil {
 		return err
@@ -463,7 +464,7 @@ func (client *gocloak) UpdateClientScope(token *JWT, realm string, scope ClientS
 func (client *gocloak) DeleteUser(token *JWT, realm, userID string) error {
 	resp, err := getRequestWithHeader(token).
 		SetHeader("Content-Type", "application/json").
-		Delete(client.basePath + "/auth/admin/realms/" + realm + "/users/" + userID)
+		Delete(client.basePath + authRealm + realm + "/users/" + userID)
 
 	if err != nil {
 		return err
@@ -480,7 +481,7 @@ func (client *gocloak) DeleteUser(token *JWT, realm, userID string) error {
 func (client *gocloak) DeleteGroup(token *JWT, realm, groupID string) error {
 	resp, err := getRequestWithHeader(token).
 		SetHeader("Content-Type", "application/json").
-		Delete(client.basePath + "/auth/admin/realms/" + realm + "/groups/" + groupID)
+		Delete(client.basePath + authRealm + realm + "/groups/" + groupID)
 
 	if err != nil {
 		return err
@@ -497,7 +498,7 @@ func (client *gocloak) DeleteGroup(token *JWT, realm, groupID string) error {
 func (client *gocloak) DeleteClient(token *JWT, realm, clientID string) error {
 	resp, err := getRequestWithHeader(token).
 		SetHeader("Content-Type", "application/json").
-		Delete(client.basePath + "/auth/admin/realms/" + realm + "/clients/" + clientID)
+		Delete(client.basePath + authRealm + realm + "/clients/" + clientID)
 
 	if err != nil {
 		return err
@@ -514,7 +515,7 @@ func (client *gocloak) DeleteClient(token *JWT, realm, clientID string) error {
 func (client *gocloak) DeleteComponent(token *JWT, realm, componentID string) error {
 	resp, err := getRequestWithHeader(token).
 		SetHeader("Content-Type", "application/json").
-		Delete(client.basePath + "/auth/admin/realms/" + realm + "/components/" + componentID)
+		Delete(client.basePath + authRealm + realm + "/components/" + componentID)
 
 	if err != nil {
 		return err
@@ -531,7 +532,7 @@ func (client *gocloak) DeleteComponent(token *JWT, realm, componentID string) er
 func (client *gocloak) DeleteRole(token *JWT, realm, clientID, roleName string) error {
 	resp, err := getRequestWithHeader(token).
 		SetHeader("Content-Type", "application/json").
-		Delete(client.basePath + "/auth/admin/realms/" + realm + "clients/" + clientID + "/roles/" + roleName)
+		Delete(client.basePath + authRealm + realm + "clients/" + clientID + "/roles/" + roleName)
 
 	if err != nil {
 		return err
@@ -548,7 +549,7 @@ func (client *gocloak) DeleteRole(token *JWT, realm, clientID, roleName string) 
 func (client *gocloak) DeleteClientScope(token *JWT, realm, scopeID string) error {
 	resp, err := getRequestWithHeader(token).
 		SetHeader("Content-Type", "application/json").
-		Put(client.basePath + "/auth/admin/realms/" + realm + "/client-scopes/" + scopeID)
+		Put(client.basePath + authRealm + realm + "/client-scopes/" + scopeID)
 
 	if err != nil {
 		return err
@@ -564,7 +565,7 @@ func (client *gocloak) DeleteClientScope(token *JWT, realm, scopeID string) erro
 // GetKeyStoreConfig get keystoreconfig of the realm
 func (client *gocloak) GetKeyStoreConfig(token *JWT, realm string) (*KeyStoreConfig, error) {
 	resp, err := getRequestWithHeader(token).
-		Get(client.basePath + "/auth/admin/realms/" + realm + "/keys")
+		Get(client.basePath + authRealm + realm + "/keys")
 	if err != nil {
 		return nil, err
 	}
@@ -580,7 +581,7 @@ func (client *gocloak) GetKeyStoreConfig(token *JWT, realm string) (*KeyStoreCon
 // GetUser get all users inr ealm
 func (client *gocloak) GetUser(token *JWT, realm, userID string) (*User, error) {
 	resp, err := getRequestWithHeader(token).
-		Get(client.basePath + "/auth/admin/realms/" + realm + "/user/" + userID)
+		Get(client.basePath + authRealm + realm + "/user/" + userID)
 	if err != nil {
 		return nil, err
 	}
@@ -596,7 +597,7 @@ func (client *gocloak) GetUser(token *JWT, realm, userID string) (*User, error) 
 // GetComponents get all cimponents in realm
 func (client *gocloak) GetComponents(token *JWT, realm string) (*[]Component, error) {
 	resp, err := getRequestWithHeader(token).
-		Get(client.basePath + "/auth/admin/realms/" + realm + "/components")
+		Get(client.basePath + authRealm + realm + "/components")
 	if err != nil {
 		return nil, err
 	}
@@ -612,7 +613,7 @@ func (client *gocloak) GetComponents(token *JWT, realm string) (*[]Component, er
 // GetUsers get all users in realm
 func (client *gocloak) GetUsers(token *JWT, realm string) (*[]User, error) {
 	resp, err := getRequestWithHeader(token).
-		Get(client.basePath + "/auth/admin/realms/" + realm + "/users")
+		Get(client.basePath + authRealm + realm + "/users")
 	if err != nil {
 		return nil, err
 	}
@@ -628,7 +629,7 @@ func (client *gocloak) GetUsers(token *JWT, realm string) (*[]User, error) {
 // GetUserCount gets the user count in the realm
 func (client *gocloak) GetUserCount(token *JWT, realm string) (int, error) {
 	resp, err := getRequestWithHeader(token).
-		Get(client.basePath + "/auth/admin/realms/" + realm + "/users/count")
+		Get(client.basePath + authRealm + realm + "/users/count")
 	if err != nil {
 		return -1, err
 	}
@@ -644,7 +645,7 @@ func (client *gocloak) GetUserCount(token *JWT, realm string) (int, error) {
 // GetUsergroups get all groups for user
 func (client *gocloak) GetUserGroups(token *JWT, realm string, userID string) (*[]UserGroup, error) {
 	resp, err := getRequestWithHeader(token).
-		Get(client.basePath + "/auth/admin/realms/" + realm + "/users/" + userID + "/groups")
+		Get(client.basePath + authRealm + realm + "/users/" + userID + "/groups")
 	if err != nil {
 		return nil, err
 	}
@@ -660,7 +661,7 @@ func (client *gocloak) GetUserGroups(token *JWT, realm string, userID string) (*
 // GetRoleMappingByGroupID gets the role mappings by group
 func (client *gocloak) GetRoleMappingByGroupID(token *JWT, realm string, groupID string) (*[]RoleMapping, error) {
 	resp, err := getRequestWithHeader(token).
-		Get(client.basePath + "/auth/admin/realms/" + realm + "/groups/" + groupID + "/role-mappings")
+		Get(client.basePath + authRealm + realm + "/groups/" + groupID + "/role-mappings")
 	if err != nil {
 		return nil, err
 	}
@@ -694,7 +695,7 @@ func (client *gocloak) GetRoleMappingByGroupID(token *JWT, realm string, groupID
 // GetGroup get group with id in realm
 func (client *gocloak) GetGroup(token *JWT, realm, groupID string) (*Group, error) {
 	resp, err := getRequestWithHeader(token).
-		Get(client.basePath + "/auth/admin/realms/" + realm + "/group/" + groupID)
+		Get(client.basePath + authRealm + realm + "/group/" + groupID)
 	if err != nil {
 		return nil, err
 	}
@@ -710,7 +711,7 @@ func (client *gocloak) GetGroup(token *JWT, realm, groupID string) (*Group, erro
 // GetGroups get all groups in realm
 func (client *gocloak) GetGroups(token *JWT, realm string) (*[]Group, error) {
 	resp, err := getRequestWithHeader(token).
-		Get(client.basePath + "/auth/admin/realms/" + realm + "/groups")
+		Get(client.basePath + authRealm + realm + "/groups")
 	if err != nil {
 		return nil, err
 	}
@@ -726,7 +727,7 @@ func (client *gocloak) GetGroups(token *JWT, realm string) (*[]Group, error) {
 // GetRoles get all roles in realm
 func (client *gocloak) GetRoles(token *JWT, realm string) (*[]Role, error) {
 	resp, err := getRequestWithHeader(token).
-		Get(client.basePath + "/auth/admin/realms/" + realm + "/roles")
+		Get(client.basePath + authRealm + realm + "/roles")
 	if err != nil {
 		return nil, err
 	}
@@ -742,7 +743,7 @@ func (client *gocloak) GetRoles(token *JWT, realm string) (*[]Role, error) {
 // GetRolesByClientID get all roles for the given client in realm
 func (client *gocloak) GetRolesByClientID(token *JWT, realm string, clientID string) (*[]Role, error) {
 	resp, err := getRequestWithHeader(token).
-		Get(client.basePath + "/auth/admin/realms/" + realm + "/clients/" + clientID + "/roles")
+		Get(client.basePath + authRealm + realm + "/clients/" + clientID + "/roles")
 	if err != nil {
 		return nil, err
 	}
@@ -759,7 +760,7 @@ func (client *gocloak) GetRolesByClientID(token *JWT, realm string, clientID str
 // GetClients gets all clients in realm
 func (client *gocloak) GetClients(token *JWT, realm string) (*[]Client, error) {
 	resp, err := getRequestWithHeader(token).
-		Get(client.basePath + "/auth/admin/realms/" + realm + "/clients")
+		Get(client.basePath + authRealm + realm + "/clients")
 	if err != nil {
 		return nil, err
 	}
