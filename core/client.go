@@ -18,6 +18,7 @@ type GoCloak interface {
 	Login(username string, password string, realm string, clientID string) (*JWT, error)
 	LoginClient(clientID, clientSecret, realm string) (*JWT, error)
 	LoginAdmin(username, password, realm string) (*JWT, error)
+	RefreshToken(token *JWT, clientID string) (*JWT, error)
 
 	DirectGrantAuthentication(clientID string, clientSecret string, realm string, username string, password string) (*JWT, error)
 
@@ -74,6 +75,39 @@ func NewClient(basePath string) GoCloak {
 	return &gocloak{
 		basePath: basePath,
 	}
+}
+
+func (client *gocloak) RefreshToken(token *JWT, clientID string) (*JWT, error) {
+	firstPart := "/auth/realms/"
+	lastPart := "/protocol/openid-connect/token"
+	loginPath := firstPart + realm + lastPart
+
+	data := url.Values{}
+	data.Set("client_id", clientID)
+	data.Add("grant_type", "refresh_token")
+	data.Add("refresh_token", token.RefreshToken)
+
+	req, _ := http.NewRequest("POST", client.basePath+loginPath, strings.NewReader(data.Encode()))
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if res.StatusCode != 200 {
+		log.Println(string(body))
+	}
+
+	jwt := &JWT{}
+	err = json.Unmarshal(body, jwt)
+	return jwt, err
 }
 
 // Login performs a login
