@@ -153,7 +153,7 @@ func (client *gocloak) Login(username, password, realm, clientID string) (*JWT, 
 
 // Login performs a login
 func (client *gocloak) LoginClient(clientID, clientSecret, realm string) (*JWT, error) {
-	firstPart := "/auth/realms/"
+	firstPart := "/auth/realms"
 	lastPart := "/protocol/openid-connect/token"
 	loginPath := firstPart + realm + lastPart
 
