@@ -1,4 +1,4 @@
-package core
+package models
 
 // JWT is a JWT
 type JWT struct {
