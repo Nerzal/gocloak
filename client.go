@@ -1,4 +1,4 @@
-package pkg
+package gocloak
 
 import (
 	"encoding/base64"

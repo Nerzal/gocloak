@@ -1,4 +1,4 @@
-package pkg
+package gocloak
 
 import (
 	"github.com/Nerzal/gocloak/pkg/models"
