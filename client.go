@@ -35,6 +35,37 @@ func NewClient(basePath string) GoCloak {
 	}
 }
 
+func (client *gocloak) ValidateToken(token string, realm string) error {
+	firstPart := "/auth/realms/"
+	lastPart := "/protocol/openid-connect/userinfo"
+	validationPath := firstPart + realm + lastPart
+
+	req, _ := http.NewRequest("POST", client.basePath+validationPath, nil)
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Add("Authorization", token)
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode != 200 {
+		log.Println(string(body))
+		return models.APIError{
+			Code:    res.StatusCode,
+			Message: "Invalid or malformed token",
+		}
+	}
+
+	return nil
+}
+
 func (client *gocloak) RefreshToken(refreshToken string, clientID, realm string) (*models.JWT, error) {
 	firstPart := "/auth/realms/"
 	lastPart := "/protocol/openid-connect/token"

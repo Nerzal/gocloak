@@ -1,10 +1,16 @@
 package models
 
+import "strconv"
 
 // APIError represents an api error
 type APIError struct {
 	Code    int
 	Message string
+}
+
+// Error stringifies the APIError
+func (apiError APIError) Error() string {
+	return "Code: " + strconv.Itoa(apiError.Code) + "Message: " + apiError.Message
 }
 
 // User represents the Keycloak User Structure

@@ -1,8 +1,6 @@
 package gocloak
 
-import (
-	"github.com/Nerzal/gocloak/pkg/models"
-)
+import "github.com/Nerzal/gocloak/pkg/models"
 
 // GoCloak holds all methods a client should fullfill
 type GoCloak interface {
@@ -10,6 +8,7 @@ type GoCloak interface {
 	LoginClient(clientID, clientSecret, realm string) (*models.JWT, error)
 	LoginAdmin(username, password, realm string) (*models.JWT, error)
 	RefreshToken(refreshToken string, clientID, realm string) (*models.JWT, error)
+	ValidateToken(token string, realm string) error
 
 	DirectGrantAuthentication(clientID string, clientSecret string, realm string, username string, password string) (*models.JWT, error)
 
