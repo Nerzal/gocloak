@@ -11,3 +11,9 @@ type JWT struct {
 	SessionState     string `json:"session_state"`
 	Scope            string `json:"scope"`
 }
+
+// Refresh is used to refresh the JWT
+type Refresh struct {
+	ClientID     string `json:"clientID"`
+	RefreshToken string `json:"refreshToken"`
+}
