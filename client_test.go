@@ -5,6 +5,21 @@ import (
 	"testing"
 )
 
+func TestValidate(t *testing.T) {
+	client := NewClient(hostname)
+	token, err := client.LoginAdmin(username, password, realm)
+	if err != nil {
+		t.Log("TestLogin failed", err.Error())
+		t.Fail()
+	}
+
+	err = client.ValidateToken(token.RefreshToken, realm)
+	if err != nil {
+		t.Log("ValidateToken failed", err.Error())
+		t.Fail()
+	}
+}
+
 func TestLogin(t *testing.T) {
 	client := NewClient(hostname)
 	_, err := client.LoginAdmin(username, password, realm)
