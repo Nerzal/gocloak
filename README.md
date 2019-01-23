@@ -8,13 +8,11 @@ This client is based on : https://github.com/PhilippHeuer/go-keycloak/blob/maste
 ```go
 // GoCloak holds all methods a client should fullfill
 type GoCloak interface {
-	DecodeAccessTokenHeader(token string, realm string) (*DecodedAccessTokenHeader, error)
-
 	Login(clientID string, clientSecret string, realm string, username string, password string) (*JWT, error)
 	LoginClient(clientID, clientSecret, realm string) (*JWT, error)
 	LoginAdmin(username, password, realm string) (*JWT, error)
 	RefreshToken(refreshToken string, clientID, realm string) (*JWT, error)
-	ValidateToken(accessToken string, realm string) error
+	DecodeAccessToken(accessToken string, realm string) (*jwt.Token, *jwt.MapClaims, error)
 
 	CreateUser(accessToken string, realm string, user User) error
 	CreateGroup(accessToken string, realm string, group Group) error

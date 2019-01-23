@@ -173,3 +173,43 @@ type Client struct {
 	ID       string `json:"id"`
 	ClientID string `json:"clientId"`
 }
+
+// Claims served by keycloak inside the accessToken
+type Claims struct {
+	Jti            string   `json:"jti"`
+	Exp            int      `json:"exp"`
+	Nbf            int      `json:"nbf"`
+	Iat            int      `json:"iat"`
+	Iss            string   `json:"iss"`
+	Aud            string   `json:"aud"`
+	Sub            string   `json:"sub"`
+	Typ            string   `json:"typ"`
+	Azp            string   `json:"azp"`
+	AuthTime       int      `json:"auth_time"`
+	SessionState   string   `json:"session_state"`
+	Acr            string   `json:"acr"`
+	AllowedOrigins []string `json:"allowed-origins"`
+	RealmAccess    struct {
+		Roles []string `json:"roles"`
+	} `json:"realm_access"`
+	ResourceAccess struct {
+		RealmManagement struct {
+			Roles []string `json:"roles"`
+		} `json:"realm-management"`
+		Account struct {
+			Roles []string `json:"roles"`
+		} `json:"account"`
+		Kycnow struct {
+			Roles []string `json:"roles"`
+		} `json:"kycnow"`
+	} `json:"resource_access"`
+	Scope         string `json:"scope"`
+	EmailVerified bool   `json:"email_verified"`
+	Address       struct {
+	} `json:"address"`
+	Name              string `json:"name"`
+	PreferredUsername string `json:"preferred_username"`
+	GivenName         string `json:"given_name"`
+	FamilyName        string `json:"family_name"`
+	Email             string `json:"email"`
+}
