@@ -572,7 +572,7 @@ func (client *gocloak) GetKeyStoreConfig(token string, realm string) (*KeyStoreC
 // GetUser get all users inr ealm
 func (client *gocloak) GetUser(token string, realm string, userID string) (*User, error) {
 	resp, err := getRequestWithHeader(token).
-		Get(client.basePath + authRealm + realm + "/user/" + userID)
+		Get(client.basePath + authRealm + realm + "/users/" + userID)
 	if err != nil {
 		return nil, err
 	}
