@@ -5,22 +5,48 @@ import (
 	"testing"
 )
 
-func TestValidate(t *testing.T) {
+func Test_DecodeAccessToken(t *testing.T) {
 	client := NewClient(hostname)
-	token, err := client.LoginAdmin(username, password, realm)
+	token, err := client.Login(clientid, clientSecret, realm, username, password)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
 		t.Fail()
 	}
 
-	err = client.ValidateToken(token.RefreshToken, realm)
+	_, _, err = client.DecodeAccessToken(token.AccessToken, realm)
 	if err != nil {
-		t.Log("ValidateToken failed", err.Error())
+		t.Log(err.Error())
+		t.FailNow()
+	}
+}
+
+func Test_GetKeys(t *testing.T) {
+	client := NewClient(hostname)
+	token, err := client.Login(clientid, clientSecret, realm, username, password)
+	if err != nil {
+		t.Log("TestLogin failed", err.Error())
+		t.Fail()
+	}
+
+	config, err := client.GetKeyStoreConfig(token.AccessToken, realm)
+	if err != nil {
+		t.Log("TestLogin failed", err.Error())
+		t.Fail()
+	}
+
+	t.Log(config)
+}
+
+func Test_Login(t *testing.T) {
+	client := NewClient(hostname)
+	_, err := client.Login(clientid, clientSecret, realm, username, password)
+	if err != nil {
+		t.Log("TestLogin failed", err.Error())
 		t.Fail()
 	}
 }
 
-func TestLogin(t *testing.T) {
+func Test_LoginAdmin(t *testing.T) {
 	client := NewClient(hostname)
 	_, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
@@ -43,7 +69,7 @@ func TestCreateUser(t *testing.T) {
 	user.Email = "somm@ting.wong"
 	user.Enabled = true
 	user.Username = user.Email
-	err = client.CreateUser(token, realm, user)
+	err = client.CreateUser(token.AccessToken, realm, user)
 	if err != nil {
 		t.Log("Create User Failed: ", err.Error())
 		t.Fail()
@@ -60,7 +86,7 @@ func TestCreateGroup(t *testing.T) {
 
 	group := Group{}
 	group.Name = "MySuperCoolNewGroup"
-	err = client.CreateGroup(token, realm, group)
+	err = client.CreateGroup(token.AccessToken, realm, group)
 	if err != nil {
 		t.Log("Create User Failed: ", err.Error())
 		t.Fail()
@@ -77,7 +103,7 @@ func TestCreateRole(t *testing.T) {
 
 	role := Role{}
 	role.Name = "mySuperCoolRole"
-	err = client.CreateRole(token, realm, "9204c840-f857-4507-8b00-784c9c845e6e", role)
+	err = client.CreateRole(token.AccessToken, realm, "9204c840-f857-4507-8b00-784c9c845e6e", role)
 	if err != nil {
 		t.Log("Create User Failed: ", err.Error())
 		t.Fail()
@@ -94,7 +120,7 @@ func TestCreateClient(t *testing.T) {
 
 	newClient := Client{}
 	newClient.ClientID = "KYCnow"
-	err = client.CreateClient(token, realm, newClient)
+	err = client.CreateClient(token.AccessToken, realm, newClient)
 	if err != nil {
 		t.Log("Create User Failed: ", err.Error())
 		t.Fail()
@@ -109,7 +135,7 @@ func TestGetUsers(t *testing.T) {
 		t.Fail()
 	}
 
-	_, err = client.GetUsers(token, realm)
+	_, err = client.GetUsers(token.AccessToken, realm)
 	if err != nil {
 		t.Log("GetUsers failed", err.Error())
 		t.Fail()
@@ -124,7 +150,7 @@ func TestGetKeyStoreConfig(t *testing.T) {
 		t.Fail()
 	}
 
-	_, err = client.GetKeyStoreConfig(token, realm)
+	_, err = client.GetKeyStoreConfig(token.AccessToken, realm)
 	if err != nil {
 		t.Log("GetKeyStoreConfig failed", err.Error())
 		t.Fail()
@@ -139,14 +165,14 @@ func TestGetUser(t *testing.T) {
 		t.Fail()
 	}
 
-	users, err := client.GetUsers(token, realm)
+	users, err := client.GetUsers(token.AccessToken, realm)
 	if err != nil {
 		t.Log("GetUsers failed", err.Error())
 		t.Fail()
 	}
 
 	dereferencedUsers := *users
-	_, err = client.GetUser(token, realm, dereferencedUsers[0].ID)
+	_, err = client.GetUser(token.AccessToken, realm, dereferencedUsers[0].ID)
 }
 
 func TestGetUserCount(t *testing.T) {
@@ -157,7 +183,7 @@ func TestGetUserCount(t *testing.T) {
 		t.Fail()
 	}
 
-	count, err := client.GetUserCount(token, realm)
+	count, err := client.GetUserCount(token.AccessToken, realm)
 	if err != nil {
 		t.Log("GetUsers failed", err.Error())
 		t.Fail()
@@ -174,7 +200,7 @@ func TestGetGroups(t *testing.T) {
 		t.Fail()
 	}
 
-	_, err = client.GetGroups(token, realm)
+	_, err = client.GetGroups(token.AccessToken, realm)
 	if err != nil {
 		t.Log("GetGroups failed", err.Error())
 		t.Fail()
@@ -189,7 +215,7 @@ func TestGetUserGroups(t *testing.T) {
 		t.Fail()
 	}
 
-	users, err := client.GetUsers(token, realm)
+	users, err := client.GetUsers(token.AccessToken, realm)
 	if err != nil {
 		t.Log("GetAllUsers failed", err.Error())
 		t.Fail()
@@ -197,7 +223,7 @@ func TestGetUserGroups(t *testing.T) {
 
 	realUsers := *users
 
-	_, err = client.GetUserGroups(token, realm, realUsers[0].ID)
+	_, err = client.GetUserGroups(token.AccessToken, realm, realUsers[0].ID)
 	if err != nil {
 		t.Log("GetUserGroups failed", err.Error())
 		t.Fail()
@@ -212,7 +238,7 @@ func TestGetRoles(t *testing.T) {
 		t.Fail()
 	}
 
-	_, err = client.GetRoles(token, realm)
+	_, err = client.GetRoles(token.AccessToken, realm)
 	if err != nil {
 		t.Log("GetRoles failed", err.Error())
 		t.Fail()
@@ -227,7 +253,7 @@ func TestGetClients(t *testing.T) {
 		t.Fail()
 	}
 
-	_, err = client.GetClients(token, realm)
+	_, err = client.GetClients(token.AccessToken, realm)
 	if err != nil {
 		t.Log("GetClients failed", err.Error())
 		t.Fail()
@@ -242,14 +268,14 @@ func TestGetRolesByClientId(t *testing.T) {
 		t.Fail()
 	}
 
-	clients, err := client.GetClients(token, realm)
+	clients, err := client.GetClients(token.AccessToken, realm)
 	if err != nil {
 		t.Log("GetClients failed", err.Error())
 		t.Fail()
 	}
 
 	clientsDeferenced := *clients
-	_, err = client.GetRolesByClientID(token, realm, clientsDeferenced[4].ClientID)
+	_, err = client.GetRolesByClientID(token.AccessToken, realm, clientsDeferenced[4].ClientID)
 	if err != nil {
 		t.Log("GetRolesByClientID failed", err.Error())
 		t.Fail()
@@ -264,7 +290,7 @@ func TestGetRoleMappingByGroupID(t *testing.T) {
 		t.Fail()
 	}
 
-	groups, err := client.GetGroups(token, realm)
+	groups, err := client.GetGroups(token.AccessToken, realm)
 	if err != nil {
 		t.Log("GetGroups failed", err.Error())
 		t.Fail()
@@ -275,7 +301,7 @@ func TestGetRoleMappingByGroupID(t *testing.T) {
 	}
 
 	groupsDeferenced := *groups
-	_, err = client.GetRoleMappingByGroupID(token, realm, groupsDeferenced[0].ID)
+	_, err = client.GetRoleMappingByGroupID(token.AccessToken, realm, groupsDeferenced[0].ID)
 	if err != nil {
 		t.Log("GetRoleMappingByGroupID failed")
 		t.Fail()

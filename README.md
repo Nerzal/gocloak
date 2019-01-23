@@ -6,47 +6,51 @@ This client is based on : https://github.com/PhilippHeuer/go-keycloak/blob/maste
 ## Features
 
 ```go
-type Client interface {
-Login(username string, password string, realm string, clientID string) (*models.JWT, error)
-LoginClient(clientID, clientSecret, realm string) (*models.JWT, error)
-LoginAdmin(username, password, realm string) (*models.JWT, error)
-RefreshToken(token *JWT, clientID, realm string) (*JWT, error)
-DirectGrantAuthentication(clientID string, clientSecret string, realm string, username string, password string) (*models.JWT, error)
+// GoCloak holds all methods a client should fullfill
+type GoCloak interface {
+	DecodeAccessTokenHeader(token string, realm string) (*DecodedAccessTokenHeader, error)
 
-CreateUser(token *models.JWT, realm string, user models.User) error
-CreateGroup(token *models.JWT, realm string, group models.Group) error
-CreateRole(token *models.JWT, realm string, clientID string, role models.Role) error
-CreateClient(token *models.JWT, realm string, clientID models.Client) error
-CreateClientScope(token *models.JWT, realm string, scope models.ClientScope) error
-CreateComponent(token *models.JWT, realm string, component models.Component) error
+	Login(clientID string, clientSecret string, realm string, username string, password string) (*JWT, error)
+	LoginClient(clientID, clientSecret, realm string) (*JWT, error)
+	LoginAdmin(username, password, realm string) (*JWT, error)
+	RefreshToken(refreshToken string, clientID, realm string) (*JWT, error)
+	ValidateToken(accessToken string, realm string) error
 
-UpdateUser(token *models.JWT, realm string, user models.User) error
-UpdateGroup(token *models.JWT, realm string, group models.Group) error
-UpdateRole(token *models.JWT, realm string, clientID string, role models.Role) error
-UpdateClient(token *models.JWT, realm string, clientID models.Client) error
-UpdateClientScope(token *models.JWT, realm string, scope models.ClientScope) error
+	CreateUser(accessToken string, realm string, user User) error
+	CreateGroup(accessToken string, realm string, group Group) error
+	CreateRole(accessToken string, realm string, clientID string, role Role) error
+	CreateClient(accessToken string, realm string, clientID Client) error
+	CreateClientScope(accessToken string, realm string, scope ClientScope) error
+	CreateComponent(accessToken string, realm string, component Component) error
 
-DeleteUser(token *models.JWT, realm, userID string) error
-DeleteComponent(token *models.JWT, realm, componentID string) error
-DeleteGroup(token *models.JWT, realm, groupID string) error
-DeleteRole(token *models.JWT, realm, clientID, roleName string) error
-DeleteClient(token *models.JWT, realm, clientID string) error
-DeleteClientScope(token *models.JWT, realm, scopeID string) error
+	UpdateUser(accessToken string, realm string, user User) error
+	UpdateGroup(accessToken string, realm string, group Group) error
+	UpdateRole(accessToken string, realm string, clientID string, role Role) error
+	UpdateClient(accessToken string, realm string, clientID Client) error
+	UpdateClientScope(accessToken string, realm string, scope ClientScope) error
 
-GetKeyStoreConfig(token *models.JWT, realm string) (*models.KeyStoreConfig, error)
-GetUser(token *models.JWT, realm, userID string) (*models.User, error)
-GetUserCount(token *models.JWT, realm string) (int, error)
-GetUsers(token *models.JWT, realm string) (*[]models.User, error)
-GetUserGroups(token *models.JWT, realm string, userID string) (*[]models.UserGroup, error)
-GetComponents(token *models.JWT, realm string) (*[]models.Component, error)
+	DeleteUser(accessToken string, realm, userID string) error
+	DeleteComponent(accessToken string, realm, componentID string) error
+	DeleteGroup(accessToken string, realm, groupID string) error
+	DeleteRole(accessToken string, realm, clientID, roleName string) error
+	DeleteClient(accessToken string, realm, clientID string) error
+	DeleteClientScope(accessToken string, realm, scopeID string) error
 
-GetGroups(token *models.JWT, realm string) (*[]models.Group, error)
-GetGroup(token *models.JWT, realm, groupID string) (*models.Group, error)
-GetRoles(token *models.JWT, realm string) (*[]models.Role, error)
-GetRoleMappingByGroupID(token *models.JWT, realm string, groupID string) (*[]models.RoleMapping, error)
-GetRolesByClientID(token *models.JWT, realm string, clientID string) (*[]models.Role, error)
-GetClients(token *models.JWT, realm string) (*[]models.Client, error)
+	GetKeyStoreConfig(accessToken string, realm string) (*KeyStoreConfig, error)
+	GetUser(accessToken string, realm, userID string) (*User, error)
+	GetUserCount(accessToken string, realm string) (int, error)
+	GetUsers(accessToken string, realm string) (*[]User, error)
+	GetUserGroups(accessToken string, realm string, userID string) (*[]UserGroup, error)
+	GetComponents(accessToken string, realm string) (*[]Component, error)
+
+	GetGroups(accessToken string, realm string) (*[]Group, error)
+	GetGroup(accessToken string, realm, groupID string) (*Group, error)
+	GetRoles(accessToken string, realm string) (*[]Role, error)
+	GetRoleMappingByGroupID(accessToken string, realm string, groupID string) (*[]RoleMapping, error)
+	GetRolesByClientID(accessToken string, realm string, clientID string) (*[]Role, error)
+	GetClients(accessToken string, realm string) (*[]Client, error)
 }
+
 ```
 
 ## developing & testing
