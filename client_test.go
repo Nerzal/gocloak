@@ -150,11 +150,13 @@ func TestGetUsers(t *testing.T) {
 		t.Fail()
 	}
 
-	_, err = client.GetUsers(token.AccessToken, realm)
+	users, err := client.GetUsers(token.AccessToken, realm)
 	if err != nil {
 		t.Log("GetUsers failed", err.Error())
 		t.Fail()
 	}
+
+	t.Log(users)
 }
 
 func TestGetKeyStoreConfig(t *testing.T) {
@@ -187,7 +189,13 @@ func TestGetUser(t *testing.T) {
 	}
 
 	dereferencedUsers := *users
-	_, err = client.GetUser(token.AccessToken, realm, dereferencedUsers[0].ID)
+	user, err := client.GetUser(token.AccessToken, realm, dereferencedUsers[0].ID)
+	if err != nil {
+		t.Log("GetUser failed", err.Error())
+		t.Fail()
+	}
+
+	t.Log(user)
 }
 
 func TestGetUserCount(t *testing.T) {
