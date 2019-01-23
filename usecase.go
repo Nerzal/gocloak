@@ -1,6 +1,9 @@
 package gocloak
 
-import jwt "github.com/dgrijalva/jwt-go"
+import (
+	"github.com/Nerzal/gocloak/pkg/jwx"
+	jwt "github.com/dgrijalva/jwt-go"
+)
 
 // GoCloak holds all methods a client should fullfill
 type GoCloak interface {
@@ -9,6 +12,7 @@ type GoCloak interface {
 	LoginAdmin(username, password, realm string) (*JWT, error)
 	RefreshToken(refreshToken string, clientID, realm string) (*JWT, error)
 	DecodeAccessToken(accessToken string, realm string) (*jwt.Token, *jwt.MapClaims, error)
+	DecodeAccessTokenCustomClaims(accessToken string, realm string) (*jwt.Token, *jwx.Claims, error)
 
 	CreateUser(accessToken string, realm string, user User) error
 	CreateGroup(accessToken string, realm string, group Group) error

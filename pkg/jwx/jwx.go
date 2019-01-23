@@ -54,6 +54,27 @@ func DecodeAccessToken(accessToken string, publicKey string) (*jwt.Token, *jwt.M
 	return token2, claims, nil
 }
 
+// DecodeAccessTokenCustomClaims currently only supports RSA - sorry for that
+func DecodeAccessTokenCustomClaims(accessToken string, publicKey string, customClaims *Claims) (*jwt.Token, error) {
+	rsaPublicKey, err := getRSAPublicKey(publicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	token2, err := jwt.ParseWithClaims(accessToken, customClaims, func(token *jwt.Token) (interface{}, error) {
+		// Don't forget to validate the alg is what you expect:
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+		return rsaPublicKey, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return token2, nil
+}
+
 func getRSAPublicKey(publicKey string) (*rsa.PublicKey, error) {
 	var builder strings.Builder
 	builder.WriteString("\n-----BEGIN PUBLIC KEY-----\n")
