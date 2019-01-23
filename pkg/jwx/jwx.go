@@ -85,6 +85,7 @@ func getRSAPublicKey(publicKey string) (*rsa.PublicKey, error) {
 	if block == nil {
 		return nil, errors.New("failed to parse PEM block containing the public key")
 	}
+	
 	pkey, _ := x509.ParsePKIXPublicKey(block.Bytes)
 	if pkey == nil {
 		return nil, errors.New("failed to parse public key")

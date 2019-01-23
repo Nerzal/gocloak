@@ -3,6 +3,8 @@ golang keycloak client
 
 This client is based on : https://github.com/PhilippHeuer/go-keycloak/blob/master/client.go
 
+Use this together with the keycloak client [gocloak-echo](https://github.com/Nerzal/gocloak-echo)
+
 ## Features
 
 ```go
