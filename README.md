@@ -5,6 +5,28 @@ This client is based on : https://github.com/PhilippHeuer/go-keycloak/blob/maste
 
 Use this together with the keycloak client [gocloak-echo](https://github.com/Nerzal/gocloak-echo)
 
+## Usage
+
+### Create New User
+```go
+	gocloak := gocloak.NewClient("https://mycool.keycloak.instance")
+	token, err := gocloak.LoginAdmin("user", "password", "realmName")
+	if err != nil {
+		panic("Something wong with the credentials or url")
+	}
+	user := gocloak.User{
+		FirstName: "Bob",
+		LastName:  "Uncle",
+		EMail:     "something@really.wrong",
+		Enabled:   true,
+		Username:  "CoolGuy",
+	}
+	gocloak.CreateUser(token.AccessToken, "realm", user)
+	if err != nil {
+		panic("Oh no!, failed to create user :(")
+	}
+```
+
 ## Features
 
 ```go
