@@ -12,7 +12,7 @@ Use this together with the keycloak client [gocloak-echo](https://github.com/Ner
 	gocloak := gocloak.NewClient("https://mycool.keycloak.instance")
 	token, err := gocloak.LoginAdmin("user", "password", "realmName")
 	if err != nil {
-		panic("Something wong with the credentials or url")
+		panic("Something wrong with the credentials or url")
 	}
 	user := gocloak.User{
 		FirstName: "Bob",
