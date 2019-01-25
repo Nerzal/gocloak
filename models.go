@@ -33,6 +33,13 @@ type User struct {
 	Access                     Access        `json:"access,omitempty"`
 }
 
+// SetPasswordRequest sets a new password
+type SetPasswordRequest struct {
+	Type      string `json:"type"`
+	Temporary bool   `json:"temporary"`
+	Password  string `json:"value"`
+}
+
 // Component is a component
 type Component struct {
 	ID              string          `json:"id"`

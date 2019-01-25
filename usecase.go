@@ -14,7 +14,8 @@ type GoCloak interface {
 	DecodeAccessToken(accessToken string, realm string) (*jwt.Token, *jwt.MapClaims, error)
 	DecodeAccessTokenCustomClaims(accessToken string, realm string) (*jwt.Token, *jwx.Claims, error)
 
-	CreateUser(accessToken string, realm string, user User) error
+	SetPassword(token string, userID string, realm string, password string, temporary bool) error
+	CreateUser(token string, realm string, user User) (*string, error)
 	CreateGroup(accessToken string, realm string, group Group) error
 	CreateRole(accessToken string, realm string, clientID string, role Role) error
 	CreateClient(accessToken string, realm string, clientID Client) error

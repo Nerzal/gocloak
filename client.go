@@ -209,16 +209,17 @@ func (client *gocloak) Login(clientID string, clientSecret string, realm string,
 	return &result, nil
 }
 
-// CreateUser creates a new user
-func (client *gocloak) CreateUser(token string, realm string, user User) error {
-	bytes, err := json.Marshal(user)
+// SetPassword sets a new password
+func (client *gocloak) SetPassword(token string, userID string, realm string, password string, temporary bool) error {
+	requestBody := SetPasswordRequest{Password: password, Temporary: temporary, Type: "password"}
+	bytes, err := json.Marshal(requestBody)
 	if err != nil {
 		return err
 	}
 	resp, err := getRequestWithHeader(token).
 		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
-		Post(client.basePath + authRealm + realm + "/users")
+		Put(client.basePath + authRealm + realm + "/users/" + userID + "/reset-password")
 
 	if err != nil {
 		return err
@@ -229,6 +230,32 @@ func (client *gocloak) CreateUser(token string, realm string, user User) error {
 	}
 
 	return nil
+}
+
+// CreateUser tries to create the given user in the given realm and returns it's userID
+func (client *gocloak) CreateUser(token string, realm string, user User) (*string, error) {
+	bytes, err := json.Marshal(user)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := getRequestWithHeader(token).
+		SetHeader("Content-Type", "application/json").
+		SetBody(string(bytes)).
+		Post(client.basePath + authRealm + realm + "/users")
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode() != 201 && resp.StatusCode() != 409 {
+		return nil, errors.New(resp.Status())
+	}
+
+	userPath := resp.Header().Get("Location")
+	splittedPath := strings.Split(userPath, "/")
+	userID := splittedPath[len(splittedPath)-1]
+
+	return &userID, nil
 }
 
 // CreateUser creates a new user

@@ -70,6 +70,33 @@ func Test_LoginAdmin(t *testing.T) {
 	}
 }
 
+func Test_SetPassword(t *testing.T) {
+	client := NewClient(hostname)
+	token, err := client.LoginClient(clientid, clientSecret, realm)
+	if err != nil {
+		t.Log("Failed to login: ", err.Error())
+		t.FailNow()
+	}
+	user := User{}
+	user.FirstName = "Klaus"
+	user.LastName = "Peter"
+	user.Email = "olaf4@mail.com"
+	user.Enabled = true
+	user.Username = user.Email
+
+	userID, err := client.CreateUser(token.AccessToken, realm, user)
+	if err != nil {
+		t.Log("Create User Failed: ", err.Error())
+		t.FailNow()
+	}
+
+	err = client.SetPassword(token.AccessToken, *userID, realm, "passwort1234!", false)
+	if err != nil {
+		t.Log("Failed to set password: ", err.Error())
+		t.FailNow()
+	}
+}
+
 func TestCreateUser(t *testing.T) {
 	client := NewClient(hostname)
 	token, err := client.LoginAdmin(username, password, realm)
@@ -81,10 +108,10 @@ func TestCreateUser(t *testing.T) {
 	user := User{}
 	user.FirstName = "Klaus"
 	user.LastName = "Peter"
-	user.Email = "somm@ting.wong"
+	user.Email = "trololo@mail.com"
 	user.Enabled = true
 	user.Username = user.Email
-	err = client.CreateUser(token.AccessToken, realm, user)
+	_, err = client.CreateUser(token.AccessToken, realm, user)
 	if err != nil {
 		t.Log("Create User Failed: ", err.Error())
 		t.Fail()
