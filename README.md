@@ -35,7 +35,7 @@ type GoCloak interface {
 	Login(clientID string, clientSecret string, realm string, username string, password string) (*JWT, error)
 	LoginClient(clientID, clientSecret, realm string) (*JWT, error)
 	LoginAdmin(username, password, realm string) (*JWT, error)
-	RefreshToken(refreshToken string, clientID, realm string) (*JWT, error)
+	RefreshToken(refreshToken string, clientID, clientSecret, realm string) (*JWT, error)
     DecodeAccessToken(accessToken string, realm string) (*jwt.Token, *jwt.MapClaims, error)
     DecodeAccessTokenCustomClaims(accessToken string, realm string) (*jwt.Token, *jwx.Claims, error)
 
