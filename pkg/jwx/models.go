@@ -28,9 +28,6 @@ type Claims struct {
 		Account struct {
 			Roles []string `json:"roles"`
 		} `json:"account"`
-		Kycnow struct {
-			Roles []string `json:"roles"`
-		} `json:"kycnow"`
 	} `json:"resource_access"`
 	Scope         string `json:"scope"`
 	EmailVerified bool   `json:"email_verified"`
