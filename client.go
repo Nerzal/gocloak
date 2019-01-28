@@ -225,7 +225,7 @@ func (client *gocloak) SetPassword(token string, userID string, realm string, pa
 		return err
 	}
 
-	if resp.StatusCode() != 201 && resp.StatusCode() != 409 {
+	if resp.StatusCode() != 201 && resp.StatusCode() != 204 && resp.StatusCode() != 409 {
 		return errors.New(resp.Status())
 	}
 
@@ -247,7 +247,7 @@ func (client *gocloak) CreateUser(token string, realm string, user User) (*strin
 		return nil, err
 	}
 
-	if resp.StatusCode() != 201 && resp.StatusCode() != 409 {
+	if resp.StatusCode() != 201 && resp.StatusCode() != 204 && resp.StatusCode() != 409 {
 		return nil, errors.New(resp.Status())
 	}
 
