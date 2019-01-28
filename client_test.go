@@ -20,6 +20,24 @@ func Test_DecodeAccessToken(t *testing.T) {
 	}
 }
 
+func Test_RefreshToken(t *testing.T) {
+	client := NewClient(hostname)
+	token, err := client.Login(clientid, clientSecret, realm, username, password)
+	if err != nil {
+		t.Log("TestLogin failed", err.Error())
+		t.Fail()
+	}
+
+	token, err = client.RefreshToken(token.RefreshToken, clientid, clientSecret, realm)
+	if err != nil {
+		t.Log("TestLogin failed", err.Error())
+		t.Fail()
+	}
+
+	t.Log(token)
+
+}
+
 func Test_DecodeAccessTokenCustomClaims(t *testing.T) {
 	client := NewClient(hostname)
 	token, err := client.Login(clientid, clientSecret, realm, username, password)

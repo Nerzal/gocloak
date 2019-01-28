@@ -81,13 +81,14 @@ func findUsedKey(usedKeyID string, keyStore KeyStoreConfig) *Key {
 	return nil
 }
 
-func (client *gocloak) RefreshToken(refreshToken string, clientID, realm string) (*JWT, error) {
+func (client *gocloak) RefreshToken(refreshToken string, clientID, clientSecret, realm string) (*JWT, error) {
 	firstPart := "/auth/realms/"
 	lastPart := "/protocol/openid-connect/token"
 	loginPath := firstPart + realm + lastPart
 
 	data := url.Values{}
 	data.Set("client_id", clientID)
+	data.Set("client_secret", clientSecret)
 	data.Add("grant_type", "refresh_token")
 	data.Add("refresh_token", refreshToken)
 
