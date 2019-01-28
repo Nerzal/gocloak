@@ -28,11 +28,13 @@ func Test_DecodeAccessTokenCustomClaims(t *testing.T) {
 		t.Fail()
 	}
 
-	_, _, err = client.DecodeAccessTokenCustomClaims(token.AccessToken, realm)
+	_, claims, err := client.DecodeAccessTokenCustomClaims(token.AccessToken, realm)
 	if err != nil {
 		t.Log(err.Error())
 		t.FailNow()
 	}
+
+	t.Log(claims)
 }
 
 func Test_GetKeys(t *testing.T) {
