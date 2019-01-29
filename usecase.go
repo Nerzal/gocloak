@@ -39,6 +39,7 @@ type GoCloak interface {
 	GetUser(accessToken string, realm, userID string) (*User, error)
 	GetUserCount(accessToken string, realm string) (int, error)
 	GetUsers(accessToken string, realm string) (*[]User, error)
+	GetUserByID(accessToken string, realm string, userID string) (*User, error)
 	GetUserGroups(accessToken string, realm string, userID string) (*[]UserGroup, error)
 	GetComponents(accessToken string, realm string) (*[]Component, error)
 

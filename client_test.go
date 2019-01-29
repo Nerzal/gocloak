@@ -1,8 +1,10 @@
 package gocloak
 
 import (
+	"math/rand"
 	"strconv"
 	"testing"
+	"time"
 )
 
 func Test_DecodeAccessToken(t *testing.T) {
@@ -35,7 +37,43 @@ func Test_RefreshToken(t *testing.T) {
 	}
 
 	t.Log(token)
+}
 
+func Test_GetUserByID(t *testing.T) {
+	t.Parallel()
+	client := NewClient(hostname)
+	token, err := client.Login(clientid, clientSecret, realm, username, password)
+	if err != nil {
+		t.Log("TestLogin failed", err.Error())
+		t.FailNow()
+	}
+
+	s1 := rand.NewSource(time.Now().UnixNano())
+	r1 := rand.New(s1)
+	randomNumber := r1.Intn(100000)
+	user := User{}
+	user.FirstName = "Klaus"
+	user.LastName = "Peter"
+	user.Email = "trololo" + strconv.Itoa(randomNumber) + "@mail.com"
+	user.Enabled = true
+	user.Username = user.Email
+	user.Attributes = map[string][]string{}
+	user.Attributes["foo"] = []string{"bar", "alice", "bob", "roflcopter"}
+	user.Attributes["bar"] = []string{"baz"}
+
+	id, err := client.CreateUser(token.AccessToken, realm, user)
+	if err != nil {
+		t.Log("CreateUser failed", err.Error())
+		t.FailNow()
+	}
+
+	fetchedUser, err := client.GetUserByID(token.AccessToken, realm, *id)
+	if err != nil {
+		t.Log("GetUserById failed", err.Error())
+		t.FailNow()
+	}
+
+	t.Log(fetchedUser)
 }
 
 func Test_DecodeAccessTokenCustomClaims(t *testing.T) {
@@ -152,9 +190,9 @@ func Test_CreateUser_CustomAttributes(t *testing.T) {
 	user.Email = "trololo2@mail.com"
 	user.Enabled = true
 	user.Username = user.Email
-	user.Attributes = map[string]string{}
-	user.Attributes["foo"] = "bar"
-	user.Attributes["bar"] = "baz"
+	user.Attributes = map[string][]string{}
+	user.Attributes["foo"] = []string{"bar"}
+	user.Attributes["bar"] = []string{"baz"}
 
 	id, err := client.CreateUser(token.AccessToken, realm, user)
 	if err != nil {

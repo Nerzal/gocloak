@@ -614,6 +614,25 @@ func (client *gocloak) GetUser(token string, realm string, userID string) (*User
 	return &result, nil
 }
 
+func (client *gocloak) GetUserByID(accessToken string, realm string, userID string) (*User, error) {
+	if userID == "" {
+		return nil, errors.New("UserID shall not be empty")
+	}
+
+	resp, err := getRequestWithHeader(accessToken).
+		Get(client.basePath + authRealm + realm + "/users/" + userID)
+	if err != nil {
+		return nil, err
+	}
+
+	var result User
+	if err := json.Unmarshal(resp.Body(), &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
 // GetComponents get all cimponents in realm
 func (client *gocloak) GetComponents(token string, realm string) (*[]Component, error) {
 	resp, err := getRequestWithHeader(token).
