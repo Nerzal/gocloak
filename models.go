@@ -17,20 +17,20 @@ func (apiError APIError) Error() string {
 
 // User represents the Keycloak User Structure
 type User struct {
-	ID                         string        `json:"id,omitempty"`
-	CreatedTimestamp           int64         `json:"createdTimestamp,omitempty"`
-	Username                   string        `json:"username,omitempty"`
-	Enabled                    bool          `json:"enabled,omitempty"`
-	Totp                       bool          `json:"totp,omitempty"`
-	EmailVerified              bool          `json:"emailVerified,omitempty"`
-	FirstName                  string        `json:"firstName,omitempty"`
-	LastName                   string        `json:"lastName,omitempty"`
-	Email                      string        `json:"email,omitempty"`
-	FederationLink             string        `json:"federationLink,omitempty"`
-	Attributes                 Attributes    `json:"attributes,omitempty"`
-	DisableableCredentialTypes []interface{} `json:"disableableCredentialTypes,omitempty"`
-	RequiredActions            []interface{} `json:"requiredActions,omitempty"`
-	Access                     Access        `json:"access,omitempty"`
+	ID                         string              `json:"id,omitempty"`
+	CreatedTimestamp           int64               `json:"createdTimestamp,omitempty"`
+	Username                   string              `json:"username,omitempty"`
+	Enabled                    bool                `json:"enabled,omitempty"`
+	Totp                       bool                `json:"totp,omitempty"`
+	EmailVerified              bool                `json:"emailVerified,omitempty"`
+	FirstName                  string              `json:"firstName,omitempty"`
+	LastName                   string              `json:"lastName,omitempty"`
+	Email                      string              `json:"email,omitempty"`
+	FederationLink             string              `json:"federationLink,omitempty"`
+	Attributes                 map[string][]string `json:"attributes,omitempty"`
+	DisableableCredentialTypes []interface{}       `json:"disableableCredentialTypes,omitempty"`
+	RequiredActions            []interface{}       `json:"requiredActions,omitempty"`
+	Access                     Access              `json:"access,omitempty"`
 }
 
 // SetPasswordRequest sets a new password
