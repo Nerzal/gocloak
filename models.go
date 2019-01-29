@@ -27,7 +27,7 @@ type User struct {
 	LastName                   string              `json:"lastName,omitempty"`
 	Email                      string              `json:"email,omitempty"`
 	FederationLink             string              `json:"federationLink,omitempty"`
-	Attributes                 map[string][]string `json:"attributes,omitempty"`
+	Attributes                 map[string]string `json:"attributes,omitempty"`
 	DisableableCredentialTypes []interface{}       `json:"disableableCredentialTypes,omitempty"`
 	RequiredActions            []interface{}       `json:"requiredActions,omitempty"`
 	Access                     Access              `json:"access,omitempty"`

@@ -149,18 +149,20 @@ func Test_CreateUser_CustomAttributes(t *testing.T) {
 	user := User{}
 	user.FirstName = "Klaus"
 	user.LastName = "Peter"
-	user.Email = "trololo1@mail.com"
+	user.Email = "trololo2@mail.com"
 	user.Enabled = true
 	user.Username = user.Email
-	user.Attributes = map[string][]string{}
-	user.Attributes["foo"] = []string{"bar"}
-	user.Attributes["bar"] = []string{"baz"}
+	user.Attributes = map[string]string{}
+	user.Attributes["foo"] = "bar"
+	user.Attributes["bar"] = "baz"
 
-	_, err = client.CreateUser(token.AccessToken, realm, user)
+	id, err := client.CreateUser(token.AccessToken, realm, user)
 	if err != nil {
 		t.Log("Create User Failed: ", err.Error())
 		t.Fail()
 	}
+
+	t.Log(id)
 }
 
 func TestCreateGroup(t *testing.T) {
