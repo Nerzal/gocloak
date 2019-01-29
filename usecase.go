@@ -43,6 +43,8 @@ type GoCloak interface {
 	GetUserGroups(accessToken string, realm string, userID string) (*[]UserGroup, error)
 	GetComponents(accessToken string, realm string) (*[]Component, error)
 
+	UserAttributeContains(attributes map[string][]string, attribute string, value string) bool
+
 	GetGroups(accessToken string, realm string) (*[]Group, error)
 	GetGroup(accessToken string, realm, groupID string) (*Group, error)
 	GetRoles(accessToken string, realm string) (*[]Role, error)

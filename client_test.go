@@ -39,6 +39,19 @@ func Test_RefreshToken(t *testing.T) {
 	t.Log(token)
 }
 
+func Test_UserAttributeContains(t *testing.T) {
+	t.Parallel()
+
+	attributes := map[string][]string{}
+	attributes["foo"] = []string{"bar", "alice", "bob", "roflcopter"}
+	attributes["bar"] = []string{"baz"}
+
+	client := NewClient(hostname)
+	if !client.UserAttributeContains(attributes, "foo", "alice") {
+		t.FailNow()
+	}
+}
+
 func Test_GetUserByID(t *testing.T) {
 	t.Parallel()
 	client := NewClient(hostname)

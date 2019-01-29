@@ -812,6 +812,17 @@ func (client *gocloak) GetClients(token string, realm string) (*[]Client, error)
 	return &result, nil
 }
 
+func (client *gocloak) UserAttributeContains(attributes map[string][]string, attribute string, value string) bool {
+	if val, ok := attributes[attribute]; ok {
+		for _, item := range val {
+			if item == value {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func getRequestWithHeader(token string) *resty.Request {
 	return resty.R().
 		SetHeader("Content-Type", "application/json").
