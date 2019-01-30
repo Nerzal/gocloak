@@ -36,13 +36,13 @@ func NewClient(basePath string) GoCloak {
 	}
 }
 
-func (client *gocloak) DecodeAccessToken(accessToken string, realm string) (*jwt.Token, *jwt.MapClaims, error) {
+func (client *gocloak) DecodeAccessToken(accessToken string, adminAccessToken string, realm string) (*jwt.Token, *jwt.MapClaims, error) {
 	decodedHeader, err := jwx.DecodeAccessTokenHeader(accessToken)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	keyStore, err := client.GetKeyStoreConfig(accessToken, realm)
+	keyStore, err := client.GetKeyStoreConfig(adminAccessToken, realm)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -52,13 +52,13 @@ func (client *gocloak) DecodeAccessToken(accessToken string, realm string) (*jwt
 	return jwx.DecodeAccessToken(accessToken, usedKey.PublicKey)
 }
 
-func (client *gocloak) DecodeAccessTokenCustomClaims(accessToken string, realm string) (*jwt.Token, *jwx.Claims, error) {
+func (client *gocloak) DecodeAccessTokenCustomClaims(accessToken string, adminAccessToken string, realm string) (*jwt.Token, *jwx.Claims, error) {
 	decodedHeader, err := jwx.DecodeAccessTokenHeader(accessToken)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	keyStore, err := client.GetKeyStoreConfig(accessToken, realm)
+	keyStore, err := client.GetKeyStoreConfig(adminAccessToken, realm)
 	if err != nil {
 		return nil, nil, err
 	}

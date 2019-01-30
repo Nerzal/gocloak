@@ -25,6 +25,7 @@ func stripBearerAndCheckToken(accessToken string, realm string) (*jwt.Token, err
 }
 
 func Test_DecodeAccessToken(t *testing.T) {
+	t.Parallel()
 	client := NewClient(hostname)
 	token, err := client.LoginClient(clientid, clientSecret, realm)
 	if err != nil {
@@ -40,6 +41,7 @@ func Test_DecodeAccessToken(t *testing.T) {
 }
 
 func Test_RefreshToken(t *testing.T) {
+	t.Parallel()
 	client := NewClient(hostname)
 	token, err := client.Login(clientid, clientSecret, realm, username, password)
 	if err != nil {
@@ -72,7 +74,7 @@ func Test_UserAttributeContains(t *testing.T) {
 func Test_GetUserByID(t *testing.T) {
 	t.Parallel()
 	client := NewClient(hostname)
-	token, err := client.Login(clientid, clientSecret, realm, username, password)
+	token, err := client.LoginClient(clientid, clientSecret, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
 		t.FailNow()
@@ -107,8 +109,9 @@ func Test_GetUserByID(t *testing.T) {
 }
 
 func Test_DecodeAccessTokenCustomClaims(t *testing.T) {
+	t.Parallel()
 	client := NewClient(hostname)
-	token, err := client.Login(clientid, clientSecret, realm, username, password)
+	token, err := client.LoginClient(clientid, clientSecret, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
 		t.Fail()
@@ -124,8 +127,9 @@ func Test_DecodeAccessTokenCustomClaims(t *testing.T) {
 }
 
 func Test_GetKeys(t *testing.T) {
+	t.Parallel()
 	client := NewClient(hostname)
-	token, err := client.Login(clientid, clientSecret, realm, username, password)
+	token, err := client.LoginClient(clientid, clientSecret, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
 		t.Fail()
@@ -141,6 +145,7 @@ func Test_GetKeys(t *testing.T) {
 }
 
 func Test_Login(t *testing.T) {
+	t.Parallel()
 	client := NewClient(hostname)
 	_, err := client.Login(clientid, clientSecret, realm, username, password)
 	if err != nil {
@@ -150,6 +155,7 @@ func Test_Login(t *testing.T) {
 }
 
 func Test_LoginAdmin(t *testing.T) {
+	t.Parallel()
 	client := NewClient(hostname)
 	_, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
@@ -159,6 +165,7 @@ func Test_LoginAdmin(t *testing.T) {
 }
 
 func Test_SetPassword(t *testing.T) {
+	t.Parallel()
 	client := NewClient(hostname)
 	token, err := client.LoginClient(clientid, clientSecret, realm)
 	if err != nil {
@@ -168,7 +175,7 @@ func Test_SetPassword(t *testing.T) {
 	user := User{}
 	user.FirstName = "Klaus"
 	user.LastName = "Peter"
-	user.Email = "olaf4@mail.com"
+	user.Email = "olaf5@mail.com"
 	user.Enabled = true
 	user.Username = user.Email
 
@@ -186,8 +193,9 @@ func Test_SetPassword(t *testing.T) {
 }
 
 func TestCreateUser(t *testing.T) {
+	t.Parallel()
 	client := NewClient(hostname)
-	token, err := client.LoginAdmin(username, password, realm)
+	token, err := client.LoginClient(clientid, clientSecret, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
 		t.Fail()
@@ -207,8 +215,9 @@ func TestCreateUser(t *testing.T) {
 }
 
 func Test_CreateUser_CustomAttributes(t *testing.T) {
+	t.Parallel()
 	client := NewClient(hostname)
-	token, err := client.LoginAdmin(username, password, realm)
+	token, err := client.LoginClient(clientid, clientSecret, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
 		t.Fail()
@@ -217,7 +226,7 @@ func Test_CreateUser_CustomAttributes(t *testing.T) {
 	user := User{}
 	user.FirstName = "Klaus"
 	user.LastName = "Peter"
-	user.Email = "trololo2@mail.com"
+	user.Email = "trololo4234@mail.com"
 	user.Enabled = true
 	user.Username = user.Email
 	user.Attributes = map[string][]string{}
@@ -234,8 +243,9 @@ func Test_CreateUser_CustomAttributes(t *testing.T) {
 }
 
 func TestCreateGroup(t *testing.T) {
+	t.Parallel()
 	client := NewClient(hostname)
-	token, err := client.LoginAdmin(username, password, realm)
+	token, err := client.LoginClient(clientid, clientSecret, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
 		t.Fail()
@@ -251,8 +261,9 @@ func TestCreateGroup(t *testing.T) {
 }
 
 func TestCreateRole(t *testing.T) {
+	t.Parallel()
 	client := NewClient(hostname)
-	token, err := client.LoginAdmin(username, password, realm)
+	token, err := client.LoginClient(clientid, clientSecret, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
 		t.Fail()
@@ -268,6 +279,7 @@ func TestCreateRole(t *testing.T) {
 }
 
 func TestCreateClient(t *testing.T) {
+	t.Parallel()
 	client := NewClient(hostname)
 	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
@@ -285,6 +297,7 @@ func TestCreateClient(t *testing.T) {
 }
 
 func TestGetUsers(t *testing.T) {
+	t.Parallel()
 	client := NewClient(hostname)
 	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
@@ -302,8 +315,9 @@ func TestGetUsers(t *testing.T) {
 }
 
 func TestGetKeyStoreConfig(t *testing.T) {
+	t.Parallel()
 	client := NewClient(hostname)
-	token, err := client.LoginAdmin(username, password, realm)
+	token, err := client.LoginClient(clientid, clientSecret, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
 		t.Fail()
@@ -317,6 +331,7 @@ func TestGetKeyStoreConfig(t *testing.T) {
 }
 
 func TestGetUser(t *testing.T) {
+	t.Parallel()
 	client := NewClient(hostname)
 	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
@@ -341,6 +356,7 @@ func TestGetUser(t *testing.T) {
 }
 
 func TestGetUserCount(t *testing.T) {
+	t.Parallel()
 	client := NewClient(hostname)
 	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
@@ -358,6 +374,7 @@ func TestGetUserCount(t *testing.T) {
 }
 
 func TestGetGroups(t *testing.T) {
+	t.Parallel()
 	client := NewClient(hostname)
 	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
@@ -373,6 +390,7 @@ func TestGetGroups(t *testing.T) {
 }
 
 func TestGetUserGroups(t *testing.T) {
+	t.Parallel()
 	client := NewClient(hostname)
 	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
@@ -396,6 +414,7 @@ func TestGetUserGroups(t *testing.T) {
 }
 
 func TestGetRoles(t *testing.T) {
+	t.Parallel()
 	client := NewClient(hostname)
 	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
@@ -411,6 +430,7 @@ func TestGetRoles(t *testing.T) {
 }
 
 func TestGetClients(t *testing.T) {
+	t.Parallel()
 	client := NewClient(hostname)
 	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
@@ -426,6 +446,7 @@ func TestGetClients(t *testing.T) {
 }
 
 func TestGetRolesByClientId(t *testing.T) {
+	t.Parallel()
 	client := NewClient(hostname)
 	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
@@ -448,6 +469,7 @@ func TestGetRolesByClientId(t *testing.T) {
 }
 
 func TestGetRoleMappingByGroupID(t *testing.T) {
+	t.Parallel()
 	client := NewClient(hostname)
 	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
