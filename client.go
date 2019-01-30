@@ -590,6 +590,10 @@ func (client *gocloak) GetKeyStoreConfig(token string, realm string) (*KeyStoreC
 		return nil, err
 	}
 
+	if resp.StatusCode() != 200 {
+		return nil, errors.New(resp.Status())
+	}
+
 	var result KeyStoreConfig
 	if err := json.Unmarshal(resp.Body(), &result); err != nil {
 		return nil, err

@@ -3,13 +3,30 @@ package gocloak
 import (
 	"math/rand"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
+
+	jwt "github.com/dgrijalva/jwt-go"
 )
+
+func Test_BearerStrip(t *testing.T) {
+	client := NewClient(hostname)
+	token, _ := client.Login(clientid, clientSecret, realm, username, password)
+	accessToken := "Bearer " + token.AccessToken
+	stripBearerAndCheckToken(accessToken, realm)
+}
+
+func stripBearerAndCheckToken(accessToken string, realm string) (*jwt.Token, error) {
+	client := NewClient(hostname)
+	accessToken = strings.Replace(accessToken, "Bearer ", "", 1)
+	decodedToken, _, err := client.DecodeAccessTokenCustomClaims(accessToken, realm)
+	return decodedToken, err
+}
 
 func Test_DecodeAccessToken(t *testing.T) {
 	client := NewClient(hostname)
-	token, err := client.Login(clientid, clientSecret, realm, username, password)
+	token, err := client.LoginClient(clientid, clientSecret, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
 		t.Fail()
