@@ -8,7 +8,6 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -16,13 +15,13 @@ import (
 
 // DecodeAccessTokenHeader decodes the header of the accessToken
 func DecodeAccessTokenHeader(token string) (*DecodedAccessTokenHeader, error) {
+	token = strings.Replace(token, "Bearer ", "", 1)
 	headerString := strings.Split(token, ".")
 	decodedData, err := base64.RawStdEncoding.DecodeString(headerString[0])
 	if err != nil {
 		return nil, err
 	}
 
-	log.Println(string(decodedData))
 	result := &DecodedAccessTokenHeader{}
 	err = json.Unmarshal(decodedData, result)
 	if err != nil {
@@ -85,7 +84,7 @@ func getRSAPublicKey(publicKey string) (*rsa.PublicKey, error) {
 	if block == nil {
 		return nil, errors.New("failed to parse PEM block containing the public key")
 	}
-	
+
 	pkey, _ := x509.ParsePKIXPublicKey(block.Bytes)
 	if pkey == nil {
 		return nil, errors.New("failed to parse public key")
