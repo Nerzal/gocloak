@@ -3,26 +3,9 @@ package gocloak
 import (
 	"math/rand"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
-
-	jwt "github.com/dgrijalva/jwt-go"
 )
-
-func Test_BearerStrip(t *testing.T) {
-	client := NewClient(hostname)
-	token, _ := client.Login(clientid, clientSecret, realm, username, password)
-	accessToken := "Bearer " + token.AccessToken
-	stripBearerAndCheckToken(accessToken, realm)
-}
-
-func stripBearerAndCheckToken(accessToken string, realm string) (*jwt.Token, error) {
-	client := NewClient(hostname)
-	accessToken = strings.Replace(accessToken, "Bearer ", "", 1)
-	decodedToken, _, err := client.DecodeAccessTokenCustomClaims(accessToken, realm)
-	return decodedToken, err
-}
 
 func Test_DecodeAccessToken(t *testing.T) {
 	t.Parallel()
@@ -33,7 +16,7 @@ func Test_DecodeAccessToken(t *testing.T) {
 		t.Fail()
 	}
 
-	_, _, err = client.DecodeAccessToken(token.AccessToken, realm)
+	_, _, err = client.DecodeAccessToken(token.AccessToken, token.AccessToken, realm)
 	if err != nil {
 		t.Log(err.Error())
 		t.FailNow()
@@ -117,7 +100,7 @@ func Test_DecodeAccessTokenCustomClaims(t *testing.T) {
 		t.Fail()
 	}
 
-	_, claims, err := client.DecodeAccessTokenCustomClaims(token.AccessToken, realm)
+	_, claims, err := client.DecodeAccessTokenCustomClaims(token.AccessToken, token.AccessToken, realm)
 	if err != nil {
 		t.Log(err.Error())
 		t.FailNow()
