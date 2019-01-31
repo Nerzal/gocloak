@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/Nerzal/gocloak/pkg/jwx"
 )
 
 func Test_DecodeAccessToken(t *testing.T) {
@@ -17,6 +19,23 @@ func Test_DecodeAccessToken(t *testing.T) {
 	}
 
 	_, _, err = client.DecodeAccessToken(token.AccessToken, token.AccessToken, realm)
+	if err != nil {
+		t.Log(err.Error())
+		t.FailNow()
+	}
+}
+
+func Test_DecodeAccessTokenCustomClaims(t *testing.T) {
+	t.Parallel()
+	client := NewClient(hostname)
+	token, err := client.LoginClient(clientid, clientSecret, realm)
+	if err != nil {
+		t.Log("TestLogin failed", err.Error())
+		t.Fail()
+	}
+
+	claims := jwx.Claims{}
+	_, err = client.DecodeAccessTokenCustomClaims(token.AccessToken, token.AccessToken, realm, claims)
 	if err != nil {
 		t.Log(err.Error())
 		t.FailNow()
@@ -89,24 +108,6 @@ func Test_GetUserByID(t *testing.T) {
 	}
 
 	t.Log(fetchedUser)
-}
-
-func Test_DecodeAccessTokenCustomClaims(t *testing.T) {
-	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.LoginClient(clientid, clientSecret, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.Fail()
-	}
-
-	_, claims, err := client.DecodeAccessTokenCustomClaims(token.AccessToken, token.AccessToken, realm)
-	if err != nil {
-		t.Log(err.Error())
-		t.FailNow()
-	}
-
-	t.Log(claims)
 }
 
 func Test_GetKeys(t *testing.T) {

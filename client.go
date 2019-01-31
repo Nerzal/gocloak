@@ -52,22 +52,21 @@ func (client *gocloak) DecodeAccessToken(accessToken string, adminAccessToken st
 	return jwx.DecodeAccessToken(accessToken, usedKey.PublicKey)
 }
 
-func (client *gocloak) DecodeAccessTokenCustomClaims(accessToken string, adminAccessToken string, realm string) (*jwt.Token, *jwx.Claims, error) {
+func (client *gocloak) DecodeAccessTokenCustomClaims(accessToken string, adminAccessToken string, realm string, claims jwt.Claims) (*jwt.Token, error) {
 	decodedHeader, err := jwx.DecodeAccessTokenHeader(accessToken)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	keyStore, err := client.GetKeyStoreConfig(adminAccessToken, realm)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	usedKey := findUsedKey(decodedHeader.Kid, *keyStore)
 
-	claims := &jwx.Claims{}
 	token, err := jwx.DecodeAccessTokenCustomClaims(accessToken, usedKey.PublicKey, claims)
-	return token, claims, err
+	return token, err
 }
 
 func findUsedKey(usedKeyID string, keyStore KeyStoreConfig) *Key {

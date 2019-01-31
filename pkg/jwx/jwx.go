@@ -54,7 +54,7 @@ func DecodeAccessToken(accessToken string, publicKey string) (*jwt.Token, *jwt.M
 }
 
 // DecodeAccessTokenCustomClaims currently only supports RSA - sorry for that
-func DecodeAccessTokenCustomClaims(accessToken string, publicKey string, customClaims *Claims) (*jwt.Token, error) {
+func DecodeAccessTokenCustomClaims(accessToken string, publicKey string, customClaims jwt.Claims) (*jwt.Token, error) {
 	rsaPublicKey, err := getRSAPublicKey(publicKey)
 	if err != nil {
 		return nil, err
