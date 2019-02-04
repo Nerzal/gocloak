@@ -12,6 +12,7 @@ type GoCloak interface {
 	RefreshToken(refreshToken string, clientID, clientSecret, realm string) (*JWT, error)
 	DecodeAccessToken(accessToken string, adminAccessToken string, realm string) (*jwt.Token, *jwt.MapClaims, error)
 	DecodeAccessTokenCustomClaims(accessToken string, adminAccessToken string, realm string, claims jwt.Claims) (*jwt.Token, error)
+	//RetroSpectToken is used to validate tokens
 	RetrospectToken(accessToken string, clientID, clientSecret string, realm string) (*RetrospecTokenResult, error)
 
 	SetPassword(token string, userID string, realm string, password string, temporary bool) error
