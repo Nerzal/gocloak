@@ -18,13 +18,13 @@ func (apiError APIError) Error() string {
 // RetrospectTokenResult is returned when a token was checked
 type RetrospecTokenResult struct {
 	Permissions []struct {
-		ResourceSetID   string `json:"resource_set_id"`
-		ResourceSetName string `json:"resource_set_name"`
-	} `json:"permissions"`
-	Exp    int    `json:"exp"`
-	Nbf    int    `json:"nbf"`
-	Iat    int    `json:"iat"`
-	Aud    string `json:"aud"`
+		ResourceSetID   string `json:"resource_set_id,omitempty"`
+		ResourceSetName string `json:"resource_set_name,omitempty"`
+	} `json:"permissions,omitempty"`
+	Exp    int    `json:"exp,omitempty"`
+	Nbf    int    `json:"nbf,omitempty"`
+	Iat    int    `json:"iat,omitempty"`
+	Aud    string `json:"aud,omitempty"`
 	Active bool   `json:"active"`
 }
 
