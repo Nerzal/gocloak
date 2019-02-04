@@ -9,6 +9,29 @@ import (
 	"github.com/Nerzal/gocloak/pkg/jwx"
 )
 
+func Test_RetrospectToken_InactiveToken(t *testing.T) {
+	t.Parallel()
+	client := NewClient(hostname)
+	_, err := client.LoginClient(clientid, clientSecret, realm)
+	if err != nil {
+		t.Log("Login failed", err.Error())
+		t.FailNow()
+	}
+
+	rptResult, err := client.RetrospectToken("foobar", clientid, clientSecret, realm)
+	if err != nil {
+		t.Log("Inspection failed:", err.Error())
+		t.FailNow()
+	}
+
+	if rptResult.Active {
+		t.Log("That should never happen. Token is active")
+		t.FailNow()
+	}
+
+	t.Log(rptResult)
+}
+
 func Test_RetrospectToken(t *testing.T) {
 	t.Parallel()
 	client := NewClient(hostname)
@@ -27,7 +50,7 @@ func Test_RetrospectToken(t *testing.T) {
 	if !rptResult.Active {
 		t.Log("Inactive Token o_O")
 		t.FailNow()
-	}	
+	}
 
 	t.Log(rptResult)
 }
