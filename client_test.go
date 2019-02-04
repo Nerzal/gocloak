@@ -9,13 +9,36 @@ import (
 	"github.com/Nerzal/gocloak/pkg/jwx"
 )
 
+func Test_RetrospectToken(t *testing.T) {
+	t.Parallel()
+	client := NewClient(hostname)
+	token, err := client.LoginClient(clientid, clientSecret, realm)
+	if err != nil {
+		t.Log("Login failed", err.Error())
+		t.FailNow()
+	}
+
+	rptResult, err := client.RetrospectToken(token.AccessToken, clientid, clientSecret, realm)
+	if err != nil {
+		t.Log("Inspection failed:", err.Error())
+		t.FailNow()
+	}
+
+	if !rptResult.Active {
+		t.Log("Inactive Token o_O")
+		t.FailNow()
+	}
+
+	t.Log(rptResult)
+}
+
 func Test_DecodeAccessToken(t *testing.T) {
 	t.Parallel()
 	client := NewClient(hostname)
 	token, err := client.LoginClient(clientid, clientSecret, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	_, _, err = client.DecodeAccessToken(token.AccessToken, token.AccessToken, realm)
@@ -31,7 +54,7 @@ func Test_DecodeAccessTokenCustomClaims(t *testing.T) {
 	token, err := client.LoginClient(clientid, clientSecret, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	claims := jwx.Claims{}
@@ -48,13 +71,13 @@ func Test_RefreshToken(t *testing.T) {
 	token, err := client.Login(clientid, clientSecret, realm, username, password)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	token, err = client.RefreshToken(token.RefreshToken, clientid, clientSecret, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	t.Log(token)
@@ -116,13 +139,13 @@ func Test_GetKeys(t *testing.T) {
 	token, err := client.LoginClient(clientid, clientSecret, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	config, err := client.GetKeyStoreConfig(token.AccessToken, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	t.Log(config)
@@ -134,7 +157,7 @@ func Test_Login(t *testing.T) {
 	_, err := client.Login(clientid, clientSecret, realm, username, password)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 }
 
@@ -144,7 +167,7 @@ func Test_LoginAdmin(t *testing.T) {
 	_, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 }
 
@@ -182,7 +205,7 @@ func TestCreateUser(t *testing.T) {
 	token, err := client.LoginClient(clientid, clientSecret, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	user := User{}
@@ -194,7 +217,7 @@ func TestCreateUser(t *testing.T) {
 	_, err = client.CreateUser(token.AccessToken, realm, user)
 	if err != nil {
 		t.Log("Create User Failed: ", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 }
 
@@ -204,7 +227,7 @@ func Test_CreateUser_CustomAttributes(t *testing.T) {
 	token, err := client.LoginClient(clientid, clientSecret, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	user := User{}
@@ -220,7 +243,7 @@ func Test_CreateUser_CustomAttributes(t *testing.T) {
 	id, err := client.CreateUser(token.AccessToken, realm, user)
 	if err != nil {
 		t.Log("Create User Failed: ", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	t.Log(id)
@@ -232,7 +255,7 @@ func TestCreateGroup(t *testing.T) {
 	token, err := client.LoginClient(clientid, clientSecret, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	group := Group{}
@@ -240,7 +263,7 @@ func TestCreateGroup(t *testing.T) {
 	err = client.CreateGroup(token.AccessToken, realm, group)
 	if err != nil {
 		t.Log("Create User Failed: ", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 }
 
@@ -250,7 +273,7 @@ func TestCreateRole(t *testing.T) {
 	token, err := client.LoginClient(clientid, clientSecret, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	role := Role{}
@@ -258,7 +281,7 @@ func TestCreateRole(t *testing.T) {
 	err = client.CreateRole(token.AccessToken, realm, "9204c840-f857-4507-8b00-784c9c845e6e", role)
 	if err != nil {
 		t.Log("Create User Failed: ", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 }
 
@@ -268,7 +291,7 @@ func TestCreateClient(t *testing.T) {
 	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	newClient := Client{}
@@ -276,7 +299,7 @@ func TestCreateClient(t *testing.T) {
 	err = client.CreateClient(token.AccessToken, realm, newClient)
 	if err != nil {
 		t.Log("Create User Failed: ", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 }
 
@@ -286,13 +309,13 @@ func TestGetUsers(t *testing.T) {
 	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	users, err := client.GetUsers(token.AccessToken, realm)
 	if err != nil {
 		t.Log("GetUsers failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	t.Log(users)
@@ -304,13 +327,13 @@ func TestGetKeyStoreConfig(t *testing.T) {
 	token, err := client.LoginClient(clientid, clientSecret, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	_, err = client.GetKeyStoreConfig(token.AccessToken, realm)
 	if err != nil {
 		t.Log("GetKeyStoreConfig failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 }
 
@@ -320,20 +343,20 @@ func TestGetUser(t *testing.T) {
 	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	users, err := client.GetUsers(token.AccessToken, realm)
 	if err != nil {
 		t.Log("GetUsers failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	dereferencedUsers := *users
 	user, err := client.GetUser(token.AccessToken, realm, dereferencedUsers[0].ID)
 	if err != nil {
 		t.Log("GetUser failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	t.Log(user)
@@ -345,13 +368,13 @@ func TestGetUserCount(t *testing.T) {
 	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	count, err := client.GetUserCount(token.AccessToken, realm)
 	if err != nil {
 		t.Log("GetUsers failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	t.Log("Users in Realm: " + strconv.Itoa(count))
@@ -363,13 +386,13 @@ func TestGetGroups(t *testing.T) {
 	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	_, err = client.GetGroups(token.AccessToken, realm)
 	if err != nil {
 		t.Log("GetGroups failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 }
 
@@ -379,13 +402,13 @@ func TestGetUserGroups(t *testing.T) {
 	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	users, err := client.GetUsers(token.AccessToken, realm)
 	if err != nil {
 		t.Log("GetAllUsers failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	realUsers := *users
@@ -393,7 +416,7 @@ func TestGetUserGroups(t *testing.T) {
 	_, err = client.GetUserGroups(token.AccessToken, realm, realUsers[0].ID)
 	if err != nil {
 		t.Log("GetUserGroups failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 }
 
@@ -403,13 +426,13 @@ func TestGetRoles(t *testing.T) {
 	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	_, err = client.GetRoles(token.AccessToken, realm)
 	if err != nil {
 		t.Log("GetRoles failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 }
 
@@ -419,13 +442,13 @@ func TestGetClients(t *testing.T) {
 	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	_, err = client.GetClients(token.AccessToken, realm)
 	if err != nil {
 		t.Log("GetClients failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 }
 
@@ -435,20 +458,20 @@ func TestGetRolesByClientId(t *testing.T) {
 	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	clients, err := client.GetClients(token.AccessToken, realm)
 	if err != nil {
 		t.Log("GetClients failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	clientsDeferenced := *clients
 	_, err = client.GetRolesByClientID(token.AccessToken, realm, clientsDeferenced[4].ClientID)
 	if err != nil {
 		t.Log("GetRolesByClientID failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 }
 
@@ -458,13 +481,13 @@ func TestGetRoleMappingByGroupID(t *testing.T) {
 	token, err := client.LoginAdmin(username, password, realm)
 	if err != nil {
 		t.Log("TestLogin failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	groups, err := client.GetGroups(token.AccessToken, realm)
 	if err != nil {
 		t.Log("GetGroups failed", err.Error())
-		t.Fail()
+		t.FailNow()
 	}
 
 	if len(*groups) == 0 {
@@ -475,6 +498,6 @@ func TestGetRoleMappingByGroupID(t *testing.T) {
 	_, err = client.GetRoleMappingByGroupID(token.AccessToken, realm, groupsDeferenced[0].ID)
 	if err != nil {
 		t.Log("GetRoleMappingByGroupID failed")
-		t.Fail()
+		t.FailNow()
 	}
 }

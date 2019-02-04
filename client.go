@@ -36,6 +36,32 @@ func NewClient(basePath string) GoCloak {
 	}
 }
 
+func (client *gocloak) RetrospectToken(accessToken string, clientID, clientSecret string, realm string) (*RetrospecTokenResult, error) {
+	resp, err := resty.R().
+		SetHeader("Content-Type", "application/x-www-form-urlencoded").
+		SetHeader("Authorization", getBasicAuthForClient(clientID, clientSecret)).
+		SetFormData(map[string]string{
+			"token_type_hint": "requesting_party_token",
+			"token":           accessToken,
+		}).Post(client.basePath + "/auth/realms/" + realm + "/protocol/openid-connect/token/introspect")
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode() != 200 {
+		log.Println(resp.StatusCode())
+		log.Println(string(resp.Body()))
+		return nil, errors.New(resp.Status())
+	}
+
+	var result RetrospecTokenResult
+	if err := json.Unmarshal(resp.Body(), &result); err != nil {
+		return nil, errors.New("Inspection failed")
+	}
+
+	return &result, nil
+}
+
 func (client *gocloak) DecodeAccessToken(accessToken string, adminAccessToken string, realm string) (*jwt.Token, *jwt.MapClaims, error) {
 	decodedHeader, err := jwx.DecodeAccessTokenHeader(accessToken)
 	if err != nil {

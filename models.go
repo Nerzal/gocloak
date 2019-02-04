@@ -15,6 +15,19 @@ func (apiError APIError) Error() string {
 	return "Code: " + strconv.Itoa(apiError.Code) + "Message: " + apiError.Message
 }
 
+// RetrospectTokenResult is returned when a token was checked
+type RetrospecTokenResult struct {
+	Permissions []struct {
+		ResourceSetID   string `json:"resource_set_id"`
+		ResourceSetName string `json:"resource_set_name"`
+	} `json:"permissions"`
+	Exp    int    `json:"exp"`
+	Nbf    int    `json:"nbf"`
+	Iat    int    `json:"iat"`
+	Aud    string `json:"aud"`
+	Active bool   `json:"active"`
+}
+
 // User represents the Keycloak User Structure
 type User struct {
 	ID                         string              `json:"id,omitempty"`
