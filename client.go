@@ -112,6 +112,13 @@ func (client *gocloak) RefreshToken(refreshToken string, clientID, clientSecret,
 
 	jwt := &JWT{}
 	err = json.Unmarshal(body, jwt)
+	if err != nil {
+		return nil, err
+	}
+
+	if jwt.AccessToken == "" {
+		return nil, errors.New("Authentication Failed")
+	}
 	return jwt, err
 }
 
@@ -147,7 +154,14 @@ func (client *gocloak) LoginAdmin(username, password, realm string) (*JWT, error
 
 	jwt := &JWT{}
 	err = json.Unmarshal(body, jwt)
-	return jwt, err
+	if err != nil {
+		return nil, err
+	}
+
+	if jwt.AccessToken == "" {
+		return nil, errors.New("Authentication Failed")
+	}
+	return jwt, nil
 }
 
 // Login performs a login
@@ -181,7 +195,15 @@ func (client *gocloak) LoginClient(clientID, clientSecret, realm string) (*JWT, 
 
 	jwt := &JWT{}
 	err = json.Unmarshal(body, jwt)
-	return jwt, err
+	if err != nil {
+		return nil, err
+	}
+
+	if jwt.AccessToken == "" {
+		return nil, errors.New("Authentication Failed")
+	}
+
+	return jwt, nil
 }
 
 // Login like login, but with basic auth
@@ -205,6 +227,10 @@ func (client *gocloak) Login(clientID string, clientSecret string, realm string,
 	var result JWT
 	if err := json.Unmarshal(resp.Body(), &result); err != nil {
 		return nil, errors.New("Authentication failed")
+	}
+
+	if result.AccessToken == "" {
+		return nil, errors.New("Authentication Failed")
 	}
 
 	return &result, nil
