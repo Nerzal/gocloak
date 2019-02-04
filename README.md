@@ -27,6 +27,28 @@ Use this together with the keycloak client [gocloak-echo](https://github.com/Ner
 	}
 ```
 
+### Introspect Token
+```go
+	client := NewClient(hostname)
+	token, err := client.LoginClient(clientid, clientSecret, realm)
+	if err != nil {
+		panic("Login failed:"+ err.Error())
+	}
+
+	rptResult, err := client.RetrospectToken(token.AccessToken, clientid, clientSecret, realm)
+	if err != nil {
+		panic("Inspection failed:"+ err.Error())
+		t.FailNow()
+	}
+
+	if !rptResult.Active {
+		panic("Token is not active")
+	}
+
+	permissions := rptResult.Permissions
+	//Do something with the permissions ;) 
+```
+
 ## Features
 
 ```go

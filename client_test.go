@@ -27,7 +27,7 @@ func Test_RetrospectToken(t *testing.T) {
 	if !rptResult.Active {
 		t.Log("Inactive Token o_O")
 		t.FailNow()
-	}
+	}	
 
 	t.Log(rptResult)
 }
