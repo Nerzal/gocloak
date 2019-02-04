@@ -1,7 +1,7 @@
 # gocloak
 golang keycloak client
 
-This client is based on : https://github.com/PhilippHeuer/go-keycloak/blob/master/client.go
+This client is based on : [go-keycloak](https://github.com/PhilippHeuer/go-keycloak)
 
 Use this together with the keycloak client [gocloak-echo](https://github.com/Nerzal/gocloak-echo)
 
