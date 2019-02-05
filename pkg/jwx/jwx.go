@@ -1,13 +1,16 @@
 package jwx
 
 import (
+	"bytes"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"math/big"
 	"strings"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -31,9 +34,39 @@ func DecodeAccessTokenHeader(token string) (*DecodedAccessTokenHeader, error) {
 	return result, nil
 }
 
+func decodePublicKey(e, n string) (*rsa.PublicKey, error) {
+	decN, err := base64.RawURLEncoding.DecodeString(n)
+	if err != nil {
+		return nil, err
+	}
+	nInt := big.NewInt(0)
+	nInt.SetBytes(decN)
+
+	decE, err := base64.RawURLEncoding.DecodeString(e)
+	if err != nil {
+		return nil, err
+	}
+	var eBytes []byte
+	if len(decE) < 8 {
+		eBytes = make([]byte, 8-len(decE), 8)
+		eBytes = append(eBytes, decE...)
+	} else {
+		eBytes = decE
+	}
+
+	eReader := bytes.NewReader(eBytes)
+	var eInt uint64
+	err = binary.Read(eReader, binary.BigEndian, &eInt)
+	if err != nil {
+		return nil, err
+	}
+	pKey := rsa.PublicKey{N: nInt, E: int(eInt)}
+	return &pKey, nil
+}
+
 // DecodeAccessToken currently only supports RSA - sorry for that
-func DecodeAccessToken(accessToken string, publicKey string) (*jwt.Token, *jwt.MapClaims, error) {
-	rsaPublicKey, err := getRSAPublicKey(publicKey)
+func DecodeAccessToken(accessToken string, e string, n string) (*jwt.Token, *jwt.MapClaims, error) {
+	rsaPublicKey, err := decodePublicKey(e, n)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -54,8 +87,8 @@ func DecodeAccessToken(accessToken string, publicKey string) (*jwt.Token, *jwt.M
 }
 
 // DecodeAccessTokenCustomClaims currently only supports RSA - sorry for that
-func DecodeAccessTokenCustomClaims(accessToken string, publicKey string, customClaims jwt.Claims) (*jwt.Token, error) {
-	rsaPublicKey, err := getRSAPublicKey(publicKey)
+func DecodeAccessTokenCustomClaims(accessToken string, e string, n string, customClaims jwt.Claims) (*jwt.Token, error) {
+	rsaPublicKey, err := decodePublicKey(e, n)
 	if err != nil {
 		return nil, err
 	}

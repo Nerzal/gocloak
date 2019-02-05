@@ -9,6 +9,30 @@ import (
 	"github.com/Nerzal/gocloak/pkg/jwx"
 )
 
+func Test_GetCerts(t *testing.T) {
+	t.Parallel()
+	client := NewClient(hostname)
+	certs, err := client.GetCerts(realm)
+	if err != nil {
+		t.Log(err)
+		t.FailNow()
+	}
+
+	t.Log(certs)
+}
+
+func Test_GetIssuer(t *testing.T) {
+	t.Parallel()
+	client := NewClient(hostname)
+	issuer, err := client.GetIssuer(realm)
+	if err != nil {
+		t.Log(err)
+		t.FailNow()
+	}
+
+	t.Log(issuer)
+}
+
 func Test_RetrospectToken_InactiveToken(t *testing.T) {
 	t.Parallel()
 	client := NewClient(hostname)
@@ -64,11 +88,14 @@ func Test_DecodeAccessToken(t *testing.T) {
 		t.FailNow()
 	}
 
-	_, _, err = client.DecodeAccessToken(token.AccessToken, token.AccessToken, realm)
+	resultToken, claims, err := client.DecodeAccessToken(token.AccessToken, realm)
 	if err != nil {
 		t.Log(err.Error())
 		t.FailNow()
 	}
+
+	t.Log(resultToken)
+	t.Log(claims)
 }
 
 func Test_DecodeAccessTokenCustomClaims(t *testing.T) {
@@ -81,7 +108,7 @@ func Test_DecodeAccessTokenCustomClaims(t *testing.T) {
 	}
 
 	claims := jwx.Claims{}
-	_, err = client.DecodeAccessTokenCustomClaims(token.AccessToken, token.AccessToken, realm, claims)
+	_, err = client.DecodeAccessTokenCustomClaims(token.AccessToken, realm, claims)
 	if err != nil {
 		t.Log(err.Error())
 		t.FailNow()

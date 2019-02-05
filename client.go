@@ -36,6 +36,42 @@ func NewClient(basePath string) GoCloak {
 	}
 }
 
+func (client *gocloak) GetCerts(realm string) (*CertResponse, error) {
+	resp, err := resty.R().Get(client.basePath + "/auth/realms/" + realm + "/protocol/openid-connect/certs")
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode() != 200 {
+		return nil, errors.New(resp.Status())
+	}
+
+	var result CertResponse
+	if err := json.Unmarshal(resp.Body(), &result); err != nil {
+		return nil, errors.New("GetCerts failed")
+	}
+
+	return &result, nil
+}
+
+func (client *gocloak) GetIssuer(realm string) (*IssuerResponse, error) {
+	resp, err := resty.R().Get(client.basePath + "/auth/realms/" + realm)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode() != 200 {
+		return nil, errors.New(resp.Status())
+	}
+
+	var result IssuerResponse
+	if err := json.Unmarshal(resp.Body(), &result); err != nil {
+		return nil, errors.New("GetIssuer failed")
+	}
+
+	return &result, nil
+}
+
 func (client *gocloak) RetrospectToken(accessToken string, clientID, clientSecret string, realm string) (*RetrospecTokenResult, error) {
 	resp, err := resty.R().
 		SetHeader("Content-Type", "application/x-www-form-urlencoded").
@@ -49,8 +85,6 @@ func (client *gocloak) RetrospectToken(accessToken string, clientID, clientSecre
 	}
 
 	if resp.StatusCode() != 200 {
-		log.Println(resp.StatusCode())
-		log.Println(string(resp.Body()))
 		return nil, errors.New(resp.Status())
 	}
 
@@ -62,41 +96,39 @@ func (client *gocloak) RetrospectToken(accessToken string, clientID, clientSecre
 	return &result, nil
 }
 
-func (client *gocloak) DecodeAccessToken(accessToken string, adminAccessToken string, realm string) (*jwt.Token, *jwt.MapClaims, error) {
+func (client *gocloak) DecodeAccessToken(accessToken string, realm string) (*jwt.Token, *jwt.MapClaims, error) {
 	decodedHeader, err := jwx.DecodeAccessTokenHeader(accessToken)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	keyStore, err := client.GetKeyStoreConfig(adminAccessToken, realm)
+	certResult, err := client.GetCerts(realm)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	usedKey := findUsedKey(decodedHeader.Kid, *keyStore)
-
-	return jwx.DecodeAccessToken(accessToken, usedKey.PublicKey)
+	usedKey := findUsedKey(decodedHeader.Kid, certResult.Keys)
+	return jwx.DecodeAccessToken(accessToken, usedKey.E, usedKey.N)
 }
 
-func (client *gocloak) DecodeAccessTokenCustomClaims(accessToken string, adminAccessToken string, realm string, claims jwt.Claims) (*jwt.Token, error) {
+func (client *gocloak) DecodeAccessTokenCustomClaims(accessToken string, realm string, claims jwt.Claims) (*jwt.Token, error) {
 	decodedHeader, err := jwx.DecodeAccessTokenHeader(accessToken)
 	if err != nil {
 		return nil, err
 	}
 
-	keyStore, err := client.GetKeyStoreConfig(adminAccessToken, realm)
+	certResult, err := client.GetCerts(realm)
 	if err != nil {
 		return nil, err
 	}
 
-	usedKey := findUsedKey(decodedHeader.Kid, *keyStore)
-
-	token, err := jwx.DecodeAccessTokenCustomClaims(accessToken, usedKey.PublicKey, claims)
+	usedKey := findUsedKey(decodedHeader.Kid, certResult.Keys)
+	token, err := jwx.DecodeAccessTokenCustomClaims(accessToken, usedKey.E, usedKey.N, claims)
 	return token, err
 }
 
-func findUsedKey(usedKeyID string, keyStore KeyStoreConfig) *Key {
-	for _, key := range keyStore.Key {
+func findUsedKey(usedKeyID string, keys []CertResponseKey) *CertResponseKey {
+	for _, key := range keys {
 		if key.Kid != usedKeyID {
 			continue
 		}

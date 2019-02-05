@@ -15,6 +15,29 @@ func (apiError APIError) Error() string {
 	return "Code: " + strconv.Itoa(apiError.Code) + "Message: " + apiError.Message
 }
 
+type CertResponseKey struct {
+	Kid string `json:"kid"`
+	Kty string `json:"kty"`
+	Alg string `json:"alg"`
+	Use string `json:"use"`
+	N   string `json:"n"`
+	E   string `json:"e"`
+}
+
+// CertResponse is retuned by the certs endpoint
+type CertResponse struct {
+	Keys []CertResponseKey `json:"keys"`
+}
+
+// IssuerResponse is returned by the issuer endpoint
+type IssuerResponse struct {
+	Realm           string `json:"realm"`
+	PublicKey       string `json:"public_key"`
+	TokenService    string `json:"token-service"`
+	AccountService  string `json:"account-service"`
+	TokensNotBefore int    `json:"tokens-not-before"`
+}
+
 // RetrospectTokenResult is returned when a token was checked
 type RetrospecTokenResult struct {
 	Permissions []struct {
