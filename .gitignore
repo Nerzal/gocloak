@@ -1,3 +1,5 @@
+*.orig
+
 # Other stuff aslong as i'm to lazy to use environment variables
 *.secret.go
 

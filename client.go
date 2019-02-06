@@ -234,7 +234,7 @@ func (client *gocloak) LoginClient(clientID, clientSecret, realm string) (*JWT, 
 	}
 
 	if res.StatusCode != 200 {
-		log.Println(string(body))
+		return nil, errors.New(res.Status)
 	}
 
 	jwt := &JWT{}

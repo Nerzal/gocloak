@@ -43,6 +43,15 @@ func TestGetCerts(t *testing.T) {
 
 	t.Log(certs)
 }
+func Test_LoginClient_UnknownRealm(t *testing.T) {
+	t.Parallel()
+	client := NewClient(hostname)
+	_, err := client.LoginClient(clientid, clientSecret, "blacklayer")
+	if err != nil {
+		t.Log("Login failed", err.Error())
+		t.FailNow()
+	}
+}
 
 func TestGetIssuer(t *testing.T) {
 	t.Parallel()
