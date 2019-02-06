@@ -46,9 +46,15 @@ func TestGetCerts(t *testing.T) {
 func Test_LoginClient_UnknownRealm(t *testing.T) {
 	t.Parallel()
 	client := NewClient(hostname)
-	_, err := client.LoginClient(clientid, clientSecret, "blacklayer")
-	if err != nil {
-		t.Log("Login failed", err.Error())
+	_, err := client.LoginClient(clientid, clientSecret, "ThisRealmDoesNotExist")
+	if err == nil {
+		t.Log("Login shouldn't be succesful", err.Error())
+		t.FailNow()
+	}
+
+	errorMessage := err.Error()
+	if errorMessage != "404 Not Found" {
+		t.Log("Unexpected error message", err.Error())
 		t.FailNow()
 	}
 }
