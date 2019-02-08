@@ -1,9 +1,5 @@
 package gocloak
 
-import (
-	"strconv"
-)
-
 // APIError represents an api error
 type APIError struct {
 	Code    int
@@ -12,7 +8,7 @@ type APIError struct {
 
 // Error stringifies the APIError
 func (apiError APIError) Error() string {
-	return "Code: " + strconv.Itoa(apiError.Code) + "Message: " + apiError.Message
+	return apiError.Message
 }
 
 type CertResponseKey struct {
