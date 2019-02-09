@@ -809,6 +809,40 @@ func (client *gocloak) GetRoleMappingByGroupID(token string, realm string, group
 	return &result, nil
 }
 
+// GetRoleMappingByUserID gets the role mappings by user
+func (client *gocloak) GetRoleMappingByUserID(token string, realm string, userID string) (*[]RoleMapping, error) {
+	resp, err := getRequestWithHeader(token).
+		Get(client.basePath + authRealm + realm + "/users/" + userID + "/role-mappings")
+	if err != nil {
+		return nil, err
+	}
+
+	var result []RoleMapping
+
+	var f map[string]interface{}
+	if err := json.Unmarshal(resp.Body(), &f); err != nil {
+		return nil, err
+	}
+
+	itemsMap := f["clientMappings"].(map[string]interface{})
+
+	for _, v := range itemsMap {
+		switch jsonObj := v.(type) {
+		case interface{}:
+			jsonClientMapping, _ := json.Marshal(jsonObj)
+			var client RoleMapping
+			if err := json.Unmarshal(jsonClientMapping, &client); err != nil {
+				return nil, err
+			}
+			result = append(result, client)
+		default:
+			return nil, errors.New("Expecting a JSON object; got something else")
+		}
+	}
+
+	return &result, nil
+}
+
 // GetGroup get group with id in realm
 func (client *gocloak) GetGroup(token string, realm string, groupID string) (*Group, error) {
 	var result Group
@@ -905,4 +939,37 @@ func getBasicAuthForClient(clientID string, clientSecret string) string {
 	}
 
 	return "Basic " + httpBasicAuth
+}
+
+
+// GetRealmRolesByUserID gets the roles by user
+func (client *gocloak) GetRealmRolesByUserID(token string, realm string, userID string) (*[]Role, error) {
+	resp, err := getRequestWithHeader(token).
+		Get(client.basePath + authRealm + realm + "/users/" + userID + "/role-mappings/realm")
+	if err != nil {
+		return nil, err
+	}
+
+	var result []Role
+	if err := json.Unmarshal(resp.Body(), &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// GetRealmRolesByGroupID gets the roles by group
+func (client *gocloak) GetRealmRolesByGroupID(token string, realm string, groupID string) (*[]Role, error) {
+	resp, err := getRequestWithHeader(token).
+		Get(client.basePath + authRealm + realm + "/groups/" + groupID + "/role-mappings/realm")
+	if err != nil {
+		return nil, err
+	}
+
+	var result []Role
+	if err := json.Unmarshal(resp.Body(), &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }
