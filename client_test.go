@@ -9,6 +9,29 @@ import (
 	"github.com/Nerzal/gocloak/pkg/jwx"
 )
 
+func Test_RequestPermission(t *testing.T) {
+	t.Parallel()
+	client := NewClient(hostname)
+	token, err := client.RequestPermission(clientid, clientSecret, realm, username, password, "Permission foo # 3")
+	if err != nil {
+		t.Log("Login failed", err.Error())
+		t.FailNow()
+	}
+
+	rptResult, err := client.RetrospectToken(token.AccessToken, clientid, clientSecret, realm)
+	if err != nil {
+		t.Log("Inspection failed:", err.Error())
+		t.FailNow()
+	}
+
+	if !rptResult.Active {
+		t.Log("Inactive Token o_O")
+		t.FailNow()
+	}
+
+	t.Log(rptResult)
+}
+
 func Test_GetCerts(t *testing.T) {
 	t.Parallel()
 	client := NewClient(hostname)
@@ -59,7 +82,7 @@ func Test_RetrospectToken_InactiveToken(t *testing.T) {
 func Test_RetrospectToken(t *testing.T) {
 	t.Parallel()
 	client := NewClient(hostname)
-	token, err := client.LoginClient(clientid, clientSecret, realm)
+	token, err := client.Login(clientid, clientSecret, realm, username, password)
 	if err != nil {
 		t.Log("Login failed", err.Error())
 		t.FailNow()
@@ -403,7 +426,7 @@ func TestGetUser(t *testing.T) {
 	}
 
 	dereferencedUsers := *users
-	user, err := client.GetUser(token.AccessToken, realm, dereferencedUsers[0].ID)
+	user, err := client.GetUserByID(token.AccessToken, realm, dereferencedUsers[0].ID)
 	if err != nil {
 		t.Log("GetUser failed", err.Error())
 		t.FailNow()

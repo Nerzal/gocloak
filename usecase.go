@@ -9,6 +9,7 @@ type GoCloak interface {
 	Login(clientID string, clientSecret string, realm string, username string, password string) (*JWT, error)
 	LoginClient(clientID, clientSecret, realm string) (*JWT, error)
 	LoginAdmin(username, password, realm string) (*JWT, error)
+	RequestPermission(clientID string, clientSecret string, realm string, username string, password string, permission string) (*JWT, error)
 	RefreshToken(refreshToken string, clientID, clientSecret, realm string) (*JWT, error)
 	DecodeAccessToken(accessToken string, realm string) (*jwt.Token, *jwt.MapClaims, error)
 	DecodeAccessTokenCustomClaims(accessToken string, realm string, claims jwt.Claims) (*jwt.Token, error)
@@ -39,10 +40,9 @@ type GoCloak interface {
 	DeleteClientScope(accessToken string, realm, scopeID string) error
 
 	GetKeyStoreConfig(accessToken string, realm string) (*KeyStoreConfig, error)
-	GetUser(accessToken string, realm, userID string) (*User, error)
+	GetUserByID(accessToken string, realm string, userID string) (*User, error)
 	GetUserCount(accessToken string, realm string) (int, error)
 	GetUsers(accessToken string, realm string) (*[]User, error)
-	GetUserByID(accessToken string, realm string, userID string) (*User, error)
 	GetUserGroups(accessToken string, realm string, userID string) (*[]UserGroup, error)
 	GetComponents(accessToken string, realm string) (*[]Component, error)
 

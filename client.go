@@ -37,60 +37,54 @@ func NewClient(basePath string) GoCloak {
 }
 
 func (client *gocloak) GetCerts(realm string) (*CertResponse, error) {
-	resp, err := resty.R().Get(client.basePath + "/auth/realms/" + realm + "/protocol/openid-connect/certs")
+	var result CertResponse
+	resp, err := resty.R().
+		SetResult(&result).
+		Get(client.basePath + "/auth/realms/" + realm + "/protocol/openid-connect/certs")
 	if err != nil {
 		return nil, err
 	}
 
 	if resp.StatusCode() != 200 {
 		return nil, errors.New(resp.Status())
-	}
-
-	var result CertResponse
-	if err := json.Unmarshal(resp.Body(), &result); err != nil {
-		return nil, errors.New("GetCerts failed")
 	}
 
 	return &result, nil
 }
 
 func (client *gocloak) GetIssuer(realm string) (*IssuerResponse, error) {
-	resp, err := resty.R().Get(client.basePath + "/auth/realms/" + realm)
+	var result IssuerResponse
+	resp, err := resty.R().
+		SetResult(&result).
+		Get(client.basePath + "/auth/realms/" + realm)
 	if err != nil {
 		return nil, err
 	}
 
 	if resp.StatusCode() != 200 {
 		return nil, errors.New(resp.Status())
-	}
-
-	var result IssuerResponse
-	if err := json.Unmarshal(resp.Body(), &result); err != nil {
-		return nil, errors.New("GetIssuer failed")
 	}
 
 	return &result, nil
 }
 
 func (client *gocloak) RetrospectToken(accessToken string, clientID, clientSecret string, realm string) (*RetrospecTokenResult, error) {
+	var result RetrospecTokenResult
 	resp, err := resty.R().
 		SetHeader("Content-Type", "application/x-www-form-urlencoded").
 		SetHeader("Authorization", getBasicAuthForClient(clientID, clientSecret)).
 		SetFormData(map[string]string{
 			"token_type_hint": "requesting_party_token",
 			"token":           accessToken,
-		}).Post(client.basePath + "/auth/realms/" + realm + "/protocol/openid-connect/token/introspect")
+		}).
+		SetResult(&result).
+		Post(client.basePath + "/auth/realms/" + realm + "/protocol/openid-connect/token/introspect")
 	if err != nil {
 		return nil, err
 	}
 
 	if resp.StatusCode() != 200 {
 		return nil, errors.New(resp.Status())
-	}
-
-	var result RetrospecTokenResult
-	if err := json.Unmarshal(resp.Body(), &result); err != nil {
-		return nil, errors.New("Inspection failed")
 	}
 
 	return &result, nil
@@ -266,6 +260,7 @@ func (client *gocloak) LoginClient(clientID, clientSecret, realm string) (*JWT, 
 
 // Login like login, but with basic auth
 func (client *gocloak) Login(clientID string, clientSecret string, realm string, username string, password string) (*JWT, error) {
+	var result JWT
 	resp, err := resty.R().
 		SetHeader("Content-Type", "application/x-www-form-urlencoded").
 		SetHeader("Authorization", getBasicAuthForClient(clientID, clientSecret)).
@@ -273,7 +268,9 @@ func (client *gocloak) Login(clientID string, clientSecret string, realm string,
 			"grant_type": "password",
 			"username":   username,
 			"password":   password,
-		}).Post(client.basePath + "/auth/realms/" + realm + "/protocol/openid-connect/token")
+		}).
+		SetResult(&result).
+		Post(client.basePath + "/auth/realms/" + realm + "/protocol/openid-connect/token")
 	if err != nil {
 		return nil, err
 	}
@@ -282,9 +279,33 @@ func (client *gocloak) Login(clientID string, clientSecret string, realm string,
 		log.Println(string(resp.Body()))
 	}
 
+	if result.AccessToken == "" {
+		return nil, errors.New("Authentication Failed")
+	}
+
+	return &result, nil
+}
+
+// RequestPermission l
+func (client *gocloak) RequestPermission(clientID string, clientSecret string, realm string, username string, password string, permission string) (*JWT, error) {
 	var result JWT
-	if err := json.Unmarshal(resp.Body(), &result); err != nil {
-		return nil, errors.New("Authentication failed")
+	resp, err := resty.R().
+		SetHeader("Content-Type", "application/x-www-form-urlencoded").
+		SetHeader("Authorization", getBasicAuthForClient(clientID, clientSecret)).
+		SetFormData(map[string]string{
+			"grant_type": "password",
+			"username":   username,
+			"password":   password,
+			"permission": permission,
+		}).
+		SetResult(&result).
+		Post(client.basePath + "/auth/realms/" + realm + "/protocol/openid-connect/token")
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode() != 200 {
+		log.Println(string(resp.Body()))
 	}
 
 	if result.AccessToken == "" {
@@ -685,35 +706,17 @@ func (client *gocloak) GetKeyStoreConfig(token string, realm string) (*KeyStoreC
 	return &result, nil
 }
 
-// GetUser get all users inr ealm
-func (client *gocloak) GetUser(token string, realm string, userID string) (*User, error) {
-	resp, err := getRequestWithHeader(token).
-		Get(client.basePath + authRealm + realm + "/users/" + userID)
-	if err != nil {
-		return nil, err
-	}
-
-	var result User
-	if err := json.Unmarshal(resp.Body(), &result); err != nil {
-		return nil, err
-	}
-
-	return &result, nil
-}
-
 func (client *gocloak) GetUserByID(accessToken string, realm string, userID string) (*User, error) {
 	if userID == "" {
 		return nil, errors.New("UserID shall not be empty")
 	}
 
-	resp, err := getRequestWithHeader(accessToken).
-		Get(client.basePath + authRealm + realm + "/users/" + userID)
-	if err != nil {
-		return nil, err
-	}
-
 	var result User
-	if err := json.Unmarshal(resp.Body(), &result); err != nil {
+	_, err := getRequestWithHeader(accessToken).
+		SetResult(&result).
+		Get(client.basePath + authRealm + realm + "/users/" + userID)
+
+	if err != nil {
 		return nil, err
 	}
 
@@ -722,14 +725,11 @@ func (client *gocloak) GetUserByID(accessToken string, realm string, userID stri
 
 // GetComponents get all cimponents in realm
 func (client *gocloak) GetComponents(token string, realm string) (*[]Component, error) {
-	resp, err := getRequestWithHeader(token).
+	var result []Component
+	_, err := getRequestWithHeader(token).
+		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/components")
 	if err != nil {
-		return nil, err
-	}
-
-	var result []Component
-	if err := json.Unmarshal(resp.Body(), &result); err != nil {
 		return nil, err
 	}
 
@@ -738,14 +738,11 @@ func (client *gocloak) GetComponents(token string, realm string) (*[]Component, 
 
 // GetUsers get all users in realm
 func (client *gocloak) GetUsers(token string, realm string) (*[]User, error) {
-	resp, err := getRequestWithHeader(token).
+	var result []User
+	_, err := getRequestWithHeader(token).
+		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/users")
 	if err != nil {
-		return nil, err
-	}
-
-	var result []User
-	if err := json.Unmarshal(resp.Body(), &result); err != nil {
 		return nil, err
 	}
 
@@ -754,14 +751,11 @@ func (client *gocloak) GetUsers(token string, realm string) (*[]User, error) {
 
 // GetUserCount gets the user count in the realm
 func (client *gocloak) GetUserCount(token string, realm string) (int, error) {
-	resp, err := getRequestWithHeader(token).
+	var result int
+	_, err := getRequestWithHeader(token).
+		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/users/count")
 	if err != nil {
-		return -1, err
-	}
-
-	var result int
-	if err := json.Unmarshal(resp.Body(), &result); err != nil {
 		return -1, err
 	}
 
@@ -770,14 +764,11 @@ func (client *gocloak) GetUserCount(token string, realm string) (int, error) {
 
 // GetUsergroups get all groups for user
 func (client *gocloak) GetUserGroups(token string, realm string, userID string) (*[]UserGroup, error) {
-	resp, err := getRequestWithHeader(token).
+	var result []UserGroup
+	_, err := getRequestWithHeader(token).
+		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/users/" + userID + "/groups")
 	if err != nil {
-		return nil, err
-	}
-
-	var result []UserGroup
-	if err := json.Unmarshal(resp.Body(), &result); err != nil {
 		return nil, err
 	}
 
@@ -820,14 +811,11 @@ func (client *gocloak) GetRoleMappingByGroupID(token string, realm string, group
 
 // GetGroup get group with id in realm
 func (client *gocloak) GetGroup(token string, realm string, groupID string) (*Group, error) {
-	resp, err := getRequestWithHeader(token).
+	var result Group
+	_, err := getRequestWithHeader(token).
+		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/group/" + groupID)
 	if err != nil {
-		return nil, err
-	}
-
-	var result Group
-	if err := json.Unmarshal(resp.Body(), &result); err != nil {
 		return nil, err
 	}
 
@@ -868,31 +856,25 @@ func (client *gocloak) GetRoles(token string, realm string) (*[]Role, error) {
 
 // GetRolesByClientID get all roles for the given client in realm
 func (client *gocloak) GetRolesByClientID(token string, realm string, clientID string) (*[]Role, error) {
-	resp, err := getRequestWithHeader(token).
+	var result []Role
+	_, err := getRequestWithHeader(token).
+		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/clients/" + clientID + "/roles")
 	if err != nil {
 		return nil, err
 	}
-
-	var result []Role
-	ioutil.WriteFile("test.json", resp.Body(), 0644)
-	if err := json.Unmarshal(resp.Body(), &result); err != nil {
-		return nil, err
-	}
+	// ioutil.WriteFile("test.json", resp.Body(), 0644)
 
 	return &result, nil
 }
 
 // GetClients gets all clients in realm
 func (client *gocloak) GetClients(token string, realm string) (*[]Client, error) {
-	resp, err := getRequestWithHeader(token).
+	var result []Client
+	_, err := getRequestWithHeader(token).
+		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/clients")
 	if err != nil {
-		return nil, err
-	}
-
-	var result []Client
-	if err := json.Unmarshal(resp.Body(), &result); err != nil {
 		return nil, err
 	}
 
