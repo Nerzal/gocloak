@@ -34,17 +34,17 @@ type IssuerResponse struct {
 	TokensNotBefore int    `json:"tokens-not-before"`
 }
 
-// RetrospectTokenResult is returned when a token was checked
+// RetrospecTokenResult is returned when a token was checked
 type RetrospecTokenResult struct {
-	Permissions []struct {
-		ResourceSetID   string `json:"resource_set_id,omitempty"`
-		ResourceSetName string `json:"resource_set_name,omitempty"`
-	} `json:"permissions,omitempty"`
-	Exp    int    `json:"exp,omitempty"`
-	Nbf    int    `json:"nbf,omitempty"`
-	Iat    int    `json:"iat,omitempty"`
-	Aud    string `json:"aud,omitempty"`
-	Active bool   `json:"active"`
+	Permissions map[string]string `json:"permissions,omitempty"`
+	Exp         int               `json:"exp,omitempty"`
+	Nbf         int               `json:"nbf,omitempty"`
+	Iat         int               `json:"iat,omitempty"`
+	Aud         string            `json:"aud,omitempty"`
+	Active      bool              `json:"active,omitempty"`
+	AuthTime    int               `json:"auth_time,omitempty"`
+	Jti         string            `json:"jti,omitempty"`
+	Type        string            `json:"typ,omitempty"`
 }
 
 // User represents the Keycloak User Structure
