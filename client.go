@@ -790,21 +790,24 @@ func (client *gocloak) GetRoleMappingByGroupID(token string, realm string, group
 		return nil, err
 	}
 
-	itemsMap := f["clientMappings"].(map[string]interface{})
+	if _, ok := f["clientMappings"]; ok {
+		itemsMap := f["clientMappings"].(map[string]interface{})
 
-	for _, v := range itemsMap {
-		switch jsonObj := v.(type) {
-		case interface{}:
-			jsonClientMapping, _ := json.Marshal(jsonObj)
-			var client RoleMapping
-			if err := json.Unmarshal(jsonClientMapping, &client); err != nil {
-				return nil, err
+		for _, v := range itemsMap {
+			switch jsonObj := v.(type) {
+			case interface{}:
+				jsonClientMapping, _ := json.Marshal(jsonObj)
+				var client RoleMapping
+				if err := json.Unmarshal(jsonClientMapping, &client); err != nil {
+					return nil, err
+				}
+				result = append(result, client)
+			default:
+				return nil, errors.New("Expecting a JSON object; got something else")
 			}
-			result = append(result, client)
-		default:
-			return nil, errors.New("Expecting a JSON object; got something else")
 		}
 	}
+
 
 	return &result, nil
 }
@@ -824,19 +827,21 @@ func (client *gocloak) GetRoleMappingByUserID(token string, realm string, userID
 		return nil, err
 	}
 
-	itemsMap := f["clientMappings"].(map[string]interface{})
+	if _, ok := f["clientMappings"]; ok {
+		itemsMap := f["clientMappings"].(map[string]interface{})
 
-	for _, v := range itemsMap {
-		switch jsonObj := v.(type) {
-		case interface{}:
-			jsonClientMapping, _ := json.Marshal(jsonObj)
-			var client RoleMapping
-			if err := json.Unmarshal(jsonClientMapping, &client); err != nil {
-				return nil, err
+		for _, v := range itemsMap {
+			switch jsonObj := v.(type) {
+			case interface{}:
+				jsonClientMapping, _ := json.Marshal(jsonObj)
+				var client RoleMapping
+				if err := json.Unmarshal(jsonClientMapping, &client); err != nil {
+					return nil, err
+				}
+				result = append(result, client)
+			default:
+				return nil, errors.New("Expecting a JSON object; got something else")
 			}
-			result = append(result, client)
-		default:
-			return nil, errors.New("Expecting a JSON object; got something else")
 		}
 	}
 
