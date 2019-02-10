@@ -28,6 +28,9 @@ type loginData struct {
 
 const adminClientID string = "admin-cli"
 const authRealm string = "/auth/admin/realms/"
+const authRealms string = "/auth/realms/"
+const tokenEndpoint string = "/protocol/openid-connect/token"
+const openIdConnect string = "/protocol/openid-connect"
 
 // NewClient creates a new Client
 func NewClient(basePath string) GoCloak {
@@ -36,11 +39,12 @@ func NewClient(basePath string) GoCloak {
 	}
 }
 
+// GetCerts fetches certificates for the given realm from the public /open-id-connect/certs endpoint
 func (client *gocloak) GetCerts(realm string) (*CertResponse, error) {
 	var result CertResponse
 	resp, err := resty.R().
 		SetResult(&result).
-		Get(client.basePath + "/auth/realms/" + realm + "/protocol/openid-connect/certs")
+		Get(client.basePath + authRealms + realm + openIdConnect + "/certs")
 	if err != nil {
 		return nil, err
 	}
@@ -52,11 +56,12 @@ func (client *gocloak) GetCerts(realm string) (*CertResponse, error) {
 	return &result, nil
 }
 
+// GetIssuer gets the isser of the given realm
 func (client *gocloak) GetIssuer(realm string) (*IssuerResponse, error) {
 	var result IssuerResponse
 	resp, err := resty.R().
 		SetResult(&result).
-		Get(client.basePath + "/auth/realms/" + realm)
+		Get(client.basePath + authRealms + realm)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +83,7 @@ func (client *gocloak) RetrospectToken(accessToken string, clientID, clientSecre
 			"token":           accessToken,
 		}).
 		SetResult(&result).
-		Post(client.basePath + "/auth/realms/" + realm + "/protocol/openid-connect/token/introspect")
+		Post(client.basePath + authRealms + realm + tokenEndpoint + "/introspect")
 	if err != nil {
 		return nil, err
 	}
@@ -133,8 +138,8 @@ func findUsedKey(usedKeyID string, keys []CertResponseKey) *CertResponseKey {
 }
 
 func (client *gocloak) RefreshToken(refreshToken string, clientID, clientSecret, realm string) (*JWT, error) {
-	firstPart := "/auth/realms/"
-	lastPart := "/protocol/openid-connect/token"
+	firstPart := authRealms
+	lastPart := tokenEndpoint
 	loginPath := firstPart + realm + lastPart
 
 	data := url.Values{}
@@ -176,8 +181,8 @@ func (client *gocloak) RefreshToken(refreshToken string, clientID, clientSecret,
 
 // LoginAdmin performs a login
 func (client *gocloak) LoginAdmin(username, password, realm string) (*JWT, error) {
-	firstPart := "/auth/realms/"
-	lastPart := "/protocol/openid-connect/token"
+	firstPart := authRealms
+	lastPart := tokenEndpoint
 	loginPath := firstPart + realm + lastPart
 
 	data := url.Values{}
@@ -218,8 +223,8 @@ func (client *gocloak) LoginAdmin(username, password, realm string) (*JWT, error
 
 // Login performs a login
 func (client *gocloak) LoginClient(clientID, clientSecret, realm string) (*JWT, error) {
-	firstPart := "/auth/realms/"
-	lastPart := "/protocol/openid-connect/token"
+	firstPart := authRealms
+	lastPart := tokenEndpoint
 	loginPath := firstPart + realm + lastPart
 
 	data := url.Values{}
@@ -270,7 +275,7 @@ func (client *gocloak) Login(clientID string, clientSecret string, realm string,
 			"password":   password,
 		}).
 		SetResult(&result).
-		Post(client.basePath + "/auth/realms/" + realm + "/protocol/openid-connect/token")
+		Post(client.basePath + authRealms + realm + tokenEndpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -299,7 +304,7 @@ func (client *gocloak) RequestPermission(clientID string, clientSecret string, r
 			"permission": permission,
 		}).
 		SetResult(&result).
-		Post(client.basePath + "/auth/realms/" + realm + "/protocol/openid-connect/token")
+		Post(client.basePath + authRealms + realm + tokenEndpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -808,7 +813,6 @@ func (client *gocloak) GetRoleMappingByGroupID(token string, realm string, group
 		}
 	}
 
-
 	return &result, nil
 }
 
@@ -945,7 +949,6 @@ func getBasicAuthForClient(clientID string, clientSecret string) string {
 
 	return "Basic " + httpBasicAuth
 }
-
 
 // GetRealmRolesByUserID gets the roles by user
 func (client *gocloak) GetRealmRolesByUserID(token string, realm string, userID string) (*[]Role, error) {
