@@ -8,6 +8,7 @@ golang keycloak client
 This client is based on : [go-keycloak](https://github.com/PhilippHeuer/go-keycloak)
 
 For Questions either raise an issue, or come to the [goper-slack](https://invite.slack.golangbridge.org/) into the channel #gocloak
+
 If u are using the echo framework have a look at [gocloak-echo](https://github.com/Nerzal/gocloak-echo)
 
 ## Usage
