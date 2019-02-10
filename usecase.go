@@ -52,6 +52,9 @@ type GoCloak interface {
 	GetGroup(accessToken string, realm, groupID string) (*Group, error)
 	GetRoles(accessToken string, realm string) (*[]Role, error)
 	GetRoleMappingByGroupID(accessToken string, realm string, groupID string) (*[]RoleMapping, error)
+	GetRoleMappingByUserID(accessToken string, realm string, userID string) (*[]RoleMapping, error)
 	GetRolesByClientID(accessToken string, realm string, clientID string) (*[]Role, error)
 	GetClients(accessToken string, realm string) (*[]Client, error)
+	GetRealmRolesByUserID(accessToken string, realm string, userID string) (*[]Role, error)
+	GetRealmRolesByGroupID(accessToken string, realm string, groupID string) (*[]Role, error)
 }

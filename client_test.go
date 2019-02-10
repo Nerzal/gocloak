@@ -574,3 +574,84 @@ func TestGetRoleMappingByGroupID(t *testing.T) {
 		t.FailNow()
 	}
 }
+
+func TestGetRoleMappingByUserID(t *testing.T) {
+	t.Parallel()
+	client := NewClient(hostname)
+	token, err := client.LoginAdmin(username, password, realm)
+	if err != nil {
+		t.Log("TestLogin failed", err.Error())
+		t.FailNow()
+	}
+
+	users, err := client.GetUsers(token.AccessToken, realm)
+	if err != nil {
+		t.Log("GetUsers failed", err.Error())
+		t.FailNow()
+	}
+
+	if len(*users) == 0 {
+		return
+	}
+
+	usersDeferenced := *users
+	_, err = client.GetRoleMappingByGroupID(token.AccessToken, realm, usersDeferenced[0].ID)
+	if err != nil {
+		t.Log("GetRoleMappingByUserID failed")
+		t.FailNow()
+	}
+}
+
+func TestGetRealmRolesByUserID(t *testing.T) {
+	t.Parallel()
+	client := NewClient(hostname)
+	token, err := client.LoginAdmin(username, password, realm)
+	if err != nil {
+		t.Log("TestLogin failed", err.Error())
+		t.FailNow()
+	}
+
+	users, err := client.GetUsers(token.AccessToken, realm)
+	if err != nil {
+		t.Log("GetUsers failed", err.Error())
+		t.FailNow()
+	}
+
+	if len(*users) == 0 {
+		return
+	}
+
+	usersDeferenced := *users
+	_, err = client.GetRealmRolesByUserID(token.AccessToken, realm, usersDeferenced[0].ID)
+	if err != nil {
+		t.Log("GetRealmRolesByUserID failed")
+		t.FailNow()
+	}
+}
+
+func TestGetRealmRolesByGroupID(t *testing.T) {
+	t.Parallel()
+	client := NewClient(hostname)
+	token, err := client.LoginAdmin(username, password, realm)
+	if err != nil {
+		t.Log("TestLogin failed", err.Error())
+		t.FailNow()
+	}
+
+	groups, err := client.GetGroups(token.AccessToken, realm)
+	if err != nil {
+		t.Log("GetGroups failed", err.Error())
+		t.FailNow()
+	}
+
+	if len(*groups) == 0 {
+		return
+	}
+
+	groupsDeferenced := *groups
+	_, err = client.GetRealmRolesByGroupID(token.AccessToken, realm, groupsDeferenced[0].ID)
+	if err != nil {
+		t.Log("GetRealmRolesByGroupID failed")
+		t.FailNow()
+	}
+}
