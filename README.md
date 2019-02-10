@@ -44,7 +44,6 @@ If u are using the echo framework have a look at [gocloak-echo](https://github.c
 	rptResult, err := client.RetrospectToken(token.AccessToken, clientid, clientSecret, realm)
 	if err != nil {
 		panic("Inspection failed:"+ err.Error())
-		t.FailNow()
 	}
 
 	if !rptResult.Active {
