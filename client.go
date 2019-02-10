@@ -552,7 +552,7 @@ func (client *gocloak) UpdateRole(token string, realm string, clientID string, r
 	resp, err := getRequestWithHeader(token).
 		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
-		Put(client.basePath + authRealm + realm + "clients/" + clientID + "/roles/" + role.Name)
+		Put(client.basePath + authRealm + realm + "/clients/" + clientID + "/roles/" + role.Name)
 
 	if err != nil {
 		return err
@@ -659,7 +659,7 @@ func (client *gocloak) DeleteComponent(token string, realm string, componentID s
 func (client *gocloak) DeleteRole(token string, realm string, clientID, roleName string) error {
 	resp, err := getRequestWithHeader(token).
 		SetHeader("Content-Type", "application/json").
-		Delete(client.basePath + authRealm + realm + "clients/" + clientID + "/roles/" + roleName)
+		Delete(client.basePath + authRealm + realm + "/clients/" + clientID + "/roles/" + roleName)
 
 	if err != nil {
 		return err
