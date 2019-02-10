@@ -142,9 +142,7 @@ func findUsedKey(usedKeyID string, keys []CertResponseKey) *CertResponseKey {
 
 // RefreshToken refrehes the given token
 func (client *gocloak) RefreshToken(refreshToken string, clientID, clientSecret, realm string) (*JWT, error) {
-	firstPart := authRealms
-	lastPart := tokenEndpoint
-	loginPath := firstPart + realm + lastPart
+	loginPath := authRealms + realm + tokenEndpoint
 
 	data := url.Values{}
 	data.Set("client_id", clientID)
@@ -185,9 +183,7 @@ func (client *gocloak) RefreshToken(refreshToken string, clientID, clientSecret,
 
 // LoginAdmin performs a login
 func (client *gocloak) LoginAdmin(username, password, realm string) (*JWT, error) {
-	firstPart := authRealms
-	lastPart := tokenEndpoint
-	loginPath := firstPart + realm + lastPart
+	loginPath := authRealms + realm + tokenEndpoint
 
 	data := url.Values{}
 	data.Set("client_id", adminClientID)
@@ -227,9 +223,7 @@ func (client *gocloak) LoginAdmin(username, password, realm string) (*JWT, error
 
 // Login performs a login
 func (client *gocloak) LoginClient(clientID, clientSecret, realm string) (*JWT, error) {
-	firstPart := authRealms
-	lastPart := tokenEndpoint
-	loginPath := firstPart + realm + lastPart
+	loginPath := authRealms + realm + tokenEndpoint
 
 	data := url.Values{}
 	data.Set("client_id", clientID)
