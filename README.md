@@ -1,6 +1,7 @@
 # gocloak
-[![codebeat badge](https://codebeat.co/badges/c699bc56-aa5f-4cf5-893f-5cf564391b94)](https://codebeat.co/projects/github-com-nerzal-gocloak-master) <a href="https://goreportcard.com/badge/github.com/Nerzal/gocloak"><img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/Nerzal/gocloak"></a>
-<a href="https://godoc.org/github.com/Nerzal/gocloak"><img alt="Go Doc" src="https://godoc.org/github.com/Nerzal/gocloak?status.svg"></a>
+[![codebeat badge](https://codebeat.co/badges/c699bc56-aa5f-4cf5-893f-5cf564391b94)](https://codebeat.co/projects/github-com-nerzal-gocloak-master)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Nerzal/gocloak)](https://goreportcard.com/report/github.com/Nerzal/gocloak)
+[![Go Doc](https://godoc.org/github.com/Nerzal/gocloak?status.svg)](https://godoc.org/github.com/Nerzal/gocloak)
 
 golang keycloak client
 
