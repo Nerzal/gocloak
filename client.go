@@ -73,6 +73,7 @@ func (client *gocloak) GetIssuer(realm string) (*IssuerResponse, error) {
 	return &result, nil
 }
 
+// RetrospectToken calls the openid-connect introspect endpoint
 func (client *gocloak) RetrospectToken(accessToken string, clientID, clientSecret string, realm string) (*RetrospecTokenResult, error) {
 	var result RetrospecTokenResult
 	resp, err := resty.R().
@@ -95,6 +96,7 @@ func (client *gocloak) RetrospectToken(accessToken string, clientID, clientSecre
 	return &result, nil
 }
 
+// DecodeAccessToken decodes the accessToken
 func (client *gocloak) DecodeAccessToken(accessToken string, realm string) (*jwt.Token, *jwt.MapClaims, error) {
 	decodedHeader, err := jwx.DecodeAccessTokenHeader(accessToken)
 	if err != nil {
@@ -110,6 +112,7 @@ func (client *gocloak) DecodeAccessToken(accessToken string, realm string) (*jwt
 	return jwx.DecodeAccessToken(accessToken, usedKey.E, usedKey.N)
 }
 
+// DecodeAccesTokenCustomClaims decodes the accessToken and writes claims into the given claims
 func (client *gocloak) DecodeAccessTokenCustomClaims(accessToken string, realm string, claims jwt.Claims) (*jwt.Token, error) {
 	decodedHeader, err := jwx.DecodeAccessTokenHeader(accessToken)
 	if err != nil {
@@ -137,6 +140,7 @@ func findUsedKey(usedKeyID string, keys []CertResponseKey) *CertResponseKey {
 	return nil
 }
 
+// RefreshToken refrehes the given token
 func (client *gocloak) RefreshToken(refreshToken string, clientID, clientSecret, realm string) (*JWT, error) {
 	firstPart := authRealms
 	lastPart := tokenEndpoint
@@ -711,6 +715,7 @@ func (client *gocloak) GetKeyStoreConfig(token string, realm string) (*KeyStoreC
 	return &result, nil
 }
 
+// GetUserByID fetches a user from the given realm witht he given userID
 func (client *gocloak) GetUserByID(accessToken string, realm string, userID string) (*User, error) {
 	if userID == "" {
 		return nil, errors.New("UserID shall not be empty")
@@ -924,6 +929,7 @@ func (client *gocloak) GetClients(token string, realm string) (*[]Client, error)
 	return &result, nil
 }
 
+// UserAttributeContains checks if the given attribute value is set
 func (client *gocloak) UserAttributeContains(attributes map[string][]string, attribute string, value string) bool {
 	if val, ok := attributes[attribute]; ok {
 		for _, item := range val {

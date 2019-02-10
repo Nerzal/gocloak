@@ -9,7 +9,7 @@ import (
 	"github.com/Nerzal/gocloak/pkg/jwx"
 )
 
-func Test_RequestPermission(t *testing.T) {
+func TestRequestPermission(t *testing.T) {
 	t.Parallel()
 	client := NewClient(hostname)
 	token, err := client.RequestPermission(clientid, clientSecret, realm, username, password, "Permission foo # 3")
@@ -25,14 +25,14 @@ func Test_RequestPermission(t *testing.T) {
 	}
 
 	if !rptResult.Active {
-		t.Log("Inactive Token o_O")
+		t.Log("Inactive Token oO")
 		t.FailNow()
 	}
 
 	t.Log(rptResult)
 }
 
-func Test_GetCerts(t *testing.T) {
+func TestGetCerts(t *testing.T) {
 	t.Parallel()
 	client := NewClient(hostname)
 	certs, err := client.GetCerts(realm)
@@ -44,7 +44,7 @@ func Test_GetCerts(t *testing.T) {
 	t.Log(certs)
 }
 
-func Test_GetIssuer(t *testing.T) {
+func TestGetIssuer(t *testing.T) {
 	t.Parallel()
 	client := NewClient(hostname)
 	issuer, err := client.GetIssuer(realm)
@@ -56,7 +56,7 @@ func Test_GetIssuer(t *testing.T) {
 	t.Log(issuer)
 }
 
-func Test_RetrospectToken_InactiveToken(t *testing.T) {
+func TestRetrospectTokenInactiveToken(t *testing.T) {
 	t.Parallel()
 	client := NewClient(hostname)
 	_, err := client.LoginClient(clientid, clientSecret, realm)
@@ -79,7 +79,7 @@ func Test_RetrospectToken_InactiveToken(t *testing.T) {
 	t.Log(rptResult)
 }
 
-func Test_RetrospectToken(t *testing.T) {
+func TestRetrospectToken(t *testing.T) {
 	t.Parallel()
 	client := NewClient(hostname)
 	token, err := client.Login(clientid, clientSecret, realm, username, password)
@@ -95,14 +95,14 @@ func Test_RetrospectToken(t *testing.T) {
 	}
 
 	if !rptResult.Active {
-		t.Log("Inactive Token o_O")
+		t.Log("Inactive Token oO")
 		t.FailNow()
 	}
 
 	t.Log(rptResult)
 }
 
-func Test_DecodeAccessToken(t *testing.T) {
+func TestDecodeAccessToken(t *testing.T) {
 	t.Parallel()
 	client := NewClient(hostname)
 	token, err := client.LoginClient(clientid, clientSecret, realm)
@@ -121,7 +121,7 @@ func Test_DecodeAccessToken(t *testing.T) {
 	t.Log(claims)
 }
 
-func Test_DecodeAccessTokenCustomClaims(t *testing.T) {
+func TestDecodeAccessTokenCustomClaims(t *testing.T) {
 	t.Parallel()
 	client := NewClient(hostname)
 	token, err := client.LoginClient(clientid, clientSecret, realm)
@@ -138,7 +138,7 @@ func Test_DecodeAccessTokenCustomClaims(t *testing.T) {
 	}
 }
 
-func Test_RefreshToken(t *testing.T) {
+func TestRefreshToken(t *testing.T) {
 	t.Parallel()
 	client := NewClient(hostname)
 	token, err := client.Login(clientid, clientSecret, realm, username, password)
@@ -156,7 +156,7 @@ func Test_RefreshToken(t *testing.T) {
 	t.Log(token)
 }
 
-func Test_UserAttributeContains(t *testing.T) {
+func TestUserAttributeContains(t *testing.T) {
 	t.Parallel()
 
 	attributes := map[string][]string{}
@@ -169,7 +169,7 @@ func Test_UserAttributeContains(t *testing.T) {
 	}
 }
 
-func Test_GetUserByID(t *testing.T) {
+func TestGetUserByID(t *testing.T) {
 	t.Parallel()
 	client := NewClient(hostname)
 	token, err := client.LoginClient(clientid, clientSecret, realm)
@@ -206,7 +206,7 @@ func Test_GetUserByID(t *testing.T) {
 	t.Log(fetchedUser)
 }
 
-func Test_GetKeys(t *testing.T) {
+func TestGetKeys(t *testing.T) {
 	t.Parallel()
 	client := NewClient(hostname)
 	token, err := client.LoginClient(clientid, clientSecret, realm)
@@ -224,7 +224,7 @@ func Test_GetKeys(t *testing.T) {
 	t.Log(config)
 }
 
-func Test_Login(t *testing.T) {
+func TestLogin(t *testing.T) {
 	t.Parallel()
 	client := NewClient(hostname)
 	_, err := client.Login(clientid, clientSecret, realm, username, password)
@@ -234,7 +234,7 @@ func Test_Login(t *testing.T) {
 	}
 }
 
-func Test_LoginAdmin(t *testing.T) {
+func TestLoginAdmin(t *testing.T) {
 	t.Parallel()
 	client := NewClient(hostname)
 	_, err := client.LoginAdmin(username, password, realm)
@@ -244,7 +244,7 @@ func Test_LoginAdmin(t *testing.T) {
 	}
 }
 
-func Test_SetPassword(t *testing.T) {
+func TestSetPassword(t *testing.T) {
 	t.Parallel()
 	client := NewClient(hostname)
 	token, err := client.LoginClient(clientid, clientSecret, realm)
@@ -294,7 +294,7 @@ func TestCreateUser(t *testing.T) {
 	}
 }
 
-func Test_CreateUser_CustomAttributes(t *testing.T) {
+func TestCreateUserCustomAttributes(t *testing.T) {
 	t.Parallel()
 	client := NewClient(hostname)
 	token, err := client.LoginClient(clientid, clientSecret, realm)
