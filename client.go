@@ -315,12 +315,8 @@ func (client *gocloak) RequestPermission(clientID string, clientSecret string, r
 // SetPassword sets a new password
 func (client *gocloak) SetPassword(token string, userID string, realm string, password string, temporary bool) error {
 	requestBody := SetPasswordRequest{Password: password, Temporary: temporary, Type: "password"}
-	bytes, err := json.Marshal(requestBody)
-	if err != nil {
-		return err
-	}
 	resp, err := getRequestWithBearerAuth(token).
-		SetBody(string(bytes)).
+		SetBody(requestBody).
 		Put(client.basePath + authRealm + realm + "/users/" + userID + "/reset-password")
 
 	if err != nil {
@@ -336,12 +332,8 @@ func (client *gocloak) SetPassword(token string, userID string, realm string, pa
 
 // CreateUser tries to create the given user in the given realm and returns it's userID
 func (client *gocloak) CreateUser(token string, realm string, user User) (*string, error) {
-	bytes, err := json.Marshal(user)
-	if err != nil {
-		return nil, err
-	}
 	resp, err := getRequestWithBearerAuth(token).
-		SetBody(string(bytes)).
+		SetBody(user).
 		Post(client.basePath + authRealm + realm + "/users")
 
 	if err != nil {
@@ -361,12 +353,8 @@ func (client *gocloak) CreateUser(token string, realm string, user User) (*strin
 
 // CreateUser creates a new user
 func (client *gocloak) CreateGroup(token string, realm string, group Group) error {
-	bytes, err := json.Marshal(group)
-	if err != nil {
-		return err
-	}
 	resp, err := getRequestWithBearerAuth(token).
-		SetBody(string(bytes)).
+		SetBody(group).
 		Post(client.basePath + authRealm + realm + "/groups")
 
 	if err != nil {
@@ -382,12 +370,8 @@ func (client *gocloak) CreateGroup(token string, realm string, group Group) erro
 
 // CreateComponent creates a new user
 func (client *gocloak) CreateComponent(token string, realm string, component Component) error {
-	bytes, err := json.Marshal(component)
-	if err != nil {
-		return err
-	}
 	resp, err := getRequestWithBearerAuth(token).
-		SetBody(string(bytes)).
+		SetBody(component).
 		Post(client.basePath + authRealm + realm + "/components")
 
 	if err != nil {
@@ -403,12 +387,8 @@ func (client *gocloak) CreateComponent(token string, realm string, component Com
 
 // CreateUser creates a new user
 func (client *gocloak) CreateClient(token string, realm string, newClient Client) error {
-	bytes, err := json.Marshal(newClient)
-	if err != nil {
-		return err
-	}
 	resp, err := getRequestWithBearerAuth(token).
-		SetBody(string(bytes)).
+		SetBody(newClient).
 		Post(client.basePath + authRealm + realm + "/clients")
 
 	if err != nil {
@@ -424,12 +404,8 @@ func (client *gocloak) CreateClient(token string, realm string, newClient Client
 
 // CreateUser creates a new user
 func (client *gocloak) CreateRole(token string, realm string, clientID string, role Role) error {
-	bytes, err := json.Marshal(role)
-	if err != nil {
-		return err
-	}
 	resp, err := getRequestWithBearerAuth(token).
-		SetBody(string(bytes)).
+		SetBody(role).
 		Post(client.basePath + authRealm + realm + "clients/" + clientID + "/roles")
 
 	if err != nil {
@@ -445,12 +421,8 @@ func (client *gocloak) CreateRole(token string, realm string, clientID string, r
 
 // CreateClientScope creates a new client scope
 func (client *gocloak) CreateClientScope(token string, realm string, scope ClientScope) error {
-	bytes, err := json.Marshal(scope)
-	if err != nil {
-		return err
-	}
 	resp, err := getRequestWithBearerAuth(token).
-		SetBody(string(bytes)).
+		SetBody(scope).
 		Post(client.basePath + authRealm + realm + "/client-scopes")
 
 	if err != nil {
@@ -466,12 +438,8 @@ func (client *gocloak) CreateClientScope(token string, realm string, scope Clien
 
 // UpdateUser creates a new user
 func (client *gocloak) UpdateUser(token string, realm string, user User) error {
-	bytes, err := json.Marshal(user)
-	if err != nil {
-		return err
-	}
 	resp, err := getRequestWithBearerAuth(token).
-		SetBody(string(bytes)).
+		SetBody(user).
 		Put(client.basePath + authRealm + realm + "/users/" + user.ID)
 
 	if err != nil {
@@ -487,12 +455,8 @@ func (client *gocloak) UpdateUser(token string, realm string, user User) error {
 
 // UpdateUser creates a new user
 func (client *gocloak) UpdateGroup(token string, realm string, group Group) error {
-	bytes, err := json.Marshal(group)
-	if err != nil {
-		return err
-	}
 	resp, err := getRequestWithBearerAuth(token).
-		SetBody(string(bytes)).
+		SetBody(group).
 		Put(client.basePath + authRealm + realm + "/groups/" + group.ID)
 
 	if err != nil {
@@ -508,12 +472,8 @@ func (client *gocloak) UpdateGroup(token string, realm string, group Group) erro
 
 // UpdateUser creates a new user
 func (client *gocloak) UpdateClient(token string, realm string, newClient Client) error {
-	bytes, err := json.Marshal(newClient)
-	if err != nil {
-		return err
-	}
 	resp, err := getRequestWithBearerAuth(token).
-		SetBody(string(bytes)).
+		SetBody(newClient).
 		Put(client.basePath + authRealm + realm + "/clients")
 
 	if err != nil {
@@ -529,12 +489,8 @@ func (client *gocloak) UpdateClient(token string, realm string, newClient Client
 
 // UpdateUser creates a new user
 func (client *gocloak) UpdateRole(token string, realm string, clientID string, role Role) error {
-	bytes, err := json.Marshal(role)
-	if err != nil {
-		return err
-	}
 	resp, err := getRequestWithBearerAuth(token).
-		SetBody(string(bytes)).
+		SetBody(role).
 		Put(client.basePath + authRealm + realm + "/clients/" + clientID + "/roles/" + role.Name)
 
 	if err != nil {
@@ -550,12 +506,8 @@ func (client *gocloak) UpdateRole(token string, realm string, clientID string, r
 
 // UpdateClientScope creates a new client scope
 func (client *gocloak) UpdateClientScope(token string, realm string, scope ClientScope) error {
-	bytes, err := json.Marshal(scope)
-	if err != nil {
-		return err
-	}
 	resp, err := getRequestWithBearerAuth(token).
-		SetBody(string(bytes)).
+		SetBody(scope).
 		Put(client.basePath + authRealm + realm + "/client-scopes/" + scope.ID)
 
 	if err != nil {
