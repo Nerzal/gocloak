@@ -326,7 +326,6 @@ func (client *gocloak) SetPassword(token string, userID string, realm string, pa
 		return err
 	}
 	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
 		Put(client.basePath + authRealm + realm + "/users/" + userID + "/reset-password")
 
@@ -348,7 +347,6 @@ func (client *gocloak) CreateUser(token string, realm string, user User) (*strin
 		return nil, err
 	}
 	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
 		Post(client.basePath + authRealm + realm + "/users")
 
@@ -374,7 +372,6 @@ func (client *gocloak) CreateGroup(token string, realm string, group Group) erro
 		return err
 	}
 	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
 		Post(client.basePath + authRealm + realm + "/groups")
 
@@ -396,7 +393,6 @@ func (client *gocloak) CreateComponent(token string, realm string, component Com
 		return err
 	}
 	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
 		Post(client.basePath + authRealm + realm + "/components")
 
@@ -418,7 +414,6 @@ func (client *gocloak) CreateClient(token string, realm string, newClient Client
 		return err
 	}
 	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
 		Post(client.basePath + authRealm + realm + "/clients")
 
@@ -440,7 +435,6 @@ func (client *gocloak) CreateRole(token string, realm string, clientID string, r
 		return err
 	}
 	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
 		Post(client.basePath + authRealm + realm + "clients/" + clientID + "/roles")
 
@@ -462,7 +456,6 @@ func (client *gocloak) CreateClientScope(token string, realm string, scope Clien
 		return err
 	}
 	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
 		Post(client.basePath + authRealm + realm + "/client-scopes")
 
@@ -484,7 +477,6 @@ func (client *gocloak) UpdateUser(token string, realm string, user User) error {
 		return err
 	}
 	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
 		Put(client.basePath + authRealm + realm + "/users/" + user.ID)
 
@@ -506,7 +498,6 @@ func (client *gocloak) UpdateGroup(token string, realm string, group Group) erro
 		return err
 	}
 	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
 		Put(client.basePath + authRealm + realm + "/groups/" + group.ID)
 
@@ -528,7 +519,6 @@ func (client *gocloak) UpdateClient(token string, realm string, newClient Client
 		return err
 	}
 	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
 		Put(client.basePath + authRealm + realm + "/clients")
 
@@ -550,7 +540,6 @@ func (client *gocloak) UpdateRole(token string, realm string, clientID string, r
 		return err
 	}
 	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
 		Put(client.basePath + authRealm + realm + "/clients/" + clientID + "/roles/" + role.Name)
 
@@ -572,7 +561,6 @@ func (client *gocloak) UpdateClientScope(token string, realm string, scope Clien
 		return err
 	}
 	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
 		SetBody(string(bytes)).
 		Put(client.basePath + authRealm + realm + "/client-scopes/" + scope.ID)
 
@@ -590,7 +578,6 @@ func (client *gocloak) UpdateClientScope(token string, realm string, scope Clien
 // DeleteUser creates a new user
 func (client *gocloak) DeleteUser(token string, realm string, userID string) error {
 	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
 		Delete(client.basePath + authRealm + realm + "/users/" + userID)
 
 	if err != nil {
@@ -607,7 +594,6 @@ func (client *gocloak) DeleteUser(token string, realm string, userID string) err
 // DeleteUser creates a new user
 func (client *gocloak) DeleteGroup(token string, realm string, groupID string) error {
 	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
 		Delete(client.basePath + authRealm + realm + "/groups/" + groupID)
 
 	if err != nil {
@@ -624,7 +610,6 @@ func (client *gocloak) DeleteGroup(token string, realm string, groupID string) e
 // DeleteUser creates a new user
 func (client *gocloak) DeleteClient(token string, realm string, clientID string) error {
 	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
 		Delete(client.basePath + authRealm + realm + "/clients/" + clientID)
 
 	if err != nil {
@@ -641,7 +626,6 @@ func (client *gocloak) DeleteClient(token string, realm string, clientID string)
 // DeleteComponent creates a new user
 func (client *gocloak) DeleteComponent(token string, realm string, componentID string) error {
 	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
 		Delete(client.basePath + authRealm + realm + "/components/" + componentID)
 
 	if err != nil {
@@ -658,7 +642,6 @@ func (client *gocloak) DeleteComponent(token string, realm string, componentID s
 // DeleteUser creates a new user
 func (client *gocloak) DeleteRole(token string, realm string, clientID, roleName string) error {
 	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
 		Delete(client.basePath + authRealm + realm + "/clients/" + clientID + "/roles/" + roleName)
 
 	if err != nil {
@@ -675,7 +658,6 @@ func (client *gocloak) DeleteRole(token string, realm string, clientID, roleName
 // DeleteClientScope creates a new client scope
 func (client *gocloak) DeleteClientScope(token string, realm string, scopeID string) error {
 	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
 		Put(client.basePath + authRealm + realm + "/client-scopes/" + scopeID)
 
 	if err != nil {
