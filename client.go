@@ -832,6 +832,21 @@ func (client *gocloak) GetRealmRolesByGroupID(token string, realm string, groupI
 	return &result, nil
 }
 
+// GetUsersByRoleName returns Users by a Role Name
+func (client *gocloak) GetUsersByRoleName(token string, realm string, roleName string) (*[]User, error) {
+	var result []User
+	resp, err := getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.basePath + authRealm + realm + "/roles/" + roleName + "/users")
+
+	err = checkForError(resp, err)
+	if err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
 func checkForError(resp *resty.Response, err error) error {
 	if err != nil {
 		return err

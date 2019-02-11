@@ -97,6 +97,8 @@ type GoCloak interface {
 	GetRealmRolesByUserID(accessToken string, realm string, userID string) (*[]Role, error)
 	// GetRealmRolesByGroupID gets roles for given groupID
 	GetRealmRolesByGroupID(accessToken string, realm string, groupID string) (*[]Role, error)
+	// GetUsersByRoleName gets users for given roleName
+	GetUsersByRoleName(token string, realm string, roleName string) (*[]User, error)
 
 	// UserAttributeContains checks if the given attribute has the given value
 	UserAttributeContains(attributes map[string][]string, attribute string, value string) bool
