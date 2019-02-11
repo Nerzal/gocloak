@@ -619,7 +619,9 @@ func (client *gocloak) DeleteClientScope(token string, realm string, scopeID str
 
 // GetKeyStoreConfig get keystoreconfig of the realm
 func (client *gocloak) GetKeyStoreConfig(token string, realm string) (*KeyStoreConfig, error) {
+	var result KeyStoreConfig
 	resp, err := getRequestWithBearerAuth(token).
+		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/keys")
 	if err != nil {
 		return nil, err
@@ -627,11 +629,6 @@ func (client *gocloak) GetKeyStoreConfig(token string, realm string) (*KeyStoreC
 
 	if resp.StatusCode() != 200 {
 		return nil, errors.New(resp.Status())
-	}
-
-	var result KeyStoreConfig
-	if err := json.Unmarshal(resp.Body(), &result); err != nil {
-		return nil, err
 	}
 
 	return &result, nil
@@ -794,14 +791,11 @@ func (client *gocloak) GetGroup(token string, realm string, groupID string) (*Gr
 
 // GetGroups get all groups in realm
 func (client *gocloak) GetGroups(token string, realm string) (*[]Group, error) {
-	resp, err := getRequestWithBearerAuth(token).
+	var result []Group
+	_, err := getRequestWithBearerAuth(token).
+		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/groups")
 	if err != nil {
-		return nil, err
-	}
-
-	var result []Group
-	if err := json.Unmarshal(resp.Body(), &result); err != nil {
 		return nil, err
 	}
 
@@ -810,14 +804,11 @@ func (client *gocloak) GetGroups(token string, realm string) (*[]Group, error) {
 
 // GetRoles get all roles in realm
 func (client *gocloak) GetRoles(token string, realm string) (*[]Role, error) {
-	resp, err := getRequestWithBearerAuth(token).
+	var result []Role
+	_, err := getRequestWithBearerAuth(token).
+		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/roles")
 	if err != nil {
-		return nil, err
-	}
-
-	var result []Role
-	if err := json.Unmarshal(resp.Body(), &result); err != nil {
 		return nil, err
 	}
 
@@ -881,14 +872,11 @@ func getRequestWithBasicAuth(clientID string, clientSecret string) *resty.Reques
 
 // GetRealmRolesByUserID gets the roles by user
 func (client *gocloak) GetRealmRolesByUserID(token string, realm string, userID string) (*[]Role, error) {
-	resp, err := getRequestWithBearerAuth(token).
+	var result []Role
+	_, err := getRequestWithBearerAuth(token).
+		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/users/" + userID + "/role-mappings/realm")
 	if err != nil {
-		return nil, err
-	}
-
-	var result []Role
-	if err := json.Unmarshal(resp.Body(), &result); err != nil {
 		return nil, err
 	}
 
@@ -897,14 +885,10 @@ func (client *gocloak) GetRealmRolesByUserID(token string, realm string, userID 
 
 // GetRealmRolesByGroupID gets the roles by group
 func (client *gocloak) GetRealmRolesByGroupID(token string, realm string, groupID string) (*[]Role, error) {
-	resp, err := getRequestWithBearerAuth(token).
+	var result []Role
+	_, err := getRequestWithBearerAuth(token).
 		Get(client.basePath + authRealm + realm + "/groups/" + groupID + "/role-mappings/realm")
 	if err != nil {
-		return nil, err
-	}
-
-	var result []Role
-	if err := json.Unmarshal(resp.Body(), &result); err != nil {
 		return nil, err
 	}
 
