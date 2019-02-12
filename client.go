@@ -807,7 +807,7 @@ func (client *gocloak) UserAttributeContains(attributes map[string][]string, att
 func getRequestWithBearerAuth(token string) *resty.Request {
 	return resty.R().
 		SetHeader("Content-Type", "application/json").
-		SetHeader("Authorization", "Bearer " + token)
+		SetHeader("Authorization", "Bearer "+token)
 }
 
 func getRequestWithBasicAuth(clientID string, clientSecret string) *resty.Request {
@@ -817,7 +817,7 @@ func getRequestWithBasicAuth(clientID string, clientSecret string) *resty.Reques
 	}
 	return resty.R().
 		SetHeader("Content-Type", "application/x-www-form-urlencoded").
-		SetHeader("Authorization", "Basic " + httpBasicAuth)
+		SetHeader("Authorization", "Basic "+httpBasicAuth)
 }
 
 // GetRealmRolesByUserID gets the roles by user
@@ -854,7 +854,7 @@ func checkForError(resp *resty.Response, err error, validStatusCodes ...int) err
 		return err
 	}
 	if len(validStatusCodes) == 0 {
-		validStatusCodes = append(validStatusCodes,200)
+		validStatusCodes = append(validStatusCodes, 200)
 	}
 	statusCode := resp.StatusCode()
 	for _, code := range validStatusCodes {
