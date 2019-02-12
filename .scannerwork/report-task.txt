@@ -1,0 +1,6 @@
+projectKey=gocloak
+serverUrl=http://localhost:9000
+serverVersion=7.6.0.21501
+dashboardUrl=http://localhost:9000/dashboard?id=gocloak
+ceTaskId=AWjX8nGWdqj66mV4Noub
+ceTaskUrl=http://localhost:9000/api/ce/task?id=AWjX8nGWdqj66mV4Noub

@@ -249,6 +249,16 @@ func TestLogin(t *testing.T) {
 	}
 }
 
+func TestLoginClient(t *testing.T) {
+	t.Parallel()
+	client := NewClient(hostname)
+	_, err := client.LoginClient(clientid, clientSecret, realm)
+	if err != nil {
+		t.Log("TestLogin failed", err.Error())
+		t.FailNow()
+	}
+}
+
 func TestLoginAdmin(t *testing.T) {
 	t.Parallel()
 	client := NewClient(hostname)
@@ -303,6 +313,11 @@ func TestCreateUser(t *testing.T) {
 	user.Enabled = true
 	user.Username = user.Email
 	_, err = client.CreateUser(token.AccessToken, realm, user)
+	_, ok := err.(*ObjectAllreadyExists)
+	if ok {
+		return
+	}
+
 	if err != nil {
 		t.Log("Create User Failed: ", err.Error())
 		t.FailNow()
@@ -329,6 +344,11 @@ func TestCreateUserCustomAttributes(t *testing.T) {
 	user.Attributes["bar"] = []string{"baz"}
 
 	id, err := client.CreateUser(token.AccessToken, realm, user)
+	_, ok := err.(*ObjectAllreadyExists)
+	if ok {
+		return
+	}
+
 	if err != nil {
 		t.Log("Create User Failed: ", err.Error())
 		t.FailNow()
@@ -349,6 +369,11 @@ func TestCreateGroup(t *testing.T) {
 	group := Group{}
 	group.Name = "MySuperCoolNewGroup"
 	err = client.CreateGroup(token.AccessToken, realm, group)
+	_, ok := err.(*ObjectAllreadyExists)
+	if ok {
+		return
+	}
+
 	if err != nil {
 		t.Log("Create User Failed: ", err.Error())
 		t.FailNow()
@@ -367,8 +392,13 @@ func TestCreateRole(t *testing.T) {
 	role := Role{}
 	role.Name = "mySuperCoolRole"
 	err = client.CreateRole(token.AccessToken, realm, "9204c840-f857-4507-8b00-784c9c845e6e", role)
+	_, ok := err.(*ObjectAllreadyExists)
+	if ok {
+		return
+	}
+
 	if err != nil {
-		t.Log("Create User Failed: ", err.Error())
+		t.Log("Create Role Failed: ", err.Error())
 		t.FailNow()
 	}
 }
@@ -385,6 +415,11 @@ func TestCreateClient(t *testing.T) {
 	newClient := Client{}
 	newClient.ClientID = "KYCnow"
 	err = client.CreateClient(token.AccessToken, realm, newClient)
+	_, ok := err.(*ObjectAllreadyExists)
+	if ok {
+		return
+	}
+
 	if err != nil {
 		t.Log("Create User Failed: ", err.Error())
 		t.FailNow()
