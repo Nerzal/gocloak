@@ -45,12 +45,9 @@ func (client *gocloak) GetCerts(realm string) (*CertResponse, error) {
 	resp, err := resty.R().
 		SetResult(&result).
 		Get(client.basePath + authRealms + realm + openIdConnect + "/certs")
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
-	}
-
-	if resp.StatusCode() != 200 {
-		return nil, errors.New(resp.Status())
 	}
 
 	return &result, nil
@@ -62,12 +59,9 @@ func (client *gocloak) GetIssuer(realm string) (*IssuerResponse, error) {
 	resp, err := resty.R().
 		SetResult(&result).
 		Get(client.basePath + authRealms + realm)
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
-	}
-
-	if resp.StatusCode() != 200 {
-		return nil, errors.New(resp.Status())
 	}
 
 	return &result, nil
@@ -83,12 +77,9 @@ func (client *gocloak) RetrospectToken(accessToken string, clientID, clientSecre
 		}).
 		SetResult(&result).
 		Post(client.basePath + authRealms + realm + tokenEndpoint + "/introspect")
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
-	}
-
-	if resp.StatusCode() != 200 {
-		return nil, errors.New(resp.Status())
 	}
 
 	return &result, nil
@@ -270,12 +261,9 @@ func (client *gocloak) Login(clientID string, clientSecret string, realm string,
 		}).
 		SetResult(&result).
 		Post(client.basePath + authRealms + realm + tokenEndpoint)
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
-	}
-
-	if resp.StatusCode() != 200 {
-		log.Println(string(resp.Body()))
 	}
 
 	if result.AccessToken == "" {
@@ -297,12 +285,9 @@ func (client *gocloak) RequestPermission(clientID string, clientSecret string, r
 		}).
 		SetResult(&result).
 		Post(client.basePath + authRealms + realm + tokenEndpoint)
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
-	}
-
-	if resp.StatusCode() != 200 {
-		log.Println(string(resp.Body()))
 	}
 
 	if result.AccessToken == "" {
@@ -318,13 +303,9 @@ func (client *gocloak) SetPassword(token string, userID string, realm string, pa
 	resp, err := getRequestWithBearerAuth(token).
 		SetBody(requestBody).
 		Put(client.basePath + authRealm + realm + "/users/" + userID + "/reset-password")
-
+	err = checkForError(resp, err, 201, 204, 409)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 && resp.StatusCode() != 204 && resp.StatusCode() != 409 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -336,12 +317,9 @@ func (client *gocloak) CreateUser(token string, realm string, user User) (*strin
 		SetBody(user).
 		Post(client.basePath + authRealm + realm + "/users")
 
+	err = checkForError(resp, err, 201, 204, 409)
 	if err != nil {
 		return nil, err
-	}
-
-	if resp.StatusCode() != 201 && resp.StatusCode() != 204 && resp.StatusCode() != 409 {
-		return nil, errors.New(resp.Status())
 	}
 
 	userPath := resp.Header().Get("Location")
@@ -357,12 +335,9 @@ func (client *gocloak) CreateGroup(token string, realm string, group Group) erro
 		SetBody(group).
 		Post(client.basePath + authRealm + realm + "/groups")
 
+	err = checkForError(resp, err, 201, 409)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 && resp.StatusCode() != 409 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -374,12 +349,9 @@ func (client *gocloak) CreateComponent(token string, realm string, component Com
 		SetBody(component).
 		Post(client.basePath + authRealm + realm + "/components")
 
+	err = checkForError(resp, err, 201, 409)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 && resp.StatusCode() != 409 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -391,12 +363,9 @@ func (client *gocloak) CreateClient(token string, realm string, newClient Client
 		SetBody(newClient).
 		Post(client.basePath + authRealm + realm + "/clients")
 
+	err = checkForError(resp, err, 201, 409)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 && resp.StatusCode() != 409 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -408,12 +377,9 @@ func (client *gocloak) CreateRole(token string, realm string, clientID string, r
 		SetBody(role).
 		Post(client.basePath + authRealm + realm + "clients/" + clientID + "/roles")
 
+	err = checkForError(resp, err, 201, 409)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 && resp.StatusCode() != 409 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -425,12 +391,9 @@ func (client *gocloak) CreateClientScope(token string, realm string, scope Clien
 		SetBody(scope).
 		Post(client.basePath + authRealm + realm + "/client-scopes")
 
+	err = checkForError(resp, err, 201, 409)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 && resp.StatusCode() != 409 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -442,12 +405,9 @@ func (client *gocloak) UpdateUser(token string, realm string, user User) error {
 		SetBody(user).
 		Put(client.basePath + authRealm + realm + "/users/" + user.ID)
 
+	err = checkForError(resp, err, 201)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -459,12 +419,9 @@ func (client *gocloak) UpdateGroup(token string, realm string, group Group) erro
 		SetBody(group).
 		Put(client.basePath + authRealm + realm + "/groups/" + group.ID)
 
+	err = checkForError(resp, err, 201)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -476,12 +433,9 @@ func (client *gocloak) UpdateClient(token string, realm string, newClient Client
 		SetBody(newClient).
 		Put(client.basePath + authRealm + realm + "/clients")
 
+	err = checkForError(resp, err, 201)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -493,12 +447,9 @@ func (client *gocloak) UpdateRole(token string, realm string, clientID string, r
 		SetBody(role).
 		Put(client.basePath + authRealm + realm + "/clients/" + clientID + "/roles/" + role.Name)
 
+	err = checkForError(resp, err, 201)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -510,12 +461,9 @@ func (client *gocloak) UpdateClientScope(token string, realm string, scope Clien
 		SetBody(scope).
 		Put(client.basePath + authRealm + realm + "/client-scopes/" + scope.ID)
 
+	err = checkForError(resp, err, 201)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -526,12 +474,9 @@ func (client *gocloak) DeleteUser(token string, realm string, userID string) err
 	resp, err := getRequestWithBearerAuth(token).
 		Delete(client.basePath + authRealm + realm + "/users/" + userID)
 
+	err = checkForError(resp, err, 201)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -542,12 +487,9 @@ func (client *gocloak) DeleteGroup(token string, realm string, groupID string) e
 	resp, err := getRequestWithBearerAuth(token).
 		Delete(client.basePath + authRealm + realm + "/groups/" + groupID)
 
+	err = checkForError(resp, err, 201)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -558,12 +500,9 @@ func (client *gocloak) DeleteClient(token string, realm string, clientID string)
 	resp, err := getRequestWithBearerAuth(token).
 		Delete(client.basePath + authRealm + realm + "/clients/" + clientID)
 
+	err = checkForError(resp, err, 201)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -574,12 +513,9 @@ func (client *gocloak) DeleteComponent(token string, realm string, componentID s
 	resp, err := getRequestWithBearerAuth(token).
 		Delete(client.basePath + authRealm + realm + "/components/" + componentID)
 
+	err = checkForError(resp, err, 201)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -590,12 +526,9 @@ func (client *gocloak) DeleteRole(token string, realm string, clientID, roleName
 	resp, err := getRequestWithBearerAuth(token).
 		Delete(client.basePath + authRealm + realm + "/clients/" + clientID + "/roles/" + roleName)
 
+	err = checkForError(resp, err, 201)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -606,12 +539,9 @@ func (client *gocloak) DeleteClientScope(token string, realm string, scopeID str
 	resp, err := getRequestWithBearerAuth(token).
 		Put(client.basePath + authRealm + realm + "/client-scopes/" + scopeID)
 
+	err = checkForError(resp, err, 201)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -623,12 +553,10 @@ func (client *gocloak) GetKeyStoreConfig(token string, realm string) (*KeyStoreC
 	resp, err := getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/keys")
+
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
-	}
-
-	if resp.StatusCode() != 200 {
-		return nil, errors.New(resp.Status())
 	}
 
 	return &result, nil
@@ -641,10 +569,11 @@ func (client *gocloak) GetUserByID(accessToken string, realm string, userID stri
 	}
 
 	var result User
-	_, err := getRequestWithBearerAuth(accessToken).
+	resp, err := getRequestWithBearerAuth(accessToken).
 		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/users/" + userID)
 
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
 	}
@@ -655,9 +584,11 @@ func (client *gocloak) GetUserByID(accessToken string, realm string, userID stri
 // GetComponents get all cimponents in realm
 func (client *gocloak) GetComponents(token string, realm string) (*[]Component, error) {
 	var result []Component
-	_, err := getRequestWithBearerAuth(token).
+	resp, err := getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/components")
+
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
 	}
@@ -668,9 +599,11 @@ func (client *gocloak) GetComponents(token string, realm string) (*[]Component, 
 // GetUsers get all users in realm
 func (client *gocloak) GetUsers(token string, realm string) (*[]User, error) {
 	var result []User
-	_, err := getRequestWithBearerAuth(token).
+	resp, err := getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/users")
+
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
 	}
@@ -681,9 +614,11 @@ func (client *gocloak) GetUsers(token string, realm string) (*[]User, error) {
 // GetUserCount gets the user count in the realm
 func (client *gocloak) GetUserCount(token string, realm string) (int, error) {
 	var result int
-	_, err := getRequestWithBearerAuth(token).
+	resp, err := getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/users/count")
+
+	err = checkForError(resp, err)
 	if err != nil {
 		return -1, err
 	}
@@ -694,9 +629,11 @@ func (client *gocloak) GetUserCount(token string, realm string) (int, error) {
 // GetUsergroups get all groups for user
 func (client *gocloak) GetUserGroups(token string, realm string, userID string) (*[]UserGroup, error) {
 	var result []UserGroup
-	_, err := getRequestWithBearerAuth(token).
+	resp, err := getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/users/" + userID + "/groups")
+
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
 	}
@@ -708,6 +645,8 @@ func (client *gocloak) GetUserGroups(token string, realm string, userID string) 
 func (client *gocloak) GetRoleMappingByGroupID(token string, realm string, groupID string) (*[]RoleMapping, error) {
 	resp, err := getRequestWithBearerAuth(token).
 		Get(client.basePath + authRealm + realm + "/groups/" + groupID + "/role-mappings")
+
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
 	}
@@ -744,6 +683,8 @@ func (client *gocloak) GetRoleMappingByGroupID(token string, realm string, group
 func (client *gocloak) GetRoleMappingByUserID(token string, realm string, userID string) (*[]RoleMapping, error) {
 	resp, err := getRequestWithBearerAuth(token).
 		Get(client.basePath + authRealm + realm + "/users/" + userID + "/role-mappings")
+
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
 	}
@@ -779,9 +720,11 @@ func (client *gocloak) GetRoleMappingByUserID(token string, realm string, userID
 // GetGroup get group with id in realm
 func (client *gocloak) GetGroup(token string, realm string, groupID string) (*Group, error) {
 	var result Group
-	_, err := getRequestWithBearerAuth(token).
+	resp, err := getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/group/" + groupID)
+
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
 	}
@@ -792,9 +735,11 @@ func (client *gocloak) GetGroup(token string, realm string, groupID string) (*Gr
 // GetGroups get all groups in realm
 func (client *gocloak) GetGroups(token string, realm string) (*[]Group, error) {
 	var result []Group
-	_, err := getRequestWithBearerAuth(token).
+	resp, err := getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/groups")
+
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
 	}
@@ -805,9 +750,11 @@ func (client *gocloak) GetGroups(token string, realm string) (*[]Group, error) {
 // GetRoles get all roles in realm
 func (client *gocloak) GetRoles(token string, realm string) (*[]Role, error) {
 	var result []Role
-	_, err := getRequestWithBearerAuth(token).
+	resp, err := getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/roles")
+
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
 	}
@@ -818,13 +765,14 @@ func (client *gocloak) GetRoles(token string, realm string) (*[]Role, error) {
 // GetRolesByClientID get all roles for the given client in realm
 func (client *gocloak) GetRolesByClientID(token string, realm string, clientID string) (*[]Role, error) {
 	var result []Role
-	_, err := getRequestWithBearerAuth(token).
+	resp, err := getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/clients/" + clientID + "/roles")
+
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
 	}
-	// ioutil.WriteFile("test.json", resp.Body(), 0644)
 
 	return &result, nil
 }
@@ -832,9 +780,11 @@ func (client *gocloak) GetRolesByClientID(token string, realm string, clientID s
 // GetClients gets all clients in realm
 func (client *gocloak) GetClients(token string, realm string) (*[]Client, error) {
 	var result []Client
-	_, err := getRequestWithBearerAuth(token).
+	resp, err := getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/clients")
+
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
 	}
@@ -873,9 +823,11 @@ func getRequestWithBasicAuth(clientID string, clientSecret string) *resty.Reques
 // GetRealmRolesByUserID gets the roles by user
 func (client *gocloak) GetRealmRolesByUserID(token string, realm string, userID string) (*[]Role, error) {
 	var result []Role
-	_, err := getRequestWithBearerAuth(token).
+	resp, err := getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/users/" + userID + "/role-mappings/realm")
+
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
 	}
@@ -886,11 +838,31 @@ func (client *gocloak) GetRealmRolesByUserID(token string, realm string, userID 
 // GetRealmRolesByGroupID gets the roles by group
 func (client *gocloak) GetRealmRolesByGroupID(token string, realm string, groupID string) (*[]Role, error) {
 	var result []Role
-	_, err := getRequestWithBearerAuth(token).
+	resp, err := getRequestWithBearerAuth(token).
 		Get(client.basePath + authRealm + realm + "/groups/" + groupID + "/role-mappings/realm")
+
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
 	}
 
 	return &result, nil
+}
+
+func checkForError(resp *resty.Response, err error, validStatusCodes ...int) error {
+	if err != nil {
+		return err
+	}
+	if len(validStatusCodes) == 0 {
+		validStatusCodes = append(validStatusCodes,200)
+	}
+	statusCode := resp.StatusCode()
+	for _, code := range validStatusCodes {
+		if code == statusCode {
+			return nil
+		}
+	}
+	log.Printf("Error: Request returned a response with status '%s' and body: %s", resp.Status(), string(resp.Body()))
+	return errors.New(resp.Status())
+
 }
