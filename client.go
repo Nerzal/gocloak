@@ -45,12 +45,9 @@ func (client *gocloak) GetCerts(realm string) (*CertResponse, error) {
 	resp, err := resty.R().
 		SetResult(&result).
 		Get(client.basePath + authRealms + realm + openIdConnect + "/certs")
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
-	}
-
-	if resp.StatusCode() != 200 {
-		return nil, errors.New(resp.Status())
 	}
 
 	return &result, nil
@@ -62,12 +59,9 @@ func (client *gocloak) GetIssuer(realm string) (*IssuerResponse, error) {
 	resp, err := resty.R().
 		SetResult(&result).
 		Get(client.basePath + authRealms + realm)
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
-	}
-
-	if resp.StatusCode() != 200 {
-		return nil, errors.New(resp.Status())
 	}
 
 	return &result, nil
@@ -76,21 +70,16 @@ func (client *gocloak) GetIssuer(realm string) (*IssuerResponse, error) {
 // RetrospectToken calls the openid-connect introspect endpoint
 func (client *gocloak) RetrospectToken(accessToken string, clientID, clientSecret string, realm string) (*RetrospecTokenResult, error) {
 	var result RetrospecTokenResult
-	resp, err := resty.R().
-		SetHeader("Content-Type", "application/x-www-form-urlencoded").
-		SetHeader("Authorization", getBasicAuthForClient(clientID, clientSecret)).
+	resp, err := getRequestWithBasicAuth(clientID, clientSecret).
 		SetFormData(map[string]string{
 			"token_type_hint": "requesting_party_token",
 			"token":           accessToken,
 		}).
 		SetResult(&result).
 		Post(client.basePath + authRealms + realm + tokenEndpoint + "/introspect")
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
-	}
-
-	if resp.StatusCode() != 200 {
-		return nil, errors.New(resp.Status())
 	}
 
 	return &result, nil
@@ -264,9 +253,7 @@ func (client *gocloak) LoginClient(clientID, clientSecret, realm string) (*JWT, 
 // Login like login, but with basic auth
 func (client *gocloak) Login(clientID string, clientSecret string, realm string, username string, password string) (*JWT, error) {
 	var result JWT
-	resp, err := resty.R().
-		SetHeader("Content-Type", "application/x-www-form-urlencoded").
-		SetHeader("Authorization", getBasicAuthForClient(clientID, clientSecret)).
+	resp, err := getRequestWithBasicAuth(clientID, clientSecret).
 		SetFormData(map[string]string{
 			"grant_type": "password",
 			"username":   username,
@@ -274,12 +261,9 @@ func (client *gocloak) Login(clientID string, clientSecret string, realm string,
 		}).
 		SetResult(&result).
 		Post(client.basePath + authRealms + realm + tokenEndpoint)
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
-	}
-
-	if resp.StatusCode() != 200 {
-		log.Println(string(resp.Body()))
 	}
 
 	if result.AccessToken == "" {
@@ -292,9 +276,7 @@ func (client *gocloak) Login(clientID string, clientSecret string, realm string,
 // RequestPermission l
 func (client *gocloak) RequestPermission(clientID string, clientSecret string, realm string, username string, password string, permission string) (*JWT, error) {
 	var result JWT
-	resp, err := resty.R().
-		SetHeader("Content-Type", "application/x-www-form-urlencoded").
-		SetHeader("Authorization", getBasicAuthForClient(clientID, clientSecret)).
+	resp, err := getRequestWithBasicAuth(clientID, clientSecret).
 		SetFormData(map[string]string{
 			"grant_type": "password",
 			"username":   username,
@@ -303,12 +285,9 @@ func (client *gocloak) RequestPermission(clientID string, clientSecret string, r
 		}).
 		SetResult(&result).
 		Post(client.basePath + authRealms + realm + tokenEndpoint)
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
-	}
-
-	if resp.StatusCode() != 200 {
-		log.Println(string(resp.Body()))
 	}
 
 	if result.AccessToken == "" {
@@ -321,21 +300,12 @@ func (client *gocloak) RequestPermission(clientID string, clientSecret string, r
 // SetPassword sets a new password
 func (client *gocloak) SetPassword(token string, userID string, realm string, password string, temporary bool) error {
 	requestBody := SetPasswordRequest{Password: password, Temporary: temporary, Type: "password"}
-	bytes, err := json.Marshal(requestBody)
-	if err != nil {
-		return err
-	}
-	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
-		SetBody(string(bytes)).
+	resp, err := getRequestWithBearerAuth(token).
+		SetBody(requestBody).
 		Put(client.basePath + authRealm + realm + "/users/" + userID + "/reset-password")
-
+	err = checkForError(resp, err, 201, 204, 409)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 && resp.StatusCode() != 204 && resp.StatusCode() != 409 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -343,21 +313,13 @@ func (client *gocloak) SetPassword(token string, userID string, realm string, pa
 
 // CreateUser tries to create the given user in the given realm and returns it's userID
 func (client *gocloak) CreateUser(token string, realm string, user User) (*string, error) {
-	bytes, err := json.Marshal(user)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
-		SetBody(string(bytes)).
+	resp, err := getRequestWithBearerAuth(token).
+		SetBody(user).
 		Post(client.basePath + authRealm + realm + "/users")
 
+	err = checkForError(resp, err, 201, 204, 409)
 	if err != nil {
 		return nil, err
-	}
-
-	if resp.StatusCode() != 201 && resp.StatusCode() != 204 && resp.StatusCode() != 409 {
-		return nil, errors.New(resp.Status())
 	}
 
 	userPath := resp.Header().Get("Location")
@@ -369,21 +331,13 @@ func (client *gocloak) CreateUser(token string, realm string, user User) (*strin
 
 // CreateUser creates a new user
 func (client *gocloak) CreateGroup(token string, realm string, group Group) error {
-	bytes, err := json.Marshal(group)
-	if err != nil {
-		return err
-	}
-	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
-		SetBody(string(bytes)).
+	resp, err := getRequestWithBearerAuth(token).
+		SetBody(group).
 		Post(client.basePath + authRealm + realm + "/groups")
 
+	err = checkForError(resp, err, 201, 409)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 && resp.StatusCode() != 409 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -391,21 +345,13 @@ func (client *gocloak) CreateGroup(token string, realm string, group Group) erro
 
 // CreateComponent creates a new user
 func (client *gocloak) CreateComponent(token string, realm string, component Component) error {
-	bytes, err := json.Marshal(component)
-	if err != nil {
-		return err
-	}
-	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
-		SetBody(string(bytes)).
+	resp, err := getRequestWithBearerAuth(token).
+		SetBody(component).
 		Post(client.basePath + authRealm + realm + "/components")
 
+	err = checkForError(resp, err, 201, 409)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 && resp.StatusCode() != 409 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -413,21 +359,13 @@ func (client *gocloak) CreateComponent(token string, realm string, component Com
 
 // CreateUser creates a new user
 func (client *gocloak) CreateClient(token string, realm string, newClient Client) error {
-	bytes, err := json.Marshal(newClient)
-	if err != nil {
-		return err
-	}
-	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
-		SetBody(string(bytes)).
+	resp, err := getRequestWithBearerAuth(token).
+		SetBody(newClient).
 		Post(client.basePath + authRealm + realm + "/clients")
 
+	err = checkForError(resp, err, 201, 409)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 && resp.StatusCode() != 409 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -435,21 +373,13 @@ func (client *gocloak) CreateClient(token string, realm string, newClient Client
 
 // CreateUser creates a new user
 func (client *gocloak) CreateRole(token string, realm string, clientID string, role Role) error {
-	bytes, err := json.Marshal(role)
-	if err != nil {
-		return err
-	}
-	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
-		SetBody(string(bytes)).
+	resp, err := getRequestWithBearerAuth(token).
+		SetBody(role).
 		Post(client.basePath + authRealm + realm + "clients/" + clientID + "/roles")
 
+	err = checkForError(resp, err, 201, 409)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 && resp.StatusCode() != 409 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -457,21 +387,13 @@ func (client *gocloak) CreateRole(token string, realm string, clientID string, r
 
 // CreateClientScope creates a new client scope
 func (client *gocloak) CreateClientScope(token string, realm string, scope ClientScope) error {
-	bytes, err := json.Marshal(scope)
-	if err != nil {
-		return err
-	}
-	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
-		SetBody(string(bytes)).
+	resp, err := getRequestWithBearerAuth(token).
+		SetBody(scope).
 		Post(client.basePath + authRealm + realm + "/client-scopes")
 
+	err = checkForError(resp, err, 201, 409)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 && resp.StatusCode() != 409 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -479,21 +401,13 @@ func (client *gocloak) CreateClientScope(token string, realm string, scope Clien
 
 // UpdateUser creates a new user
 func (client *gocloak) UpdateUser(token string, realm string, user User) error {
-	bytes, err := json.Marshal(user)
-	if err != nil {
-		return err
-	}
-	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
-		SetBody(string(bytes)).
+	resp, err := getRequestWithBearerAuth(token).
+		SetBody(user).
 		Put(client.basePath + authRealm + realm + "/users/" + user.ID)
 
+	err = checkForError(resp, err, 201)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -501,21 +415,13 @@ func (client *gocloak) UpdateUser(token string, realm string, user User) error {
 
 // UpdateUser creates a new user
 func (client *gocloak) UpdateGroup(token string, realm string, group Group) error {
-	bytes, err := json.Marshal(group)
-	if err != nil {
-		return err
-	}
-	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
-		SetBody(string(bytes)).
+	resp, err := getRequestWithBearerAuth(token).
+		SetBody(group).
 		Put(client.basePath + authRealm + realm + "/groups/" + group.ID)
 
+	err = checkForError(resp, err, 201)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -523,21 +429,13 @@ func (client *gocloak) UpdateGroup(token string, realm string, group Group) erro
 
 // UpdateUser creates a new user
 func (client *gocloak) UpdateClient(token string, realm string, newClient Client) error {
-	bytes, err := json.Marshal(newClient)
-	if err != nil {
-		return err
-	}
-	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
-		SetBody(string(bytes)).
+	resp, err := getRequestWithBearerAuth(token).
+		SetBody(newClient).
 		Put(client.basePath + authRealm + realm + "/clients")
 
+	err = checkForError(resp, err, 201)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -545,21 +443,13 @@ func (client *gocloak) UpdateClient(token string, realm string, newClient Client
 
 // UpdateUser creates a new user
 func (client *gocloak) UpdateRole(token string, realm string, clientID string, role Role) error {
-	bytes, err := json.Marshal(role)
-	if err != nil {
-		return err
-	}
-	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
-		SetBody(string(bytes)).
+	resp, err := getRequestWithBearerAuth(token).
+		SetBody(role).
 		Put(client.basePath + authRealm + realm + "/clients/" + clientID + "/roles/" + role.Name)
 
+	err = checkForError(resp, err, 201)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -567,21 +457,13 @@ func (client *gocloak) UpdateRole(token string, realm string, clientID string, r
 
 // UpdateClientScope creates a new client scope
 func (client *gocloak) UpdateClientScope(token string, realm string, scope ClientScope) error {
-	bytes, err := json.Marshal(scope)
-	if err != nil {
-		return err
-	}
-	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
-		SetBody(string(bytes)).
+	resp, err := getRequestWithBearerAuth(token).
+		SetBody(scope).
 		Put(client.basePath + authRealm + realm + "/client-scopes/" + scope.ID)
 
+	err = checkForError(resp, err, 201)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -589,16 +471,12 @@ func (client *gocloak) UpdateClientScope(token string, realm string, scope Clien
 
 // DeleteUser creates a new user
 func (client *gocloak) DeleteUser(token string, realm string, userID string) error {
-	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
+	resp, err := getRequestWithBearerAuth(token).
 		Delete(client.basePath + authRealm + realm + "/users/" + userID)
 
+	err = checkForError(resp, err, 201)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -606,16 +484,12 @@ func (client *gocloak) DeleteUser(token string, realm string, userID string) err
 
 // DeleteUser creates a new user
 func (client *gocloak) DeleteGroup(token string, realm string, groupID string) error {
-	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
+	resp, err := getRequestWithBearerAuth(token).
 		Delete(client.basePath + authRealm + realm + "/groups/" + groupID)
 
+	err = checkForError(resp, err, 201)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -623,16 +497,12 @@ func (client *gocloak) DeleteGroup(token string, realm string, groupID string) e
 
 // DeleteUser creates a new user
 func (client *gocloak) DeleteClient(token string, realm string, clientID string) error {
-	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
+	resp, err := getRequestWithBearerAuth(token).
 		Delete(client.basePath + authRealm + realm + "/clients/" + clientID)
 
+	err = checkForError(resp, err, 201)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -640,16 +510,12 @@ func (client *gocloak) DeleteClient(token string, realm string, clientID string)
 
 // DeleteComponent creates a new user
 func (client *gocloak) DeleteComponent(token string, realm string, componentID string) error {
-	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
+	resp, err := getRequestWithBearerAuth(token).
 		Delete(client.basePath + authRealm + realm + "/components/" + componentID)
 
+	err = checkForError(resp, err, 201)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -657,16 +523,12 @@ func (client *gocloak) DeleteComponent(token string, realm string, componentID s
 
 // DeleteUser creates a new user
 func (client *gocloak) DeleteRole(token string, realm string, clientID, roleName string) error {
-	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
+	resp, err := getRequestWithBearerAuth(token).
 		Delete(client.basePath + authRealm + realm + "/clients/" + clientID + "/roles/" + roleName)
 
+	err = checkForError(resp, err, 201)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -674,16 +536,12 @@ func (client *gocloak) DeleteRole(token string, realm string, clientID, roleName
 
 // DeleteClientScope creates a new client scope
 func (client *gocloak) DeleteClientScope(token string, realm string, scopeID string) error {
-	resp, err := getRequestWithHeader(token).
-		SetHeader("Content-Type", "application/json").
+	resp, err := getRequestWithBearerAuth(token).
 		Put(client.basePath + authRealm + realm + "/client-scopes/" + scopeID)
 
+	err = checkForError(resp, err, 201)
 	if err != nil {
 		return err
-	}
-
-	if resp.StatusCode() != 201 {
-		return errors.New(resp.Status())
 	}
 
 	return nil
@@ -691,18 +549,13 @@ func (client *gocloak) DeleteClientScope(token string, realm string, scopeID str
 
 // GetKeyStoreConfig get keystoreconfig of the realm
 func (client *gocloak) GetKeyStoreConfig(token string, realm string) (*KeyStoreConfig, error) {
-	resp, err := getRequestWithHeader(token).
-		Get(client.basePath + authRealm + realm + "/keys")
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode() != 200 {
-		return nil, errors.New(resp.Status())
-	}
-
 	var result KeyStoreConfig
-	if err := json.Unmarshal(resp.Body(), &result); err != nil {
+	resp, err := getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.basePath + authRealm + realm + "/keys")
+
+	err = checkForError(resp, err)
+	if err != nil {
 		return nil, err
 	}
 
@@ -716,10 +569,11 @@ func (client *gocloak) GetUserByID(accessToken string, realm string, userID stri
 	}
 
 	var result User
-	_, err := getRequestWithHeader(accessToken).
+	resp, err := getRequestWithBearerAuth(accessToken).
 		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/users/" + userID)
 
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
 	}
@@ -730,9 +584,11 @@ func (client *gocloak) GetUserByID(accessToken string, realm string, userID stri
 // GetComponents get all cimponents in realm
 func (client *gocloak) GetComponents(token string, realm string) (*[]Component, error) {
 	var result []Component
-	_, err := getRequestWithHeader(token).
+	resp, err := getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/components")
+
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
 	}
@@ -743,9 +599,11 @@ func (client *gocloak) GetComponents(token string, realm string) (*[]Component, 
 // GetUsers get all users in realm
 func (client *gocloak) GetUsers(token string, realm string) (*[]User, error) {
 	var result []User
-	_, err := getRequestWithHeader(token).
+	resp, err := getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/users")
+
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
 	}
@@ -756,9 +614,11 @@ func (client *gocloak) GetUsers(token string, realm string) (*[]User, error) {
 // GetUserCount gets the user count in the realm
 func (client *gocloak) GetUserCount(token string, realm string) (int, error) {
 	var result int
-	_, err := getRequestWithHeader(token).
+	resp, err := getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/users/count")
+
+	err = checkForError(resp, err)
 	if err != nil {
 		return -1, err
 	}
@@ -769,9 +629,11 @@ func (client *gocloak) GetUserCount(token string, realm string) (int, error) {
 // GetUsergroups get all groups for user
 func (client *gocloak) GetUserGroups(token string, realm string, userID string) (*[]UserGroup, error) {
 	var result []UserGroup
-	_, err := getRequestWithHeader(token).
+	resp, err := getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/users/" + userID + "/groups")
+
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
 	}
@@ -781,8 +643,10 @@ func (client *gocloak) GetUserGroups(token string, realm string, userID string) 
 
 // GetRoleMappingByGroupID gets the role mappings by group
 func (client *gocloak) GetRoleMappingByGroupID(token string, realm string, groupID string) (*[]RoleMapping, error) {
-	resp, err := getRequestWithHeader(token).
+	resp, err := getRequestWithBearerAuth(token).
 		Get(client.basePath + authRealm + realm + "/groups/" + groupID + "/role-mappings")
+
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
 	}
@@ -817,8 +681,10 @@ func (client *gocloak) GetRoleMappingByGroupID(token string, realm string, group
 
 // GetRoleMappingByUserID gets the role mappings by user
 func (client *gocloak) GetRoleMappingByUserID(token string, realm string, userID string) (*[]RoleMapping, error) {
-	resp, err := getRequestWithHeader(token).
+	resp, err := getRequestWithBearerAuth(token).
 		Get(client.basePath + authRealm + realm + "/users/" + userID + "/role-mappings")
+
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
 	}
@@ -854,9 +720,11 @@ func (client *gocloak) GetRoleMappingByUserID(token string, realm string, userID
 // GetGroup get group with id in realm
 func (client *gocloak) GetGroup(token string, realm string, groupID string) (*Group, error) {
 	var result Group
-	_, err := getRequestWithHeader(token).
+	resp, err := getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/group/" + groupID)
+
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
 	}
@@ -866,14 +734,13 @@ func (client *gocloak) GetGroup(token string, realm string, groupID string) (*Gr
 
 // GetGroups get all groups in realm
 func (client *gocloak) GetGroups(token string, realm string) (*[]Group, error) {
-	resp, err := getRequestWithHeader(token).
-		Get(client.basePath + authRealm + realm + "/groups")
-	if err != nil {
-		return nil, err
-	}
-
 	var result []Group
-	if err := json.Unmarshal(resp.Body(), &result); err != nil {
+	resp, err := getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.basePath + authRealm + realm + "/groups")
+
+	err = checkForError(resp, err)
+	if err != nil {
 		return nil, err
 	}
 
@@ -882,14 +749,13 @@ func (client *gocloak) GetGroups(token string, realm string) (*[]Group, error) {
 
 // GetRoles get all roles in realm
 func (client *gocloak) GetRoles(token string, realm string) (*[]Role, error) {
-	resp, err := getRequestWithHeader(token).
-		Get(client.basePath + authRealm + realm + "/roles")
-	if err != nil {
-		return nil, err
-	}
-
 	var result []Role
-	if err := json.Unmarshal(resp.Body(), &result); err != nil {
+	resp, err := getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.basePath + authRealm + realm + "/roles")
+
+	err = checkForError(resp, err)
+	if err != nil {
 		return nil, err
 	}
 
@@ -899,13 +765,14 @@ func (client *gocloak) GetRoles(token string, realm string) (*[]Role, error) {
 // GetRolesByClientID get all roles for the given client in realm
 func (client *gocloak) GetRolesByClientID(token string, realm string, clientID string) (*[]Role, error) {
 	var result []Role
-	_, err := getRequestWithHeader(token).
+	resp, err := getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/clients/" + clientID + "/roles")
+
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
 	}
-	// ioutil.WriteFile("test.json", resp.Body(), 0644)
 
 	return &result, nil
 }
@@ -913,9 +780,11 @@ func (client *gocloak) GetRolesByClientID(token string, realm string, clientID s
 // GetClients gets all clients in realm
 func (client *gocloak) GetClients(token string, realm string) (*[]Client, error) {
 	var result []Client
-	_, err := getRequestWithHeader(token).
+	resp, err := getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.basePath + authRealm + realm + "/clients")
+
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
 	}
@@ -935,31 +804,31 @@ func (client *gocloak) UserAttributeContains(attributes map[string][]string, att
 	return false
 }
 
-func getRequestWithHeader(token string) *resty.Request {
+func getRequestWithBearerAuth(token string) *resty.Request {
 	return resty.R().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Authorization", "Bearer "+token)
 }
 
-func getBasicAuthForClient(clientID string, clientSecret string) string {
+func getRequestWithBasicAuth(clientID string, clientSecret string) *resty.Request {
 	var httpBasicAuth string
 	if len(clientID) > 0 && len(clientSecret) > 0 {
 		httpBasicAuth = base64.URLEncoding.EncodeToString([]byte(clientID + ":" + clientSecret))
 	}
-
-	return "Basic " + httpBasicAuth
+	return resty.R().
+		SetHeader("Content-Type", "application/x-www-form-urlencoded").
+		SetHeader("Authorization", "Basic "+httpBasicAuth)
 }
 
 // GetRealmRolesByUserID gets the roles by user
 func (client *gocloak) GetRealmRolesByUserID(token string, realm string, userID string) (*[]Role, error) {
-	resp, err := getRequestWithHeader(token).
-		Get(client.basePath + authRealm + realm + "/users/" + userID + "/role-mappings/realm")
-	if err != nil {
-		return nil, err
-	}
-
 	var result []Role
-	if err := json.Unmarshal(resp.Body(), &result); err != nil {
+	resp, err := getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.basePath + authRealm + realm + "/users/" + userID + "/role-mappings/realm")
+
+	err = checkForError(resp, err)
+	if err != nil {
 		return nil, err
 	}
 
@@ -968,16 +837,32 @@ func (client *gocloak) GetRealmRolesByUserID(token string, realm string, userID 
 
 // GetRealmRolesByGroupID gets the roles by group
 func (client *gocloak) GetRealmRolesByGroupID(token string, realm string, groupID string) (*[]Role, error) {
-	resp, err := getRequestWithHeader(token).
+	var result []Role
+	resp, err := getRequestWithBearerAuth(token).
 		Get(client.basePath + authRealm + realm + "/groups/" + groupID + "/role-mappings/realm")
+
+	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
 	}
 
-	var result []Role
-	if err := json.Unmarshal(resp.Body(), &result); err != nil {
-		return nil, err
-	}
-
 	return &result, nil
+}
+
+func checkForError(resp *resty.Response, err error, validStatusCodes ...int) error {
+	if err != nil {
+		return err
+	}
+	if len(validStatusCodes) == 0 {
+		validStatusCodes = append(validStatusCodes, 200)
+	}
+	statusCode := resp.StatusCode()
+	for _, code := range validStatusCodes {
+		if code == statusCode {
+			return nil
+		}
+	}
+	log.Printf("Error: Request returned a response with status '%s' and body: %s", resp.Status(), string(resp.Body()))
+	return errors.New(resp.Status())
+
 }
