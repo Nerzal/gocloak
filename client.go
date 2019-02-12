@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/Nerzal/gocloak/pkg/jwx"
 	jwt "github.com/dgrijalva/jwt-go"
@@ -13,7 +14,11 @@ import (
 )
 
 type gocloak struct {
-	basePath string
+	basePath   string
+	certsCache map[string]*CertResponse
+	Config     struct {
+		CertsInvalidateTime time.Duration
+	}
 }
 
 type loginData struct {
@@ -31,13 +36,16 @@ const openIDConnect string = "/protocol/openid-connect"
 
 // NewClient creates a new Client
 func NewClient(basePath string) GoCloak {
-	return &gocloak{
-		basePath: basePath,
+	c := gocloak{
+		basePath:   basePath,
+		certsCache: make(map[string]*CertResponse),
 	}
+	c.Config.CertsInvalidateTime = 10 * time.Minute
+
+	return &c
 }
 
-// GetCerts fetches certificates for the given realm from the public /open-id-connect/certs endpoint
-func (client *gocloak) GetCerts(realm string) (*CertResponse, error) {
+func (client *gocloak) getNewCerts(realm string) (*CertResponse, error) {
 	var result CertResponse
 	resp, err := resty.R().
 		SetResult(&result).
@@ -48,6 +56,24 @@ func (client *gocloak) GetCerts(realm string) (*CertResponse, error) {
 	}
 
 	return &result, nil
+}
+
+// GetCerts fetches certificates for the given realm from the public /open-id-connect/certs endpoint
+func (client *gocloak) GetCerts(realm string) (*CertResponse, error) {
+	if cert, ok := client.certsCache[realm]; ok {
+		return cert, nil
+	}
+	cert, err := client.getNewCerts(realm)
+	if err != nil {
+		return nil, err
+	}
+	client.certsCache[realm] = cert
+	timer := time.NewTimer(client.Config.CertsInvalidateTime)
+	go func() {
+		<-timer.C
+		client.certsCache[realm] = cert
+	}()
+	return cert, nil
 }
 
 // GetIssuer gets the isser of the given realm
@@ -95,6 +121,10 @@ func (client *gocloak) DecodeAccessToken(accessToken string, realm string) (*jwt
 	}
 
 	usedKey := findUsedKey(decodedHeader.Kid, certResult.Keys)
+	if usedKey == nil {
+		return nil, nil, errors.New("Cannot find a key to decode the token")
+	}
+
 	return jwx.DecodeAccessToken(accessToken, usedKey.E, usedKey.N)
 }
 
@@ -117,12 +147,11 @@ func (client *gocloak) DecodeAccessTokenCustomClaims(accessToken string, realm s
 
 func findUsedKey(usedKeyID string, keys []CertResponseKey) *CertResponseKey {
 	for _, key := range keys {
-		if key.Kid != usedKeyID {
-			continue
+		if key.Kid == usedKeyID {
+			return &key
 		}
-
-		return &key
 	}
+
 	return nil
 }
 
