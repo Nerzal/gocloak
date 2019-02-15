@@ -83,6 +83,7 @@ type GoCloak interface {
 
 	GetIssuer(realm string) (*IssuerResponse, error)
 	GetCerts(realm string) (*CertResponse, error)
+	(*UserInfo, error)
 
 	SetPassword(token string, userID string, realm string, password string, temporary bool) error
 	CreateUser(token string, realm string, user User) (*string, error)

@@ -94,6 +94,18 @@ func TestRetrospectTokenInactiveToken(t *testing.T) {
 	t.Log(rptResult)
 }
 
+func TestGetUserInfo(t *testing.T) {
+	t.Parallel()
+	client := NewClient(hostname)
+	token, err := client.LoginClient(clientid, clientSecret, realm)
+	if err != nil {
+		t.Log("TestLogin failed", err.Error())
+		t.FailNow()
+	}
+
+	client.GetUserInfo(token.AccessToken, realm)
+}
+
 func TestRetrospectToken(t *testing.T) {
 	t.Parallel()
 	client := NewClient(hostname)

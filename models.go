@@ -214,3 +214,13 @@ type Client struct {
 	ID       string `json:"id"`
 	ClientID string `json:"clientId"`
 }
+
+// UserInfo is returned by the userinfo endpoint
+type UserInfo struct {
+	Sub               string      `json:"sub"`
+	EmailVerified     bool        `json:"email_verified"`
+	Address           interface{} `json:"address"`
+	PreferredUsername string      `json:"preferred_username"`
+	Email             string      `json:"email"`
+}
+

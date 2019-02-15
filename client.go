@@ -45,6 +45,21 @@ func NewClient(basePath string) GoCloak {
 	return &c
 }
 
+// GetUserInfo calls the UserInfo endpoint
+func (client *gocloak) GetUserInfo(accessToken string, realm string) (*UserInfo, error) {
+	var result UserInfo
+	resp, err := resty.R().
+		SetResult(&result).
+		SetAuthToken(accessToken).
+		Get(client.basePath + authRealms + realm + openIDConnect + "/userinfo")
+	err = checkForError(resp, err)
+	if err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
 func (client *gocloak) getNewCerts(realm string) (*CertResponse, error) {
 	var result CertResponse
 	resp, err := resty.R().
