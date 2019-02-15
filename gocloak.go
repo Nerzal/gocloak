@@ -27,7 +27,7 @@ type GoCloak interface {
 	// GetCerts gets the public keys for the given realm
 	GetCerts(realm string) (*CertResponse, error)
 	// GetUserInfo gets the user info for the given realm
-	GetUserInfo(accessToken string, realm string) error
+	GetUserInfo(accessToken string, realm string) (*UserInfo, error)
 
 	//SetPassword sets a new password for the user with the given id. Needs elevated priviliges
 	SetPassword(token string, userID string, realm string, password string, temporary bool) error
