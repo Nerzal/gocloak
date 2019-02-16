@@ -28,6 +28,9 @@ type Claims struct {
 	GivenName         string         `json:"given_name,omitempty"`
 	FamilyName        string         `json:"family_name,omitempty"`
 	Email             string         `json:"email,omitempty"`
+	ClientID          string         `json:"clientId,omitempty"`
+	ClientHost        string         `json:"clientHost,omitempty"`
+	ClientIP          string         `json:"clientAddress,omitempty"`
 }
 
 // Address TODO what fields does any address have?

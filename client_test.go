@@ -103,7 +103,12 @@ func TestGetUserInfo(t *testing.T) {
 		t.FailNow()
 	}
 
-	client.GetUserInfo(token.AccessToken, realm)
+	userInfo, err := client.GetUserInfo(token.AccessToken, realm)
+	if err != nil {
+		t.Log("Failed to fetch userinfo", err.Error())
+		t.FailNow()
+	}
+	t.Log(userInfo)
 }
 
 func TestRetrospectToken(t *testing.T) {
