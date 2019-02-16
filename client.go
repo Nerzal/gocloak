@@ -48,9 +48,8 @@ func NewClient(basePath string) GoCloak {
 // GetUserInfo calls the UserInfo endpoint
 func (client *gocloak) GetUserInfo(accessToken string, realm string) (*UserInfo, error) {
 	var result UserInfo
-	resp, err := resty.R().
+	resp, err := getRequestWithBearerAuth(accessToken).
 		SetResult(&result).
-		SetAuthToken(accessToken).
 		Get(client.basePath + authRealms + realm + openIDConnect + "/userinfo")
 	err = checkForError(resp, err)
 	if err != nil {
@@ -804,8 +803,8 @@ func (client *gocloak) UserAttributeContains(attributes map[string][]string, att
 
 func getRequestWithBearerAuth(token string) *resty.Request {
 	return resty.R().
-		SetHeader("Content-Type", "application/json").
-		SetHeader("Authorization", "Bearer "+token)
+		SetAuthToken(token).
+		SetHeader("Content-Type", "application/json")
 }
 
 func getRequestWithBasicAuth(clientID string, clientSecret string) *resty.Request {
