@@ -12,7 +12,7 @@ For Questions either raise an issue, or come to the [gopher-slack](https://invit
 If u are using the echo framework have a look at [gocloak-echo](https://github.com/Nerzal/gocloak-echo)
 
 ### Keycloak Version < 4.8
-If you are using a Keycloak Server version <4.8 please use the V1.0 release of keycloak.
+If you are using a Keycloak Server version <4.8 please use the V1.0 release of gocloak.
 
 ```go
 	go get gopkg.in/nerzal/gocloak.v1
