@@ -136,6 +136,15 @@ type UserGroup struct {
 	Path string `json:"path,omitempty"`
 }
 
+// ExecuteActionsEmail represents parameters for executing action emails
+type ExecuteActionsEmail struct {
+	UserID      string   `path:"userId"`
+	ClientID    string   `query:"clientId,omitempty"`
+	Lifespan    int      `query:"lifespan,omitempty"`
+	RedirectURI string   `query:"redirect_uri,omitempty"`
+	Actions     []string `body:"actions"`
+}
+
 // Group is a Group
 type Group struct {
 	ID        string        `json:"id,omitempty"`
@@ -223,4 +232,3 @@ type UserInfo struct {
 	PreferredUsername string      `json:"preferred_username"`
 	Email             string      `json:"email"`
 }
-

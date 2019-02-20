@@ -86,6 +86,7 @@ type GoCloak interface {
 	GetUserInfo(accessToken string, realm string) (*UserInfo, error)
 
 	SetPassword(token string, userID string, realm string, password string, temporary bool) error
+	ExecuteActionsEmail(token string, realm string, params ExecuteActionsEmail) error
 	CreateUser(token string, realm string, user User) (*string, error)
 	CreateGroup(accessToken string, realm string, group Group) error
 	CreateRole(accessToken string, realm string, clientID string, role Role) error
