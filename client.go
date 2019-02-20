@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Nerzal/gocloak/pkg/jwx"
-	jwt "github.com/dgrijalva/jwt-go"
-	resty "gopkg.in/resty.v1"
+	"github.com/dgrijalva/jwt-go"
+	"gopkg.in/resty.v1"
 )
 
 type gocloak struct {
@@ -306,6 +307,26 @@ func (client *gocloak) SetPassword(token string, userID string, realm string, pa
 	}
 
 	return nil
+}
+
+// ExecuteActionsEmail executes an actions email
+func (client *gocloak) ExecuteActionsEmail(token string, realm string, params ExecuteActionsEmail) error {
+	q := map[string]string{}
+	if len(params.ClientID) > 0 {
+		q["client_id"] = params.ClientID
+	}
+	if len(params.RedirectURI) > 0 {
+		q["redirect_uri"] = params.RedirectURI
+	}
+	if params.Lifespan > 0 {
+		q["lifepsan"] = strconv.Itoa(params.Lifespan)
+	}
+
+	resp, err := getRequestWithBearerAuth(token).
+		SetBody(params.Actions).SetQueryParams(q).
+		Put(client.basePath + authRealm + realm + "/users/" + params.UserID + "/execute-actions-email")
+
+	return checkForError(resp, err)
 }
 
 // CreateUser tries to create the given user in the given realm and returns it's userID

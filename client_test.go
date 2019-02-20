@@ -722,3 +722,25 @@ func TestGetRealmRolesByGroupID(t *testing.T) {
 		t.FailNow()
 	}
 }
+
+func TestExecuteActionsEmailUpdatePassword(t *testing.T) {
+	t.Parallel()
+	client := NewClient(hostname)
+	token, err := client.LoginAdmin(username, password, realm)
+	if err != nil {
+		t.Log("TestLogin failed", err.Error())
+		t.FailNow()
+	}
+
+	params := ExecuteActionsEmail{
+		ClientID: clientid,
+		UserID:   "7ce47297-f884-43ac-92e2-71820c63969a",
+		Actions:  []string{"UPDATE_PASSWORD"},
+	}
+
+	err = client.ExecuteActionsEmail(token.AccessToken, realm, params)
+	if err != nil {
+		t.Log("ExecuteActionsEmail failed", err.Error())
+		t.FailNow()
+	}
+}

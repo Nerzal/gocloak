@@ -29,8 +29,11 @@ type GoCloak interface {
 	// GetUserInfo gets the user info for the given realm
 	GetUserInfo(accessToken string, realm string) (*UserInfo, error)
 
-	//SetPassword sets a new password for the user with the given id. Needs elevated priviliges
+	// SetPassword sets a new password for the user with the given id. Needs elevated priviliges
 	SetPassword(token string, userID string, realm string, password string, temporary bool) error
+
+	// ExecuteActionsEmail executes an actions email
+	ExecuteActionsEmail(token string, realm string, params ExecuteActionsEmail) error
 
 	// CreateUser creates a new user
 	CreateUser(token string, realm string, user User) (*string, error)
