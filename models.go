@@ -136,6 +136,18 @@ type UserGroup struct {
 	Path string `json:"path,omitempty"`
 }
 
+// GetUsersParams represents the optional parameters for getting users
+type GetUsersParams struct {
+	BriefRepresentation *bool  `query:"briefRepresentation,omitempty"`
+	Email               string `query:"email,omitempty"`
+	First               int    `query:"first,omitempty"`
+	FirstName           string `query:"firstName,omitempty"`
+	LastName            string `query:"lastName,omitempty"`
+	Max                 int    `query:"max,omitempty"`
+	Search              string `query:"search,omitempty"`
+	Username            string `query:"username,omitempty"`
+}
+
 // ExecuteActionsEmail represents parameters for executing action emails
 type ExecuteActionsEmail struct {
 	UserID      string   `path:"userId"`

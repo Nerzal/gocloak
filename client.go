@@ -615,10 +615,37 @@ func (client *gocloak) GetComponents(token string, realm string) (*[]Component, 
 }
 
 // GetUsers get all users in realm
-func (client *gocloak) GetUsers(token string, realm string) (*[]User, error) {
+func (client *gocloak) GetUsers(token string, realm string, params GetUsersParams) (*[]User, error) {
 	var result []User
+
+	q := map[string]string{}
+	if params.BriefRepresentation != nil {
+		q["briefRepresentation"] = strconv.FormatBool(*params.BriefRepresentation)
+	}
+	if len(params.Email) > 0 {
+		q["email"] = params.Email
+	}
+	if params.First > 0 {
+		q["first"] = strconv.Itoa(params.First)
+	}
+	if len(params.FirstName) > 0 {
+		q["firstName"] = params.FirstName
+	}
+	if len(params.LastName) > 0 {
+		q["lastName"] = params.LastName
+	}
+	if params.Max > 0 {
+		q["max"] = strconv.Itoa(params.Max)
+	}
+	if len(params.Search) > 0 {
+		q["search"] = params.Search
+	}
+	if len(params.Username) > 0 {
+		q["username"] = params.Username
+	}
+
 	resp, err := getRequestWithBearerAuth(token).
-		SetResult(&result).
+		SetResult(&result).SetQueryParams(q).
 		Get(client.basePath + authRealm + realm + "/users")
 
 	err = checkForError(resp, err)

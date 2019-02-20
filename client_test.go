@@ -452,7 +452,7 @@ func TestGetUsers(t *testing.T) {
 		t.FailNow()
 	}
 
-	users, err := client.GetUsers(token.AccessToken, realm)
+	users, err := client.GetUsers(token.AccessToken, realm, GetUsersParams{})
 	if err != nil {
 		t.Log("GetUsers failed", err.Error())
 		t.FailNow()
@@ -486,7 +486,7 @@ func TestGetUser(t *testing.T) {
 		t.FailNow()
 	}
 
-	users, err := client.GetUsers(token.AccessToken, realm)
+	users, err := client.GetUsers(token.AccessToken, realm, GetUsersParams{})
 	if err != nil {
 		t.Log("GetUsers failed", err.Error())
 		t.FailNow()
@@ -545,7 +545,7 @@ func TestGetUserGroups(t *testing.T) {
 		t.FailNow()
 	}
 
-	users, err := client.GetUsers(token.AccessToken, realm)
+	users, err := client.GetUsers(token.AccessToken, realm, GetUsersParams{})
 	if err != nil {
 		t.Log("GetAllUsers failed", err.Error())
 		t.FailNow()
@@ -651,7 +651,7 @@ func TestGetRoleMappingByUserID(t *testing.T) {
 		t.FailNow()
 	}
 
-	users, err := client.GetUsers(token.AccessToken, realm)
+	users, err := client.GetUsers(token.AccessToken, realm, GetUsersParams{})
 	if err != nil {
 		t.Log("GetUsers failed", err.Error())
 		t.FailNow()
@@ -678,7 +678,7 @@ func TestGetRealmRolesByUserID(t *testing.T) {
 		t.FailNow()
 	}
 
-	users, err := client.GetUsers(token.AccessToken, realm)
+	users, err := client.GetUsers(token.AccessToken, realm, GetUsersParams{})
 	if err != nil {
 		t.Log("GetUsers failed", err.Error())
 		t.FailNow()
@@ -743,4 +743,22 @@ func TestExecuteActionsEmailUpdatePassword(t *testing.T) {
 		t.Log("ExecuteActionsEmail failed", err.Error())
 		t.FailNow()
 	}
+}
+
+func TestGetUsersByEmail(t *testing.T) {
+	t.Parallel()
+	client := NewClient(hostname)
+	token, err := client.LoginAdmin(username, password, realm)
+	if err != nil {
+		t.Log("TestLogin failed", err.Error())
+		t.FailNow()
+	}
+
+	users, err := client.GetUsers(token.AccessToken, realm, GetUsersParams{Email: "trololo@mail.com"})
+	if err != nil {
+		t.Log("GetUsers failed", err.Error())
+		t.FailNow()
+	}
+
+	t.Logf("%+v", users)
 }
