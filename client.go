@@ -33,15 +33,60 @@ const (
 	urlSeparator  string = "/"
 )
 
-func makeURL(path ...string) string {
-	return strings.Join(path, urlSeparator)
-}
-
 var authAdminRealms = makeURL("auth", "admin", "realms")
 var authRealms = makeURL("auth", "realms")
 var tokenEndpoint = makeURL("protocol", "openid-connect", "token")
 var logoutEndpoint = makeURL("protocol", "openid-connect", "logout")
 var openIDConnect = makeURL("protocol", "openid-connect")
+
+func makeURL(path ...string) string {
+	return strings.Join(path, urlSeparator)
+}
+
+func getRequestWithBearerAuth(token string) *resty.Request {
+	return resty.R().
+		SetAuthToken(token).
+		SetHeader("Content-Type", "application/json")
+}
+
+func getRequestWithBasicAuth(clientID string, clientSecret string) *resty.Request {
+	var httpBasicAuth string
+	if len(clientID) > 0 && len(clientSecret) > 0 {
+		httpBasicAuth = base64.URLEncoding.EncodeToString([]byte(clientID + ":" + clientSecret))
+	}
+	return resty.R().
+		SetHeader("Content-Type", "application/x-www-form-urlencoded").
+		SetHeader("Authorization", "Basic "+httpBasicAuth)
+}
+
+func checkForError(resp *resty.Response, err error) error {
+	if err != nil {
+		return err
+	}
+
+	if resp.IsError() {
+		if resp.StatusCode() == 409 {
+			return &ObjectAllreadyExists{}
+		}
+		log.Printf("Error: Request returned a response with status '%s' and body: %s", resp.Status(), string(resp.Body()))
+		return errors.New(resp.Status())
+	}
+	return nil
+}
+
+func findUsedKey(usedKeyID string, keys []CertResponseKey) *CertResponseKey {
+	for _, key := range keys {
+		if key.Kid == usedKeyID {
+			return &key
+		}
+	}
+
+	return nil
+}
+
+// ===============
+// Keycloak client
+// ===============
 
 // NewClient creates a new Client
 func NewClient(basePath string) GoCloak {
@@ -177,16 +222,6 @@ func (client *gocloak) DecodeAccessTokenCustomClaims(accessToken string, realm s
 	usedKey := findUsedKey(decodedHeader.Kid, certResult.Keys)
 	token, err := jwx.DecodeAccessTokenCustomClaims(accessToken, usedKey.E, usedKey.N, claims)
 	return token, err
-}
-
-func findUsedKey(usedKeyID string, keys []CertResponseKey) *CertResponseKey {
-	for _, key := range keys {
-		if key.Kid == usedKeyID {
-			return &key
-		}
-	}
-
-	return nil
 }
 
 // RefreshToken refrehes the given token
@@ -765,21 +800,6 @@ func (client *gocloak) GetGroups(token string, realm string) (*[]Group, error) {
 	return &result, nil
 }
 
-// GetRoles get all roles in realm
-func (client *gocloak) GetRoles(token string, realm string) (*[]Role, error) {
-	var result []Role
-	resp, err := getRequestWithBearerAuth(token).
-		SetResult(&result).
-		Get(client.getAdminRealmURL(realm, "roles"))
-
-	err = checkForError(resp, err)
-	if err != nil {
-		return nil, err
-	}
-
-	return &result, nil
-}
-
 // GetRolesByClientID get all roles for the given client in realm
 func (client *gocloak) GetRolesByClientID(token string, realm string, clientID string) (*[]Role, error) {
 	var result []Role
@@ -822,52 +842,7 @@ func (client *gocloak) UserAttributeContains(attributes map[string][]string, att
 	return false
 }
 
-func getRequestWithBearerAuth(token string) *resty.Request {
-	return resty.R().
-		SetAuthToken(token).
-		SetHeader("Content-Type", "application/json")
-}
-
-func getRequestWithBasicAuth(clientID string, clientSecret string) *resty.Request {
-	var httpBasicAuth string
-	if len(clientID) > 0 && len(clientSecret) > 0 {
-		httpBasicAuth = base64.URLEncoding.EncodeToString([]byte(clientID + ":" + clientSecret))
-	}
-	return resty.R().
-		SetHeader("Content-Type", "application/x-www-form-urlencoded").
-		SetHeader("Authorization", "Basic "+httpBasicAuth)
-}
-
-// GetRealmRolesByUserID gets the roles by user
-func (client *gocloak) GetRealmRolesByUserID(token string, realm string, userID string) (*[]Role, error) {
-	var result []Role
-	resp, err := getRequestWithBearerAuth(token).
-		SetResult(&result).
-		Get(client.getAdminRealmURL(realm, "users", userID, "role-mappings", "realm"))
-
-	err = checkForError(resp, err)
-	if err != nil {
-		return nil, err
-	}
-
-	return &result, nil
-}
-
-// GetRealmRolesByGroupID gets the roles by group
-func (client *gocloak) GetRealmRolesByGroupID(token string, realm string, groupID string) (*[]Role, error) {
-	var result []Role
-	resp, err := getRequestWithBearerAuth(token).
-		Get(client.getAdminRealmURL(realm, "groups", groupID, "role-mappings", "realm"))
-
-	err = checkForError(resp, err)
-	if err != nil {
-		return nil, err
-	}
-
-	return &result, nil
-}
-
-// GetUsersByRoleName returns Users by a Role Name
+// GetUsersByRoleName returns all users have a given role
 func (client *gocloak) GetUsersByRoleName(token string, realm string, roleName string) (*[]User, error) {
 	var result []User
 	resp, err := getRequestWithBearerAuth(token).
@@ -882,17 +857,100 @@ func (client *gocloak) GetUsersByRoleName(token string, realm string, roleName s
 	return &result, nil
 }
 
-func checkForError(resp *resty.Response, err error) error {
-	if err != nil {
+// -----------
+// Realm Roles
+// -----------
+
+// CreateRealmRole creates a role in a realm
+func (client *gocloak) CreateRealmRole(token string, realm string, role Role) error {
+	resp, err := getRequestWithBearerAuth(token).
+		SetBody(role).
+		Post(client.getAdminRealmURL(realm, "roles"))
+
+	if err = checkForError(resp, err); err != nil {
 		return err
 	}
 
-	if resp.IsError() {
-		if resp.StatusCode() == 409 {
-			return &ObjectAllreadyExists{}
-		}
-		log.Printf("Error: Request returned a response with status '%s' and body: %s", resp.Status(), string(resp.Body()))
-		return errors.New(resp.Status())
+	return nil
+}
+
+// GetRealmRole returns a role from a realm by role's name
+func (client *gocloak) GetRealmRole(token string, realm string, roleName string) (*Role, error) {
+	var result Role
+	resp, err := getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "roles", roleName))
+
+	if err = checkForError(resp, err); err != nil {
+		return nil, err
 	}
+
+	return &result, nil
+}
+
+// GetRealmRoles get all roles of the given realm.
+func (client *gocloak) GetRealmRoles(token string, realm string) (*[]Role, error) {
+	var result []Role
+	resp, err := getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "roles"))
+
+	err = checkForError(resp, err)
+	if err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// GetRealmRolesByUserID returns all roles assigned to the given user
+func (client *gocloak) GetRealmRolesByUserID(token string, realm string, userID string) (*[]Role, error) {
+	var result []Role
+	resp, err := getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "users", userID, "role-mappings", "realm"))
+
+	if err = checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// GetRealmRolesByGroupID returns all roles assigned to the given group
+func (client *gocloak) GetRealmRolesByGroupID(token string, realm string, groupID string) (*[]Role, error) {
+	var result []Role
+	resp, err := getRequestWithBearerAuth(token).
+		Get(client.getAdminRealmURL(realm, "groups", groupID, "role-mappings", "realm"))
+
+	if err = checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// UpdateRealmRole updates a role in a realm
+func (client *gocloak) UpdateRealmRole(token string, realm string, role Role) error {
+	resp, err := getRequestWithBearerAuth(token).
+		SetBody(role).
+		Put(client.getAdminRealmURL(realm, "roles", role.Name))
+
+	if err = checkForError(resp, err); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DeleteRealmRole deletes a role in a realm by role's name
+func (client *gocloak) DeleteRealmRole(token string, realm string, roleName string) error {
+	resp, err := getRequestWithBearerAuth(token).
+		Delete(client.getAdminRealmURL(realm, "roles", roleName))
+
+	if err = checkForError(resp, err); err != nil {
+		return err
+	}
+
 	return nil
 }
