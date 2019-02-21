@@ -177,21 +177,16 @@ type Role struct {
 }
 
 // RoleMapping is a role mapping
-type RoleMapping struct {
-	ID       string                  `json:"id"`
-	Client   string                  `json:"client"`
-	Mappings []ClientRoleMappingRole `json:"mappings"`
+type ClientMappingsRepresentation struct {
+	ID       string `json:"id"`
+	Client   string `json:"client"`
+	Mappings []Role `json:"mappings"`
 }
 
-// ClientRoleMappingRole is a client role mapping role
-type ClientRoleMappingRole struct {
-	ID                 string `json:"id"`
-	Name               string `json:"name"`
-	Description        string `json:"description,omitempty"`
-	ScopeParamRequired bool   `json:"scopeParamRequired"`
-	Composite          bool   `json:"composite"`
-	ClientRole         bool   `json:"clientRole"`
-	ContainerID        string `json:"containerId"`
+// MappingsRepresentation is a representation of role mappings
+type MappingsRepresentation struct {
+	ClientMappings map[string]ClientMappingsRepresentation `json:"clientMappings,omitempty"`
+	RealmMappings  []Role                                  `json:"realmMappings,omitempty"`
 }
 
 // ClientScope is a ClientScope

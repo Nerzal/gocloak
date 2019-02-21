@@ -2,7 +2,6 @@ package gocloak
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"log"
 	"strconv"
@@ -686,80 +685,28 @@ func (client *gocloak) GetUserGroups(token string, realm string, userID string) 
 	return &result, nil
 }
 
-// GetRoleMappingByGroupID gets the role mappings by group
-func (client *gocloak) GetRoleMappingByGroupID(token string, realm string, groupID string) (*[]RoleMapping, error) {
+func (client *gocloak) getRoleMappings(token string, realm string, path string, objectID string) (*MappingsRepresentation, error) {
+	var result MappingsRepresentation
 	resp, err := getRequestWithBearerAuth(token).
-		Get(client.basePath + authRealm + realm + "/groups/" + groupID + "/role-mappings")
+		SetResult(&result).
+		Get(client.basePath + authRealm + strings.Join([]string{realm, path, objectID, "role-mappings"}, "/"))
 
 	err = checkForError(resp, err)
 	if err != nil {
 		return nil, err
-	}
-
-	var result []RoleMapping
-
-	var f map[string]interface{}
-	if err := json.Unmarshal(resp.Body(), &f); err != nil {
-		return nil, err
-	}
-
-	if _, ok := f["clientMappings"]; ok {
-		itemsMap := f["clientMappings"].(map[string]interface{})
-
-		for _, v := range itemsMap {
-			switch jsonObj := v.(type) {
-			case interface{}:
-				jsonClientMapping, _ := json.Marshal(jsonObj)
-				var client RoleMapping
-				if err := json.Unmarshal(jsonClientMapping, &client); err != nil {
-					return nil, err
-				}
-				result = append(result, client)
-			default:
-				return nil, errors.New("Expecting a JSON object; got something else")
-			}
-		}
 	}
 
 	return &result, nil
 }
 
+// GetRoleMappingByGroupID gets the role mappings by group
+func (client *gocloak) GetRoleMappingByGroupID(token string, realm string, groupID string) (*MappingsRepresentation, error) {
+	return client.getRoleMappings(token, realm, "groups", groupID)
+}
+
 // GetRoleMappingByUserID gets the role mappings by user
-func (client *gocloak) GetRoleMappingByUserID(token string, realm string, userID string) (*[]RoleMapping, error) {
-	resp, err := getRequestWithBearerAuth(token).
-		Get(client.basePath + authRealm + realm + "/users/" + userID + "/role-mappings")
-
-	err = checkForError(resp, err)
-	if err != nil {
-		return nil, err
-	}
-
-	var result []RoleMapping
-
-	var f map[string]interface{}
-	if err := json.Unmarshal(resp.Body(), &f); err != nil {
-		return nil, err
-	}
-
-	if _, ok := f["clientMappings"]; ok {
-		itemsMap := f["clientMappings"].(map[string]interface{})
-
-		for _, v := range itemsMap {
-			switch jsonObj := v.(type) {
-			case interface{}:
-				jsonClientMapping, _ := json.Marshal(jsonObj)
-				var client RoleMapping
-				if err := json.Unmarshal(jsonClientMapping, &client); err != nil {
-					return nil, err
-				}
-				result = append(result, client)
-			default:
-				return nil, errors.New("Expecting a JSON object; got something else")
-			}
-		}
-	}
-
-	return &result, nil
+func (client *gocloak) GetRoleMappingByUserID(token string, realm string, userID string) (*MappingsRepresentation, error) {
+	return client.getRoleMappings(token, realm, "users", userID)
 }
 
 // GetGroup get group with id in realm
