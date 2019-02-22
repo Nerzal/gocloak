@@ -91,9 +91,9 @@ type GoCloak interface {
 	// GetRoles get all roles of the given realm
 	GetRoles(accessToken string, realm string) (*[]Role, error)
 	// GetRoleMappingByGroupID gets the rolemapping for the given group id
-	GetRoleMappingByGroupID(accessToken string, realm string, groupID string) (*[]RoleMapping, error)
+	GetRoleMappingByGroupID(accessToken string, realm string, groupID string) (*MappingsRepresentation, error)
 	// GetRoleMappingByUserID gets the rolemapping for the given user id
-	GetRoleMappingByUserID(accessToken string, realm string, userID string) (*[]RoleMapping, error)
+	GetRoleMappingByUserID(accessToken string, realm string, userID string) (*MappingsRepresentation, error)
 	// GetRolesByClientID gets roles for the given client
 	GetRolesByClientID(accessToken string, realm string, clientID string) (*[]Role, error)
 	// GetClients gets the clients in the realm
