@@ -11,6 +11,7 @@ func (apiError APIError) Error() string {
 	return apiError.Message
 }
 
+// CertResponseKey is returned by the certs endpoint
 type CertResponseKey struct {
 	Kid string `json:"kid"`
 	Kty string `json:"kty"`
@@ -20,7 +21,7 @@ type CertResponseKey struct {
 	E   string `json:"e"`
 }
 
-// CertResponse is retuned by the certs endpoint
+// CertResponse is returned by the certs endpoint
 type CertResponse struct {
 	Keys []CertResponseKey `json:"keys"`
 }
@@ -176,7 +177,7 @@ type Role struct {
 	Description        string `json:"description,omitempty,omitempty"`
 }
 
-// RoleMapping is a role mapping
+// ClientMappingsRepresentation is a client role mappings
 type ClientMappingsRepresentation struct {
 	ID       string `json:"id"`
 	Client   string `json:"client"`
