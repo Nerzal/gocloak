@@ -1,13 +1,15 @@
 package gocloak
 
 import (
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go"
 )
 
 // GoCloak holds all methods a client should fullfill
 type GoCloak interface {
 	// Login sends a request to the token endpoint using user and client credentials
 	Login(clientID string, clientSecret string, realm string, username string, password string) (*JWT, error)
+	// Logout sends a request to the logout endpoint using refresh token
+	Logout(clientID, realm, refreshToken string) error
 	// LoginClient sends a request to the token endpoint using client credentials
 	LoginClient(clientID, clientSecret, realm string) (*JWT, error)
 	// LoginAdmin login as admin
