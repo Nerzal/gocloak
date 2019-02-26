@@ -285,7 +285,7 @@ func (client *gocloak) Login(clientID string, clientSecret string, realm string,
 }
 
 // Logout logs out users with refresh token
-func (client *gocloak) Logout(clientID string, realm string, refreshToken string) error {
+func (client *gocloak) Logout(clientID string, clientSecret string, realm string, refreshToken string) error {
 	resp, err := getRequestWithBasicAuth(clientID, clientSecret).
 		SetFormData(map[string]string{
 			"client_id":     clientID,

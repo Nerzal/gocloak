@@ -9,7 +9,7 @@ type GoCloak interface {
 	// Login sends a request to the token endpoint using user and client credentials
 	Login(clientID string, clientSecret string, realm string, username string, password string) (*JWT, error)
 	// Logout sends a request to the logout endpoint using refresh token
-	Logout(clientID, realm, refreshToken string) error
+	Logout(clientID, clientSecret, realm, refreshToken string) error
 	// LoginClient sends a request to the token endpoint using client credentials
 	LoginClient(clientID, clientSecret, realm string) (*JWT, error)
 	// LoginAdmin login as admin

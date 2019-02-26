@@ -772,7 +772,7 @@ func TestLogout(t *testing.T) {
 		t.FailNow()
 	}
 
-	err = client.Logout(clientid, realm, token.RefreshToken)
+	err = client.Logout(clientid, clientSecret, realm, token.RefreshToken)
 	if err != nil {
 		t.Log("TestLogout failed", err.Error())
 		t.FailNow()

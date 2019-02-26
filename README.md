@@ -73,7 +73,7 @@ https://gopkg.in/nerzal/gocloak.v1
 // GoCloak holds all methods a client should fullfill
 type GoCloak interface {
 	Login(clientID string, clientSecret string, realm string, username string, password string) (*JWT, error)
-	Logout(clientID, realm, refreshToken string) error
+	Logout(clientID, clientSecret, realm, refreshToken string) error
 	LoginClient(clientID, clientSecret, realm string) (*JWT, error)
 	LoginAdmin(username, password, realm string) (*JWT, error)
 	RequestPermission(clientID string, clientSecret string, realm string, username string, password string, permission string) (*JWT, error)
