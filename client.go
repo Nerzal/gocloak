@@ -40,6 +40,7 @@ func makeURL(path ...string) string {
 var authAdminRealms = makeURL("auth", "admin", "realms")
 var authRealms = makeURL("auth", "realms")
 var tokenEndpoint = makeURL("protocol", "openid-connect", "token")
+var logoutEndpoint = makeURL("protocol", "openid-connect", "logout")
 var openIDConnect = makeURL("protocol", "openid-connect")
 
 // NewClient creates a new Client
@@ -281,6 +282,17 @@ func (client *gocloak) Login(clientID string, clientSecret string, realm string,
 	}
 
 	return &result, nil
+}
+
+func (client *gocloak) Logout(clientID string, realm string, refreshToken string) error {
+	resp, err := getRequestWithBasicAuth(clientID, clientSecret).
+		SetFormData(map[string]string{
+			"client_id":     clientID,
+			"refresh_token": refreshToken,
+		}).
+		Post(client.getRealmURL(realm, logoutEndpoint))
+
+	return checkForError(resp, err)
 }
 
 // RequestPermission l

@@ -762,3 +762,19 @@ func TestGetUsersByEmail(t *testing.T) {
 
 	t.Logf("%+v", users)
 }
+
+func TestLogout(t *testing.T) {
+	t.Parallel()
+	client := NewClient(hostname)
+	token, err := client.Login(clientid, clientSecret, realm, username, password)
+	if err != nil {
+		t.Log("TestLogin failed", err.Error())
+		t.FailNow()
+	}
+
+	err = client.Logout(clientid, realm, token.RefreshToken)
+	if err != nil {
+		t.Log("TestLogout failed", err.Error())
+		t.FailNow()
+	}
+}
