@@ -90,8 +90,6 @@ type GoCloak interface {
 	GetGroups(accessToken string, realm string) (*[]Group, error)
 	// GetGroup gets the given group
 	GetGroup(accessToken string, realm, groupID string) (*Group, error)
-	// GetRoles get all roles of the given realm
-	GetRoles(accessToken string, realm string) (*[]Role, error)
 	// GetRoleMappingByGroupID gets the rolemapping for the given group id
 	GetRoleMappingByGroupID(accessToken string, realm string, groupID string) (*MappingsRepresentation, error)
 	// GetRoleMappingByUserID gets the rolemapping for the given user id
@@ -100,13 +98,26 @@ type GoCloak interface {
 	GetRolesByClientID(accessToken string, realm string, clientID string) (*[]Role, error)
 	// GetClients gets the clients in the realm
 	GetClients(accessToken string, realm string) (*[]Client, error)
-	// GetRealmRolesByUserID gets roles for the given uerID
-	GetRealmRolesByUserID(accessToken string, realm string, userID string) (*[]Role, error)
-	// GetRealmRolesByGroupID gets roles for given groupID
-	GetRealmRolesByGroupID(accessToken string, realm string, groupID string) (*[]Role, error)
-	// GetUsersByRoleName gets users for given roleName
+	// GetUsersByRoleName returns all users have a given role
 	GetUsersByRoleName(token string, realm string, roleName string) (*[]User, error)
 
 	// UserAttributeContains checks if the given attribute has the given value
 	UserAttributeContains(attributes map[string][]string, attribute string, value string) bool
+
+	// *** Realm Roles ***
+
+	// CreateRealmRole creates a role in a realm
+	CreateRealmRole(token string, realm string, role Role) error
+	// GetRealmRole returns a role from a realm by role's name
+	GetRealmRole(token string, realm string, roleName string) (*Role, error)
+	// GetRealmRoles get all roles of the given realm. It's an alias for the GetRoles function
+	GetRealmRoles(accessToken string, realm string) (*[]Role, error)
+	// GetRealmRolesByUserID returns all roles assigned to the given user
+	GetRealmRolesByUserID(accessToken string, realm string, userID string) (*[]Role, error)
+	// GetRealmRolesByGroupID returns all roles assigned to the given group
+	GetRealmRolesByGroupID(accessToken string, realm string, groupID string) (*[]Role, error)
+	// UpdateRealmRole updates a role in a realm
+	UpdateRealmRole(token string, realm string, role Role) error
+	// DeleteRealmRole deletes a role in a realm by role's name
+	DeleteRealmRole(token string, realm string, roleName string) error
 }
