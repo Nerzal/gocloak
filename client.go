@@ -954,3 +954,17 @@ func (client *gocloak) DeleteRealmRole(token string, realm string, roleName stri
 
 	return nil
 }
+
+// GetRealm returns top-level representation of the realm
+func (client *gocloak) GetRealm(token string, realm string) (*RealmRepresentation, error) {
+	var result RealmRepresentation
+	resp, err := getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm))
+
+	if err = checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}

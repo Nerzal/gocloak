@@ -569,7 +569,7 @@ func TestGetRoles(t *testing.T) {
 		t.FailNow()
 	}
 
-	_, err = client.GetRoles(token.AccessToken, realm)
+	_, err = client.GetRealmRoles(token.AccessToken, realm)
 	if err != nil {
 		t.Log("GetRoles failed", err.Error())
 		t.FailNow()
@@ -777,4 +777,22 @@ func TestLogout(t *testing.T) {
 		t.Log("TestLogout failed", err.Error())
 		t.FailNow()
 	}
+}
+
+func TestGetRealm(t *testing.T) {
+	t.Parallel()
+	client := NewClient(hostname)
+	token, err := client.LoginAdmin(username, password, realm)
+	if err != nil {
+		t.Log("TestAdminLogin failed", err.Error())
+		t.FailNow()
+	}
+
+	r, err := client.GetRealm(token.AccessToken, realm)
+	if err != nil {
+		t.Log("GetRealm failed", err.Error())
+		t.FailNow()
+	}
+
+	t.Logf("%+v", r)
 }
