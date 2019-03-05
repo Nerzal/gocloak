@@ -127,6 +127,8 @@ type GoCloak interface {
 	GetRealmRolesByUserID(accessToken string, realm string, userID string) (*[]Role, error)
 	GetRealmRolesByGroupID(accessToken string, realm string, groupID string) (*[]Role, error)
 	GetUsersByRoleName(token string, realm string, roleName string) (*[]User, error)
+	
+    GetRealm(token string, realm string) (*RealmRepresentation, error)
 }
 ```
 
