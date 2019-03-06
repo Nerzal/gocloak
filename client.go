@@ -867,11 +867,7 @@ func (client *gocloak) CreateRealmRole(token string, realm string, role Role) er
 		SetBody(role).
 		Post(client.getAdminRealmURL(realm, "roles"))
 
-	if err = checkForError(resp, err); err != nil {
-		return err
-	}
-
-	return nil
+	return checkForError(resp, err)
 }
 
 // GetRealmRole returns a role from a realm by role's name
@@ -936,11 +932,7 @@ func (client *gocloak) UpdateRealmRole(token string, realm string, role Role) er
 		SetBody(role).
 		Put(client.getAdminRealmURL(realm, "roles", role.Name))
 
-	if err = checkForError(resp, err); err != nil {
-		return err
-	}
-
-	return nil
+	return checkForError(resp, err)
 }
 
 // DeleteRealmRole deletes a role in a realm by role's name
@@ -948,12 +940,30 @@ func (client *gocloak) DeleteRealmRole(token string, realm string, roleName stri
 	resp, err := getRequestWithBearerAuth(token).
 		Delete(client.getAdminRealmURL(realm, "roles", roleName))
 
-	if err = checkForError(resp, err); err != nil {
-		return err
-	}
-
-	return nil
+	return checkForError(resp, err)
 }
+
+// AddRealmRoleToUser adds realm-level role mappings
+func (client *gocloak) AddRealmRoleToUser(token string, realm string, userID string, roles []Role) error {
+	resp, err := getRequestWithBearerAuth(token).
+		SetBody(roles).
+		Post(client.getAdminRealmURL(realm, "users", userID, "role-mappings", "realm"))
+
+	return checkForError(resp, err)
+}
+
+// DeleteRealmRoleFromUser deletes realm-level role mappings
+func (client *gocloak) DeleteRealmRoleFromUser(token string, realm string, userID string, roles []Role) error {
+	resp, err := getRequestWithBearerAuth(token).
+		SetBody(roles).
+		Delete(client.getAdminRealmURL(realm, "users", userID, "role-mappings", "realm"))
+
+	return checkForError(resp, err)
+}
+
+// -----
+// Realm
+// -----
 
 // GetRealm returns top-level representation of the realm
 func (client *gocloak) GetRealm(token string, realm string) (*RealmRepresentation, error) {
