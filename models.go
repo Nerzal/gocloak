@@ -41,7 +41,7 @@ type RetrospecTokenResult struct {
 	Exp         int               `json:"exp,omitempty"`
 	Nbf         int               `json:"nbf,omitempty"`
 	Iat         int               `json:"iat,omitempty"`
-	Aud         []string          `json:"aud,omitempty"`
+	Aud         string            `json:"aud,omitempty"`
 	Active      bool              `json:"active,omitempty"`
 	AuthTime    int               `json:"auth_time,omitempty"`
 	Jti         string            `json:"jti,omitempty"`
@@ -166,6 +166,13 @@ type Group struct {
 	SubGroups []interface{} `json:"subGroups,omitempty"`
 }
 
+// GetGroupsParams represents the optional parameters for getting groups
+type GetGroupsParams struct {
+	First  int    `query:"first,omitempty"`
+	Max    int    `query:"max,omitempty"`
+	Search string `query:"search,omitempty"`
+}
+
 // Role is a role
 type Role struct {
 	ID                 string            `json:"id,omitempty"`
@@ -233,6 +240,12 @@ type Client struct {
 	ClientID string `json:"clientId"`
 }
 
+// GetClientsParams represents the query parameters
+type GetClientsParams struct {
+	ClientID     string `json:"clientId,omitempty"`
+	ViewableOnly bool   `json:"viewableOnly,omitempty"`
+}
+
 // UserInfo is returned by the userinfo endpoint
 type UserInfo struct {
 	Sub               string      `json:"sub"`
@@ -242,6 +255,7 @@ type UserInfo struct {
 	Email             string      `json:"email"`
 }
 
+// RealmRepresentation represent a realm
 type RealmRepresentation struct {
 	AccessCodeLifespan                  int               `json:"accessCodeLifespan"`
 	AccessCodeLifespanLogin             int               `json:"accessCodeLifespanLogin"`
@@ -273,7 +287,7 @@ type RealmRepresentation struct {
 	DefaultSignatureAlgorithm           string            `json:"defaultSignatureAlgorithm"`
 	DirectGrantFlow                     string            `json:"directGrantFlow"`
 	DisplayName                         string            `json:"displayName"`
-	DisplayNameHtml                     string            `json:"displayNameHtml"`
+	DisplayNameHTML                     string            `json:"displayNameHtml"`
 	DockerAuthenticationFlow            string            `json:"dockerAuthenticationFlow"`
 	DuplicateEmailsAllowed              bool              `json:"duplicateEmailsAllowed"`
 	EditUsernameAllowed                 bool              `json:"editUsernameAllowed"`
@@ -286,7 +300,7 @@ type RealmRepresentation struct {
 	FailureFactor                       int               `json:"failureFactor"`
 	FederatedUsers                      []interface{}     `json:"federatedUsers"`
 	Groups                              []interface{}     `json:"groups"`
-	Id                                  string            `json:"id"`
+	ID                                  string            `json:"id"`
 	IdentityProviderMappers             []interface{}     `json:"identityProviderMappers"`
 	IdentityProviders                   []interface{}     `json:"identityProviders"`
 	InternationalizationEnabled         bool              `json:"internationalizationEnabled"`
@@ -323,7 +337,7 @@ type RealmRepresentation struct {
 	RevokeRefreshToken                  bool              `json:"revokeRefreshToken"`
 	Roles                               interface{}       `json:"roles"`
 	ScopeMappings                       []interface{}     `json:"scopeMappings"`
-	SmtpServer                          map[string]string `json:"smtpServer"`
+	SMTPServer                          map[string]string `json:"smtpServer"`
 	SslRequired                         string            `json:"sslRequired"`
 	SsoSessionIdleTimeout               int               `json:"ssoSessionIdleTimeout"`
 	SsoSessionIdleTimeoutRememberMe     int               `json:"ssoSessionIdleTimeoutRememberMe"`
@@ -336,4 +350,28 @@ type RealmRepresentation struct {
 	Users                               []interface{}     `json:"users"`
 	VerifyEmail                         bool              `json:"verifyEmail"`
 	WaitIncrementSeconds                int               `json:"waitIncrementSeconds"`
+}
+
+// MultivaluedHashMap represents something
+type MultivaluedHashMap struct {
+	Empty      bool    `json:"empty"`
+	LoadFactor float32 `json:"loadFactor"`
+	Threshold  int32   `json:"threshold"`
+}
+
+// CredentialRepresentation represents credentials
+type CredentialRepresentation struct {
+	Algorithm         string             `json:"algorithm"`
+	Config            MultivaluedHashMap `json:"config"`
+	Counter           int32              `json:"counter"`
+	CreatedDate       int64              `json:"createdDate"`
+	Device            string             `json:"device"`
+	Digits            int32              `json:"digits"`
+	HashIterations    int32              `json:"hashIterations"`
+	HashedSaltedValue string             `json:"hashedSaltedValue"`
+	Period            int32              `json:"period"`
+	Salt              string             `json:"salt"`
+	Temporary         bool               `json:"temporary"`
+	Type              string             `json:"type"`
+	Value             string             `json:"value"`
 }

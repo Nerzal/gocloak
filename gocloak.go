@@ -41,8 +41,8 @@ type GoCloak interface {
 	CreateUser(token string, realm string, user User) (*string, error)
 	// CreateGroup creates a new group
 	CreateGroup(accessToken string, realm string, group Group) error
-	// CreateRole creates a new role
-	CreateRole(accessToken string, realm string, clientID string, role Role) error
+	// CreateClientRole creates a new role for a client
+	CreateClientRole(accessToken string, realm string, clientID string, role Role) error
 	// CreateClient creates a new client
 	CreateClient(accessToken string, realm string, clientID Client) error
 	// CreateClientScope creates a new clientScope
@@ -67,13 +67,17 @@ type GoCloak interface {
 	DeleteComponent(accessToken string, realm, componentID string) error
 	// DeleteGroup deletes the given group
 	DeleteGroup(accessToken string, realm, groupID string) error
-	// DeleteRole deletes the given role
-	DeleteRole(accessToken string, realm, clientID, roleName string) error
+	// DeleteClientRole deletes the given role
+	DeleteClientRole(accessToken string, realm, clientID, roleName string) error
 	// DeleteClient deletes the given client
 	DeleteClient(accessToken string, realm, clientID string) error
 	// DeleteClientScope
 	DeleteClientScope(accessToken string, realm, scopeID string) error
 
+	// GetClient returns a client
+	GetClient(accessToken string, realm string, clientID string) (*Client, error)
+	// GetClientSecret returns a client's secret
+	GetClientSecret(token string, realm string, clientID string) (*CredentialRepresentation, error)
 	// GetKeyStoreConfig gets the keyStoreConfig
 	GetKeyStoreConfig(accessToken string, realm string) (*KeyStoreConfig, error)
 	// GetUserByID gets the user with the given id
@@ -87,17 +91,19 @@ type GoCloak interface {
 	// GetComponents gets components of the given realm
 	GetComponents(accessToken string, realm string) (*[]Component, error)
 	// GetGroups gets all groups of the given realm
-	GetGroups(accessToken string, realm string) (*[]Group, error)
+	GetGroups(accessToken string, realm string, params GetGroupsParams) (*[]Group, error)
 	// GetGroup gets the given group
 	GetGroup(accessToken string, realm, groupID string) (*Group, error)
 	// GetRoleMappingByGroupID gets the rolemapping for the given group id
 	GetRoleMappingByGroupID(accessToken string, realm string, groupID string) (*MappingsRepresentation, error)
 	// GetRoleMappingByUserID gets the rolemapping for the given user id
 	GetRoleMappingByUserID(accessToken string, realm string, userID string) (*MappingsRepresentation, error)
-	// GetRolesByClientID gets roles for the given client
-	GetRolesByClientID(accessToken string, realm string, clientID string) (*[]Role, error)
+	// GetClientRoles gets roles for the given client
+	GetClientRoles(accessToken string, realm string, clientID string) (*[]Role, error)
+	// GetClientRole get a role for the given client in a realm by role name
+	GetClientRole(token string, realm string, clientID string, roleName string) (*Role, error)
 	// GetClients gets the clients in the realm
-	GetClients(accessToken string, realm string) (*[]Client, error)
+	GetClients(accessToken string, realm string, params GetClientsParams) (*[]Client, error)
 	// GetUsersByRoleName returns all users have a given role
 	GetUsersByRoleName(token string, realm string, roleName string) (*[]User, error)
 
@@ -129,4 +135,6 @@ type GoCloak interface {
 
 	// GetRealm returns top-level representation of the realm
 	GetRealm(token string, realm string) (*RealmRepresentation, error)
+	// CreateRealm creates a realm
+	CreateRealm(token string, realm RealmRepresentation) error
 }
