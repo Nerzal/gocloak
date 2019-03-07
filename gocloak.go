@@ -120,6 +120,10 @@ type GoCloak interface {
 	UpdateRealmRole(token string, realm string, role Role) error
 	// DeleteRealmRole deletes a role in a realm by role's name
 	DeleteRealmRole(token string, realm string, roleName string) error
+	// AddRealmRoleToUser adds realm-level role mappings
+	AddRealmRoleToUser(token string, realm string, userID string, roles []Role) error
+	// DeleteRealmRoleFromUser deletes realm-level role mappings
+	DeleteRealmRoleFromUser(token string, realm string, userID string, roles []Role) error
 
 	// *** Realm ***
 
