@@ -1,0 +1,16 @@
+{
+  "hostname": "http://localhost:8080",
+  "proxy": "",
+  "admin": {
+    "username": "admin",
+    "password": "secret",
+    "realm": "master"
+  },
+  "gocloak": {
+    "username": "test",
+    "password": "test",
+    "realm": "gocloak",
+    "client_id": "gocloak",
+    "client_secret": "gocloak-secret"
+  }
+}

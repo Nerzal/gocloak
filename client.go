@@ -218,7 +218,6 @@ func (client *gocloak) DecodeAccessTokenCustomClaims(accessToken string, realm s
 	if err != nil {
 		return nil, err
 	}
-
 	usedKey := findUsedKey(decodedHeader.Kid, certResult.Keys)
 	token, err := jwx.DecodeAccessTokenCustomClaims(accessToken, usedKey.E, usedKey.N, claims)
 	return token, err
@@ -449,14 +448,13 @@ func (client *gocloak) CreateClient(token string, realm string, newClient Client
 	return nil
 }
 
-// CreateUser creates a new user
-func (client *gocloak) CreateRole(token string, realm string, clientID string, role Role) error {
+// CreateClientRole creates a new role for a client
+func (client *gocloak) CreateClientRole(token string, realm string, clientID string, role Role) error {
 	resp, err := getRequestWithBearerAuth(token).
 		SetBody(role).
 		Post(client.getAdminRealmURL(realm, "clients", clientID, "roles"))
 
-	err = checkForError(resp, err)
-	if err != nil {
+	if err := checkForError(resp, err); err != nil {
 		return err
 	}
 
@@ -573,7 +571,7 @@ func (client *gocloak) DeleteGroup(token string, realm string, groupID string) e
 	return nil
 }
 
-// DeleteUser creates a new user
+// DeleteClient deletes a given client
 func (client *gocloak) DeleteClient(token string, realm string, clientID string) error {
 	resp, err := getRequestWithBearerAuth(token).
 		Delete(client.getAdminRealmURL(realm, "clients", clientID))
@@ -599,13 +597,12 @@ func (client *gocloak) DeleteComponent(token string, realm string, componentID s
 	return nil
 }
 
-// DeleteUser creates a new user
-func (client *gocloak) DeleteRole(token string, realm string, clientID, roleName string) error {
+// DeleteClientRole deletes a given role
+func (client *gocloak) DeleteClientRole(token string, realm string, clientID, roleName string) error {
 	resp, err := getRequestWithBearerAuth(token).
 		Delete(client.getAdminRealmURL(realm, "clients", clientID, "roles", roleName))
 
-	err = checkForError(resp, err)
-	if err != nil {
+	if err := checkForError(resp, err); err != nil {
 		return err
 	}
 
@@ -623,6 +620,35 @@ func (client *gocloak) DeleteClientScope(token string, realm string, scopeID str
 	}
 
 	return nil
+}
+
+// GetClient returns a client
+func (client *gocloak) GetClient(token string, realm string, clientID string) (*Client, error) {
+	var result Client
+
+	resp, err := getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "clients", clientID))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// GetClientSecret returns a client's secret
+func (client *gocloak) GetClientSecret(token string, realm string, clientID string) (*CredentialRepresentation, error) {
+	var result CredentialRepresentation
+	resp, err := getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "clients", clientID, "client-secret"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }
 
 // GetKeyStoreConfig get keystoreconfig of the realm
@@ -786,10 +812,21 @@ func (client *gocloak) GetGroup(token string, realm string, groupID string) (*Gr
 }
 
 // GetGroups get all groups in realm
-func (client *gocloak) GetGroups(token string, realm string) (*[]Group, error) {
+func (client *gocloak) GetGroups(token string, realm string, params GetGroupsParams) (*[]Group, error) {
 	var result []Group
+	q := map[string]string{}
+	if params.First > 0 {
+		q["first"] = strconv.Itoa(params.First)
+	}
+	if params.Max > 0 {
+		q["max"] = strconv.Itoa(params.Max)
+	}
+	if len(params.Search) > 0 {
+		q["search"] = params.Search
+	}
+
 	resp, err := getRequestWithBearerAuth(token).
-		SetResult(&result).
+		SetResult(&result).SetQueryParams(q).
 		Get(client.getAdminRealmURL(realm, "groups"))
 
 	err = checkForError(resp, err)
@@ -800,15 +837,28 @@ func (client *gocloak) GetGroups(token string, realm string) (*[]Group, error) {
 	return &result, nil
 }
 
-// GetRolesByClientID get all roles for the given client in realm
-func (client *gocloak) GetRolesByClientID(token string, realm string, clientID string) (*[]Role, error) {
+// GetClientRoles get all roles for the given client in realm
+func (client *gocloak) GetClientRoles(token string, realm string, clientID string) (*[]Role, error) {
 	var result []Role
 	resp, err := getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.getAdminRealmURL(realm, "clients", clientID, "roles"))
 
-	err = checkForError(resp, err)
-	if err != nil {
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// GetClientRole get a role for the given client in a realm by role name
+func (client *gocloak) GetClientRole(token string, realm string, clientID string, roleName string) (*Role, error) {
+	var result Role
+	resp, err := getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "clients", clientID, "roles", roleName))
+
+	if err := checkForError(resp, err); err != nil {
 		return nil, err
 	}
 
@@ -816,10 +866,17 @@ func (client *gocloak) GetRolesByClientID(token string, realm string, clientID s
 }
 
 // GetClients gets all clients in realm
-func (client *gocloak) GetClients(token string, realm string) (*[]Client, error) {
+func (client *gocloak) GetClients(token string, realm string, params GetClientsParams) (*[]Client, error) {
 	var result []Client
+	q := map[string]string{}
+	if params.ViewableOnly {
+		q["viewableOnly"] = strconv.FormatBool(params.ViewableOnly)
+	}
+	if len(params.ClientID) != 0 {
+		q["clientId"] = params.ClientID
+	}
 	resp, err := getRequestWithBearerAuth(token).
-		SetResult(&result).
+		SetResult(&result).SetQueryParams(q).
 		Get(client.getAdminRealmURL(realm, "clients"))
 
 	err = checkForError(resp, err)
@@ -977,4 +1034,13 @@ func (client *gocloak) GetRealm(token string, realm string) (*RealmRepresentatio
 	}
 
 	return &result, nil
+}
+
+// CreateRealm creates a realm
+func (client *gocloak) CreateRealm(token string, realm RealmRepresentation) error {
+	resp, err := getRequestWithBearerAuth(token).
+		SetBody(&realm).
+		Post(client.getAdminRealmURL(""))
+
+	return checkForError(resp, err)
 }

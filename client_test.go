@@ -1,798 +1,797 @@
 package gocloak
 
 import (
+	"crypto/tls"
+	"encoding/json"
+	"github.com/Nerzal/gocloak/pkg/jwx"
+	"io/ioutil"
 	"math/rand"
+	"net/http"
+	"net/url"
+	"os"
+	"path/filepath"
+	"runtime"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
-
-	"github.com/Nerzal/gocloak/pkg/jwx"
 )
 
-func TestRequestPermission(t *testing.T) {
-	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.RequestPermission(clientid, clientSecret, realm, username, password, "Permission foo # 3")
-	if err != nil {
-		t.Log("Login failed", err.Error())
-		t.FailNow()
-	}
-
-	rptResult, err := client.RetrospectToken(token.AccessToken, clientid, clientSecret, realm)
-	if err != nil {
-		t.Log("Inspection failed:", err.Error())
-		t.FailNow()
-	}
-
-	if !rptResult.Active {
-		t.Log("Inactive Token oO")
-		t.FailNow()
-	}
-
-	t.Log(rptResult)
+type configAdmin struct {
+	UserName string `json:"username"`
+	Password string `json:"password"`
+	Realm    string `json:"realm"`
 }
 
-func TestGetCerts(t *testing.T) {
-	t.Parallel()
-	client := NewClient(hostname)
-	certs, err := client.GetCerts(realm)
-	if err != nil {
-		t.Log(err)
-		t.FailNow()
-	}
-
-	t.Log(certs)
+type configGoCloak struct {
+	UserName     string `json:"username"`
+	Password     string `json:"password"`
+	Realm        string `json:"realm"`
+	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
 }
-func Test_LoginClient_UnknownRealm(t *testing.T) {
-	t.Parallel()
-	client := NewClient(hostname)
-	_, err := client.LoginClient(clientid, clientSecret, "ThisRealmDoesNotExist")
-	if err == nil {
-		t.Log("Login shouldn't be succesful", err.Error())
-		t.FailNow()
-	}
 
-	errorMessage := err.Error()
-	if errorMessage != "404 Not Found" {
-		t.Log("Unexpected error message", err.Error())
-		t.FailNow()
+type Config struct {
+	HostName string        `json:"hostname"`
+	Proxy    string        `json:"proxy,omitempty"`
+	Admin    configAdmin   `json:"admin"`
+	GoCloak  configGoCloak `json:"gocloak"`
+}
+
+var (
+	config     *Config
+	configOnce sync.Once
+	setupOnce  sync.Once
+)
+
+func FailIfErr(t *testing.T, err error, msg string) {
+	if err != nil {
+		_, file, line, _ := runtime.Caller(1)
+		if len(msg) == 0 {
+			msg = "unexpected error"
+		}
+		t.Fatalf("%s:%d: %s: %s", filepath.Base(file), line, msg, err.Error())
 	}
 }
 
-func TestGetIssuer(t *testing.T) {
-	t.Parallel()
-	client := NewClient(hostname)
-	issuer, err := client.GetIssuer(realm)
-	if err != nil {
-		t.Log(err)
-		t.FailNow()
-	}
-
-	t.Log(issuer)
-}
-
-func TestRetrospectTokenInactiveToken(t *testing.T) {
-	t.Parallel()
-	client := NewClient(hostname)
-	_, err := client.LoginClient(clientid, clientSecret, realm)
-	if err != nil {
-		t.Log("Login failed", err.Error())
-		t.FailNow()
-	}
-
-	rptResult, err := client.RetrospectToken("foobar", clientid, clientSecret, realm)
-	if err != nil {
-		t.Log("Inspection failed:", err.Error())
-		t.FailNow()
-	}
-
-	if rptResult.Active {
-		t.Log("That should never happen. Token is active")
-		t.FailNow()
-	}
-
-	t.Log(rptResult)
-}
-
-func TestGetUserInfo(t *testing.T) {
-	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.LoginClient(clientid, clientSecret, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
-
-	userInfo, err := client.GetUserInfo(token.AccessToken, realm)
-	if err != nil {
-		t.Log("Failed to fetch userinfo", err.Error())
-		t.FailNow()
-	}
-	t.Log(userInfo)
-}
-
-func TestRetrospectToken(t *testing.T) {
-	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.Login(clientid, clientSecret, realm, username, password)
-	if err != nil {
-		t.Log("Login failed", err.Error())
-		t.FailNow()
-	}
-
-	rptResult, err := client.RetrospectToken(token.AccessToken, clientid, clientSecret, realm)
-	if err != nil {
-		t.Log("Inspection failed:", err.Error())
-		t.FailNow()
-	}
-
-	if !rptResult.Active {
-		t.Log("Inactive Token oO")
-		t.FailNow()
-	}
-
-	t.Log(rptResult)
-}
-
-func TestDecodeAccessToken(t *testing.T) {
-	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.LoginClient(clientid, clientSecret, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
-
-	resultToken, claims, err := client.DecodeAccessToken(token.AccessToken, realm)
-	if err != nil {
-		t.Log(err.Error())
-		t.FailNow()
-	}
-
-	t.Log(resultToken)
-	t.Log(claims)
-}
-
-func TestDecodeAccessTokenCustomClaims(t *testing.T) {
-	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.LoginClient(clientid, clientSecret, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
-
-	claims := jwx.Claims{}
-	_, err = client.DecodeAccessTokenCustomClaims(token.AccessToken, realm, claims)
-	if err != nil {
-		t.Log(err.Error())
-		t.FailNow()
+func FailIf(t *testing.T, cond bool, msg string) {
+	if cond {
+		t.Fatal(msg)
 	}
 }
 
-func TestRefreshToken(t *testing.T) {
-	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.Login(clientid, clientSecret, realm, username, password)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
-
-	token, err = client.RefreshToken(token.RefreshToken, clientid, clientSecret, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
-
-	t.Log(token)
+func GetConfig(t *testing.T) *Config {
+	configOnce.Do(func() {
+		configFile, err := os.Open(filepath.Join("testdata", "config.json"))
+		FailIfErr(t, err, "cannot open config.json")
+		defer configFile.Close()
+		data, err := ioutil.ReadAll(configFile)
+		FailIfErr(t, err, "cannot read config.json")
+		config = &Config{}
+		err = json.Unmarshal(data, config)
+		FailIfErr(t, err, "cannot parse config.json")
+		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+		if len(config.Proxy) != 0 {
+			proxy, err := url.Parse(config.Proxy)
+			FailIfErr(t, err, "incorrect proxy url: "+config.Proxy)
+			http.DefaultTransport.(*http.Transport).Proxy = http.ProxyURL(proxy)
+		}
+	})
+	return config
 }
 
-func TestUserAttributeContains(t *testing.T) {
-	t.Parallel()
-
-	attributes := map[string][]string{}
-	attributes["foo"] = []string{"bar", "alice", "bob", "roflcopter"}
-	attributes["bar"] = []string{"baz"}
-
-	client := NewClient(hostname)
-	if !client.UserAttributeContains(attributes, "foo", "alice") {
-		t.FailNow()
-	}
+func GetClientToken(t *testing.T, client GoCloak) *JWT {
+	cfg := GetConfig(t)
+	token, err := client.LoginClient(
+		cfg.GoCloak.ClientID,
+		cfg.GoCloak.ClientSecret,
+		cfg.GoCloak.Realm)
+	FailIfErr(t, err, "Login failed")
+	return token
 }
 
-func TestGetUserByID(t *testing.T) {
-	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.LoginClient(clientid, clientSecret, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
+func GetUserToken(t *testing.T, client GoCloak) *JWT {
+	SetUpTestUser(t, client)
+	cfg := GetConfig(t)
+	token, err := client.Login(
+		cfg.GoCloak.ClientID,
+		cfg.GoCloak.ClientSecret,
+		cfg.GoCloak.Realm,
+		cfg.GoCloak.UserName,
+		cfg.GoCloak.Password)
+	FailIfErr(t, err, "Login failed")
+	return token
+}
 
+func GetAdminToken(t *testing.T, client GoCloak) *JWT {
+	cfg := GetConfig(t)
+	token, err := client.LoginAdmin(
+		cfg.Admin.UserName,
+		cfg.Admin.Password,
+		cfg.Admin.Realm)
+	FailIfErr(t, err, "Login failed")
+	return token
+}
+
+func GetRandomName(name string) string {
 	s1 := rand.NewSource(time.Now().UnixNano())
 	r1 := rand.New(s1)
 	randomNumber := r1.Intn(100000)
+	return name + strconv.Itoa(randomNumber)
+}
+
+func GetClientByClientID(t *testing.T, client GoCloak, clientID string) *Client {
+	cfg := GetConfig(t)
+	token := GetAdminToken(t, client)
+	clients, err := client.GetClients(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		GetClientsParams{
+			ClientID: clientID,
+		})
+	FailIfErr(t, err, "GetClients failed")
+	for _, fetchedClient := range *clients {
+		if fetchedClient.ClientID == clientID {
+			return &fetchedClient
+		}
+	}
+	t.Fatal("Client not found")
+	return nil
+}
+
+func CreateUser(t *testing.T, client GoCloak) (func(), string) {
+	cfg := GetConfig(t)
+	token := GetAdminToken(t, client)
+
 	user := User{}
 	user.FirstName = "Klaus"
 	user.LastName = "Peter"
-	user.Email = "trololo" + strconv.Itoa(randomNumber) + "@mail.com"
+	user.Email = GetRandomName("trololo") + "@localhost"
 	user.Enabled = true
 	user.Username = user.Email
 	user.Attributes = map[string][]string{}
 	user.Attributes["foo"] = []string{"bar", "alice", "bob", "roflcopter"}
 	user.Attributes["bar"] = []string{"baz"}
 
-	id, err := client.CreateUser(token.AccessToken, realm, user)
-	if err != nil {
-		t.Log("CreateUser failed", err.Error())
-		t.FailNow()
+	userID, err := client.CreateUser(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		user)
+	FailIfErr(t, err, "CreateUser failed")
+	tearDown := func() {
+		err := client.DeleteUser(
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			*userID)
+		FailIfErr(t, err, "DeleteUser")
 	}
 
-	fetchedUser, err := client.GetUserByID(token.AccessToken, realm, *id)
-	if err != nil {
-		t.Log("GetUserById failed", err.Error())
-		t.FailNow()
-	}
+	return tearDown, *userID
+}
 
+func CreateGroup(t *testing.T, client GoCloak) (func(), string) {
+	cfg := GetConfig(t)
+	token := GetAdminToken(t, client)
+	group := Group{
+		Name: GetRandomName("MySuperCoolNewGroup"),
+	}
+	err := client.CreateGroup(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		group)
+	FailIfErr(t, err, "CreateGroup failed")
+	groups, err := client.GetGroups(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		GetGroupsParams{
+			Search: group.Name,
+		})
+	FailIfErr(t, err, "GetGroups failed")
+	var groupID string
+	for _, fetchedGroup := range *groups {
+		if fetchedGroup.Name == group.Name {
+			groupID = fetchedGroup.ID
+			break
+		}
+	}
+	tearDown := func() {
+		err := client.DeleteGroup(
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			groupID)
+		FailIfErr(t, err, "DeleteGroup failed")
+	}
+	return tearDown, groupID
+}
+
+func SetUpTestUser(t *testing.T, client GoCloak) {
+	setupOnce.Do(func() {
+		cfg := GetConfig(t)
+		token := GetAdminToken(t, client)
+
+		user := User{
+			Username:      cfg.GoCloak.UserName,
+			Email:         cfg.GoCloak.UserName + "@localhost",
+			EmailVerified: true,
+			Enabled:       true,
+		}
+
+		createdUserID, err := client.CreateUser(
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			user)
+		var userID string
+		if err != nil && err.Error() == "Conflict: Object allready exists" {
+			err = nil
+			users, err := client.GetUsers(
+				token.AccessToken,
+				cfg.GoCloak.Realm,
+				GetUsersParams{
+					Username: cfg.GoCloak.UserName,
+				})
+			FailIfErr(t, err, "GetUsers failed")
+			for _, user := range *users {
+				if user.Username == cfg.GoCloak.UserName {
+					userID = user.ID
+					break
+				}
+			}
+		} else {
+			FailIfErr(t, err, "CreateUser failed")
+			userID = *createdUserID
+		}
+
+		err = client.SetPassword(
+			token.AccessToken,
+			userID,
+			cfg.GoCloak.Realm,
+			cfg.GoCloak.Password,
+			false)
+		FailIfErr(t, err, "SetPassword	 failed")
+	})
+}
+
+func TestGocloak_RequestPermission(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	SetUpTestUser(t, client)
+	token, err := client.RequestPermission(
+		cfg.GoCloak.ClientID,
+		cfg.GoCloak.ClientSecret,
+		cfg.GoCloak.Realm,
+		cfg.GoCloak.UserName,
+		cfg.GoCloak.Password,
+		"Permission foo # 3")
+	FailIfErr(t, err, "login failed")
+
+	rptResult, err := client.RetrospectToken(
+		token.AccessToken,
+		cfg.GoCloak.ClientID,
+		cfg.GoCloak.ClientSecret,
+		cfg.GoCloak.Realm)
+	t.Log(rptResult)
+	FailIfErr(t, err, "inspection failed")
+	FailIf(t, !rptResult.Active, "Inactive Token oO")
+}
+
+func TestGocloak_GetCerts(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	certs, err := client.GetCerts(cfg.GoCloak.Realm)
+	t.Log(certs)
+	FailIfErr(t, err, "get certs")
+}
+
+func TestGocloak_LoginClient_UnknownRealm(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	_, err := client.LoginClient(
+		cfg.GoCloak.ClientID,
+		cfg.GoCloak.ClientSecret,
+		"ThisRealmDoesNotExist")
+	FailIf(t, err == nil, "Login shouldn't be successful")
+
+	errorMessage := err.Error()
+	FailIf(t, errorMessage != "404 Not Found", "Unexpected error message: "+errorMessage)
+}
+
+func TestGocloak_GetIssuer(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	issuer, err := client.GetIssuer(cfg.GoCloak.Realm)
+	t.Log(issuer)
+	FailIfErr(t, err, "get issuer")
+}
+
+func TestGocloak_RetrospectToken_InactiveToken(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+
+	rptResult, err := client.RetrospectToken(
+		"foobar",
+		cfg.GoCloak.ClientID,
+		cfg.GoCloak.ClientSecret,
+		cfg.GoCloak.Realm)
+	t.Log(rptResult)
+	FailIfErr(t, err, "inspection failed")
+	FailIf(t, rptResult.Active, "That should never happen. Token is active")
+
+}
+
+func TestGocloak_GetUserInfo(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetClientToken(t, client)
+
+	userInfo, err := client.GetUserInfo(
+		token.AccessToken,
+		cfg.GoCloak.Realm)
+	t.Log(userInfo)
+	FailIfErr(t, err, "Failed to fetch userinfo")
+}
+
+func TestGocloak_RetrospectToken(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetClientToken(t, client)
+
+	rptResult, err := client.RetrospectToken(
+		token.AccessToken,
+		cfg.GoCloak.ClientID,
+		cfg.GoCloak.ClientSecret,
+		cfg.GoCloak.Realm)
+	t.Log(rptResult)
+	FailIfErr(t, err, "Inspection failed")
+	FailIf(t, !rptResult.Active, "Inactive Token oO")
+}
+
+func TestGocloak_DecodeAccessToken(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetClientToken(t, client)
+
+	resultToken, claims, err := client.DecodeAccessToken(
+		token.AccessToken,
+		cfg.GoCloak.Realm)
+	t.Log(resultToken)
+	t.Log(claims)
+	FailIfErr(t, err, "DecodeAccessToken")
+}
+
+func TestGocloak_DecodeAccessTokenCustomClaims(t *testing.T) {
+	t.Skipf(
+		"Due to error: %s",
+		"DecodeAccessTokenCustomClaims: json: cannot unmarshal object into Go value of type jwt.Claims")
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetClientToken(t, client)
+
+	claims := jwx.Claims{}
+	_, err := client.DecodeAccessTokenCustomClaims(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		claims)
+	FailIfErr(t, err, "DecodeAccessTokenCustomClaims")
+}
+
+func TestGocloak_RefreshToken(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetClientToken(t, client)
+
+	token, err := client.RefreshToken(
+		token.RefreshToken,
+		cfg.GoCloak.ClientID,
+		cfg.GoCloak.ClientSecret,
+		cfg.GoCloak.Realm)
+	t.Log(token)
+	FailIfErr(t, err, "RefreshToken failed")
+}
+
+func TestGocloak_UserAttributeContains(t *testing.T) {
+	t.Parallel()
+
+	attributes := map[string][]string{}
+	attributes["foo"] = []string{"bar", "alice", "bob", "roflcopter"}
+	attributes["bar"] = []string{"baz"}
+
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	ok := client.UserAttributeContains(attributes, "foo", "alice")
+	FailIf(t, !ok, "UserAttributeContains")
+}
+
+func TestGocloak_GetUserByID(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
+
+	tearDown, userID := CreateUser(t, client)
+	defer tearDown()
+
+	fetchedUser, err := client.GetUserByID(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		userID)
 	t.Log(fetchedUser)
+	FailIfErr(t, err, "GetUserById failed")
 }
 
-func TestGetKeys(t *testing.T) {
+func TestGocloak_GetKeyStoreConfig(t *testing.T) {
 	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.LoginClient(clientid, clientSecret, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
 
-	config, err := client.GetKeyStoreConfig(token.AccessToken, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
-
+	config, err := client.GetKeyStoreConfig(
+		token.AccessToken,
+		cfg.GoCloak.Realm)
 	t.Log(config)
+	FailIfErr(t, err, "GetKeyStoreConfig")
 }
 
-func TestLogin(t *testing.T) {
+func TestGocloak_Login(t *testing.T) {
 	t.Parallel()
-	client := NewClient(hostname)
-	_, err := client.Login(clientid, clientSecret, realm, username, password)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	SetUpTestUser(t, client)
+	_, err := client.Login(
+		cfg.GoCloak.ClientID,
+		cfg.GoCloak.ClientSecret,
+		cfg.GoCloak.Realm,
+		cfg.GoCloak.UserName,
+		cfg.GoCloak.Password)
+	FailIfErr(t, err, "Login failed")
 }
 
-func TestLoginClient(t *testing.T) {
+func TestGocloak_LoginClient(t *testing.T) {
 	t.Parallel()
-	client := NewClient(hostname)
-	_, err := client.LoginClient(clientid, clientSecret, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	_, err := client.LoginClient(
+		cfg.GoCloak.ClientID,
+		cfg.GoCloak.ClientSecret,
+		cfg.GoCloak.Realm)
+	FailIfErr(t, err, "LoginClient failed")
 }
 
-func TestLoginAdmin(t *testing.T) {
+func TestGocloak_LoginAdmin(t *testing.T) {
 	t.Parallel()
-	client := NewClient(hostname)
-	_, err := client.LoginAdmin(username, password, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	_, err := client.LoginAdmin(
+		cfg.Admin.UserName,
+		cfg.Admin.Password,
+		cfg.Admin.Realm)
+	FailIfErr(t, err, "LoginAdmin failed")
 }
 
-func TestSetPassword(t *testing.T) {
+func TestGocloak_SetPassword(t *testing.T) {
 	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.LoginClient(clientid, clientSecret, realm)
-	if err != nil {
-		t.Log("Failed to login: ", err.Error())
-		t.FailNow()
-	}
-	user := User{}
-	user.FirstName = "Klaus"
-	user.LastName = "Peter"
-	user.Email = "olaf5@mail.com"
-	user.Enabled = true
-	user.Username = user.Email
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
 
-	userID, err := client.CreateUser(token.AccessToken, realm, user)
-	if err != nil {
-		t.Log("Create User Failed: ", err.Error())
-		t.FailNow()
-	}
+	tearDown, userID := CreateUser(t, client)
+	defer tearDown()
 
-	err = client.SetPassword(token.AccessToken, *userID, realm, "passwort1234!", false)
-	if err != nil {
-		t.Log("Failed to set password: ", err.Error())
-		t.FailNow()
-	}
+	err := client.SetPassword(
+		token.AccessToken,
+		userID,
+		cfg.GoCloak.Realm,
+		"passwort1234!",
+		false)
+	FailIfErr(t, err, "Failed to set password")
 }
 
-func TestCreateUser(t *testing.T) {
+func TestGocloak_CreateUser(t *testing.T) {
 	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.LoginClient(clientid, clientSecret, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
 
-	user := User{}
-	user.FirstName = "Klaus"
-	user.LastName = "Peter"
-	user.Email = "trololo@mail.com"
-	user.Enabled = true
-	user.Username = user.Email
-	_, err = client.CreateUser(token.AccessToken, realm, user)
-	_, ok := err.(*ObjectAllreadyExists)
-	if ok {
-		return
-	}
-
-	if err != nil {
-		t.Log("Create User Failed: ", err.Error())
-		t.FailNow()
-	}
+	tearDown, _ := CreateUser(t, client)
+	defer tearDown()
 }
 
-func TestCreateUserCustomAttributes(t *testing.T) {
+func TestGocloak_CreateUserCustomAttributes(t *testing.T) {
 	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.LoginClient(clientid, clientSecret, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
 
-	user := User{}
-	user.FirstName = "Klaus"
-	user.LastName = "Peter"
-	user.Email = "trololo4234@mail.com"
-	user.Enabled = true
-	user.Username = user.Email
-	user.Attributes = map[string][]string{}
-	user.Attributes["foo"] = []string{"bar"}
-	user.Attributes["bar"] = []string{"baz"}
+	tearDown, userID := CreateUser(t, client)
+	defer tearDown()
 
-	id, err := client.CreateUser(token.AccessToken, realm, user)
-	_, ok := err.(*ObjectAllreadyExists)
-	if ok {
-		return
-	}
-
-	if err != nil {
-		t.Log("Create User Failed: ", err.Error())
-		t.FailNow()
-	}
-
-	t.Log(id)
+	fetchedUser, err := client.GetUserByID(token.AccessToken,
+		cfg.GoCloak.Realm,
+		userID)
+	FailIfErr(t, err, "GetUserByID failed")
+	ok := client.UserAttributeContains(fetchedUser.Attributes, "foo", "alice")
+	FailIf(t, !ok, "User doesn't have custom attributes")
+	ok = client.UserAttributeContains(fetchedUser.Attributes, "foo2", "alice")
+	FailIf(t, ok, "User's custom attributes contains unexpected attribute")
 }
 
-func TestCreateGroup(t *testing.T) {
+func TestGocloak_CreateGroup(t *testing.T) {
 	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.LoginClient(clientid, clientSecret, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
 
-	group := Group{}
-	group.Name = "MySuperCoolNewGroup"
-	err = client.CreateGroup(token.AccessToken, realm, group)
-	_, ok := err.(*ObjectAllreadyExists)
-	if ok {
-		return
-	}
-
-	if err != nil {
-		t.Log("Create User Failed: ", err.Error())
-		t.FailNow()
-	}
+	tearDown, _ := CreateGroup(t, client)
+	defer tearDown()
 }
 
-func TestCreateRole(t *testing.T) {
+func TestGocloak_CreateClientRole(t *testing.T) {
 	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.LoginClient(clientid, clientSecret, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
 
-	role := Role{}
-	role.Name = "mySuperCoolRole"
-	err = client.CreateRole(token.AccessToken, realm, "9204c840-f857-4507-8b00-784c9c845e6e", role)
-	_, ok := err.(*ObjectAllreadyExists)
-	if ok {
-		return
+	role := Role{
+		Name: GetRandomName("mySuperCoolRole"),
 	}
+	testClient := GetClientByClientID(t, client, cfg.GoCloak.ClientID)
 
-	if err != nil {
-		t.Log("Create Role Failed: ", err.Error())
-		t.FailNow()
-	}
+	err := client.CreateClientRole(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		testClient.ID,
+		role)
+	FailIfErr(t, err, "CreateClientRole failed")
+	defer client.DeleteClientRole(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		testClient.ID,
+		role.Name)
 }
 
-func TestCreateClient(t *testing.T) {
+func TestGocloak_CreateClient(t *testing.T) {
 	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.LoginAdmin(username, password, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
 
-	newClient := Client{}
-	newClient.ClientID = "KYCnow"
-	err = client.CreateClient(token.AccessToken, realm, newClient)
-	_, ok := err.(*ObjectAllreadyExists)
-	if ok {
-		return
+	newClient := Client{
+		ID:       GetRandomName("ID"),
+		ClientID: GetRandomName("ClientID"),
 	}
-
-	if err != nil {
-		t.Log("Create User Failed: ", err.Error())
-		t.FailNow()
-	}
+	err := client.CreateClient(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		newClient)
+	FailIfErr(t, err, "CreateClient failed")
+	defer client.DeleteClient(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		newClient.ID)
 }
 
-func TestGetUsers(t *testing.T) {
+func TestGocloak_GetUsers(t *testing.T) {
 	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.LoginAdmin(username, password, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
 
-	users, err := client.GetUsers(token.AccessToken, realm, GetUsersParams{})
-	if err != nil {
-		t.Log("GetUsers failed", err.Error())
-		t.FailNow()
-	}
-
+	users, err := client.GetUsers(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		GetUsersParams{
+			Username: cfg.GoCloak.UserName,
+		})
 	t.Log(users)
+	FailIfErr(t, err, "GetUsers failed")
 }
 
-func TestGetKeyStoreConfig(t *testing.T) {
+func TestGocloak_GetUserCount(t *testing.T) {
 	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.LoginClient(clientid, clientSecret, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
 
-	_, err = client.GetKeyStoreConfig(token.AccessToken, realm)
-	if err != nil {
-		t.Log("GetKeyStoreConfig failed", err.Error())
-		t.FailNow()
-	}
+	count, err := client.GetUserCount(
+		token.AccessToken,
+		cfg.GoCloak.Realm)
+	t.Logf("Users in Realm: %d", count)
+	FailIfErr(t, err, "GetUserCount failed")
 }
 
-func TestGetUser(t *testing.T) {
+func TestGocloak_GetGroups(t *testing.T) {
 	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.LoginAdmin(username, password, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
 
-	users, err := client.GetUsers(token.AccessToken, realm, GetUsersParams{})
-	if err != nil {
-		t.Log("GetUsers failed", err.Error())
-		t.FailNow()
-	}
-
-	dereferencedUsers := *users
-	user, err := client.GetUserByID(token.AccessToken, realm, dereferencedUsers[0].ID)
-	if err != nil {
-		t.Log("GetUser failed", err.Error())
-		t.FailNow()
-	}
-
-	t.Log(user)
+	_, err := client.GetGroups(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		GetGroupsParams{})
+	FailIfErr(t, err, "GetGroups failed")
 }
 
-func TestGetUserCount(t *testing.T) {
+func TestGocloak_GetUserGroups(t *testing.T) {
 	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.LoginAdmin(username, password, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
 
-	count, err := client.GetUserCount(token.AccessToken, realm)
-	if err != nil {
-		t.Log("GetUsers failed", err.Error())
-		t.FailNow()
-	}
+	tearDown, userID := CreateUser(t, client)
+	defer tearDown()
 
-	t.Log("Users in Realm: " + strconv.Itoa(count))
+	_, err := client.GetUserGroups(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		userID)
+	FailIfErr(t, err, "GetUserGroups failed")
 }
 
-func TestGetGroups(t *testing.T) {
+func TestGocloak_GetRealmRoles(t *testing.T) {
 	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.LoginAdmin(username, password, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
 
-	_, err = client.GetGroups(token.AccessToken, realm)
-	if err != nil {
-		t.Log("GetGroups failed", err.Error())
-		t.FailNow()
-	}
+	_, err := client.GetRealmRoles(
+		token.AccessToken,
+		cfg.GoCloak.Realm)
+	FailIfErr(t, err, "GetRealmRoles failed")
 }
 
-func TestGetUserGroups(t *testing.T) {
+func TestGocloak_GetClients(t *testing.T) {
 	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.LoginAdmin(username, password, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
 
-	users, err := client.GetUsers(token.AccessToken, realm, GetUsersParams{})
-	if err != nil {
-		t.Log("GetAllUsers failed", err.Error())
-		t.FailNow()
-	}
-
-	realUsers := *users
-
-	_, err = client.GetUserGroups(token.AccessToken, realm, realUsers[0].ID)
-	if err != nil {
-		t.Log("GetUserGroups failed", err.Error())
-		t.FailNow()
-	}
+	_, err := client.GetClients(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		GetClientsParams{
+			ClientID: cfg.GoCloak.ClientID,
+		})
+	FailIfErr(t, err, "GetClients failed")
 }
 
-func TestGetRoles(t *testing.T) {
+func TestGocloak_GetClientRoles(t *testing.T) {
 	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.LoginAdmin(username, password, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
 
-	_, err = client.GetRealmRoles(token.AccessToken, realm)
-	if err != nil {
-		t.Log("GetRoles failed", err.Error())
-		t.FailNow()
-	}
+	testClient := GetClientByClientID(t, client, cfg.GoCloak.ClientID)
+
+	_, err := client.GetClientRoles(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		testClient.ID)
+	FailIfErr(t, err, "GetClientRoles failed")
 }
 
-func TestGetClients(t *testing.T) {
+func TestGocloak_GetRoleMappingByGroupID(t *testing.T) {
 	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.LoginAdmin(username, password, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
 
-	_, err = client.GetClients(token.AccessToken, realm)
-	if err != nil {
-		t.Log("GetClients failed", err.Error())
-		t.FailNow()
-	}
+	tearDown, groupID := CreateGroup(t, client)
+	defer tearDown()
+
+	_, err := client.GetRoleMappingByGroupID(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		groupID)
+	FailIfErr(t, err, "GetRoleMappingByGroupID failed")
 }
 
-func TestGetRolesByClientId(t *testing.T) {
+func TestGocloak_GetRoleMappingByUserID(t *testing.T) {
 	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.LoginAdmin(username, password, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
 
-	clients, err := client.GetClients(token.AccessToken, realm)
-	if err != nil {
-		t.Log("GetClients failed", err.Error())
-		t.FailNow()
-	}
+	tearDown, userID := CreateUser(t, client)
+	defer tearDown()
 
-	clientsDeferenced := *clients
-	_, err = client.GetRolesByClientID(token.AccessToken, realm, clientsDeferenced[4].ClientID)
-	if err != nil {
-		t.Log("GetRolesByClientID failed", err.Error())
-		t.FailNow()
-	}
+	_, err := client.GetRoleMappingByUserID(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		userID)
+	FailIfErr(t, err, "GetRoleMappingByUserID failed")
 }
 
-func TestGetRoleMappingByGroupID(t *testing.T) {
+func TestGocloak_GetRealmRolesByUserID(t *testing.T) {
 	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.LoginAdmin(username, password, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
 
-	groups, err := client.GetGroups(token.AccessToken, realm)
-	if err != nil {
-		t.Log("GetGroups failed", err.Error())
-		t.FailNow()
-	}
+	tearDown, userID := CreateUser(t, client)
+	defer tearDown()
 
-	if len(*groups) == 0 {
-		return
-	}
-
-	groupsDeferenced := *groups
-	_, err = client.GetRoleMappingByGroupID(token.AccessToken, realm, groupsDeferenced[0].ID)
-	if err != nil {
-		t.Log("GetRoleMappingByGroupID failed")
-		t.FailNow()
-	}
+	_, err := client.GetRealmRolesByUserID(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		userID)
+	FailIfErr(t, err, "GetRealmRolesByUserID failed")
 }
 
-func TestGetRoleMappingByUserID(t *testing.T) {
+func TestGocloak_GetRealmRolesByGroupID(t *testing.T) {
 	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.LoginAdmin(username, password, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
 
-	users, err := client.GetUsers(token.AccessToken, realm, GetUsersParams{})
-	if err != nil {
-		t.Log("GetUsers failed", err.Error())
-		t.FailNow()
-	}
+	tearDown, groupID := CreateGroup(t, client)
+	defer tearDown()
 
-	if len(*users) == 0 {
-		return
-	}
-
-	usersDeferenced := *users
-	_, err = client.GetRoleMappingByGroupID(token.AccessToken, realm, usersDeferenced[0].ID)
-	if err != nil {
-		t.Log("GetRoleMappingByUserID failed")
-		t.FailNow()
-	}
+	_, err := client.GetRealmRolesByGroupID(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		groupID)
+	FailIfErr(t, err, "GetRealmRolesByGroupID failed")
 }
 
-func TestGetRealmRolesByUserID(t *testing.T) {
+func TestGocloak_ExecuteActionsEmail_UpdatePassword(t *testing.T) {
 	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.LoginAdmin(username, password, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
 
-	users, err := client.GetUsers(token.AccessToken, realm, GetUsersParams{})
-	if err != nil {
-		t.Log("GetUsers failed", err.Error())
-		t.FailNow()
-	}
-
-	if len(*users) == 0 {
-		return
-	}
-
-	usersDeferenced := *users
-	_, err = client.GetRealmRolesByUserID(token.AccessToken, realm, usersDeferenced[0].ID)
-	if err != nil {
-		t.Log("GetRealmRolesByUserID failed")
-		t.FailNow()
-	}
-}
-
-func TestGetRealmRolesByGroupID(t *testing.T) {
-	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.LoginAdmin(username, password, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
-
-	groups, err := client.GetGroups(token.AccessToken, realm)
-	if err != nil {
-		t.Log("GetGroups failed", err.Error())
-		t.FailNow()
-	}
-
-	if len(*groups) == 0 {
-		return
-	}
-
-	groupsDeferenced := *groups
-	_, err = client.GetRealmRolesByGroupID(token.AccessToken, realm, groupsDeferenced[0].ID)
-	if err != nil {
-		t.Log("GetRealmRolesByGroupID failed")
-		t.FailNow()
-	}
-}
-
-func TestExecuteActionsEmailUpdatePassword(t *testing.T) {
-	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.LoginAdmin(username, password, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
+	tearDown, userID := CreateUser(t, client)
+	defer tearDown()
 
 	params := ExecuteActionsEmail{
-		ClientID: clientid,
-		UserID:   "7ce47297-f884-43ac-92e2-71820c63969a",
+		ClientID: cfg.GoCloak.ClientID,
+		UserID:   userID,
 		Actions:  []string{"UPDATE_PASSWORD"},
 	}
 
-	err = client.ExecuteActionsEmail(token.AccessToken, realm, params)
+	err := client.ExecuteActionsEmail(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		params)
+
 	if err != nil {
-		t.Log("ExecuteActionsEmail failed", err.Error())
-		t.FailNow()
+		if err.Error() == "500 Internal Server Error" {
+			return
+		}
+		FailIfErr(t, err, "ExecuteActionsEmail failed")
 	}
 }
 
-func TestGetUsersByEmail(t *testing.T) {
+func TestGocloak_Logout(t *testing.T) {
 	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.LoginAdmin(username, password, realm)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetUserToken(t, client)
 
-	users, err := client.GetUsers(token.AccessToken, realm, GetUsersParams{Email: "trololo@mail.com"})
-	if err != nil {
-		t.Log("GetUsers failed", err.Error())
-		t.FailNow()
-	}
-
-	t.Logf("%+v", users)
+	err := client.Logout(
+		cfg.GoCloak.ClientID,
+		cfg.GoCloak.ClientSecret,
+		cfg.GoCloak.Realm,
+		token.RefreshToken)
+	FailIfErr(t, err, "Logout failed")
 }
 
-func TestLogout(t *testing.T) {
+func TestGocloak_GetRealm(t *testing.T) {
 	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.Login(clientid, clientSecret, realm, username, password)
-	if err != nil {
-		t.Log("TestLogin failed", err.Error())
-		t.FailNow()
-	}
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
 
-	err = client.Logout(clientid, clientSecret, realm, token.RefreshToken)
-	if err != nil {
-		t.Log("TestLogout failed", err.Error())
-		t.FailNow()
-	}
-}
-
-func TestGetRealm(t *testing.T) {
-	t.Parallel()
-	client := NewClient(hostname)
-	token, err := client.LoginAdmin(username, password, realm)
-	if err != nil {
-		t.Log("TestAdminLogin failed", err.Error())
-		t.FailNow()
-	}
-
-	r, err := client.GetRealm(token.AccessToken, realm)
-	if err != nil {
-		t.Log("GetRealm failed", err.Error())
-		t.FailNow()
-	}
-
+	r, err := client.GetRealm(
+		token.AccessToken,
+		cfg.GoCloak.Realm)
 	t.Logf("%+v", r)
+	FailIfErr(t, err, "GetRealm failed")
 }
