@@ -16,4 +16,4 @@ after_failure:
   - docker logs keycloak
 
 script:
-  - go test -cover
+  - go test -cover -v -race
