@@ -137,4 +137,8 @@ type GoCloak interface {
 ```
 
 ## developing & testing
-I was to lazy to add some environment variables. So i added a "super.secret.go" file, which holds some constants(username, password, realm), that are used for the tests.
+For local testing you needa start a docker container. Simply run following commands prior to starting the tests:
+
+docker pull jboss/keycloak
+
+docker run -d -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=secret -e KEYCLOAK_IMPORT=/tmp/gocloak-realm.json -v `pwd`/testdata/gocloak-realm.json:/tmp/gocloak-realm.json -p 8080:8080 --name keycloak jboss/keycloak
