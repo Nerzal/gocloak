@@ -984,10 +984,10 @@ func (client *gocloak) GetRealmRolesByGroupID(token string, realm string, groupI
 }
 
 // UpdateRealmRole updates a role in a realm
-func (client *gocloak) UpdateRealmRole(token string, realm string, role Role) error {
+func (client *gocloak) UpdateRealmRole(token string, realm string, roleName string, role Role) error {
 	resp, err := getRequestWithBearerAuth(token).
 		SetBody(role).
-		Put(client.getAdminRealmURL(realm, "roles", role.Name))
+		Put(client.getAdminRealmURL(realm, "roles", roleName))
 
 	return checkForError(resp, err)
 }

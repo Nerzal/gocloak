@@ -54,9 +54,13 @@ func FailIfErr(t *testing.T, err error, msg string) {
 	}
 }
 
-func FailIf(t *testing.T, cond bool, msg string) {
+func FailIf(t *testing.T, cond bool, msg string, args ...interface{}) {
 	if cond {
-		t.Fatal(msg)
+		if len(args) > 0 {
+			t.Fatalf(msg, args...)
+		} else {
+			t.Fatal(msg)
+		}
 	}
 }
 
@@ -158,6 +162,7 @@ func CreateUser(t *testing.T, client GoCloak) (func(), string) {
 		cfg.GoCloak.Realm,
 		user)
 	FailIfErr(t, err, "CreateUser failed")
+	t.Logf("Created user with ID: %s. User: %+v", *userID, user)
 	tearDown := func() {
 		err := client.DeleteUser(
 			token.AccessToken,
@@ -194,6 +199,7 @@ func CreateGroup(t *testing.T, client GoCloak) (func(), string) {
 			break
 		}
 	}
+	t.Logf("Created Group with ID: %s. Group: %+v", groupID, group)
 	tearDown := func() {
 		err := client.DeleteGroup(
 			token.AccessToken,
@@ -635,18 +641,6 @@ func TestGocloak_GetUserGroups(t *testing.T) {
 	FailIfErr(t, err, "GetUserGroups failed")
 }
 
-func TestGocloak_GetRealmRoles(t *testing.T) {
-	t.Parallel()
-	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
-	token := GetAdminToken(t, client)
-
-	_, err := client.GetRealmRoles(
-		token.AccessToken,
-		cfg.GoCloak.Realm)
-	FailIfErr(t, err, "GetRealmRoles failed")
-}
-
 func TestGocloak_GetClients(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
@@ -709,38 +703,6 @@ func TestGocloak_GetRoleMappingByUserID(t *testing.T) {
 	FailIfErr(t, err, "GetRoleMappingByUserID failed")
 }
 
-func TestGocloak_GetRealmRolesByUserID(t *testing.T) {
-	t.Parallel()
-	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
-	token := GetAdminToken(t, client)
-
-	tearDown, userID := CreateUser(t, client)
-	defer tearDown()
-
-	_, err := client.GetRealmRolesByUserID(
-		token.AccessToken,
-		cfg.GoCloak.Realm,
-		userID)
-	FailIfErr(t, err, "GetRealmRolesByUserID failed")
-}
-
-func TestGocloak_GetRealmRolesByGroupID(t *testing.T) {
-	t.Parallel()
-	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
-	token := GetAdminToken(t, client)
-
-	tearDown, groupID := CreateGroup(t, client)
-	defer tearDown()
-
-	_, err := client.GetRealmRolesByGroupID(
-		token.AccessToken,
-		cfg.GoCloak.Realm,
-		groupID)
-	FailIfErr(t, err, "GetRealmRolesByGroupID failed")
-}
-
 func TestGocloak_ExecuteActionsEmail_UpdatePassword(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
@@ -794,4 +756,250 @@ func TestGocloak_GetRealm(t *testing.T) {
 		cfg.GoCloak.Realm)
 	t.Logf("%+v", r)
 	FailIfErr(t, err, "GetRealm failed")
+}
+
+// -----------
+// Realm Roles
+// -----------
+
+func CreateRealmRole(t *testing.T, client GoCloak) (func(), string) {
+	cfg := GetConfig(t)
+	token := GetAdminToken(t, client)
+
+	roleName := GetRandomName("Role")
+	t.Logf("Creating RoleName: %s", roleName)
+	err := client.CreateRealmRole(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		Role{
+			Name: roleName,
+		})
+	FailIfErr(t, err, "CreateRealmRole failed")
+	tearDown := func() {
+		err := client.DeleteRealmRole(
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			roleName)
+		FailIfErr(t, err, "DeleteRealmRole failed")
+	}
+	return tearDown, roleName
+}
+
+func TestGocloak_CreateRealmRole(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	tearDown, _ := CreateRealmRole(t, client)
+	defer tearDown()
+}
+
+func TestGocloak_GetRealmRole(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
+
+	tearDown, roleName := CreateRealmRole(t, client)
+	defer tearDown()
+
+	role, err := client.GetRealmRole(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		roleName)
+	t.Logf("Role: %+v", *role)
+	FailIfErr(t, err, "GetRealmRole failed")
+	FailIf(
+		t,
+		role.Name != roleName,
+		"GetRealmRole returns unexpected result. Expected: %s; Actual: %+v",
+		roleName, role)
+}
+
+func TestGocloak_GetRealmRoles(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
+
+	tearDown, _ := CreateRealmRole(t, client)
+	defer tearDown()
+
+	roles, err := client.GetRealmRoles(
+		token.AccessToken,
+		cfg.GoCloak.Realm)
+	t.Logf("Roles: %+v", *roles)
+	FailIfErr(t, err, "GetRealmRoles failed")
+}
+
+func TestGocloak_UpdateRealmRole(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
+
+	newRoleName := GetRandomName("Role")
+	_, oldRoleName := CreateRealmRole(t, client)
+
+	err := client.UpdateRealmRole(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		oldRoleName,
+		Role{
+			Name: newRoleName,
+		})
+	err = client.DeleteRealmRole(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		oldRoleName)
+	FailIf(
+		t,
+		err == nil,
+		"Role with old name was deleted sucessfully, but it shouldn't. Old role: %s; Updated role: %s",
+		oldRoleName, newRoleName)
+	err = client.DeleteRealmRole(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		newRoleName)
+	FailIfErr(t, err, "DeleteRealmRole failed")
+}
+
+func TestGocloak_DeleteRealmRole(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
+
+	_, roleName := CreateRealmRole(t, client)
+
+	err := client.DeleteRealmRole(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		roleName)
+	FailIfErr(t, err, "DeleteRealmRole failed")
+}
+
+func TestGocloak_AddRealmRoleToUser(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
+
+	tearDownUser, userID := CreateUser(t, client)
+	defer tearDownUser()
+	tearDownRole, roleName := CreateRealmRole(t, client)
+	defer tearDownRole()
+	role, err := client.GetRealmRole(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		roleName)
+	FailIfErr(t, err, "GetRealmRole failed")
+
+	err = client.AddRealmRoleToUser(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		userID,
+		[]Role{
+			*role,
+		})
+	FailIfErr(t, err, "AddRealmRoleToUser failed")
+}
+
+func TestGocloak_GetRealmRolesByUserID(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
+
+	tearDownUser, userID := CreateUser(t, client)
+	defer tearDownUser()
+	tearDownRole, roleName := CreateRealmRole(t, client)
+	defer tearDownRole()
+	role, err := client.GetRealmRole(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		roleName)
+	FailIfErr(t, err, "GetRealmRole failed")
+
+	err = client.AddRealmRoleToUser(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		userID,
+		[]Role{
+			*role,
+		})
+	FailIfErr(t, err, "AddRealmRoleToUser failed")
+
+	roles, err := client.GetRealmRolesByUserID(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		userID)
+	t.Logf("User roles: %+v", *roles)
+	FailIfErr(t, err, "GetRealmRolesByUserID failed")
+	for _, r := range *roles {
+		if r.Name == role.Name {
+			return
+		}
+	}
+	t.Fatalf("The role has not been found in the assined roles. Role: %+v", *role)
+}
+
+func TestGocloak_GetRealmRolesByGroupID(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
+
+	tearDown, groupID := CreateGroup(t, client)
+	defer tearDown()
+
+	_, err := client.GetRealmRolesByGroupID(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		groupID)
+	FailIfErr(t, err, "GetRealmRolesByGroupID failed")
+}
+
+func TestGocloak_DeleteRealmRoleFromUser(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
+
+	tearDownUser, userID := CreateUser(t, client)
+	defer tearDownUser()
+	tearDownRole, roleName := CreateRealmRole(t, client)
+	defer tearDownRole()
+	role, err := client.GetRealmRole(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		roleName)
+	FailIfErr(t, err, "GetRealmRole failed")
+
+	err = client.AddRealmRoleToUser(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		userID,
+		[]Role{
+			*role,
+		})
+	FailIfErr(t, err, "AddRealmRoleToUser failed")
+	err = client.DeleteRealmRoleFromUser(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		userID,
+		[]Role{
+			*role,
+		})
+
+	roles, err := client.GetRealmRolesByUserID(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		userID)
+	FailIfErr(t, err, "GetRealmRolesByUserID failed")
+	for _, r := range *roles {
+		FailIf(
+			t,
+			r.Name == role.Name,
+			"The role has been found in asigned roles. Role: %+v", role)
+	}
 }

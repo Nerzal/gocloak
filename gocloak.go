@@ -123,7 +123,7 @@ type GoCloak interface {
 	// GetRealmRolesByGroupID returns all roles assigned to the given group
 	GetRealmRolesByGroupID(accessToken string, realm string, groupID string) (*[]Role, error)
 	// UpdateRealmRole updates a role in a realm
-	UpdateRealmRole(token string, realm string, role Role) error
+	UpdateRealmRole(token string, realm string, roleName string, role Role) error
 	// DeleteRealmRole deletes a role in a realm by role's name
 	DeleteRealmRole(token string, realm string, roleName string) error
 	// AddRealmRoleToUser adds realm-level role mappings
