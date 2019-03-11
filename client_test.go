@@ -847,6 +847,7 @@ func TestGocloak_UpdateRealmRole(t *testing.T) {
 		Role{
 			Name: newRoleName,
 		})
+	FailIfErr(t, err, "UpdateRealmRole failed")
 	err = client.DeleteRealmRole(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
@@ -990,6 +991,7 @@ func TestGocloak_DeleteRealmRoleFromUser(t *testing.T) {
 		[]Role{
 			*role,
 		})
+	FailIfErr(t, err, "DeleteRealmRoleFromUser failed")
 
 	roles, err := client.GetRealmRolesByUserID(
 		token.AccessToken,
