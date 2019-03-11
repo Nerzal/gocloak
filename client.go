@@ -116,8 +116,8 @@ func (client *gocloak) GetUserInfo(accessToken string, realm string) (*UserInfo,
 	resp, err := getRequestWithBearerAuth(accessToken).
 		SetResult(&result).
 		Get(client.getRealmURL(realm, openIDConnect, "userinfo"))
-	err = checkForError(resp, err)
-	if err != nil {
+
+	if err := checkForError(resp, err); err != nil {
 		return nil, err
 	}
 
@@ -129,8 +129,8 @@ func (client *gocloak) getNewCerts(realm string) (*CertResponse, error) {
 	resp, err := resty.R().
 		SetResult(&result).
 		Get(client.getRealmURL(realm, openIDConnect, "certs"))
-	err = checkForError(resp, err)
-	if err != nil {
+
+	if err := checkForError(resp, err); err != nil {
 		return nil, err
 	}
 
@@ -161,8 +161,8 @@ func (client *gocloak) GetIssuer(realm string) (*IssuerResponse, error) {
 	resp, err := resty.R().
 		SetResult(&result).
 		Get(client.getRealmURL(realm))
-	err = checkForError(resp, err)
-	if err != nil {
+
+	if err := checkForError(resp, err); err != nil {
 		return nil, err
 	}
 
@@ -179,8 +179,8 @@ func (client *gocloak) RetrospectToken(accessToken string, clientID, clientSecre
 		}).
 		SetResult(&result).
 		Post(client.getRealmURL(realm, tokenEndpoint, "introspect"))
-	err = checkForError(resp, err)
-	if err != nil {
+
+	if err := checkForError(resp, err); err != nil {
 		return nil, err
 	}
 
@@ -235,8 +235,8 @@ func (client *gocloak) RefreshToken(refreshToken string, clientID, clientSecret,
 		}).
 		SetResult(&result).
 		Post(client.getRealmURL(realm, tokenEndpoint))
-	err = checkForError(resp, err)
-	if err != nil {
+
+	if err := checkForError(resp, err); err != nil {
 		return nil, err
 	}
 
@@ -260,8 +260,7 @@ func (client *gocloak) LoginAdmin(username, password, realm string) (*JWT, error
 		SetResult(&result).
 		Post(client.getRealmURL(realm, tokenEndpoint))
 
-	err = checkForError(resp, err)
-	if err != nil {
+	if err := checkForError(resp, err); err != nil {
 		return nil, err
 	}
 
@@ -283,8 +282,8 @@ func (client *gocloak) LoginClient(clientID, clientSecret, realm string) (*JWT, 
 		}).
 		SetResult(&result).
 		Post(client.getRealmURL(realm, tokenEndpoint))
-	err = checkForError(resp, err)
-	if err != nil {
+
+	if err := checkForError(resp, err); err != nil {
 		return nil, err
 	}
 
@@ -306,8 +305,8 @@ func (client *gocloak) Login(clientID string, clientSecret string, realm string,
 		}).
 		SetResult(&result).
 		Post(client.getRealmURL(realm, tokenEndpoint))
-	err = checkForError(resp, err)
-	if err != nil {
+
+	if err := checkForError(resp, err); err != nil {
 		return nil, err
 	}
 
@@ -342,8 +341,8 @@ func (client *gocloak) RequestPermission(clientID string, clientSecret string, r
 		}).
 		SetResult(&result).
 		Post(client.getRealmURL(realm, tokenEndpoint))
-	err = checkForError(resp, err)
-	if err != nil {
+
+	if err := checkForError(resp, err); err != nil {
 		return nil, err
 	}
 
@@ -360,12 +359,8 @@ func (client *gocloak) SetPassword(token string, userID string, realm string, pa
 	resp, err := getRequestWithBearerAuth(token).
 		SetBody(requestBody).
 		Put(client.getAdminRealmURL(realm, "users", userID, "reset-password"))
-	err = checkForError(resp, err)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return checkForError(resp, err)
 }
 
 // ExecuteActionsEmail executes an actions email
@@ -394,8 +389,7 @@ func (client *gocloak) CreateUser(token string, realm string, user User) (*strin
 		SetBody(user).
 		Post(client.getAdminRealmURL(realm, "users"))
 
-	err = checkForError(resp, err)
-	if err != nil {
+	if err := checkForError(resp, err); err != nil {
 		return nil, err
 	}
 
@@ -412,12 +406,7 @@ func (client *gocloak) CreateGroup(token string, realm string, group Group) erro
 		SetBody(group).
 		Post(client.getAdminRealmURL(realm, "groups"))
 
-	err = checkForError(resp, err)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return checkForError(resp, err)
 }
 
 // CreateComponent creates a new user
@@ -426,12 +415,7 @@ func (client *gocloak) CreateComponent(token string, realm string, component Com
 		SetBody(component).
 		Post(client.getAdminRealmURL(realm, "components"))
 
-	err = checkForError(resp, err)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return checkForError(resp, err)
 }
 
 // CreateUser creates a new user
@@ -440,12 +424,7 @@ func (client *gocloak) CreateClient(token string, realm string, newClient Client
 		SetBody(newClient).
 		Post(client.getAdminRealmURL(realm, "clients"))
 
-	err = checkForError(resp, err)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return checkForError(resp, err)
 }
 
 // CreateClientRole creates a new role for a client
@@ -454,11 +433,7 @@ func (client *gocloak) CreateClientRole(token string, realm string, clientID str
 		SetBody(role).
 		Post(client.getAdminRealmURL(realm, "clients", clientID, "roles"))
 
-	if err := checkForError(resp, err); err != nil {
-		return err
-	}
-
-	return nil
+	return checkForError(resp, err)
 }
 
 // CreateClientScope creates a new client scope
@@ -467,12 +442,7 @@ func (client *gocloak) CreateClientScope(token string, realm string, scope Clien
 		SetBody(scope).
 		Post(client.getAdminRealmURL(realm, "client-scopes"))
 
-	err = checkForError(resp, err)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return checkForError(resp, err)
 }
 
 // UpdateUser creates a new user
@@ -481,12 +451,7 @@ func (client *gocloak) UpdateUser(token string, realm string, user User) error {
 		SetBody(user).
 		Put(client.getAdminRealmURL(realm, "users", user.ID))
 
-	err = checkForError(resp, err)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return checkForError(resp, err)
 }
 
 // UpdateUser creates a new user
@@ -495,12 +460,7 @@ func (client *gocloak) UpdateGroup(token string, realm string, group Group) erro
 		SetBody(group).
 		Put(client.getAdminRealmURL(realm, "groups", group.ID))
 
-	err = checkForError(resp, err)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return checkForError(resp, err)
 }
 
 // UpdateUser creates a new user
@@ -509,12 +469,7 @@ func (client *gocloak) UpdateClient(token string, realm string, newClient Client
 		SetBody(newClient).
 		Put(client.getAdminRealmURL(realm, "clients"))
 
-	err = checkForError(resp, err)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return checkForError(resp, err)
 }
 
 // UpdateUser creates a new user
@@ -523,12 +478,7 @@ func (client *gocloak) UpdateRole(token string, realm string, clientID string, r
 		SetBody(role).
 		Put(client.getAdminRealmURL(realm, "clients", clientID, "roles", role.Name))
 
-	err = checkForError(resp, err)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return checkForError(resp, err)
 }
 
 // UpdateClientScope creates a new client scope
@@ -537,12 +487,7 @@ func (client *gocloak) UpdateClientScope(token string, realm string, scope Clien
 		SetBody(scope).
 		Put(client.getAdminRealmURL(realm, "client-scopes", scope.ID))
 
-	err = checkForError(resp, err)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return checkForError(resp, err)
 }
 
 // DeleteUser creates a new user
@@ -550,12 +495,7 @@ func (client *gocloak) DeleteUser(token string, realm string, userID string) err
 	resp, err := getRequestWithBearerAuth(token).
 		Delete(client.getAdminRealmURL(realm, "users", userID))
 
-	err = checkForError(resp, err)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return checkForError(resp, err)
 }
 
 // DeleteUser creates a new user
@@ -563,12 +503,7 @@ func (client *gocloak) DeleteGroup(token string, realm string, groupID string) e
 	resp, err := getRequestWithBearerAuth(token).
 		Delete(client.getAdminRealmURL(realm, "groups", groupID))
 
-	err = checkForError(resp, err)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return checkForError(resp, err)
 }
 
 // DeleteClient deletes a given client
@@ -576,12 +511,7 @@ func (client *gocloak) DeleteClient(token string, realm string, clientID string)
 	resp, err := getRequestWithBearerAuth(token).
 		Delete(client.getAdminRealmURL(realm, "clients", clientID))
 
-	err = checkForError(resp, err)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return checkForError(resp, err)
 }
 
 // DeleteComponent creates a new user
@@ -589,12 +519,7 @@ func (client *gocloak) DeleteComponent(token string, realm string, componentID s
 	resp, err := getRequestWithBearerAuth(token).
 		Delete(client.getAdminRealmURL(realm, "components", componentID))
 
-	err = checkForError(resp, err)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return checkForError(resp, err)
 }
 
 // DeleteClientRole deletes a given role
@@ -602,11 +527,7 @@ func (client *gocloak) DeleteClientRole(token string, realm string, clientID, ro
 	resp, err := getRequestWithBearerAuth(token).
 		Delete(client.getAdminRealmURL(realm, "clients", clientID, "roles", roleName))
 
-	if err := checkForError(resp, err); err != nil {
-		return err
-	}
-
-	return nil
+	return checkForError(resp, err)
 }
 
 // DeleteClientScope creates a new client scope
@@ -614,12 +535,7 @@ func (client *gocloak) DeleteClientScope(token string, realm string, scopeID str
 	resp, err := getRequestWithBearerAuth(token).
 		Put(client.getAdminRealmURL(realm, "client-scopes", scopeID))
 
-	err = checkForError(resp, err)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return checkForError(resp, err)
 }
 
 // GetClient returns a client
@@ -658,8 +574,7 @@ func (client *gocloak) GetKeyStoreConfig(token string, realm string) (*KeyStoreC
 		SetResult(&result).
 		Get(client.getAdminRealmURL(realm, "keys"))
 
-	err = checkForError(resp, err)
-	if err != nil {
+	if err := checkForError(resp, err); err != nil {
 		return nil, err
 	}
 
@@ -677,8 +592,7 @@ func (client *gocloak) GetUserByID(accessToken string, realm string, userID stri
 		SetResult(&result).
 		Get(client.getAdminRealmURL(realm, "users", userID))
 
-	err = checkForError(resp, err)
-	if err != nil {
+	if err := checkForError(resp, err); err != nil {
 		return nil, err
 	}
 
@@ -692,8 +606,7 @@ func (client *gocloak) GetComponents(token string, realm string) (*[]Component, 
 		SetResult(&result).
 		Get(client.getAdminRealmURL(realm, "components"))
 
-	err = checkForError(resp, err)
-	if err != nil {
+	if err := checkForError(resp, err); err != nil {
 		return nil, err
 	}
 
@@ -734,8 +647,7 @@ func (client *gocloak) GetUsers(token string, realm string, params GetUsersParam
 		SetResult(&result).SetQueryParams(q).
 		Get(client.getAdminRealmURL(realm, "users"))
 
-	err = checkForError(resp, err)
-	if err != nil {
+	if err := checkForError(resp, err); err != nil {
 		return nil, err
 	}
 
@@ -749,8 +661,7 @@ func (client *gocloak) GetUserCount(token string, realm string) (int, error) {
 		SetResult(&result).
 		Get(client.getAdminRealmURL(realm, "users", "count"))
 
-	err = checkForError(resp, err)
-	if err != nil {
+	if err := checkForError(resp, err); err != nil {
 		return -1, err
 	}
 
@@ -764,8 +675,7 @@ func (client *gocloak) GetUserGroups(token string, realm string, userID string) 
 		SetResult(&result).
 		Get(client.getAdminRealmURL(realm, "users", userID, "groups"))
 
-	err = checkForError(resp, err)
-	if err != nil {
+	if err := checkForError(resp, err); err != nil {
 		return nil, err
 	}
 
@@ -778,8 +688,7 @@ func (client *gocloak) getRoleMappings(token string, realm string, path string, 
 		SetResult(&result).
 		Get(client.getAdminRealmURL(realm, path, objectID, "role-mappings"))
 
-	err = checkForError(resp, err)
-	if err != nil {
+	if err := checkForError(resp, err); err != nil {
 		return nil, err
 	}
 
@@ -803,8 +712,7 @@ func (client *gocloak) GetGroup(token string, realm string, groupID string) (*Gr
 		SetResult(&result).
 		Get(client.getAdminRealmURL(realm, "group", groupID))
 
-	err = checkForError(resp, err)
-	if err != nil {
+	if err := checkForError(resp, err); err != nil {
 		return nil, err
 	}
 
@@ -829,8 +737,7 @@ func (client *gocloak) GetGroups(token string, realm string, params GetGroupsPar
 		SetResult(&result).SetQueryParams(q).
 		Get(client.getAdminRealmURL(realm, "groups"))
 
-	err = checkForError(resp, err)
-	if err != nil {
+	if err := checkForError(resp, err); err != nil {
 		return nil, err
 	}
 
@@ -879,8 +786,7 @@ func (client *gocloak) GetClients(token string, realm string, params GetClientsP
 		SetResult(&result).SetQueryParams(q).
 		Get(client.getAdminRealmURL(realm, "clients"))
 
-	err = checkForError(resp, err)
-	if err != nil {
+	if err := checkForError(resp, err); err != nil {
 		return nil, err
 	}
 
@@ -906,8 +812,7 @@ func (client *gocloak) GetUsersByRoleName(token string, realm string, roleName s
 		SetResult(&result).
 		Get(client.getAdminRealmURL(realm, "roles", roleName, "users"))
 
-	err = checkForError(resp, err)
-	if err != nil {
+	if err := checkForError(resp, err); err != nil {
 		return nil, err
 	}
 
@@ -948,8 +853,7 @@ func (client *gocloak) GetRealmRoles(token string, realm string) (*[]Role, error
 		SetResult(&result).
 		Get(client.getAdminRealmURL(realm, "roles"))
 
-	err = checkForError(resp, err)
-	if err != nil {
+	if err := checkForError(resp, err); err != nil {
 		return nil, err
 	}
 
