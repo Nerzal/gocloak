@@ -66,7 +66,7 @@ func checkForError(resp *resty.Response, err error) error {
 
 	if resp.IsError() {
 		if resp.StatusCode() == 409 {
-			return &ObjectAllreadyExists{}
+			return &ObjectAlreadyExists{}
 		}
 		log.Printf("Error: Request returned a response with status '%s' and body: %s", resp.Status(), string(resp.Body()))
 		return errors.New(resp.Status())
@@ -354,7 +354,7 @@ func (client *gocloak) RequestPermission(clientID string, clientSecret string, r
 	return &result, nil
 }
 
-// SetPassword sets a new password
+// SetPassword sets a new password for the user with the given id. Needs elevated privileges
 func (client *gocloak) SetPassword(token string, userID string, realm string, password string, temporary bool) error {
 	requestBody := SetPasswordRequest{Password: password, Temporary: temporary, Type: "password"}
 	resp, err := getRequestWithBearerAuth(token).
@@ -378,7 +378,7 @@ func (client *gocloak) ExecuteActionsEmail(token string, realm string, params Ex
 		q["redirect_uri"] = params.RedirectURI
 	}
 	if params.Lifespan > 0 {
-		q["lifepsan"] = strconv.Itoa(params.Lifespan)
+		q["lifespan"] = strconv.Itoa(params.Lifespan)
 	}
 
 	resp, err := getRequestWithBearerAuth(token).
@@ -666,7 +666,7 @@ func (client *gocloak) GetKeyStoreConfig(token string, realm string) (*KeyStoreC
 	return &result, nil
 }
 
-// GetUserByID fetches a user from the given realm witht he given userID
+// GetUserByID fetches a user from the given realm with he given userID
 func (client *gocloak) GetUserByID(accessToken string, realm string, userID string) (*User, error) {
 	if userID == "" {
 		return nil, errors.New("UserID shall not be empty")
