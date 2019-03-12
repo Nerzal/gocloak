@@ -1,5 +1,27 @@
 package gocloak
 
+import "encoding/json"
+
+// BaseParams provides basic functionality for all QueryParams structures.
+// The fields tags must have `json:"<name>,string,omitempty"` format.
+// "string" tag allows to convert the structure to map[string]string.
+// "omitempty" allows to skip the fields with default values.
+type BaseParams struct{}
+
+// GetQueryParams converts the struct to map[string]string
+func (s BaseParams) GetQueryParams() (map[string]string, error) {
+	b, err := json.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+	var res map[string]string
+	err = json.Unmarshal(b, &res)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
 // APIError represents an api error
 type APIError struct {
 	Code    int
@@ -139,23 +161,25 @@ type UserGroup struct {
 
 // GetUsersParams represents the optional parameters for getting users
 type GetUsersParams struct {
-	BriefRepresentation *bool  `query:"briefRepresentation,omitempty"`
-	Email               string `query:"email,omitempty"`
-	First               int    `query:"first,omitempty"`
-	FirstName           string `query:"firstName,omitempty"`
-	LastName            string `query:"lastName,omitempty"`
-	Max                 int    `query:"max,omitempty"`
-	Search              string `query:"search,omitempty"`
-	Username            string `query:"username,omitempty"`
+	BaseParams
+	BriefRepresentation *bool  `json:"briefRepresentation,string,omitempty"`
+	Email               string `json:"email,string,omitempty"`
+	First               int    `json:"first,string,omitempty"`
+	FirstName           string `json:"firstName,string,omitempty"`
+	LastName            string `json:"lastName,string,omitempty"`
+	Max                 int    `json:"max,string,omitempty"`
+	Search              string `json:"search,string,omitempty"`
+	Username            string `json:"username,string,omitempty"`
 }
 
 // ExecuteActionsEmail represents parameters for executing action emails
 type ExecuteActionsEmail struct {
-	UserID      string   `path:"userId"`
-	ClientID    string   `query:"clientId,omitempty"`
-	Lifespan    int      `query:"lifespan,omitempty"`
-	RedirectURI string   `query:"redirect_uri,omitempty"`
-	Actions     []string `body:"actions"`
+	BaseParams
+	UserID      string   `json:"-"`
+	ClientID    string   `json:"clientId,string,omitempty"`
+	Lifespan    int      `json:"lifespan,string,omitempty"`
+	RedirectURI string   `json:"redirect_uri,string,omitempty"`
+	Actions     []string `json:"-"`
 }
 
 // Group is a Group
@@ -168,9 +192,10 @@ type Group struct {
 
 // GetGroupsParams represents the optional parameters for getting groups
 type GetGroupsParams struct {
-	First  int    `query:"first,omitempty"`
-	Max    int    `query:"max,omitempty"`
-	Search string `query:"search,omitempty"`
+	BaseParams
+	First  int    `json:"first,string,omitempty"`
+	Max    int    `json:"max,string,omitempty"`
+	Search string `json:"search,string,omitempty"`
 }
 
 // Role is a role
@@ -242,8 +267,9 @@ type Client struct {
 
 // GetClientsParams represents the query parameters
 type GetClientsParams struct {
-	ClientID     string `json:"clientId,omitempty"`
-	ViewableOnly bool   `json:"viewableOnly,omitempty"`
+	BaseParams
+	ClientID     string `json:"clientId,string,omitempty"`
+	ViewableOnly bool   `json:"viewableOnly,string,omitempty"`
 }
 
 // UserInfo is returned by the userinfo endpoint
