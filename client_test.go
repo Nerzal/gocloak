@@ -1003,3 +1003,44 @@ func TestGocloak_DeleteRealmRoleFromUser(t *testing.T) {
 			"The role has been found in asigned roles. Role: %+v", role)
 	}
 }
+
+func TestGocloak_AddRealmRoleComposite(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
+
+	tearDown, compositeRole := CreateRealmRole(t, client)
+	defer tearDown()
+
+	tearDown, role := CreateRealmRole(t, client)
+	defer tearDown()
+
+	err := client.AddRealmRoleComposite(token.AccessToken,
+		cfg.GoCloak.Realm, compositeRole, []Role{Role{Name: role}})
+	FailIfErr(t, err, "AddRealmRoleComposite failed")
+}
+
+func TestGocloak_DeleteRealmRoleComposite(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	token := GetAdminToken(t, client)
+
+	tearDown, compositeRole := CreateRealmRole(t, client)
+	defer tearDown()
+
+	tearDown, role := CreateRealmRole(t, client)
+	defer tearDown()
+
+	roleModel, err := client.GetRealmRole(token.AccessToken, cfg.GoCloak.Realm, role)
+	FailIfErr(t, err, "Can't get just created role with GetRealmRole")
+
+	err = client.AddRealmRoleComposite(token.AccessToken,
+		cfg.GoCloak.Realm, compositeRole, []Role{*roleModel})
+	FailIfErr(t, err, "AddRealmRoleComposite failed")
+
+	err = client.DeleteRealmRoleComposite(token.AccessToken,
+		cfg.GoCloak.Realm, compositeRole, []Role{*roleModel})
+	FailIfErr(t, err, "DeleteRealmRoleComposite failed")
+}
