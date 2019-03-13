@@ -66,7 +66,11 @@ func FailIf(t *testing.T, cond bool, msg string, args ...interface{}) {
 
 func GetConfig(t *testing.T) *Config {
 	configOnce.Do(func() {
-		configFile, err := os.Open(filepath.Join("testdata", "config.json"))
+		configFileName, ok := os.LookupEnv("GOCLOAK_TEST_CONFIG")
+		if !ok {
+			configFileName = filepath.Join("testdata", "config.json")
+		}
+		configFile, err := os.Open(configFileName)
 		FailIfErr(t, err, "cannot open config.json")
 		defer configFile.Close()
 		data, err := ioutil.ReadAll(configFile)

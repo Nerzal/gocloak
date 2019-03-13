@@ -85,16 +85,15 @@ type GoCloak interface {
 	DecodeAccessToken(accessToken string, realm string) (*jwt.Token, *jwt.MapClaims, error)
 	DecodeAccessTokenCustomClaims(accessToken string, realm string, claims jwt.Claims) (*jwt.Token, error)
 	RetrospectToken(accessToken string, clientID, clientSecret string, realm string) (*RetrospecTokenResult, error)
-
 	GetIssuer(realm string) (*IssuerResponse, error)
 	GetCerts(realm string) (*CertResponse, error)
 	GetUserInfo(accessToken string, realm string) (*UserInfo, error)
-
 	SetPassword(token string, userID string, realm string, password string, temporary bool) error
 	ExecuteActionsEmail(token string, realm string, params ExecuteActionsEmail) error
+
 	CreateUser(token string, realm string, user User) (*string, error)
 	CreateGroup(accessToken string, realm string, group Group) error
-	CreateRole(accessToken string, realm string, clientID string, role Role) error
+	CreateClientRole(accessToken string, realm string, clientID string, role Role) error
 	CreateClient(accessToken string, realm string, clientID Client) error
 	CreateClientScope(accessToken string, realm string, scope ClientScope) error
 	CreateComponent(accessToken string, realm string, component Component) error
@@ -108,37 +107,59 @@ type GoCloak interface {
 	DeleteUser(accessToken string, realm, userID string) error
 	DeleteComponent(accessToken string, realm, componentID string) error
 	DeleteGroup(accessToken string, realm, groupID string) error
-	DeleteRole(accessToken string, realm, clientID, roleName string) error
+	DeleteClientRole(accessToken string, realm, clientID, roleName string) error
 	DeleteClient(accessToken string, realm, clientID string) error
 	DeleteClientScope(accessToken string, realm, scopeID string) error
 
+	GetClient(accessToken string, realm string, clientID string) (*Client, error)
+	GetClientSecret(token string, realm string, clientID string) (*CredentialRepresentation, error)
 	GetKeyStoreConfig(accessToken string, realm string) (*KeyStoreConfig, error)
 	GetUserByID(accessToken string, realm string, userID string) (*User, error)
 	GetUserCount(accessToken string, realm string) (int, error)
 	GetUsers(accessToken string, realm string, params GetUsersParams) (*[]User, error)
 	GetUserGroups(accessToken string, realm string, userID string) (*[]UserGroup, error)
 	GetComponents(accessToken string, realm string) (*[]Component, error)
-
+	GetGroups(accessToken string, realm string, params GetGroupsParams) (*[]Group, error)
+	GetGroup(accessToken string, realm, groupID string) (*Group, error)
+	GetRoleMappingByGroupID(accessToken string, realm string, groupID string) (*MappingsRepresentation, error)
+	GetRoleMappingByUserID(accessToken string, realm string, userID string) (*MappingsRepresentation, error)
+	GetClientRoles(accessToken string, realm string, clientID string) (*[]Role, error)
+	GetClientRole(token string, realm string, clientID string, roleName string) (*Role, error)
+	GetClients(accessToken string, realm string, params GetClientsParams) (*[]Client, error)
+	GetUsersByRoleName(token string, realm string, roleName string) (*[]User, error)
 	UserAttributeContains(attributes map[string][]string, attribute string, value string) bool
 
-	GetGroups(accessToken string, realm string) (*[]Group, error)
-	GetGroup(accessToken string, realm, groupID string) (*Group, error)
-	GetRoles(accessToken string, realm string) (*[]Role, error)
-	GetRoleMappingByGroupID(accessToken string, realm string, groupID string) (*[]RoleMapping, error)
-	GetRoleMappingByUserID(accessToken string, realm string, userID string) (*[]RoleMapping, error)
-	GetRolesByClientID(accessToken string, realm string, clientID string) (*[]Role, error)
-	GetClients(accessToken string, realm string) (*[]Client, error)
+	// *** Realm Roles ***
+
+	CreateRealmRole(token string, realm string, role Role) error
+	GetRealmRole(token string, realm string, roleName string) (*Role, error)
+	GetRealmRoles(accessToken string, realm string) (*[]Role, error)
 	GetRealmRolesByUserID(accessToken string, realm string, userID string) (*[]Role, error)
 	GetRealmRolesByGroupID(accessToken string, realm string, groupID string) (*[]Role, error)
-	GetUsersByRoleName(token string, realm string, roleName string) (*[]User, error)
-	
-    GetRealm(token string, realm string) (*RealmRepresentation, error)
+	UpdateRealmRole(token string, realm string, roleName string, role Role) error
+	DeleteRealmRole(token string, realm string, roleName string) error
+	AddRealmRoleToUser(token string, realm string, userID string, roles []Role) error
+	DeleteRealmRoleFromUser(token string, realm string, userID string, roles []Role) error
+
+	// *** Realm ***
+
+	GetRealm(token string, realm string) (*RealmRepresentation, error)
+	CreateRealm(token string, realm RealmRepresentation) error
 }
 ```
 
 ## developing & testing
-For local testing you needa start a docker container. Simply run following commands prior to starting the tests:
+For local testing you need to start a docker container. Simply run following commands prior to starting the tests:
 
+```bash
 docker pull jboss/keycloak
-
 docker run -d -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=secret -e KEYCLOAK_IMPORT=/tmp/gocloak-realm.json -v `pwd`/testdata/gocloak-realm.json:/tmp/gocloak-realm.json -p 8080:8080 --name keycloak jboss/keycloak
+go test
+```
+
+Or you can run the tests on you own keycloak:
+```bash
+export GOCLOAK_TEST_CONFIG=/path/to/gocloak/config.json
+```
+
+All resources created as a result of unit tests will be deleted, except for the test user defined in the configuration file.
