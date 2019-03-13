@@ -175,14 +175,14 @@ type GetGroupsParams struct {
 
 // Role is a role
 type Role struct {
-	ID                 string            `json:"id,omitempty"`
-	Name               string            `json:"name,omitempty"`
-	ScopeParamRequired bool              `json:"scopeParamRequired,omitempty"`
-	Composite          bool              `json:"composite,omitempty"`
-	ClientRole         bool              `json:"clientRole,omitempty"`
-	ContainerID        string            `json:"containerId,omitempty"`
-	Description        string            `json:"description,omitempty"`
-	Attributes         map[string]string `json:"attributes,omitempty"`
+	ID                 string              `json:"id,omitempty"`
+	Name               string              `json:"name,omitempty"`
+	ScopeParamRequired bool                `json:"scopeParamRequired,omitempty"`
+	Composite          bool                `json:"composite,omitempty"`
+	ClientRole         bool                `json:"clientRole,omitempty"`
+	ContainerID        string              `json:"containerId,omitempty"`
+	Description        string              `json:"description,omitempty"`
+	Attributes         map[string][]string `json:"attributes,omitempty"`
 }
 
 // ClientMappingsRepresentation is a client role mappings
