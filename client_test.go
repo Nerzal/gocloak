@@ -1016,8 +1016,11 @@ func TestGocloak_AddRealmRoleComposite(t *testing.T) {
 	tearDown, role := CreateRealmRole(t, client)
 	defer tearDown()
 
-	err := client.AddRealmRoleComposite(token.AccessToken,
-		cfg.GoCloak.Realm, compositeRole, []Role{Role{Name: role}})
+	roleModel, err := client.GetRealmRole(token.AccessToken, cfg.GoCloak.Realm, role)
+	FailIfErr(t, err, "Can't get just created role with GetRealmRole")
+
+	err = client.AddRealmRoleComposite(token.AccessToken,
+		cfg.GoCloak.Realm, compositeRole, []Role{*roleModel})
 	FailIfErr(t, err, "AddRealmRoleComposite failed")
 }
 
