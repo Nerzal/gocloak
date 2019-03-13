@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"log"
-	"strconv"
 	"strings"
 	"time"
 
@@ -365,19 +364,13 @@ func (client *gocloak) SetPassword(token string, userID string, realm string, pa
 
 // ExecuteActionsEmail executes an actions email
 func (client *gocloak) ExecuteActionsEmail(token string, realm string, params ExecuteActionsEmail) error {
-	q := map[string]string{}
-	if len(params.ClientID) > 0 {
-		q["client_id"] = params.ClientID
+	queryParams, err := params.GetQueryParams()
+	if err != nil {
+		return err
 	}
-	if len(params.RedirectURI) > 0 {
-		q["redirect_uri"] = params.RedirectURI
-	}
-	if params.Lifespan > 0 {
-		q["lifespan"] = strconv.Itoa(params.Lifespan)
-	}
-
 	resp, err := getRequestWithBearerAuth(token).
-		SetBody(params.Actions).SetQueryParams(q).
+		SetBody(params.Actions).
+		SetQueryParams(queryParams).
 		Put(client.getAdminRealmURL(realm, "users", params.UserID, "execute-actions-email"))
 
 	return checkForError(resp, err)
@@ -616,35 +609,14 @@ func (client *gocloak) GetComponents(token string, realm string) (*[]Component, 
 // GetUsers get all users in realm
 func (client *gocloak) GetUsers(token string, realm string, params GetUsersParams) (*[]User, error) {
 	var result []User
-
-	q := map[string]string{}
-	if params.BriefRepresentation != nil {
-		q["briefRepresentation"] = strconv.FormatBool(*params.BriefRepresentation)
-	}
-	if len(params.Email) > 0 {
-		q["email"] = params.Email
-	}
-	if params.First > 0 {
-		q["first"] = strconv.Itoa(params.First)
-	}
-	if len(params.FirstName) > 0 {
-		q["firstName"] = params.FirstName
-	}
-	if len(params.LastName) > 0 {
-		q["lastName"] = params.LastName
-	}
-	if params.Max > 0 {
-		q["max"] = strconv.Itoa(params.Max)
-	}
-	if len(params.Search) > 0 {
-		q["search"] = params.Search
-	}
-	if len(params.Username) > 0 {
-		q["username"] = params.Username
+	queryParams, err := params.GetQueryParams()
+	if err != nil {
+		return nil, err
 	}
 
 	resp, err := getRequestWithBearerAuth(token).
-		SetResult(&result).SetQueryParams(q).
+		SetResult(&result).
+		SetQueryParams(queryParams).
 		Get(client.getAdminRealmURL(realm, "users"))
 
 	if err := checkForError(resp, err); err != nil {
@@ -722,19 +694,14 @@ func (client *gocloak) GetGroup(token string, realm string, groupID string) (*Gr
 // GetGroups get all groups in realm
 func (client *gocloak) GetGroups(token string, realm string, params GetGroupsParams) (*[]Group, error) {
 	var result []Group
-	q := map[string]string{}
-	if params.First > 0 {
-		q["first"] = strconv.Itoa(params.First)
-	}
-	if params.Max > 0 {
-		q["max"] = strconv.Itoa(params.Max)
-	}
-	if len(params.Search) > 0 {
-		q["search"] = params.Search
+	queryParams, err := params.GetQueryParams()
+	if err != nil {
+		return nil, err
 	}
 
 	resp, err := getRequestWithBearerAuth(token).
-		SetResult(&result).SetQueryParams(q).
+		SetResult(&result).
+		SetQueryParams(queryParams).
 		Get(client.getAdminRealmURL(realm, "groups"))
 
 	if err := checkForError(resp, err); err != nil {
@@ -775,15 +742,13 @@ func (client *gocloak) GetClientRole(token string, realm string, clientID string
 // GetClients gets all clients in realm
 func (client *gocloak) GetClients(token string, realm string, params GetClientsParams) (*[]Client, error) {
 	var result []Client
-	q := map[string]string{}
-	if params.ViewableOnly {
-		q["viewableOnly"] = strconv.FormatBool(params.ViewableOnly)
-	}
-	if len(params.ClientID) != 0 {
-		q["clientId"] = params.ClientID
+	queryParams, err := params.GetQueryParams()
+	if err != nil {
+		return nil, err
 	}
 	resp, err := getRequestWithBearerAuth(token).
-		SetResult(&result).SetQueryParams(q).
+		SetResult(&result).
+		SetQueryParams(queryParams).
 		Get(client.getAdminRealmURL(realm, "clients"))
 
 	if err := checkForError(resp, err); err != nil {
