@@ -227,7 +227,7 @@ func SetUpTestUser(t *testing.T, client GoCloak) {
 			cfg.GoCloak.Realm,
 			user)
 		var userID string
-		if err != nil && err.Error() == "Conflict: Object allready exists" {
+		if err != nil && err.Error() == "Conflict: Object already exists" {
 			err = nil
 			users, err := client.GetUsers(
 				token.AccessToken,
@@ -847,6 +847,7 @@ func TestGocloak_UpdateRealmRole(t *testing.T) {
 		Role{
 			Name: newRoleName,
 		})
+	FailIfErr(t, err, "UpdateRealmRole failed")
 	err = client.DeleteRealmRole(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
@@ -854,7 +855,7 @@ func TestGocloak_UpdateRealmRole(t *testing.T) {
 	FailIf(
 		t,
 		err == nil,
-		"Role with old name was deleted sucessfully, but it shouldn't. Old role: %s; Updated role: %s",
+		"Role with old name was deleted successfully, but it shouldn't. Old role: %s; Updated role: %s",
 		oldRoleName, newRoleName)
 	err = client.DeleteRealmRole(
 		token.AccessToken,
@@ -990,6 +991,7 @@ func TestGocloak_DeleteRealmRoleFromUser(t *testing.T) {
 		[]Role{
 			*role,
 		})
+	FailIfErr(t, err, "DeleteRealmRoleFromUser failed")
 
 	roles, err := client.GetRealmRolesByUserID(
 		token.AccessToken,

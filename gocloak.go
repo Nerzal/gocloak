@@ -4,7 +4,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
-// GoCloak holds all methods a client should fullfill
+// GoCloak holds all methods a client should fulfill
 type GoCloak interface {
 	// Login sends a request to the token endpoint using user and client credentials
 	Login(clientID string, clientSecret string, realm string, username string, password string) (*JWT, error)
@@ -31,7 +31,7 @@ type GoCloak interface {
 	// GetUserInfo gets the user info for the given realm
 	GetUserInfo(accessToken string, realm string) (*UserInfo, error)
 
-	// SetPassword sets a new password for the user with the given id. Needs elevated priviliges
+	// SetPassword sets a new password for the user with the given id. Needs elevated privileges
 	SetPassword(token string, userID string, realm string, password string, temporary bool) error
 
 	// ExecuteActionsEmail executes an actions email

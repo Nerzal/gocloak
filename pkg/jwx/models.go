@@ -42,15 +42,18 @@ type RealmAccess struct {
 	Roles []string `json:"roles,omitempty"`
 }
 
+// ResourceAccess holds TODO: What does it hold?
 type ResourceAccess struct {
 	RealmManagement RealmManagement `json:"realm-management,omitempty"`
 	Account         Account         `json:"account,omitempty"`
 }
 
+// RealmManagement holds TODO: What does it hold?
 type RealmManagement struct {
 	Roles []string `json:"roles,omitempty"`
 }
 
+// Account holds TODO: What does it hold?
 type Account struct {
 	Roles []string `json:"roles,omitempty"`
 }
