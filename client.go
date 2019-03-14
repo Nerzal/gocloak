@@ -364,7 +364,7 @@ func (client *gocloak) SetPassword(token string, userID string, realm string, pa
 
 // ExecuteActionsEmail executes an actions email
 func (client *gocloak) ExecuteActionsEmail(token string, realm string, params ExecuteActionsEmail) error {
-	queryParams, err := params.GetQueryParams()
+	queryParams, err := GetQueryParams(params)
 	if err != nil {
 		return err
 	}
@@ -609,7 +609,7 @@ func (client *gocloak) GetComponents(token string, realm string) (*[]Component, 
 // GetUsers get all users in realm
 func (client *gocloak) GetUsers(token string, realm string, params GetUsersParams) (*[]User, error) {
 	var result []User
-	queryParams, err := params.GetQueryParams()
+	queryParams, err := GetQueryParams(params)
 	if err != nil {
 		return nil, err
 	}
@@ -694,7 +694,7 @@ func (client *gocloak) GetGroup(token string, realm string, groupID string) (*Gr
 // GetGroups get all groups in realm
 func (client *gocloak) GetGroups(token string, realm string, params GetGroupsParams) (*[]Group, error) {
 	var result []Group
-	queryParams, err := params.GetQueryParams()
+	queryParams, err := GetQueryParams(params)
 	if err != nil {
 		return nil, err
 	}
@@ -742,7 +742,7 @@ func (client *gocloak) GetClientRole(token string, realm string, clientID string
 // GetClients gets all clients in realm
 func (client *gocloak) GetClients(token string, realm string, params GetClientsParams) (*[]Client, error) {
 	var result []Client
-	queryParams, err := params.GetQueryParams()
+	queryParams, err := GetQueryParams(params)
 	if err != nil {
 		return nil, err
 	}

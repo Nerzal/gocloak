@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strconv"
 	"sync"
@@ -63,6 +64,14 @@ func FailIf(t *testing.T, cond bool, msg string, args ...interface{}) {
 		}
 	}
 }
+
+func AssertEquals(t *testing.T, exp interface{}, act interface{}) {
+	FailIf(
+		t,
+		!reflect.DeepEqual(exp, act),
+		"The expected and actual results are not equal.\nExpected: %+v.\nActual:   %+v", exp, act)
+}
+
 
 func GetConfig(t *testing.T) *Config {
 	configOnce.Do(func() {
@@ -260,6 +269,39 @@ func SetUpTestUser(t *testing.T, client GoCloak) {
 		FailIfErr(t, err, "SetPassword	 failed")
 	})
 }
+
+func TestBaseParams_GetQueryParams(t *testing.T) {
+	t.Parallel()
+
+	type TestParams struct {
+		IntField    int    `json:"int_field,string,omitempty"`
+		StringField string `json:"string_field,omitempty"`
+		BoolField   bool   `json:"bool_field,string,omitempty"`
+	}
+
+	params, err := GetQueryParams(TestParams{})
+	FailIfErr(t, err, "GetQueryParams failed")
+	FailIf(
+		t,
+		len(params) > 0,
+		"Params must be empty, but got: %+v", params)
+
+	params, err = GetQueryParams(TestParams{
+		IntField:    1,
+		StringField: "fake",
+		BoolField:   true,
+	})
+	FailIfErr(t, err, "GetQueryParams failed")
+	AssertEquals(t, map[string]string{
+		"int_field": "1",
+		"string_field": "fake",
+		"bool_field": "true",
+	}, params)
+}
+
+// ---------
+// API tests
+// ---------
 
 func TestGocloak_RequestPermission(t *testing.T) {
 	t.Parallel()
@@ -776,7 +818,8 @@ func CreateRealmRole(t *testing.T, client GoCloak) (func(), string) {
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		Role{
-			Name: roleName,
+			Name:        roleName,
+			ContainerID: "asd",
 		})
 	FailIfErr(t, err, "CreateRealmRole failed")
 	tearDown := func() {
