@@ -2,8 +2,13 @@ package gocloak
 
 import "encoding/json"
 
-// getQueryParams converts the struct to map[string]string
-func getQueryParams(s interface{}) (map[string]string, error) {
+// GetQueryParams converts the struct to map[string]string
+// The fields tags must have `json:"<name>,string,omitempty"` format for all types, except strings
+// The string fields must have: `json:"<name>,omitempty"`. The `json:"<name>,string,omitempty"` tag for string field
+// will add additional double quotes.
+// "string" tag allows to convert the non-string fields of a structure to map[string]string.
+// "omitempty" allows to skip the fields with default values.
+func GetQueryParams(s interface{}) (map[string]string, error) {
 	b, err := json.Marshal(s)
 	if err != nil {
 		return nil, err
@@ -13,18 +18,7 @@ func getQueryParams(s interface{}) (map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return res, nil	
-}
-
-// BaseParams provides basic functionality for all QueryParams structures.
-// The fields tags must have `json:"<name>,string,omitempty"` format.
-// "string" tag allows to convert the structure to map[string]string.
-// "omitempty" allows to skip the fields with default values.
-type BaseParams struct{}
-
-// GetQueryParams converts the struct to map[string]string
-func (s BaseParams) GetQueryParams() (map[string]string, error) {
-	return getQueryParams(s)
+	return res, nil
 }
 
 // APIError represents an api error
@@ -166,7 +160,6 @@ type UserGroup struct {
 
 // GetUsersParams represents the optional parameters for getting users
 type GetUsersParams struct {
-	BaseParams
 	BriefRepresentation *bool  `json:"briefRepresentation,string,omitempty"`
 	Email               string `json:"email,omitempty"`
 	First               int    `json:"first,string,omitempty"`
@@ -177,24 +170,13 @@ type GetUsersParams struct {
 	Username            string `json:"username,omitempty"`
 }
 
-// GetQueryParams converts the struct to map[string]string
-func (s GetUsersParams) GetQueryParams() (map[string]string, error) {
-	return getQueryParams(s)
-}
-
 // ExecuteActionsEmail represents parameters for executing action emails
 type ExecuteActionsEmail struct {
-	BaseParams
 	UserID      string   `json:"-"`
 	ClientID    string   `json:"clientId,omitempty"`
 	Lifespan    int      `json:"lifespan,string,omitempty"`
 	RedirectURI string   `json:"redirect_uri,omitempty"`
 	Actions     []string `json:"-"`
-}
-
-// GetQueryParams converts the struct to map[string]string
-func (s ExecuteActionsEmail) GetQueryParams() (map[string]string, error) {
-	return getQueryParams(s)
 }
 
 // Group is a Group
@@ -207,15 +189,9 @@ type Group struct {
 
 // GetGroupsParams represents the optional parameters for getting groups
 type GetGroupsParams struct {
-	BaseParams
 	First  int    `json:"first,string,omitempty"`
 	Max    int    `json:"max,string,omitempty"`
 	Search string `json:"search,omitempty"`
-}
-
-// GetQueryParams converts the struct to map[string]string
-func (s GetGroupsParams) GetQueryParams() (map[string]string, error) {
-	return getQueryParams(s)
 }
 
 // Role is a role
@@ -287,14 +263,8 @@ type Client struct {
 
 // GetClientsParams represents the query parameters
 type GetClientsParams struct {
-	BaseParams
 	ClientID     string `json:"clientId,omitempty"`
 	ViewableOnly bool   `json:"viewableOnly,string,omitempty"`
-}
-
-// GetQueryParams converts the struct to map[string]string
-func (s GetClientsParams) GetQueryParams() (map[string]string, error) {
-	return getQueryParams(s)
 }
 
 // UserInfo is returned by the userinfo endpoint
