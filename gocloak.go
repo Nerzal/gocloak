@@ -31,14 +31,9 @@ type GoCloak interface {
 	// GetUserInfo gets the user info for the given realm
 	GetUserInfo(accessToken string, realm string) (*UserInfo, error)
 
-	// SetPassword sets a new password for the user with the given id. Needs elevated privileges
-	SetPassword(token string, userID string, realm string, password string, temporary bool) error
-
 	// ExecuteActionsEmail executes an actions email
 	ExecuteActionsEmail(token string, realm string, params ExecuteActionsEmail) error
 
-	// CreateUser creates a new user
-	CreateUser(token string, realm string, user User) (*string, error)
 	// CreateGroup creates a new group
 	CreateGroup(accessToken string, realm string, group Group) error
 	// CreateClientRole creates a new role for a client
@@ -50,8 +45,6 @@ type GoCloak interface {
 	// CreateComponent creates a new component
 	CreateComponent(accessToken string, realm string, component Component) error
 
-	// UpdateUser updates the given user
-	UpdateUser(accessToken string, realm string, user User) error
 	// UpdateGroup updates the given group
 	UpdateGroup(accessToken string, realm string, group Group) error
 	// UpdateRole updates the given role
@@ -61,8 +54,6 @@ type GoCloak interface {
 	// UpdateClientScope updates the given clientScope
 	UpdateClientScope(accessToken string, realm string, scope ClientScope) error
 
-	// DeleteUser deletes the given user
-	DeleteUser(accessToken string, realm, userID string) error
 	// DeleteComponent deletes the given component
 	DeleteComponent(accessToken string, realm, componentID string) error
 	// DeleteGroup deletes the given group
@@ -80,14 +71,6 @@ type GoCloak interface {
 	GetClientSecret(token string, realm string, clientID string) (*CredentialRepresentation, error)
 	// GetKeyStoreConfig gets the keyStoreConfig
 	GetKeyStoreConfig(accessToken string, realm string) (*KeyStoreConfig, error)
-	// GetUserByID gets the user with the given id
-	GetUserByID(accessToken string, realm string, userID string) (*User, error)
-	// GetUser count returns the userCount of the given realm
-	GetUserCount(accessToken string, realm string) (int, error)
-	// GetUsers gets all users of the given realm
-	GetUsers(accessToken string, realm string, params GetUsersParams) (*[]User, error)
-	// GetUserGroups gets the groups of the given user
-	GetUserGroups(accessToken string, realm string, userID string) (*[]UserGroup, error)
 	// GetComponents gets components of the given realm
 	GetComponents(accessToken string, realm string) (*[]Component, error)
 	// GetGroups gets all groups of the given realm
@@ -104,8 +87,6 @@ type GoCloak interface {
 	GetClientRole(token string, realm string, clientID string, roleName string) (*Role, error)
 	// GetClients gets the clients in the realm
 	GetClients(accessToken string, realm string, params GetClientsParams) (*[]Client, error)
-	// GetUsersByRoleName returns all users have a given role
-	GetUsersByRoleName(token string, realm string, roleName string) (*[]User, error)
 
 	// UserAttributeContains checks if the given attribute has the given value
 	UserAttributeContains(attributes map[string][]string, attribute string, value string) bool
@@ -141,4 +122,29 @@ type GoCloak interface {
 	GetRealm(token string, realm string) (*RealmRepresentation, error)
 	// CreateRealm creates a realm
 	CreateRealm(token string, realm RealmRepresentation) error
+
+	// *** Users ***
+	// CreateUser creates a new user
+	CreateUser(token string, realm string, user User) (*string, error)
+	// DeleteUser deletes the given user
+	DeleteUser(accessToken string, realm, userID string) error
+	// GetUserByID gets the user with the given id
+	GetUserByID(accessToken string, realm string, userID string) (*User, error)
+	// GetUser count returns the userCount of the given realm
+	GetUserCount(accessToken string, realm string) (int, error)
+	// GetUsers gets all users of the given realm
+	GetUsers(accessToken string, realm string, params GetUsersParams) (*[]User, error)
+	// GetUserGroups gets the groups of the given user
+	GetUserGroups(accessToken string, realm string, userID string) (*[]UserGroup, error)
+	// GetUsersByRoleName returns all users have a given role
+	GetUsersByRoleName(token string, realm string, roleName string) (*[]User, error)
+	// SetPassword sets a new password for the user with the given id. Needs elevated privileges
+	SetPassword(token string, userID string, realm string, password string, temporary bool) error
+	// UpdateUser updates the given user
+	UpdateUser(accessToken string, realm string, user User) error
+	// AddUserToGroup puts given user to given group
+	AddUserToGroup(token string, realm string, userID string, groupID string) error
+	// DeleteUserFromGroup deletes given user from given group
+	DeleteUserFromGroup(token string, realm string, userID string, groupID string) error
+
 }

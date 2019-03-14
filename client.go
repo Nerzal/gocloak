@@ -352,16 +352,6 @@ func (client *gocloak) RequestPermission(clientID string, clientSecret string, r
 	return &result, nil
 }
 
-// SetPassword sets a new password for the user with the given id. Needs elevated privileges
-func (client *gocloak) SetPassword(token string, userID string, realm string, password string, temporary bool) error {
-	requestBody := SetPasswordRequest{Password: password, Temporary: temporary, Type: "password"}
-	resp, err := getRequestWithBearerAuth(token).
-		SetBody(requestBody).
-		Put(client.getAdminRealmURL(realm, "users", userID, "reset-password"))
-
-	return checkForError(resp, err)
-}
-
 // ExecuteActionsEmail executes an actions email
 func (client *gocloak) ExecuteActionsEmail(token string, realm string, params ExecuteActionsEmail) error {
 	queryParams, err := GetQueryParams(params)
@@ -374,23 +364,6 @@ func (client *gocloak) ExecuteActionsEmail(token string, realm string, params Ex
 		Put(client.getAdminRealmURL(realm, "users", params.UserID, "execute-actions-email"))
 
 	return checkForError(resp, err)
-}
-
-// CreateUser tries to create the given user in the given realm and returns it's userID
-func (client *gocloak) CreateUser(token string, realm string, user User) (*string, error) {
-	resp, err := getRequestWithBearerAuth(token).
-		SetBody(user).
-		Post(client.getAdminRealmURL(realm, "users"))
-
-	if err := checkForError(resp, err); err != nil {
-		return nil, err
-	}
-
-	userPath := resp.Header().Get("Location")
-	splittedPath := strings.Split(userPath, urlSeparator)
-	userID := splittedPath[len(splittedPath)-1]
-
-	return &userID, nil
 }
 
 // CreateUser creates a new user
@@ -439,15 +412,6 @@ func (client *gocloak) CreateClientScope(token string, realm string, scope Clien
 }
 
 // UpdateUser creates a new user
-func (client *gocloak) UpdateUser(token string, realm string, user User) error {
-	resp, err := getRequestWithBearerAuth(token).
-		SetBody(user).
-		Put(client.getAdminRealmURL(realm, "users", user.ID))
-
-	return checkForError(resp, err)
-}
-
-// UpdateUser creates a new user
 func (client *gocloak) UpdateGroup(token string, realm string, group Group) error {
 	resp, err := getRequestWithBearerAuth(token).
 		SetBody(group).
@@ -479,14 +443,6 @@ func (client *gocloak) UpdateClientScope(token string, realm string, scope Clien
 	resp, err := getRequestWithBearerAuth(token).
 		SetBody(scope).
 		Put(client.getAdminRealmURL(realm, "client-scopes", scope.ID))
-
-	return checkForError(resp, err)
-}
-
-// DeleteUser creates a new user
-func (client *gocloak) DeleteUser(token string, realm string, userID string) error {
-	resp, err := getRequestWithBearerAuth(token).
-		Delete(client.getAdminRealmURL(realm, "users", userID))
 
 	return checkForError(resp, err)
 }
@@ -574,78 +530,12 @@ func (client *gocloak) GetKeyStoreConfig(token string, realm string) (*KeyStoreC
 	return &result, nil
 }
 
-// GetUserByID fetches a user from the given realm with he given userID
-func (client *gocloak) GetUserByID(accessToken string, realm string, userID string) (*User, error) {
-	if userID == "" {
-		return nil, errors.New("UserID shall not be empty")
-	}
-
-	var result User
-	resp, err := getRequestWithBearerAuth(accessToken).
-		SetResult(&result).
-		Get(client.getAdminRealmURL(realm, "users", userID))
-
-	if err := checkForError(resp, err); err != nil {
-		return nil, err
-	}
-
-	return &result, nil
-}
-
 // GetComponents get all cimponents in realm
 func (client *gocloak) GetComponents(token string, realm string) (*[]Component, error) {
 	var result []Component
 	resp, err := getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.getAdminRealmURL(realm, "components"))
-
-	if err := checkForError(resp, err); err != nil {
-		return nil, err
-	}
-
-	return &result, nil
-}
-
-// GetUsers get all users in realm
-func (client *gocloak) GetUsers(token string, realm string, params GetUsersParams) (*[]User, error) {
-	var result []User
-	queryParams, err := GetQueryParams(params)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := getRequestWithBearerAuth(token).
-		SetResult(&result).
-		SetQueryParams(queryParams).
-		Get(client.getAdminRealmURL(realm, "users"))
-
-	if err := checkForError(resp, err); err != nil {
-		return nil, err
-	}
-
-	return &result, nil
-}
-
-// GetUserCount gets the user count in the realm
-func (client *gocloak) GetUserCount(token string, realm string) (int, error) {
-	var result int
-	resp, err := getRequestWithBearerAuth(token).
-		SetResult(&result).
-		Get(client.getAdminRealmURL(realm, "users", "count"))
-
-	if err := checkForError(resp, err); err != nil {
-		return -1, err
-	}
-
-	return result, nil
-}
-
-// GetUsergroups get all groups for user
-func (client *gocloak) GetUserGroups(token string, realm string, userID string) (*[]UserGroup, error) {
-	var result []UserGroup
-	resp, err := getRequestWithBearerAuth(token).
-		SetResult(&result).
-		Get(client.getAdminRealmURL(realm, "users", userID, "groups"))
 
 	if err := checkForError(resp, err); err != nil {
 		return nil, err
@@ -768,20 +658,6 @@ func (client *gocloak) UserAttributeContains(attributes map[string][]string, att
 		}
 	}
 	return false
-}
-
-// GetUsersByRoleName returns all users have a given role
-func (client *gocloak) GetUsersByRoleName(token string, realm string, roleName string) (*[]User, error) {
-	var result []User
-	resp, err := getRequestWithBearerAuth(token).
-		SetResult(&result).
-		Get(client.getAdminRealmURL(realm, "roles", roleName, "users"))
-
-	if err := checkForError(resp, err); err != nil {
-		return nil, err
-	}
-
-	return &result, nil
 }
 
 // -----------
@@ -926,6 +802,150 @@ func (client *gocloak) CreateRealm(token string, realm RealmRepresentation) erro
 	resp, err := getRequestWithBearerAuth(token).
 		SetBody(&realm).
 		Post(client.getAdminRealmURL(""))
+
+	return checkForError(resp, err)
+}
+
+// -----
+// Users
+// -----
+
+// CreateUser creates the given user in the given realm and returns it's userID
+func (client *gocloak) CreateUser(token string, realm string, user User) (*string, error) {
+	resp, err := getRequestWithBearerAuth(token).
+		SetBody(user).
+		Post(client.getAdminRealmURL(realm, "users"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	userPath := resp.Header().Get("Location")
+	splittedPath := strings.Split(userPath, urlSeparator)
+	userID := splittedPath[len(splittedPath)-1]
+
+	return &userID, nil
+}
+
+// DeleteUser delete a given user
+func (client *gocloak) DeleteUser(token string, realm string, userID string) error {
+	resp, err := getRequestWithBearerAuth(token).
+		Delete(client.getAdminRealmURL(realm, "users", userID))
+
+	return checkForError(resp, err)
+}
+
+// GetUserByID fetches a user from the given realm with the given userID
+func (client *gocloak) GetUserByID(accessToken string, realm string, userID string) (*User, error) {
+	if userID == "" {
+		return nil, errors.New("UserID shall not be empty")
+	}
+
+	var result User
+	resp, err := getRequestWithBearerAuth(accessToken).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "users", userID))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// GetUserCount gets the user count in the realm
+func (client *gocloak) GetUserCount(token string, realm string) (int, error) {
+	var result int
+	resp, err := getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "users", "count"))
+
+	if err := checkForError(resp, err); err != nil {
+		return -1, err
+	}
+
+	return result, nil
+}
+
+// GetUserGroups get all groups for user
+func (client *gocloak) GetUserGroups(token string, realm string, userID string) (*[]UserGroup, error) {
+	var result []UserGroup
+	resp, err := getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "users", userID, "groups"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// GetUsers get all users in realm
+func (client *gocloak) GetUsers(token string, realm string, params GetUsersParams) (*[]User, error) {
+	var result []User
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := getRequestWithBearerAuth(token).
+		SetResult(&result).
+		SetQueryParams(queryParams).
+		Get(client.getAdminRealmURL(realm, "users"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// GetUsersByRoleName returns all users have a given role
+func (client *gocloak) GetUsersByRoleName(token string, realm string, roleName string) (*[]User, error) {
+	var result []User
+	resp, err := getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "roles", roleName, "users"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// SetPassword sets a new password for the user with the given id. Needs elevated privileges
+func (client *gocloak) SetPassword(token string, userID string, realm string, password string, temporary bool) error {
+	requestBody := SetPasswordRequest{Password: password, Temporary: temporary, Type: "password"}
+	resp, err := getRequestWithBearerAuth(token).
+		SetBody(requestBody).
+		Put(client.getAdminRealmURL(realm, "users", userID, "reset-password"))
+
+	return checkForError(resp, err)
+}
+
+// UpdateUser creates a new user
+func (client *gocloak) UpdateUser(token string, realm string, user User) error {
+	resp, err := getRequestWithBearerAuth(token).
+		SetBody(user).
+		Put(client.getAdminRealmURL(realm, "users", user.ID))
+
+	return checkForError(resp, err)
+}
+
+// AddUserToGroup puts given user to given group
+func (client *gocloak) AddUserToGroup(token string, realm string, userID string, groupID string) error {
+	resp, err := getRequestWithBearerAuth(token).
+		Put(client.getAdminRealmURL(realm, "users", userID, "groups", groupID))
+
+	return checkForError(resp, err)
+}
+
+// DeleteUserFromGroup deletes given user from given group
+func (client *gocloak) DeleteUserFromGroup(token string, realm string, userID string, groupID string) error {
+	resp, err := getRequestWithBearerAuth(token).
+		Delete(client.getAdminRealmURL(realm, "users", userID, "groups", groupID))
 
 	return checkForError(resp, err)
 }
