@@ -173,7 +173,7 @@ type GetUsersParams struct {
 // ExecuteActionsEmail represents parameters for executing action emails
 type ExecuteActionsEmail struct {
 	UserID      string   `json:"-"`
-	ClientID    string   `json:"clientId,omitempty"`
+	ClientID    string   `json:"client_id,omitempty"`
 	Lifespan    int      `json:"lifespan,string,omitempty"`
 	RedirectURI string   `json:"redirect_uri,omitempty"`
 	Actions     []string `json:"-"`
