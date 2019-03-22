@@ -32,8 +32,8 @@ https://gopkg.in/nerzal/gocloak.v1
 
 ### Create New User
 ```go
-	gocloak := gocloak.NewClient("https://mycool.keycloak.instance")
-	token, err := gocloak.LoginAdmin("user", "password", "realmName")
+	client := gocloak.NewClient("https://mycool.keycloak.instance")
+	token, err := client.LoginAdmin("user", "password", "realmName")
 	if err != nil {
 		panic("Something wrong with the credentials or url")
 	}
@@ -52,7 +52,7 @@ https://gopkg.in/nerzal/gocloak.v1
 
 ### Introspect Token
 ```go
-	client := NewClient(hostname)
+	client := gocloak.NewClient(hostname)
 	token, err := client.LoginClient(clientid, clientSecret, realm)
 	if err != nil {
 		panic("Login failed:"+ err.Error())
