@@ -58,33 +58,33 @@ type IssuerResponse struct {
 
 // RetrospecTokenResult is returned when a token was checked
 type RetrospecTokenResult struct {
-	Permissions map[string]string `json:"permissions,omitempty,omitempty"`
-	Exp         int               `json:"exp,omitempty,omitempty"`
-	Nbf         int               `json:"nbf,omitempty,omitempty"`
-	Iat         int               `json:"iat,omitempty,omitempty"`
-	Aud         string            `json:"aud,omitempty,omitempty"`
-	Active      bool              `json:"active,omitempty,omitempty"`
-	AuthTime    int               `json:"auth_time,omitempty,omitempty"`
-	Jti         string            `json:"jti,omitempty,omitempty"`
-	Type        string            `json:"typ,omitempty,omitempty"`
+	Permissions map[string]string `json:"permissions,omitempty"`
+	Exp         int               `json:"exp,omitempty"`
+	Nbf         int               `json:"nbf,omitempty"`
+	Iat         int               `json:"iat,omitempty"`
+	Aud         string            `json:"aud,omitempty"`
+	Active      bool              `json:"active,omitempty"`
+	AuthTime    int               `json:"auth_time,omitempty"`
+	Jti         string            `json:"jti,omitempty"`
+	Type        string            `json:"typ,omitempty"`
 }
 
 // User represents the Keycloak User Structure
 type User struct {
-	ID                         string              `json:"id,omitempty,omitempty"`
-	CreatedTimestamp           int64               `json:"createdTimestamp,omitempty,omitempty"`
-	Username                   string              `json:"username,omitempty,omitempty"`
-	Enabled                    bool                `json:"enabled,omitempty,omitempty"`
-	Totp                       bool                `json:"totp,omitempty,omitempty"`
-	EmailVerified              bool                `json:"emailVerified,omitempty,omitempty"`
-	FirstName                  string              `json:"firstName,omitempty,omitempty"`
-	LastName                   string              `json:"lastName,omitempty,omitempty"`
-	Email                      string              `json:"email,omitempty,omitempty"`
-	FederationLink             string              `json:"federationLink,omitempty,omitempty"`
-	Attributes                 map[string][]string `json:"attributes,omitempty,omitempty"`
-	DisableableCredentialTypes []interface{}       `json:"disableableCredentialTypes,omitempty,omitempty"`
-	RequiredActions            []interface{}       `json:"requiredActions,omitempty,omitempty"`
-	Access                     map[string]bool     `json:"access,omitempty,omitempty"`
+	ID                         string              `json:"id,omitempty"`
+	CreatedTimestamp           int64               `json:"createdTimestamp,omitempty"`
+	Username                   string              `json:"username,omitempty"`
+	Enabled                    bool                `json:"enabled,omitempty"`
+	Totp                       bool                `json:"totp,omitempty"`
+	EmailVerified              bool                `json:"emailVerified,omitempty"`
+	FirstName                  string              `json:"firstName,omitempty"`
+	LastName                   string              `json:"lastName,omitempty"`
+	Email                      string              `json:"email,omitempty"`
+	FederationLink             string              `json:"federationLink,omitempty"`
+	Attributes                 map[string][]string `json:"attributes,omitempty"`
+	DisableableCredentialTypes []interface{}       `json:"disableableCredentialTypes,omitempty"`
+	RequiredActions            []interface{}       `json:"requiredActions,omitempty"`
+	Access                     map[string]bool     `json:"access,omitempty"`
 }
 
 // SetPasswordRequest sets a new password
@@ -102,7 +102,7 @@ type Component struct {
 	ProviderType    string          `json:"providerType,omitempty"`
 	ParentID        string          `json:"parentId,omitempty"`
 	ComponentConfig ComponentConfig `json:"config,omitempty"`
-	SubType         string          `json:"subType,omitempty,omitempty"`
+	SubType         string          `json:"subType,omitempty"`
 }
 
 // ComponentConfig is a componentconfig
@@ -132,8 +132,8 @@ type Key struct {
 	Status           string `json:"status,omitempty"`
 	Type             string `json:"type,omitempty"`
 	Algorithm        string `json:"algorithm,omitempty"`
-	PublicKey        string `json:"publicKey,omitempty,omitempty"`
-	Certificate      string `json:"certificate,omitempty,omitempty"`
+	PublicKey        string `json:"publicKey,omitempty"`
+	Certificate      string `json:"certificate,omitempty"`
 }
 
 // Attributes holds Attributes
@@ -153,57 +153,57 @@ type Access struct {
 
 // UserGroup is a UserGroup
 type UserGroup struct {
-	ID   string `json:"id,omitempty,omitempty"`
-	Name string `json:"name,omitempty,omitempty"`
-	Path string `json:"path,omitempty,omitempty"`
+	ID   string `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
+	Path string `json:"path,omitempty"`
 }
 
 // GetUsersParams represents the optional parameters for getting users
 type GetUsersParams struct {
-	BriefRepresentation *bool  `json:"briefRepresentation,string,omitempty,omitempty"`
-	Email               string `json:"email,omitempty,omitempty"`
-	First               int    `json:"first,string,omitempty,omitempty"`
-	FirstName           string `json:"firstName,omitempty,omitempty"`
-	LastName            string `json:"lastName,omitempty,omitempty"`
-	Max                 int    `json:"max,string,omitempty,omitempty"`
-	Search              string `json:"search,omitempty,omitempty"`
-	Username            string `json:"username,omitempty,omitempty"`
+	BriefRepresentation *bool  `json:"briefRepresentation,string,omitempty"`
+	Email               string `json:"email,omitempty"`
+	First               int    `json:"first,string,omitempty"`
+	FirstName           string `json:"firstName,omitempty"`
+	LastName            string `json:"lastName,omitempty"`
+	Max                 int    `json:"max,string,omitempty"`
+	Search              string `json:"search,omitempty"`
+	Username            string `json:"username,omitempty"`
 }
 
 // ExecuteActionsEmail represents parameters for executing action emails
 type ExecuteActionsEmail struct {
 	UserID      string   `json:"-,omitempty"`
-	ClientID    string   `json:"client_id,omitempty,omitempty"`
-	Lifespan    int      `json:"lifespan,string,omitempty,omitempty"`
-	RedirectURI string   `json:"redirect_uri,omitempty,omitempty"`
+	ClientID    string   `json:"client_id,omitempty"`
+	Lifespan    int      `json:"lifespan,string,omitempty"`
+	RedirectURI string   `json:"redirect_uri,omitempty"`
 	Actions     []string `json:"-,omitempty"`
 }
 
 // Group is a Group
 type Group struct {
-	ID        string        `json:"id,omitempty,omitempty"`
-	Name      string        `json:"name,omitempty,omitempty"`
-	Path      string        `json:"path,omitempty,omitempty"`
-	SubGroups []interface{} `json:"subGroups,omitempty,omitempty"`
+	ID        string        `json:"id,omitempty"`
+	Name      string        `json:"name,omitempty"`
+	Path      string        `json:"path,omitempty"`
+	SubGroups []interface{} `json:"subGroups,omitempty"`
 }
 
 // GetGroupsParams represents the optional parameters for getting groups
 type GetGroupsParams struct {
-	First  int    `json:"first,string,omitempty,omitempty"`
-	Max    int    `json:"max,string,omitempty,omitempty"`
-	Search string `json:"search,omitempty,omitempty"`
+	First  int    `json:"first,string,omitempty"`
+	Max    int    `json:"max,string,omitempty"`
+	Search string `json:"search,omitempty"`
 }
 
 // Role is a role
 type Role struct {
-	ID                 string              `json:"id,omitempty,omitempty"`
-	Name               string              `json:"name,omitempty,omitempty"`
-	ScopeParamRequired bool                `json:"scopeParamRequired,omitempty,omitempty"`
-	Composite          bool                `json:"composite,omitempty,omitempty"`
-	ClientRole         bool                `json:"clientRole,omitempty,omitempty"`
-	ContainerID        string              `json:"containerId,omitempty,omitempty"`
-	Description        string              `json:"description,omitempty,omitempty"`
-	Attributes         map[string][]string `json:"attributes,omitempty,omitempty"`
+	ID                 string              `json:"id,omitempty"`
+	Name               string              `json:"name,omitempty"`
+	ScopeParamRequired bool                `json:"scopeParamRequired,omitempty"`
+	Composite          bool                `json:"composite,omitempty"`
+	ClientRole         bool                `json:"clientRole,omitempty"`
+	ContainerID        string              `json:"containerId,omitempty"`
+	Description        string              `json:"description,omitempty"`
+	Attributes         map[string][]string `json:"attributes,omitempty"`
 }
 
 // ClientMappingsRepresentation is a client role mappings
@@ -215,8 +215,8 @@ type ClientMappingsRepresentation struct {
 
 // MappingsRepresentation is a representation of role mappings
 type MappingsRepresentation struct {
-	ClientMappings map[string]ClientMappingsRepresentation `json:"clientMappings,omitempty,omitempty"`
-	RealmMappings  []Role                                  `json:"realmMappings,omitempty,omitempty"`
+	ClientMappings map[string]ClientMappingsRepresentation `json:"clientMappings,omitempty"`
+	RealmMappings  []Role                                  `json:"realmMappings,omitempty"`
 }
 
 // ClientScope is a ClientScope
@@ -226,7 +226,7 @@ type ClientScope struct {
 	Description           string                `json:"description,omitempty"`
 	Protocol              string                `json:"protocol,omitempty"`
 	ClientScopeAttributes ClientScopeAttributes `json:"attributes,omitempty"`
-	ProtocolMappers       ProtocolMappers       `json:"protocolMappers,omitempty,omitempty"`
+	ProtocolMappers       ProtocolMappers       `json:"protocolMappers,omitempty"`
 }
 
 // ClientScopeAttributes are attributes of client scopes
@@ -263,8 +263,8 @@ type Client struct {
 
 // GetClientsParams represents the query parameters
 type GetClientsParams struct {
-	ClientID     string `json:"clientId,omitempty,omitempty"`
-	ViewableOnly bool   `json:"viewableOnly,string,omitempty,omitempty"`
+	ClientID     string `json:"clientId,omitempty"`
+	ViewableOnly bool   `json:"viewableOnly,string,omitempty"`
 }
 
 // UserInfo is returned by the userinfo endpoint
