@@ -806,6 +806,13 @@ func (client *gocloak) CreateRealm(token string, realm RealmRepresentation) erro
 	return checkForError(resp, err)
 }
 
+// DeleteRealm removes a realm
+func (client *gocloak) DeleteRealm(token string, realm string) error {
+	resp, err := getRequestWithBearerAuth(token).
+		Delete(client.getAdminRealmURL(realm))
+	return checkForError(resp, err)
+}
+
 // -----
 // Users
 // -----

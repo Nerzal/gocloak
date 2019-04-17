@@ -122,6 +122,8 @@ type GoCloak interface {
 	GetRealm(token string, realm string) (*RealmRepresentation, error)
 	// CreateRealm creates a realm
 	CreateRealm(token string, realm RealmRepresentation) error
+	// DeleteRealm removes a realm
+	DeleteRealm(token string, realm string) error
 
 	// *** Users ***
 	// CreateUser creates a new user
