@@ -2,10 +2,14 @@ package gocloak
 
 import (
 	"github.com/dgrijalva/jwt-go"
+	"gopkg.in/resty.v1"
 )
 
 // GoCloak holds all methods a client should fulfill
 type GoCloak interface {
+	// RestyClient returns a resty client that gocloak uses
+	RestyClient() *resty.Client
+
 	// Login sends a request to the token endpoint using user and client credentials
 	Login(clientID string, clientSecret string, realm string, username string, password string) (*JWT, error)
 	// Logout sends a request to the logout endpoint using refresh token
@@ -148,5 +152,4 @@ type GoCloak interface {
 	AddUserToGroup(token string, realm string, userID string, groupID string) error
 	// DeleteUserFromGroup deletes given user from given group
 	DeleteUserFromGroup(token string, realm string, userID string, groupID string) error
-
 }
