@@ -3,6 +3,7 @@ package gocloak
 import (
 	"crypto/tls"
 	"encoding/json"
+	"gopkg.in/resty.v1"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -266,6 +267,18 @@ func TestGetQueryParams(t *testing.T) {
 		"string_field": "fake",
 		"bool_field":   "true",
 	}, params)
+}
+
+func TestGocloak_RestyClient(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	restyClient := client.RestyClient()
+	FailIf(
+		t,
+		restyClient == resty.DefaultClient,
+		"Resty client of the GoCloak client and the Default resty client are equal",
+	)
 }
 
 // ---------
