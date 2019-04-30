@@ -44,7 +44,7 @@ https://gopkg.in/nerzal/gocloak.v1
 		Enabled:   true,
 		Username:  "CoolGuy",
 	}
-	gocloak.CreateUser(token.AccessToken, "realm", user)
+	client.CreateUser(token.AccessToken, "realm", user)
 	if err != nil {
 		panic("Oh no!, failed to create user :(")
 	}
