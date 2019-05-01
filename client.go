@@ -129,6 +129,21 @@ func (client *gocloak) GetUserInfo(accessToken string, realm string) (*UserInfo,
 	return &result, nil
 }
 
+func (client *gocloak) GetUserInfoWithClaims(accessToken string, realm string, claims []string, output interface{}) error {
+	resp, err := client.getRequestWithBearerAuth(accessToken).
+		SetFormData(map[string]string{
+			"claims": strings.Join(claims, ","),
+		}).
+		SetResult(output).
+		Post(client.getRealmURL(realm, openIDConnect, "userinfo"))
+
+	if err := checkForError(resp, err); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (client *gocloak) getNewCerts(realm string) (*CertResponse, error) {
 	var result CertResponse
 	resp, err := client.restyClient.R().

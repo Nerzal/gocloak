@@ -36,6 +36,9 @@ type GoCloak interface {
 	GetCerts(realm string) (*CertResponse, error)
 	// GetUserInfo gets the user info for the given realm
 	GetUserInfo(accessToken string, realm string) (*UserInfo, error)
+	// GetUserInfoWithClaims gets the user info, adding any additional claims you want to request
+	// Output object should have json mappings for the return object
+	GetUserInfoWithClaims(accessToken string, realm string, claims []string, output interface{}) error
 
 	// ExecuteActionsEmail executes an actions email
 	ExecuteActionsEmail(token string, realm string, params ExecuteActionsEmail) error
