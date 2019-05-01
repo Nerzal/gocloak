@@ -22,6 +22,8 @@ type GoCloak interface {
 	RequestPermission(clientID string, clientSecret string, realm string, username string, password string, permission string) (*JWT, error)
 	// RefreshToken used to refresh the token
 	RefreshToken(refreshToken string, clientID, clientSecret, realm string) (*JWT, error)
+	// Exchanges a token for another client for one that can be used by this client
+	ExchangeToken(authToken string, clientID, clientSecret, realm string) (*JWT, error)
 	// DecodeAccessToken decodes the accessToken
 	DecodeAccessToken(accessToken string, realm string) (*jwt.Token, *jwt.MapClaims, error)
 	// DecodeAccessTokenCustomClaims decodes the accessToken and fills the given claims

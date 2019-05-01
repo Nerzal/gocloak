@@ -252,6 +252,29 @@ func (client *gocloak) RefreshToken(refreshToken string, clientID, clientSecret,
 	return &result, nil
 }
 
+func (client *gocloak) ExchangeToken(authToken string, clientID, clientSecret, realm string) (*JWT, error) {
+	var result JWT
+	resp, err := client.restyClient.R().
+		SetFormData(map[string]string{
+			"client_id":     clientID,
+			"client_secret": clientSecret,
+			"grant_type":    "urn:ietf:params:oauth:grant-type:token-exchange",
+			"subject_token": authToken,
+		}).
+		SetResult(&result).
+		Post(client.getRealmURL(realm, tokenEndpoint))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	if result.AccessToken == "" {
+		return nil, errors.New("Authentication Failed")
+	}
+
+	return &result, nil
+}
+
 // LoginAdmin performs a login
 func (client *gocloak) LoginAdmin(username, password, realm string) (*JWT, error) {
 	var result JWT
