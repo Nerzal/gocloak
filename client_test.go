@@ -3,6 +3,7 @@ package gocloak
 import (
 	"crypto/tls"
 	"encoding/json"
+	"github.com/dgrijalva/jwt-go"
 	"gopkg.in/resty.v1"
 	"io/ioutil"
 	"math/rand"
@@ -16,8 +17,6 @@ import (
 	"sync"
 	"testing"
 	"time"
-
-	"github.com/Nerzal/gocloak/pkg/jwx"
 )
 
 type configAdmin struct {
@@ -401,19 +400,18 @@ func TestGocloak_DecodeAccessToken(t *testing.T) {
 }
 
 func TestGocloak_DecodeAccessTokenCustomClaims(t *testing.T) {
-	t.Skipf(
-		"Due to error: %s",
-		"DecodeAccessTokenCustomClaims: json: cannot unmarshal object into Go value of type jwt.Claims")
 	t.Parallel()
 	cfg := GetConfig(t)
 	client := NewClient(cfg.HostName)
 	token := GetClientToken(t, client)
 
-	claims := jwx.Claims{}
-	_, err := client.DecodeAccessTokenCustomClaims(
+	claims := jwt.MapClaims{}
+	resultToken, err := client.DecodeAccessTokenCustomClaims(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		claims)
+	t.Log(resultToken)
+	t.Log(claims)
 	FailIfErr(t, err, "DecodeAccessTokenCustomClaims")
 }
 
