@@ -152,4 +152,7 @@ type GoCloak interface {
 	AddUserToGroup(token string, realm string, userID string, groupID string) error
 	// DeleteUserFromGroup deletes given user from given group
 	DeleteUserFromGroup(token string, realm string, userID string, groupID string) error
+
+	// *** Events ***
+	GetEvents(accessToken string, realm string, params *GetEventsParams) ([]EventRepresentation, error)
 }

@@ -1,6 +1,7 @@
 package gocloak
 
 import "encoding/json"
+import "time"
 
 // GetQueryParams converts the struct to map[string]string
 // The fields tags must have `json:"<name>,string,omitempty"` format for all types, except strings
@@ -395,4 +396,31 @@ type CredentialRepresentation struct {
 	Temporary         bool               `json:"temporary,omitempty"`
 	Type              string             `json:"type,omitempty"`
 	Value             string             `json:"value,omitempty"`
+}
+
+// GetEventsParams represents the optional parameters for getting events
+type GetEventsParams struct {
+	Type      string `json:"Type,omitempty"`
+	Client    string `json:"client,omitempty"`
+	User      string `json:"user,omitempty"`
+	DateFrom  string `json:"dateFrom,omitempty"`
+	DateTo    string `json:"dateTo,omitempty"`
+	IPAddress string `json:"ipAddress,omitempty"`
+	First     int    `json:"first,string,omitempty"`
+	Max       int    `json:"max,string,omitempty"`
+	Realm     string `json:"realm"`
+}
+
+// EventRepresentation represent a event
+type EventRepresentation struct {
+	Time      int64             `json:"time,omitempty"`
+	GoTime    time.Time         `json:"-"`
+	Type      string            `json:"type,omitempty"`
+	RealmID   string            `json:"realmID,omitempty"`
+	ClientID  string            `json:"clientID,omitempty"`
+	UserID    string            `json:"userID,omitempty"`
+	SessionID string            `json:"sessionID,omitempty"`
+	IPAddress string            `json:"ipAddress,omitempty"`
+	Error     string            `json:"error,omitempty"`
+	Details   map[string]string `json:"details,omitempty"`
 }

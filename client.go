@@ -962,3 +962,27 @@ func (client *gocloak) DeleteUserFromGroup(token string, realm string, userID st
 
 	return checkForError(resp, err)
 }
+
+// GetEvents get all events in a realm
+func (client *gocloak) GetEvents(token string, realm string, params *GetEventsParams) ([]EventRepresentation, error) {
+	var result []EventRepresentation
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		SetQueryParams(queryParams).
+		Get(client.getAdminRealmURL(realm, "events"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	for i := range result {
+		result[i].GoTime = time.Unix(result[i].Time/1000, (result[i].Time%1000)*1000000)
+	}
+
+	return result, nil
+}

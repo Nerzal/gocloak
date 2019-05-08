@@ -1283,3 +1283,30 @@ func TestGocloak_GetUsersByRoleName(t *testing.T) {
 		userID,
 		(*users)[0].ID)
 }
+
+// -----------
+// Events
+// -----------
+
+func GetEvents(t *testing.T, client GoCloak, cfg *Config) (func()) {
+	token := GetAdminToken(t, client)
+
+	tearDown := func() {
+		events, err := client.GetEvents(
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			&GetEventsParams{})
+		FailIfErr(t, err, "GetEvents failed")
+		FailIf(t, len(events) != 0, "no events expected")
+	}
+	return tearDown
+}
+
+func TestGocloak_GetEvents(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	tearDown := GetEvents(t, client, cfg)
+	defer tearDown()
+
+}
