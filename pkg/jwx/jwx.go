@@ -79,11 +79,8 @@ func DecodeAccessToken(accessToken string, e string, n string) (*jwt.Token, *jwt
 		}
 		return rsaPublicKey, nil
 	})
-	if err != nil {
-		return nil, nil, err
-	}
 
-	return token2, claims, nil
+	return token2, claims, err
 }
 
 // DecodeAccessTokenCustomClaims currently only supports RSA - sorry for that
@@ -100,11 +97,8 @@ func DecodeAccessTokenCustomClaims(accessToken string, e string, n string, custo
 		}
 		return rsaPublicKey, nil
 	})
-	if err != nil {
-		return nil, err
-	}
 
-	return token2, nil
+	return token2, err
 }
 
 func getRSAPublicKey(publicKey string) (*rsa.PublicKey, error) {
