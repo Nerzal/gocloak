@@ -4,6 +4,7 @@
 [![Go Doc](https://godoc.org/github.com/Nerzal/gocloak?status.svg)](https://godoc.org/github.com/Nerzal/gocloak)
 [![Build Status](https://travis-ci.com/Nerzal/gocloak.svg?branch=master)](https://travis-ci.com/Nerzal/gocloak)
 [![codecov](https://codecov.io/gh/Nerzal/gocloak/branch/master/graph/badge.svg)](https://codecov.io/gh/Nerzal/gocloak)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FNerzal%2Fgocloak.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2FNerzal%2Fgocloak?ref=badge_shield)
 
 
 
@@ -166,3 +167,7 @@ export GOCLOAK_TEST_CONFIG=/path/to/gocloak/config.json
 ```
 
 All resources created as a result of unit tests will be deleted, except for the test user defined in the configuration file.
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FNerzal%2Fgocloak.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FNerzal%2Fgocloak?ref=badge_large)
