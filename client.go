@@ -50,13 +50,14 @@ func (client *gocloak) getRequestWithBearerAuth(token string) *resty.Request {
 }
 
 func (client *gocloak) getRequestWithBasicAuth(clientID string, clientSecret string) *resty.Request {
-	var httpBasicAuth string
+	req := client.restyClient.R().
+		SetHeader("Content-Type", "application/x-www-form-urlencoded")
+	// Public client doesn't require Basic Auth
 	if len(clientID) > 0 && len(clientSecret) > 0 {
-		httpBasicAuth = base64.URLEncoding.EncodeToString([]byte(clientID + ":" + clientSecret))
+		httpBasicAuth := base64.URLEncoding.EncodeToString([]byte(clientID + ":" + clientSecret))
+		req.SetHeader("Authorization", "Basic "+httpBasicAuth)
 	}
-	return client.restyClient.R().
-		SetHeader("Content-Type", "application/x-www-form-urlencoded").
-		SetHeader("Authorization", "Basic "+httpBasicAuth)
+	return req
 }
 
 func checkForError(resp *resty.Response, err error) error {
