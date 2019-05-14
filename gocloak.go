@@ -10,16 +10,18 @@ type GoCloak interface {
 	// RestyClient returns a resty client that gocloak uses
 	RestyClient() *resty.Client
 
+	// GetToken returns a token
+	GetToken(realm string, options TokenOptions) (*JWT, error)
 	// Login sends a request to the token endpoint using user and client credentials
-	Login(clientID string, clientSecret string, realm string, username string, password string) (*JWT, error)
+	Login(clientID, clientSecret, realm, username, password string) (*JWT, error)
 	// Logout sends a request to the logout endpoint using refresh token
 	Logout(clientID, clientSecret, realm, refreshToken string) error
 	// LoginClient sends a request to the token endpoint using client credentials
 	LoginClient(clientID, clientSecret, realm string) (*JWT, error)
 	// LoginAdmin login as admin
 	LoginAdmin(username, password, realm string) (*JWT, error)
-	// RequestPermisssion sends a request to the token endpoint with permission parameter
-	RequestPermission(clientID string, clientSecret string, realm string, username string, password string, permission string) (*JWT, error)
+	// RequestPermission sends a request to the token endpoint with permission parameter
+	RequestPermission(clientID, clientSecret, realm, username, password, permission string) (*JWT, error)
 	// RefreshToken used to refresh the token
 	RefreshToken(refreshToken string, clientID, clientSecret, realm string) (*JWT, error)
 	// DecodeAccessToken decodes the accessToken

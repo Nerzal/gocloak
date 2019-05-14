@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/dgrijalva/jwt-go"
 	"gopkg.in/resty.v1"
+	"io"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -81,7 +82,10 @@ func GetConfig(t *testing.T) *Config {
 		}
 		configFile, err := os.Open(configFileName)
 		FailIfErr(t, err, "cannot open config.json")
-		defer configFile.Close()
+		defer func() {
+			err := configFile.Close()
+			FailIfErr(t, err, "cannot close config file")
+		}()
 		data, err := ioutil.ReadAll(configFile)
 		FailIfErr(t, err, "cannot read config.json")
 		config = &Config{}
@@ -235,8 +239,31 @@ func SetUpTestUser(t *testing.T, client GoCloak) {
 			cfg.GoCloak.Realm,
 			cfg.GoCloak.Password,
 			false)
-		FailIfErr(t, err, "SetPassword	 failed")
+		//client.GetRealmRole(token.AccessToken, cfg.GoCloak.Realm, "")
+		FailIfErr(t, err, "SetPassword failed")
 	})
+}
+
+type RestyLogWriter struct {
+	io.Writer
+	t *testing.T
+}
+
+func (w *RestyLogWriter) Write(p []byte) (n int, err error) {
+	w.t.Log(string(p))
+	return len(p), nil
+}
+
+func NewClientWithDebug(t *testing.T) GoCloak {
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	restyClient := client.RestyClient()
+	restyClient.SetDebug(true)
+	restyClient.SetLogger(&RestyLogWriter{
+		t: t,
+	})
+
+	return client
 }
 
 func TestGetQueryParams(t *testing.T) {
@@ -270,8 +297,7 @@ func TestGetQueryParams(t *testing.T) {
 
 func TestGocloak_RestyClient(t *testing.T) {
 	t.Parallel()
-	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	restyClient := client.RestyClient()
 	FailIf(
 		t,
@@ -287,7 +313,7 @@ func TestGocloak_RestyClient(t *testing.T) {
 func TestGocloak_GetUserInfo(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetClientToken(t, client)
 
 	userInfo, err := client.GetUserInfo(
@@ -300,7 +326,7 @@ func TestGocloak_GetUserInfo(t *testing.T) {
 func TestGocloak_RequestPermission(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	SetUpTestUser(t, client)
 	token, err := client.RequestPermission(
 		cfg.GoCloak.ClientID,
@@ -324,7 +350,7 @@ func TestGocloak_RequestPermission(t *testing.T) {
 func TestGocloak_GetCerts(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	certs, err := client.GetCerts(cfg.GoCloak.Realm)
 	t.Log(certs)
 	FailIfErr(t, err, "get certs")
@@ -333,7 +359,7 @@ func TestGocloak_GetCerts(t *testing.T) {
 func TestGocloak_LoginClient_UnknownRealm(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	_, err := client.LoginClient(
 		cfg.GoCloak.ClientID,
 		cfg.GoCloak.ClientSecret,
@@ -347,7 +373,7 @@ func TestGocloak_LoginClient_UnknownRealm(t *testing.T) {
 func TestGocloak_GetIssuer(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	issuer, err := client.GetIssuer(cfg.GoCloak.Realm)
 	t.Log(issuer)
 	FailIfErr(t, err, "get issuer")
@@ -356,7 +382,7 @@ func TestGocloak_GetIssuer(t *testing.T) {
 func TestGocloak_RetrospectToken_InactiveToken(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 
 	rptResult, err := client.RetrospectToken(
 		"foobar",
@@ -372,7 +398,7 @@ func TestGocloak_RetrospectToken_InactiveToken(t *testing.T) {
 func TestGocloak_RetrospectToken(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetClientToken(t, client)
 
 	rptResult, err := client.RetrospectToken(
@@ -388,7 +414,7 @@ func TestGocloak_RetrospectToken(t *testing.T) {
 func TestGocloak_DecodeAccessToken(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetClientToken(t, client)
 
 	resultToken, claims, err := client.DecodeAccessToken(
@@ -402,7 +428,7 @@ func TestGocloak_DecodeAccessToken(t *testing.T) {
 func TestGocloak_DecodeAccessTokenCustomClaims(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetClientToken(t, client)
 
 	claims := jwt.MapClaims{}
@@ -418,7 +444,7 @@ func TestGocloak_DecodeAccessTokenCustomClaims(t *testing.T) {
 func TestGocloak_RefreshToken(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetClientToken(t, client)
 
 	token, err := client.RefreshToken(
@@ -437,8 +463,7 @@ func TestGocloak_UserAttributeContains(t *testing.T) {
 	attributes["foo"] = []string{"bar", "alice", "bob", "roflcopter"}
 	attributes["bar"] = []string{"baz"}
 
-	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	ok := client.UserAttributeContains(attributes, "foo", "alice")
 	FailIf(t, !ok, "UserAttributeContains")
 }
@@ -446,7 +471,7 @@ func TestGocloak_UserAttributeContains(t *testing.T) {
 func TestGocloak_GetKeyStoreConfig(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
 	config, err := client.GetKeyStoreConfig(
@@ -459,7 +484,7 @@ func TestGocloak_GetKeyStoreConfig(t *testing.T) {
 func TestGocloak_Login(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	SetUpTestUser(t, client)
 	_, err := client.Login(
 		cfg.GoCloak.ClientID,
@@ -470,10 +495,34 @@ func TestGocloak_Login(t *testing.T) {
 	FailIfErr(t, err, "Login failed")
 }
 
+func TestGocloak_GetToken(t *testing.T) {
+	t.Parallel()
+	t.Failed()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	SetUpTestUser(t, client)
+	newToken, err := client.GetToken(
+		cfg.GoCloak.Realm,
+		TokenOptions{
+			ClientID:      cfg.GoCloak.ClientID,
+			ClientSecret:  cfg.GoCloak.ClientSecret,
+			Username:      cfg.GoCloak.UserName,
+			Password:      cfg.GoCloak.Password,
+			GrantType:     "password",
+			ResponseTypes: []string{"token", "id_token"},
+			Scopes:        []string{"openid", "offline_access"},
+		},
+	)
+	FailIfErr(t, err, "Login failed")
+	t.Logf("New token: %+v", *newToken)
+	FailIf(t, newToken.RefreshExpiresIn > 0, "Got a refresh token instead of offline")
+	FailIf(t, len(newToken.IDToken) == 0, "Got an empty if token")
+}
+
 func TestGocloak_LoginClient(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	_, err := client.LoginClient(
 		cfg.GoCloak.ClientID,
 		cfg.GoCloak.ClientSecret,
@@ -484,7 +533,7 @@ func TestGocloak_LoginClient(t *testing.T) {
 func TestGocloak_LoginAdmin(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	_, err := client.LoginAdmin(
 		cfg.Admin.UserName,
 		cfg.Admin.Password,
@@ -495,7 +544,7 @@ func TestGocloak_LoginAdmin(t *testing.T) {
 func TestGocloak_SetPassword(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
 	tearDown, userID := CreateUser(t, client)
@@ -512,8 +561,7 @@ func TestGocloak_SetPassword(t *testing.T) {
 
 func TestGocloak_CreateGroup(t *testing.T) {
 	t.Parallel()
-	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 
 	tearDown, _ := CreateGroup(t, client)
 	defer tearDown()
@@ -522,7 +570,7 @@ func TestGocloak_CreateGroup(t *testing.T) {
 func TestGocloak_CreateClientRole(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
 	role := Role{
@@ -536,17 +584,19 @@ func TestGocloak_CreateClientRole(t *testing.T) {
 		testClient.ID,
 		role)
 	FailIfErr(t, err, "CreateClientRole failed")
-	defer client.DeleteClientRole(
+	err = client.DeleteClientRole(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		testClient.ID,
-		role.Name)
+		role.Name,
+	)
+	FailIfErr(t, err, "DeleteClientRole failed")
 }
 
 func TestGocloak_CreateClient(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
 	newClient := Client{
@@ -558,16 +608,17 @@ func TestGocloak_CreateClient(t *testing.T) {
 		cfg.GoCloak.Realm,
 		newClient)
 	FailIfErr(t, err, "CreateClient failed")
-	defer client.DeleteClient(
+	err = client.DeleteClient(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		newClient.ID)
+	FailIfErr(t, err, "DeleteClient failed")
 }
 
 func TestGocloak_GetGroups(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
 	_, err := client.GetGroups(
@@ -580,7 +631,7 @@ func TestGocloak_GetGroups(t *testing.T) {
 func TestGocloak_GetClients(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
 	_, err := client.GetClients(
@@ -595,7 +646,7 @@ func TestGocloak_GetClients(t *testing.T) {
 func TestGocloak_GetClientRoles(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
 	testClient := GetClientByClientID(t, client, cfg.GoCloak.ClientID)
@@ -610,7 +661,7 @@ func TestGocloak_GetClientRoles(t *testing.T) {
 func TestGocloak_GetRoleMappingByGroupID(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
 	tearDown, groupID := CreateGroup(t, client)
@@ -626,7 +677,7 @@ func TestGocloak_GetRoleMappingByGroupID(t *testing.T) {
 func TestGocloak_GetRoleMappingByUserID(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
 	tearDown, userID := CreateUser(t, client)
@@ -642,7 +693,7 @@ func TestGocloak_GetRoleMappingByUserID(t *testing.T) {
 func TestGocloak_ExecuteActionsEmail_UpdatePassword(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
 	tearDown, userID := CreateUser(t, client)
@@ -670,7 +721,7 @@ func TestGocloak_ExecuteActionsEmail_UpdatePassword(t *testing.T) {
 func TestGocloak_Logout(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetUserToken(t, client)
 
 	err := client.Logout(
@@ -684,7 +735,7 @@ func TestGocloak_Logout(t *testing.T) {
 func TestGocloak_GetRealm(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
 	r, err := client.GetRealm(
@@ -720,8 +771,7 @@ func CreateRealm(t *testing.T, client GoCloak) (func(), string) {
 
 func TestGocloak_CreateRealm(t *testing.T) {
 	t.Parallel()
-	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	tearDown, _ := CreateRealm(t, client)
 	defer tearDown()
 }
@@ -756,8 +806,7 @@ func CreateRealmRole(t *testing.T, client GoCloak) (func(), string) {
 
 func TestGocloak_CreateRealmRole(t *testing.T) {
 	t.Parallel()
-	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	tearDown, _ := CreateRealmRole(t, client)
 	defer tearDown()
 }
@@ -765,7 +814,7 @@ func TestGocloak_CreateRealmRole(t *testing.T) {
 func TestGocloak_GetRealmRole(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
 	tearDown, roleName := CreateRealmRole(t, client)
@@ -775,8 +824,8 @@ func TestGocloak_GetRealmRole(t *testing.T) {
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		roleName)
-	t.Logf("Role: %+v", *role)
 	FailIfErr(t, err, "GetRealmRole failed")
+	t.Logf("Role: %+v", *role)
 	FailIf(
 		t,
 		role.Name != roleName,
@@ -787,7 +836,7 @@ func TestGocloak_GetRealmRole(t *testing.T) {
 func TestGocloak_GetRealmRoles(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
 	tearDown, _ := CreateRealmRole(t, client)
@@ -796,14 +845,14 @@ func TestGocloak_GetRealmRoles(t *testing.T) {
 	roles, err := client.GetRealmRoles(
 		token.AccessToken,
 		cfg.GoCloak.Realm)
-	t.Logf("Roles: %+v", *roles)
 	FailIfErr(t, err, "GetRealmRoles failed")
+	t.Logf("Roles: %+v", *roles)
 }
 
 func TestGocloak_UpdateRealmRole(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
 	newRoleName := GetRandomName("Role")
@@ -836,7 +885,7 @@ func TestGocloak_UpdateRealmRole(t *testing.T) {
 func TestGocloak_DeleteRealmRole(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
 	_, roleName := CreateRealmRole(t, client)
@@ -851,7 +900,7 @@ func TestGocloak_DeleteRealmRole(t *testing.T) {
 func TestGocloak_AddRealmRoleToUser(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
 	tearDownUser, userID := CreateUser(t, client)
@@ -877,7 +926,7 @@ func TestGocloak_AddRealmRoleToUser(t *testing.T) {
 func TestGocloak_GetRealmRolesByUserID(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
 	tearDownUser, userID := CreateUser(t, client)
@@ -903,8 +952,8 @@ func TestGocloak_GetRealmRolesByUserID(t *testing.T) {
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		userID)
-	t.Logf("User roles: %+v", *roles)
 	FailIfErr(t, err, "GetRealmRolesByUserID failed")
+	t.Logf("User roles: %+v", *roles)
 	for _, r := range *roles {
 		if r.Name == role.Name {
 			return
@@ -916,7 +965,7 @@ func TestGocloak_GetRealmRolesByUserID(t *testing.T) {
 func TestGocloak_GetRealmRolesByGroupID(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
 	tearDown, groupID := CreateGroup(t, client)
@@ -932,7 +981,7 @@ func TestGocloak_GetRealmRolesByGroupID(t *testing.T) {
 func TestGocloak_DeleteRealmRoleFromUser(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
 	tearDownUser, userID := CreateUser(t, client)
@@ -978,7 +1027,7 @@ func TestGocloak_DeleteRealmRoleFromUser(t *testing.T) {
 func TestGocloak_AddRealmRoleComposite(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
 	tearDown, compositeRole := CreateRealmRole(t, client)
@@ -998,7 +1047,7 @@ func TestGocloak_AddRealmRoleComposite(t *testing.T) {
 func TestGocloak_DeleteRealmRoleComposite(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
 	tearDown, compositeRole := CreateRealmRole(t, client)
@@ -1043,8 +1092,8 @@ func CreateUser(t *testing.T, client GoCloak) (func(), string) {
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		user)
-	user.ID = *userID
 	FailIfErr(t, err, "CreateUser failed")
+	user.ID = *userID
 	t.Logf("Created User: %+v", user)
 	tearDown := func() {
 		err := client.DeleteUser(
@@ -1059,8 +1108,7 @@ func CreateUser(t *testing.T, client GoCloak) (func(), string) {
 
 func TestGocloak_CreateUser(t *testing.T) {
 	t.Parallel()
-	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 
 	tearDown, _ := CreateUser(t, client)
 	defer tearDown()
@@ -1069,7 +1117,7 @@ func TestGocloak_CreateUser(t *testing.T) {
 func TestGocloak_CreateUserCustomAttributes(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
 	tearDown, userID := CreateUser(t, client)
@@ -1089,7 +1137,7 @@ func TestGocloak_CreateUserCustomAttributes(t *testing.T) {
 func TestGocloak_GetUserByID(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
 	tearDown, userID := CreateUser(t, client)
@@ -1106,7 +1154,7 @@ func TestGocloak_GetUserByID(t *testing.T) {
 func TestGocloak_GetUsers(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
 	users, err := client.GetUsers(
@@ -1122,7 +1170,7 @@ func TestGocloak_GetUsers(t *testing.T) {
 func TestGocloak_GetUserCount(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
 	count, err := client.GetUserCount(
@@ -1135,7 +1183,7 @@ func TestGocloak_GetUserCount(t *testing.T) {
 func TestGocloak_AddUserToGroup(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 	tearDownUser, userID := CreateUser(t, client)
 	defer tearDownUser()
@@ -1155,7 +1203,7 @@ func TestGocloak_AddUserToGroup(t *testing.T) {
 func TestGocloak_DeleteUserFromGroup(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 	tearDownUser, userID := CreateUser(t, client)
 	defer tearDownUser()
@@ -1181,7 +1229,7 @@ func TestGocloak_DeleteUserFromGroup(t *testing.T) {
 func TestGocloak_GetUserGroups(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
 	tearDownUser, userID := CreateUser(t, client)
@@ -1214,8 +1262,7 @@ func TestGocloak_GetUserGroups(t *testing.T) {
 
 func TestGocloak_DeleteUser(t *testing.T) {
 	t.Parallel()
-	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 
 	tearDown, _ := CreateUser(t, client)
 	defer tearDown()
@@ -1224,7 +1271,7 @@ func TestGocloak_DeleteUser(t *testing.T) {
 func TestGocloak_UpdateUser(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
 	tearDown, userID := CreateUser(t, client)
@@ -1245,7 +1292,7 @@ func TestGocloak_UpdateUser(t *testing.T) {
 func TestGocloak_GetUsersByRoleName(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
-	client := NewClient(cfg.HostName)
+	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
 	tearDownUser, userID := CreateUser(t, client)
