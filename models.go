@@ -1,6 +1,8 @@
 package gocloak
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 // GetQueryParams converts the struct to map[string]string
 // The fields tags must have `json:"<name>,string,omitempty"` format for all types, except strings
@@ -255,10 +257,127 @@ type ProtocolMappersConfig struct {
 	JSONTypeLabel      string `json:"jsonType.label,omitempty"`
 }
 
-// Client is a Client
+// Client is a ClientRepresentation
 type Client struct {
-	ID       string `json:"id,omitempty"`
-	ClientID string `json:"clientId,omitempty"`
+	Access                             map[string]interface{}         `json:"access,omitempty"`
+	AdminURL                           string                         `json:"adminUrl,omitempty"`
+	Attributes                         map[string]string              `json:"attributes,omitempty"`
+	AuthenticationFlowBindingOverrides map[string]string              `json:"authenticationFlowBindingOverrides,omitempty"`
+	AuthorizationServicesEnabled       bool                           `json:"authorizationServicesEnabled,omitempty"`
+	AuthorizationSettings              *ResourceServerRepresentation  `json:"authorizationSettings,omitempty"`
+	BaseURL                            string                         `json:"baseURL,omitempty"`
+	BaererOnly                         bool                           `json:"barerOnly,omitempty"`
+	ClientAuthenticatorType            string                         `json:"clientAuthenticatorType,omitempty"`
+	ClientID                           string                         `json:"clientId,omitempty"`
+	ConsentRequiered                   bool                           `json:"consentRequiered,omitempty"`
+	DefaultClientScopes                []string                       `json:"defaultClientScopes,omitempty"`
+	DefaultRoles                       []string                       `json:"defaultRoles,omitempty"`
+	Description                        string                         `json:"description,omitempty"`
+	DirectAccessGrantsEnabled          bool                           `json:"directAccessGrantsEnabled,omitempty"`
+	Enabled                            bool                           `json:"enabled,omitempty"`
+	FrontChannelLogout                 bool                           `json:"frontChannelLogout,omitempty"`
+	FullScopeAllowed                   bool                           `json:"fullScopeAllowed,omitempty"`
+	ID                                 string                         `json:"id"`
+	ImplicitFlowEnabled                bool                           `json:"implicitFlowEnabled,omitempty"`
+	Name                               string                         `json:"name,omitempty"`
+	NodeReRegistrationTimeout          int32                          `json:"nodeReRegistrationTimeout,omitempty"`
+	NotBefore                          int32                          `json:"notBefore,omitempty"`
+	OptionalClientScopes               []string                       `json:"optionalClientScopes,omitempty"`
+	Origin                             string                         `json:"origin,omitempty"`
+	Protocol                           string                         `json:"protocol,omitempty"`
+	ProtocolMappers                    []ProtocolMapperRepresentation `json:"protocolMappers,omitempty"`
+	PublicClient                       bool                           `json:"PublicClient,omitempty"`
+	RedirectURIs                       []string                       `json:"redirectUris,omitempty"`
+	RegisteredNodes                    map[string]string              `json:"registeredNodes,omitempty"`
+	RegistrationAccessToken            string                         `json:"registrationAccessToken,omitempty"`
+	RootURL                            string                         `json:"rootUrl,omitempty"`
+	Secret                             string                         `json:"secret,omitempty"`
+	ServiceAccountsEnabled             bool                           `json:"serviceAccountsEnabled,omitempty"`
+	StandardFlowEnabled                bool                           `json:"standardFlowEnabled,omitempty"`
+	SurrogateAuthRequired              bool                           `json:"surrogateAuthRequired,omitempty"`
+	WebOrigins                         []string                       `json:"webOrigins,omitempty"`
+}
+
+// ResourceServerRepresentation represents the resources of a Server
+type ResourceServerRepresentation struct {
+	AllowRemoteResourceManagement bool                     `json:"allowRemoteResourceManagement,omitempty"`
+	ClientID                      string                   `json:"clientId,omitempty"`
+	ID                            string                   `json:"id,omitempty"`
+	Name                          string                   `json:"name,omitempty"`
+	Policies                      []PolicyRepresentation   `json:"policies,omitempty"`
+	PolicyEnforcementMode         *PolicyEnforcementMode   `json:"policyEnforcementMode,omitempty"`
+	Resources                     []ResourceRepresentation `json:"resources,omitempty"`
+	Scopes                        []ScopeRepresentation    `json:"scopes,omitempty"`
+}
+
+type PolicyEnforcementMode int
+
+const (
+	ENFORCING PolicyEnforcementMode = iota
+	PERMISSIVE
+	DISABLED
+)
+
+// PolicyRepresentation is a representation of a Policy
+type PolicyRepresentation struct {
+	Config           map[string]string `json:"config,omitempty"`
+	DecisionStrategy *DecisionStrategy `json:"decisionStrategy,omitempty"`
+	Description      string            `json:"description,omitempty"`
+	ID               string            `json:"id,omitempty"`
+	Logic            *Logic            `json:"logic,omitempty"`
+	Name             string            `json:"name,omitempty"`
+	Owner            string            `json:"owner,omitempty"`
+	Policies         []string          `json:"policies,omitempty"`
+	Resources        []string          `json:"resources,omitempty"`
+	Scopes           []string          `json:"scopes,omitempty"`
+	Type             string            `json:"type,omitempty"`
+}
+
+type DecisionStrategy int
+
+const (
+	AFFIRMATIVE DecisionStrategy = iota
+	UNANIMOUS
+	CONSENSUS
+)
+
+type Logic int
+
+const (
+	POSITIVE Logic = iota
+	NEGATIVE
+)
+
+// ResourceRepresentation is a representation of a Resource
+type ResourceRepresentation struct {
+	ID                 string                `json:"id,omitempty"` //TODO: is marked "_optional" in template, input error or deliberate?
+	Attributes         map[string]string     `json:"attributes,omitempty"`
+	DisplayName        string                `json:"displayName,omitempty"`
+	IconURI            string                `json:"icon_uri,omitempty"` //TODO: With "_" because that's how it's written down in the template
+	Name               string                `json:"name,omitempty"`
+	OwnerManagedAccess bool                  `json:"ownerManagedAccess,omitempty"`
+	Scopes             []ScopeRepresentation `json:"scopes,omitempty"`
+	Type               string                `json:"type,omitempty"`
+	URIs               []string              `json:"uris,omitempty"`
+}
+
+// ScopeRepresentation is a represents a Scope
+type ScopeRepresentation struct {
+	DisplayName string                   `json:"displayName,omitempty"`
+	IconURI     string                   `json:"iconUri,omitempty"`
+	ID          string                   `json:"id,omitempty"`
+	Name        string                   `json:"name,omitempty"`
+	Policies    []PolicyRepresentation   `json:"policies,omitempty"`
+	Resources   []ResourceRepresentation `json:"resources,omitempty"`
+}
+
+// ProtocolMapperRepresentation represents....
+type ProtocolMapperRepresentation struct {
+	Config         map[string]string `json:"config,omitempty"`
+	ID             string            `json:"id,omitempty"`
+	Name           string            `json:"name,omitempty"`
+	Protocol       string            `json:"protocol,omitempty"`
+	ProtocolMapper string            `json:"protocolMapper,omitempty"`
 }
 
 // GetClientsParams represents the query parameters
