@@ -259,7 +259,7 @@ type ProtocolMappersConfig struct {
 
 // Client is a ClientRepresentation
 type Client struct {
-	Access                             map[string]string              `json:"access,omitempty"`
+	Access                             map[string]interface{}         `json:"access,omitempty"`
 	AdminURL                           string                         `json:"adminUrl,omitempty"`
 	Attributes                         map[string]string              `json:"attributes,omitempty"`
 	AuthenticationFlowBindingOverrides map[string]string              `json:"authenticationFlowBindingOverrides,omitempty"`
@@ -278,7 +278,7 @@ type Client struct {
 	FrontChannelLogout                 bool                           `json:"frontChannelLogout,omitempty"`
 	FullScopeAllowed                   bool                           `json:"fullScopeAllowed,omitempty"`
 	ID                                 string                         `json:"id"`
-	ImplicitFlowEnabled                string                         `json:"implicitFlowEnabled,omitempty"`
+	ImplicitFlowEnabled                bool                           `json:"implicitFlowEnabled,omitempty"`
 	Name                               string                         `json:"name,omitempty"`
 	NodeReRegistrationTimeout          int32                          `json:"nodeReRegistrationTimeout,omitempty"`
 	NotBefore                          int32                          `json:"notBefore,omitempty"`
