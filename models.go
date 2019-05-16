@@ -275,7 +275,7 @@ type Client struct {
 	Description                        string                         `json:"description,omitempty"`
 	DirectAccessGrantsEnabled          bool                           `json:"directAccessGrantsEnabled,omitempty"`
 	Enabled                            bool                           `json:"enabled,omitempty"`
-	FrontChannelLogout                 bool                           `json:"enabled,omitempty"`
+	FrontChannelLogout                 bool                           `json:"frontChannelLogout,omitempty"`
 	FullScopeAllowed                   bool                           `json:"fullScopeAllowed,omitempty"`
 	ID                                 string                         `json:"id"`
 	ImplicitFlowEnabled                string                         `json:"implicitFlowEnabled,omitempty"`
@@ -302,21 +302,29 @@ type Client struct {
 type ResourceServerRepresentation struct {
 	AllowRemoteResourceManagement bool                     `json:"allowRemoteResourceManagement,omitempty"`
 	ClientID                      string                   `json:"clientId,omitempty"`
-	id                            string                   `json:"id,omitempty"`
+	ID                            string                   `json:"id,omitempty"`
 	Name                          string                   `json:"name,omitempty"`
 	Policies                      []PolicyRepresentation   `json:"policies,omitempty"`
-	PolicyEnforcementMode         string                   `json:"policyEnforcementMode,omitempty"` //TODO: This is an ENUM(ENFORCING,PERMISSIVE,DISABLED) in the template
+	PolicyEnforcementMode         PolicyEnforcementMode    `json:"policyEnforcementMode,omitempty"`
 	Resources                     []ResourceRepresentation `json:"resources,omitempty"`
 	Scopes                        []ScopeRepresentation    `json:"scopes,omitempty"`
 }
 
+type PolicyEnforcementMode int
+
+const (
+	ENFORCING PolicyEnforcementMode = iota
+	PERMISSIVE
+	DISABLED
+)
+
 // PolicyRepresentation is a representation of a Policy
 type PolicyRepresentation struct {
 	Config           map[string]string `json:"config,omitempty"`
-	DecisionStrategy string            `json:"decisionStrategy,omitempty"` //TODO: This is an ENUM(AFFIRMATIVE,UNANIMOUS,CONSENSUS) in the template
+	DecisionStrategy DecisionStrategy  `json:"decisionStrategy,omitempty"`
 	Description      string            `json:"description,omitempty"`
 	ID               string            `json:"id,omitempty"`
-	Logic            string            `json:"logic,omitempty"` //TODO: This is an ENUM(POSITIVE,NEGATIVE) in the template
+	Logic            Logic             `json:"logic,omitempty"`
 	Name             string            `json:"name,omitempty"`
 	Owner            string            `json:"owner,omitempty"`
 	Policies         []string          `json:"policies,omitempty"`
@@ -324,6 +332,21 @@ type PolicyRepresentation struct {
 	Scopes           []string          `json:"scopes,omitempty"`
 	Type             string            `json:"type,omitempty"`
 }
+
+type DecisionStrategy int
+
+const (
+	AFFIRMATIVE DecisionStrategy = iota
+	UNANIMOUS
+	CONSENSUS
+)
+
+type Logic int
+
+const (
+	POSITIVE Logic = iota
+	NEGATIVE
+)
 
 // ResourceRepresentation is a representation of a Resource
 type ResourceRepresentation struct {
