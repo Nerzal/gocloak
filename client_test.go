@@ -3,7 +3,8 @@ package gocloak
 import (
 	"crypto/tls"
 	"encoding/json"
-	"github.com/Nerzal/gocloak/pkg/jwx"
+	"github.com/dgrijalva/jwt-go"
+	"gopkg.in/resty.v1"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -71,7 +72,6 @@ func AssertEquals(t *testing.T, exp interface{}, act interface{}) {
 		!reflect.DeepEqual(exp, act),
 		"The expected and actual results are not equal.\nExpected: %+v.\nActual:   %+v", exp, act)
 }
-
 
 func GetConfig(t *testing.T) *Config {
 	configOnce.Do(func() {
@@ -262,10 +262,22 @@ func TestGetQueryParams(t *testing.T) {
 	})
 	FailIfErr(t, err, "GetQueryParams failed")
 	AssertEquals(t, map[string]string{
-		"int_field": "1",
+		"int_field":    "1",
 		"string_field": "fake",
-		"bool_field": "true",
+		"bool_field":   "true",
 	}, params)
+}
+
+func TestGocloak_RestyClient(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	restyClient := client.RestyClient()
+	FailIf(
+		t,
+		restyClient == resty.DefaultClient,
+		"Resty client of the GoCloak client and the Default resty client are equal",
+	)
 }
 
 // ---------
@@ -388,19 +400,18 @@ func TestGocloak_DecodeAccessToken(t *testing.T) {
 }
 
 func TestGocloak_DecodeAccessTokenCustomClaims(t *testing.T) {
-	t.Skipf(
-		"Due to error: %s",
-		"DecodeAccessTokenCustomClaims: json: cannot unmarshal object into Go value of type jwt.Claims")
 	t.Parallel()
 	cfg := GetConfig(t)
 	client := NewClient(cfg.HostName)
 	token := GetClientToken(t, client)
 
-	claims := jwx.Claims{}
-	_, err := client.DecodeAccessTokenCustomClaims(
+	claims := jwt.MapClaims{}
+	resultToken, err := client.DecodeAccessTokenCustomClaims(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		claims)
+	t.Log(resultToken)
+	t.Log(claims)
 	FailIfErr(t, err, "DecodeAccessTokenCustomClaims")
 }
 
@@ -683,6 +694,37 @@ func TestGocloak_GetRealm(t *testing.T) {
 	FailIfErr(t, err, "GetRealm failed")
 }
 
+// -----------
+// Realm
+// -----------
+
+func CreateRealm(t *testing.T, client GoCloak) (func(), string) {
+	token := GetAdminToken(t, client)
+
+	realmName := GetRandomName("Realm")
+	t.Logf("Creating Realm: %s", realmName)
+	err := client.CreateRealm(
+		token.AccessToken,
+		RealmRepresentation{
+			Realm: realmName,
+		})
+	FailIfErr(t, err, "CreateRealm failed")
+	tearDown := func() {
+		err := client.DeleteRealm(
+			token.AccessToken,
+			realmName)
+		FailIfErr(t, err, "DeleteRealm failed")
+	}
+	return tearDown, realmName
+}
+
+func TestGocloak_CreateRealm(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClient(cfg.HostName)
+	tearDown, _ := CreateRealm(t, client)
+	defer tearDown()
+}
 
 // -----------
 // Realm Roles
@@ -987,9 +1029,9 @@ func CreateUser(t *testing.T, client GoCloak) (func(), string) {
 
 	user := User{
 		FirstName: GetRandomName("FirstName"),
-		LastName: GetRandomName("LastName"),
-		Email: GetRandomName("email")+"@localhost",
-		Enabled: true,
+		LastName:  GetRandomName("LastName"),
+		Email:     GetRandomName("email") + "@localhost",
+		Enabled:   true,
 		Attributes: map[string][]string{
 			"foo": {"bar", "alice", "bob", "roflcopter"},
 			"bar": {"baz"},

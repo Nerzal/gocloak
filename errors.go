@@ -1,6 +1,6 @@
 package gocloak
 
-// ObjectAllreadyExists is used when keycloak answers with 409
+// ObjectAlreadyExists is used when keycloak answers with 409
 type ObjectAlreadyExists struct{}
 
 func (o *ObjectAlreadyExists) Error() string {

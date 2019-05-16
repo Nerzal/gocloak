@@ -4,6 +4,7 @@
 [![Go Doc](https://godoc.org/github.com/Nerzal/gocloak?status.svg)](https://godoc.org/github.com/Nerzal/gocloak)
 [![Build Status](https://travis-ci.com/Nerzal/gocloak.svg?branch=master)](https://travis-ci.com/Nerzal/gocloak)
 [![codecov](https://codecov.io/gh/Nerzal/gocloak/branch/master/graph/badge.svg)](https://codecov.io/gh/Nerzal/gocloak)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FNerzal%2Fgocloak.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2FNerzal%2Fgocloak?ref=badge_shield)
 
 
 
@@ -44,7 +45,7 @@ https://gopkg.in/nerzal/gocloak.v1
 		Enabled:   true,
 		Username:  "CoolGuy",
 	}
-	gocloak.CreateUser(token.AccessToken, "realm", user)
+	client.CreateUser(token.AccessToken, "realm", user)
 	if err != nil {
 		panic("Oh no!, failed to create user :(")
 	}
@@ -147,6 +148,7 @@ type GoCloak interface {
 
 	GetRealm(token string, realm string) (*RealmRepresentation, error)
 	CreateRealm(token string, realm RealmRepresentation) error
+	DeleteRealm(token string, realm string) error
 }
 ```
 
@@ -165,3 +167,7 @@ export GOCLOAK_TEST_CONFIG=/path/to/gocloak/config.json
 ```
 
 All resources created as a result of unit tests will be deleted, except for the test user defined in the configuration file.
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FNerzal%2Fgocloak.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FNerzal%2Fgocloak?ref=badge_large)
