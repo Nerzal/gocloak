@@ -264,7 +264,7 @@ type Client struct {
 	Attributes                         map[string]string              `json:"attributes,omitempty"`
 	AuthenticationFlowBindingOverrides map[string]string              `json:"authenticationFlowBindingOverrides,omitempty"`
 	AuthorizationServicesEnabled       bool                           `json:"authorizationServicesEnabled,omitempty"`
-	AuthorizationSettings              ResourceServerRepresentation   `json:"authorizationSettings,omitempty"`
+	AuthorizationSettings              *ResourceServerRepresentation  `json:"authorizationSettings,omitempty"`
 	BaseURL                            string                         `json:"baseURL,omitempty"`
 	BaererOnly                         bool                           `json:"barerOnly,omitempty"`
 	ClientAuthenticatorType            string                         `json:"clientAuthenticatorType,omitempty"`
@@ -305,7 +305,7 @@ type ResourceServerRepresentation struct {
 	ID                            string                   `json:"id,omitempty"`
 	Name                          string                   `json:"name,omitempty"`
 	Policies                      []PolicyRepresentation   `json:"policies,omitempty"`
-	PolicyEnforcementMode         PolicyEnforcementMode    `json:"policyEnforcementMode,omitempty"`
+	PolicyEnforcementMode         *PolicyEnforcementMode   `json:"policyEnforcementMode,omitempty"`
 	Resources                     []ResourceRepresentation `json:"resources,omitempty"`
 	Scopes                        []ScopeRepresentation    `json:"scopes,omitempty"`
 }
@@ -321,10 +321,10 @@ const (
 // PolicyRepresentation is a representation of a Policy
 type PolicyRepresentation struct {
 	Config           map[string]string `json:"config,omitempty"`
-	DecisionStrategy DecisionStrategy  `json:"decisionStrategy,omitempty"`
+	DecisionStrategy *DecisionStrategy `json:"decisionStrategy,omitempty"`
 	Description      string            `json:"description,omitempty"`
 	ID               string            `json:"id,omitempty"`
-	Logic            Logic             `json:"logic,omitempty"`
+	Logic            *Logic            `json:"logic,omitempty"`
 	Name             string            `json:"name,omitempty"`
 	Owner            string            `json:"owner,omitempty"`
 	Policies         []string          `json:"policies,omitempty"`
