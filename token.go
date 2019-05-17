@@ -3,6 +3,7 @@ package gocloak
 // JWT is a JWT
 type JWT struct {
 	AccessToken      string `json:"access_token"`
+	IDToken          string `json:"id_token"`
 	ExpiresIn        int    `json:"expires_in"`
 	RefreshExpiresIn int    `json:"refresh_expires_in"`
 	RefreshToken     string `json:"refresh_token"`

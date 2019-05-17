@@ -2,6 +2,7 @@ package gocloak
 
 import (
 	"encoding/json"
+	"strings"
 )
 
 // GetQueryParams converts the struct to map[string]string
@@ -514,4 +515,36 @@ type CredentialRepresentation struct {
 	Temporary         bool               `json:"temporary,omitempty"`
 	Type              string             `json:"type,omitempty"`
 	Value             string             `json:"value,omitempty"`
+}
+
+// TokenOptions represents the options to obtain a token
+type TokenOptions struct {
+	ClientID      string   `json:"client_id"`
+	ClientSecret  string   `json:"-"`
+	GrantType     string   `json:"grant_type"`
+	RefreshToken  string   `json:"refresh_token,omitempty"`
+	Scopes        []string `json:"-"`
+	Scope         string   `json:"scope,omitempty"`
+	ResponseTypes []string `json:"-"`
+	ResponseType  string   `json:"response_type,omitempty"`
+	Permission    string   `json:"permission,omitempty"`
+	Username      string   `json:"username,omitempty"`
+	Password      string   `json:"password,omitempty"`
+}
+
+// FormData returns a map of options to be used in SetFormData function
+func (t *TokenOptions) FormData() map[string]string {
+	if len(t.Scopes) > 0 {
+		t.Scope = strings.Join(t.Scopes, " ")
+	}
+	if len(t.ResponseTypes) > 0 {
+		t.ResponseType = strings.Join(t.ResponseTypes, " ")
+	}
+	if len(t.ResponseType) == 0 {
+		t.ResponseType = "token"
+	}
+	m, _ := json.Marshal(t)
+	var res map[string]string
+	_ = json.Unmarshal(m, &res)
+	return res
 }

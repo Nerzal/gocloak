@@ -3,7 +3,6 @@ package gocloak
 import (
 	"encoding/base64"
 	"errors"
-	"log"
 	"strings"
 	"time"
 
@@ -19,13 +18,6 @@ type gocloak struct {
 	Config      struct {
 		CertsInvalidateTime time.Duration
 	}
-}
-
-type loginData struct {
-	ClientID  string `json:"client_id"`
-	UserName  string `json:"username"`
-	Password  string `json:"password"`
-	GrantType string `json:"grant_type"`
 }
 
 const (
@@ -69,7 +61,6 @@ func checkForError(resp *resty.Response, err error) error {
 		if resp.StatusCode() == 409 {
 			return &ObjectAlreadyExists{}
 		}
-		log.Printf("Error: Request returned a response with status '%s' and body: %s", resp.Status(), string(resp.Body()))
 		return errors.New(resp.Status())
 	}
 	return nil
@@ -161,7 +152,7 @@ func (client *gocloak) GetCerts(realm string) (*CertResponse, error) {
 	return cert, nil
 }
 
-// GetIssuer gets the isser of the given realm
+// GetIssuer gets the issuer of the given realm
 func (client *gocloak) GetIssuer(realm string) (*IssuerResponse, error) {
 	var result IssuerResponse
 	resp, err := client.restyClient.R().
@@ -207,13 +198,13 @@ func (client *gocloak) DecodeAccessToken(accessToken string, realm string) (*jwt
 
 	usedKey := findUsedKey(decodedHeader.Kid, certResult.Keys)
 	if usedKey == nil {
-		return nil, nil, errors.New("Cannot find a key to decode the token")
+		return nil, nil, errors.New("cannot find a key to decode the token")
 	}
 
 	return jwx.DecodeAccessToken(accessToken, usedKey.E, usedKey.N)
 }
 
-// DecodeAccesTokenCustomClaims decodes the accessToken and writes claims into the given claims
+// DecodeAccessTokenCustomClaims decodes the accessToken and writes claims into the given claims
 func (client *gocloak) DecodeAccessTokenCustomClaims(accessToken string, realm string, claims jwt.Claims) (*jwt.Token, error) {
 	decodedHeader, err := jwx.DecodeAccessTokenHeader(accessToken)
 	if err != nil {
@@ -229,102 +220,67 @@ func (client *gocloak) DecodeAccessTokenCustomClaims(accessToken string, realm s
 	return token, err
 }
 
-// RefreshToken refrehes the given token
-func (client *gocloak) RefreshToken(refreshToken string, clientID, clientSecret, realm string) (*JWT, error) {
-	var result JWT
-	resp, err := client.restyClient.R().
-		SetFormData(map[string]string{
-			"client_id":     clientID,
-			"client_secret": clientSecret,
-			"grant_type":    "refresh_token",
-			"refresh_token": refreshToken,
-		}).
-		SetResult(&result).
+func (client *gocloak) GetToken(realm string, options TokenOptions) (*JWT, error) {
+	var token JWT
+	var req *resty.Request
+	if len(options.ClientSecret) > 0 {
+		req = client.getRequestWithBasicAuth(options.ClientID, options.ClientSecret)
+	} else {
+		req = client.restyClient.R()
+	}
+	resp, err := req.SetFormData(options.FormData()).
+		SetResult(&token).
 		Post(client.getRealmURL(realm, tokenEndpoint))
 
 	if err := checkForError(resp, err); err != nil {
 		return nil, err
 	}
 
-	if result.AccessToken == "" {
-		return nil, errors.New("Authentication Failed")
-	}
-
-	return &result, nil
+	return &token, nil
 }
 
-// LoginAdmin performs a login
+// RefreshToken refreshes the given token
+func (client *gocloak) RefreshToken(refreshToken, clientID, clientSecret, realm string) (*JWT, error) {
+	return client.GetToken(realm, TokenOptions{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		GrantType:    "refresh_token",
+		RefreshToken: refreshToken,
+	})
+}
+
+// LoginAdmin performs a login with Admin client
 func (client *gocloak) LoginAdmin(username, password, realm string) (*JWT, error) {
-	var result JWT
-	resp, err := client.restyClient.R().
-		SetFormData(map[string]string{
-			"client_id":  adminClientID,
-			"grant_type": "password",
-			"username":   username,
-			"password":   password,
-		}).
-		SetResult(&result).
-		Post(client.getRealmURL(realm, tokenEndpoint))
-
-	if err := checkForError(resp, err); err != nil {
-		return nil, err
-	}
-
-	if result.AccessToken == "" {
-		return nil, errors.New("Authentication Failed")
-	}
-
-	return &result, nil
+	return client.GetToken(realm, TokenOptions{
+		ClientID:  adminClientID,
+		GrantType: "password",
+		Username:  username,
+		Password:  password,
+	})
 }
 
-// Login performs a login
+// Login performs a login with client credentials
 func (client *gocloak) LoginClient(clientID, clientSecret, realm string) (*JWT, error) {
-	var result JWT
-	resp, err := client.getRequestWithBasicAuth(clientID, clientSecret).
-		SetFormData(map[string]string{
-			"client_id":     clientID,
-			"client_secret": clientSecret,
-			"grant_type":    "client_credentials",
-		}).
-		SetResult(&result).
-		Post(client.getRealmURL(realm, tokenEndpoint))
-
-	if err := checkForError(resp, err); err != nil {
-		return nil, err
-	}
-
-	if result.AccessToken == "" {
-		return nil, errors.New("Authentication Failed")
-	}
-
-	return &result, nil
+	return client.GetToken(realm, TokenOptions{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		GrantType:    "client_credentials",
+	})
 }
 
-// Login like login, but with basic auth
-func (client *gocloak) Login(clientID string, clientSecret string, realm string, username string, password string) (*JWT, error) {
-	var result JWT
-	resp, err := client.getRequestWithBasicAuth(clientID, clientSecret).
-		SetFormData(map[string]string{
-			"grant_type": "password",
-			"username":   username,
-			"password":   password,
-		}).
-		SetResult(&result).
-		Post(client.getRealmURL(realm, tokenEndpoint))
-
-	if err := checkForError(resp, err); err != nil {
-		return nil, err
-	}
-
-	if result.AccessToken == "" {
-		return nil, errors.New("Authentication Failed")
-	}
-
-	return &result, nil
+// Login performs a login with user credentials and a client
+func (client *gocloak) Login(clientID, clientSecret, realm, username, password string) (*JWT, error) {
+	return client.GetToken(realm, TokenOptions{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		GrantType:    "password",
+		Username:     username,
+		Password:     password,
+	})
 }
 
 // Logout logs out users with refresh token
-func (client *gocloak) Logout(clientID string, clientSecret string, realm string, refreshToken string) error {
+func (client *gocloak) Logout(clientID, clientSecret, realm, refreshToken string) error {
 	resp, err := client.getRequestWithBasicAuth(clientID, clientSecret).
 		SetFormData(map[string]string{
 			"client_id":     clientID,
@@ -335,28 +291,16 @@ func (client *gocloak) Logout(clientID string, clientSecret string, realm string
 	return checkForError(resp, err)
 }
 
-// RequestPermission l
-func (client *gocloak) RequestPermission(clientID string, clientSecret string, realm string, username string, password string, permission string) (*JWT, error) {
-	var result JWT
-	resp, err := client.getRequestWithBasicAuth(clientID, clientSecret).
-		SetFormData(map[string]string{
-			"grant_type": "password",
-			"username":   username,
-			"password":   password,
-			"permission": permission,
-		}).
-		SetResult(&result).
-		Post(client.getRealmURL(realm, tokenEndpoint))
-
-	if err := checkForError(resp, err); err != nil {
-		return nil, err
-	}
-
-	if result.AccessToken == "" {
-		return nil, errors.New("Authentication Failed")
-	}
-
-	return &result, nil
+// RequestPermission request a permission
+func (client *gocloak) RequestPermission(clientID, clientSecret, realm, username, password string, permission string) (*JWT, error) {
+	return client.GetToken(realm, TokenOptions{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		GrantType:    "password",
+		Username:     username,
+		Password:     password,
+		Permission:   permission,
+	})
 }
 
 // ExecuteActionsEmail executes an actions email
@@ -537,7 +481,7 @@ func (client *gocloak) GetKeyStoreConfig(token string, realm string) (*KeyStoreC
 	return &result, nil
 }
 
-// GetComponents get all cimponents in realm
+// GetComponents get all components in realm
 func (client *gocloak) GetComponents(token string, realm string) (*[]Component, error) {
 	var result []Component
 	resp, err := client.getRequestWithBearerAuth(token).
@@ -852,7 +796,7 @@ func (client *gocloak) DeleteUser(token string, realm string, userID string) err
 // GetUserByID fetches a user from the given realm with the given userID
 func (client *gocloak) GetUserByID(accessToken string, realm string, userID string) (*User, error) {
 	if userID == "" {
-		return nil, errors.New("UserID shall not be empty")
+		return nil, errors.New("userID shall not be empty")
 	}
 
 	var result User
