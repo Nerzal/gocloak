@@ -49,6 +49,11 @@ var (
 )
 
 func FailIfErr(t *testing.T, err error, msg string) {
+	_, objectAlreadyExists := err.(*ObjectAlreadyExists)
+	if objectAlreadyExists {
+		return
+	}
+
 	if err != nil {
 		_, file, line, _ := runtime.Caller(1)
 		if len(msg) == 0 {

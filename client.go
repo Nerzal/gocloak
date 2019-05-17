@@ -433,7 +433,7 @@ func (client *gocloak) DeleteClientRole(token string, realm string, clientID, ro
 // DeleteClientScope creates a new client scope
 func (client *gocloak) DeleteClientScope(token string, realm string, scopeID string) error {
 	resp, err := client.getRequestWithBearerAuth(token).
-		Put(client.getAdminRealmURL(realm, "client-scopes", scopeID))
+		Delete(client.getAdminRealmURL(realm, "client-scopes", scopeID))
 
 	return checkForError(resp, err)
 }
