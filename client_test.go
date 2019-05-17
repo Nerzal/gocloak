@@ -609,6 +609,13 @@ func TestGocloak_CreateClientScope(t *testing.T) {
 		cfg.GoCloak.Realm,
 		newScope)
 	FailIfErr(t, err, "CreateClientScope failed")
+
+	err = client.DeleteClientScope(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		newScope.ID)
+
+	FailIfErr(t, err, "DeleteClientScope failed")
 }
 
 func TestGocloak_CreateClient(t *testing.T) {
