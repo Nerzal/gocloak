@@ -3,8 +3,6 @@ package gocloak
 import (
 	"crypto/tls"
 	"encoding/json"
-	"github.com/dgrijalva/jwt-go"
-	"gopkg.in/resty.v1"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -18,6 +16,9 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
+	"gopkg.in/resty.v1"
 )
 
 type configAdmin struct {
@@ -591,6 +592,23 @@ func TestGocloak_CreateClientRole(t *testing.T) {
 		role.Name,
 	)
 	FailIfErr(t, err, "DeleteClientRole failed")
+}
+
+func TestGocloak_CreateClientScope(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	newScope := ClientScope{
+		ID:   "foo",
+		Name: "bar",
+	}
+	err := client.CreateClientScope(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		newScope)
+	FailIfErr(t, err, "CreateClientScope failed")
 }
 
 func TestGocloak_CreateClient(t *testing.T) {
