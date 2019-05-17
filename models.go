@@ -224,12 +224,12 @@ type MappingsRepresentation struct {
 
 // ClientScope is a ClientScope
 type ClientScope struct {
-	ID                    string                `json:"id,omitempty"`
-	Name                  string                `json:"name,omitempty"`
-	Description           string                `json:"description,omitempty"`
-	Protocol              string                `json:"protocol,omitempty"`
-	ClientScopeAttributes ClientScopeAttributes `json:"attributes,omitempty"`
-	ProtocolMappers       ProtocolMappers       `json:"protocolMappers,omitempty"`
+	ID                    string                 `json:"id,omitempty"`
+	Name                  string                 `json:"name,omitempty"`
+	Description           string                 `json:"description,omitempty"`
+	Protocol              string                 `json:"protocol,omitempty"`
+	ClientScopeAttributes *ClientScopeAttributes `json:"attributes,omitempty"`
+	ProtocolMappers       *ProtocolMappers       `json:"protocolMappers,omitempty"`
 }
 
 // ClientScopeAttributes are attributes of client scopes
