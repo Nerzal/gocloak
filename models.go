@@ -287,7 +287,7 @@ type Client struct {
 	Origin                             string                         `json:"origin,omitempty"`
 	Protocol                           string                         `json:"protocol,omitempty"`
 	ProtocolMappers                    []ProtocolMapperRepresentation `json:"protocolMappers,omitempty"`
-	PublicClient                       bool                           `json:"PublicClient,omitempty"`
+	PublicClient                       bool                           `json:"publicClient,omitempty"`
 	RedirectURIs                       []string                       `json:"redirectUris,omitempty"`
 	RegisteredNodes                    map[string]string              `json:"registeredNodes,omitempty"`
 	RegistrationAccessToken            string                         `json:"registrationAccessToken,omitempty"`
