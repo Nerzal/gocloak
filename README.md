@@ -149,6 +149,11 @@ type GoCloak interface {
 	GetRealm(token string, realm string) (*RealmRepresentation, error)
 	CreateRealm(token string, realm RealmRepresentation) error
 	DeleteRealm(token string, realm string) error
+
+	GetClientUserSessions(token, realm, clientID string) (*[]UserSessionRepresentation, error)
+	GetClientOfflineSessions(token, realm, clientID string) (*[]UserSessionRepresentation, error)
+	GetUserSessions(token, realm, userID string) (*[]UserSessionRepresentation, error)
+	GetUserOfflineSessionsForClient(token, realm, userID, clientID string) (*[]UserSessionRepresentation, error)
 }
 ```
 
