@@ -548,3 +548,14 @@ func (t *TokenOptions) FormData() map[string]string {
 	_ = json.Unmarshal(m, &res)
 	return res
 }
+
+// UserSessionRepresentation represents a list of user's sessions
+type UserSessionRepresentation struct {
+	Clients    map[string]string `json:"clients,omitempty"`
+	ID         string            `json:"id,omitempty"`
+	IPAddress  string            `json:"ipAddress,omitempty"`
+	LastAccess int64             `json:"lastAccess,omitempty"`
+	Start      int64             `json:"start,omitempty"`
+	UserID     string            `json:"userId,omitempty"`
+	Username   string            `json:"username,omitempty"`
+}

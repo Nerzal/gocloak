@@ -93,6 +93,10 @@ type GoCloak interface {
 	GetClientRole(token string, realm string, clientID string, roleName string) (*Role, error)
 	// GetClients gets the clients in the realm
 	GetClients(accessToken string, realm string, params GetClientsParams) (*[]Client, error)
+	// GetClientOfflineSessions returns offline sessions associated with the client
+	GetClientOfflineSessions(token, realm, clientID string) (*[]UserSessionRepresentation, error)
+	// GetClientUserSessions returns user sessions associated with the client
+	GetClientUserSessions(token, realm, clientID string) (*[]UserSessionRepresentation, error)
 
 	// UserAttributeContains checks if the given attribute has the given value
 	UserAttributeContains(attributes map[string][]string, attribute string, value string) bool
@@ -154,4 +158,8 @@ type GoCloak interface {
 	AddUserToGroup(token string, realm string, userID string, groupID string) error
 	// DeleteUserFromGroup deletes given user from given group
 	DeleteUserFromGroup(token string, realm string, userID string, groupID string) error
+	// GetUserSessions returns user sessions associated with the user
+	GetUserSessions(token, realm, userID string) (*[]UserSessionRepresentation, error)
+	// GetUserOfflineSessionsForClient returns offline sessions associated with the user and client
+	GetUserOfflineSessionsForClient(token, realm, userID, clientID string) (*[]UserSessionRepresentation, error)
 }

@@ -467,6 +467,32 @@ func (client *gocloak) GetClientSecret(token string, realm string, clientID stri
 	return &result, nil
 }
 
+// GetClientOfflineSessions returns offline sessions associated with the client
+func (client *gocloak) GetClientOfflineSessions(token, realm, clientID string) (*[]UserSessionRepresentation, error) {
+	var res []UserSessionRepresentation
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&res).
+		Get(client.getAdminRealmURL(realm, "clients", clientID, "offline-sessions"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+// GetClientUserSessions returns user sessions associated with the client
+func (client *gocloak) GetClientUserSessions(token, realm, clientID string) (*[]UserSessionRepresentation, error) {
+	var res []UserSessionRepresentation
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&res).
+		Get(client.getAdminRealmURL(realm, "clients", clientID, "user-sessions"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
 // GetKeyStoreConfig get keystoreconfig of the realm
 func (client *gocloak) GetKeyStoreConfig(token string, realm string) (*KeyStoreConfig, error) {
 	var result KeyStoreConfig
@@ -906,4 +932,30 @@ func (client *gocloak) DeleteUserFromGroup(token string, realm string, userID st
 		Delete(client.getAdminRealmURL(realm, "users", userID, "groups", groupID))
 
 	return checkForError(resp, err)
+}
+
+// GetUserSessions returns user sessions associated with the user
+func (client *gocloak) GetUserSessions(token, realm, userID string) (*[]UserSessionRepresentation, error) {
+	var res []UserSessionRepresentation
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&res).
+		Get(client.getAdminRealmURL(realm, "users", userID, "sessions"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+// GetUserOfflineSessionsForClient returns offline sessions associated with the user and client
+func (client *gocloak) GetUserOfflineSessionsForClient(token, realm, userID, clientID string) (*[]UserSessionRepresentation, error) {
+	var res []UserSessionRepresentation
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&res).
+		Get(client.getAdminRealmURL(realm, "users", userID, "offline-sessions", clientID))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+	return &res, nil
 }

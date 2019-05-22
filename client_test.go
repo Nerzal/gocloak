@@ -46,6 +46,11 @@ var (
 	config     *Config
 	configOnce sync.Once
 	setupOnce  sync.Once
+	testUserID string
+)
+
+const (
+	gocloakClientID = "60be66a5-e007-464c-9b74-0e3c2e69e478"
 )
 
 func FailIfErr(t *testing.T, err error, msg string) {
@@ -218,7 +223,6 @@ func SetUpTestUser(t *testing.T, client GoCloak) {
 			token.AccessToken,
 			cfg.GoCloak.Realm,
 			user)
-		var userID string
 		if err != nil && err.Error() == "Conflict: Object already exists" {
 			err = nil
 			users, err := client.GetUsers(
@@ -230,18 +234,18 @@ func SetUpTestUser(t *testing.T, client GoCloak) {
 			FailIfErr(t, err, "GetUsers failed")
 			for _, user := range *users {
 				if user.Username == cfg.GoCloak.UserName {
-					userID = user.ID
+					testUserID = user.ID
 					break
 				}
 			}
 		} else {
 			FailIfErr(t, err, "CreateUser failed")
-			userID = *createdUserID
+			testUserID = *createdUserID
 		}
 
 		err = client.SetPassword(
 			token.AccessToken,
-			userID,
+			testUserID,
 			cfg.GoCloak.Realm,
 			cfg.GoCloak.Password,
 			false)
@@ -503,7 +507,6 @@ func TestGocloak_Login(t *testing.T) {
 
 func TestGocloak_GetToken(t *testing.T) {
 	t.Parallel()
-	t.Failed()
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	SetUpTestUser(t, client)
@@ -1359,4 +1362,113 @@ func TestGocloak_GetUsersByRoleName(t *testing.T) {
 		t,
 		userID,
 		(*users)[0].ID)
+}
+
+func TestGocloak_GetUserSessions(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	SetUpTestUser(t, client)
+	_, err := client.GetToken(
+		cfg.GoCloak.Realm,
+		TokenOptions{
+			ClientID:      cfg.GoCloak.ClientID,
+			ClientSecret:  cfg.GoCloak.ClientSecret,
+			Username:      cfg.GoCloak.UserName,
+			Password:      cfg.GoCloak.Password,
+			GrantType:     "password",
+		},
+	)
+	FailIfErr(t, err, "Login failed")
+	token := GetAdminToken(t, client)
+	sessions, err := client.GetUserSessions(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		testUserID,
+	)
+	FailIfErr(t, err, "GetUserSessions failed")
+	FailIf(t, len(*sessions) == 0, "GetUserSessions returned an empty list")
+}
+
+func TestGocloak_GetUserOfflineSessionsForClient(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	SetUpTestUser(t, client)
+	_, err := client.GetToken(
+		cfg.GoCloak.Realm,
+		TokenOptions{
+			ClientID:      cfg.GoCloak.ClientID,
+			ClientSecret:  cfg.GoCloak.ClientSecret,
+			Username:      cfg.GoCloak.UserName,
+			Password:      cfg.GoCloak.Password,
+			GrantType:     "password",
+			ResponseTypes: []string{"token", "id_token"},
+			Scopes:        []string{"openid", "offline_access"},
+		},
+	)
+	FailIfErr(t, err, "Login failed")
+	token := GetAdminToken(t, client)
+	sessions, err := client.GetUserOfflineSessionsForClient(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		testUserID,
+		gocloakClientID,
+	)
+	FailIfErr(t, err, "GetUserOfflineSessionsForClient failed")
+	FailIf(t, len(*sessions) == 0, "GetUserOfflineSessionsForClient returned an empty list")
+}
+
+func TestGocloak_GetClientUserSessions(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	SetUpTestUser(t, client)
+	_, err := client.GetToken(
+		cfg.GoCloak.Realm,
+		TokenOptions{
+			ClientID:      cfg.GoCloak.ClientID,
+			ClientSecret:  cfg.GoCloak.ClientSecret,
+			Username:      cfg.GoCloak.UserName,
+			Password:      cfg.GoCloak.Password,
+			GrantType:     "password",
+		},
+	)
+	FailIfErr(t, err, "Login failed")
+	token := GetAdminToken(t, client)
+	sessions, err := client.GetClientUserSessions(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+	)
+	FailIfErr(t, err, "GetClientUserSessions failed")
+	FailIf(t, len(*sessions) == 0, "GetClientUserSessions returned an empty list")
+}
+
+func TestGocloak_GetClientOfflineSessions(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	SetUpTestUser(t, client)
+	_, err := client.GetToken(
+		cfg.GoCloak.Realm,
+		TokenOptions{
+			ClientID:      cfg.GoCloak.ClientID,
+			ClientSecret:  cfg.GoCloak.ClientSecret,
+			Username:      cfg.GoCloak.UserName,
+			Password:      cfg.GoCloak.Password,
+			GrantType:     "password",
+			ResponseTypes: []string{"token", "id_token"},
+			Scopes:        []string{"openid", "offline_access"},
+		},
+	)
+	FailIfErr(t, err, "Login failed")
+	token := GetAdminToken(t, client)
+	sessions, err := client.GetClientOfflineSessions(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+	)
+	FailIfErr(t, err, "GetClientOfflineSessions failed")
+	FailIf(t, len(*sessions) == 0, "GetClientOfflineSessions returned an empty list")
 }
