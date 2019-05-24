@@ -678,7 +678,7 @@ func TestGocloak_CreateListGetUpdateDeleteClient(t *testing.T) {
 		cfg.GoCloak.Realm,
 		Client{
 			ClientID: clientID,
-			Name: GetRandomName("Name"),
+			Name:     GetRandomName("Name"),
 		},
 	)
 	FailIfErr(t, err, "CreateClient failed")
