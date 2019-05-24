@@ -278,7 +278,7 @@ type Client struct {
 	Enabled                            bool                           `json:"enabled,omitempty"`
 	FrontChannelLogout                 bool                           `json:"frontChannelLogout,omitempty"`
 	FullScopeAllowed                   bool                           `json:"fullScopeAllowed,omitempty"`
-	ID                                 string                         `json:"id"`
+	ID                                 string                         `json:"id,omitempty"`
 	ImplicitFlowEnabled                bool                           `json:"implicitFlowEnabled,omitempty"`
 	Name                               string                         `json:"name,omitempty"`
 	NodeReRegistrationTimeout          int32                          `json:"nodeReRegistrationTimeout,omitempty"`

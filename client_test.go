@@ -626,26 +626,67 @@ func TestGocloak_CreateClientScope(t *testing.T) {
 	FailIfErr(t, err, "DeleteClientScope failed")
 }
 
-func TestGocloak_CreateClient(t *testing.T) {
+func TestGocloak_CreateListGetDeleteClient(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
+	clientID := GetRandomName("ClientID")
+	t.Logf("Client ID: %s", clientID)
 
-	newClient := Client{
-		ID:       GetRandomName("ID"),
-		ClientID: GetRandomName("ClientID"),
-	}
+	// Creating a client
 	err := client.CreateClient(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		newClient)
+		Client{
+			ClientID: clientID,
+		},
+	)
 	FailIfErr(t, err, "CreateClient failed")
+
+	// Looking for a created client
+	clients, err := client.GetClients(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		GetClientsParams{
+			ClientID: clientID,
+		},
+	)
+	FailIfErr(t, err, "CreateClients failed")
+	FailIf(t, len(*clients) != 1, "GetClients should return exact 1 client")
+	t.Logf("Clients: %+v", *clients)
+
+	// Getting exact client
+	createdClient, err := client.GetClient(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		(*clients)[0].ID,
+	)
+	FailIfErr(t, err, "GetClient failed")
+	t.Logf("Created client: %+v", createdClient)
+
+	// Checking that GetClient returns same client
+	AssertEquals(t, (*clients)[0], *createdClient)
+
+	// Deleting the client
 	err = client.DeleteClient(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		newClient.ID)
+		createdClient.ID,
+	)
 	FailIfErr(t, err, "DeleteClient failed")
+
+	// Verifying that the client was deleted
+	clients, err = client.GetClients(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		GetClientsParams{
+			ClientID: clientID,
+		},
+	)
+	FailIfErr(t, err, "CreateClients failed")
+	FailIf(t, len(*clients) != 0, "GetClients should not return any clients")
+
 }
 
 func TestGocloak_GetGroups(t *testing.T) {
