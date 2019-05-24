@@ -162,9 +162,9 @@ func GetClientByClientID(t *testing.T, client GoCloak, clientID string) *Client 
 			ClientID: clientID,
 		})
 	FailIfErr(t, err, "GetClients failed")
-	for _, fetchedClient := range *clients {
+	for _, fetchedClient := range clients {
 		if fetchedClient.ClientID == clientID {
-			return &fetchedClient
+			return fetchedClient
 		}
 	}
 	t.Fatal("Client not found")
@@ -190,7 +190,7 @@ func CreateGroup(t *testing.T, client GoCloak) (func(), string) {
 		})
 	FailIfErr(t, err, "GetGroups failed")
 	var groupID string
-	for _, fetchedGroup := range *groups {
+	for _, fetchedGroup := range groups {
 		if fetchedGroup.Name == group.Name {
 			groupID = fetchedGroup.ID
 			break
@@ -233,7 +233,7 @@ func SetUpTestUser(t *testing.T, client GoCloak) {
 					Username: cfg.GoCloak.UserName,
 				})
 			FailIfErr(t, err, "GetUsers failed")
-			for _, user := range *users {
+			for _, user := range users {
 				if user.Username == cfg.GoCloak.UserName {
 					testUserID = user.ID
 					break
@@ -241,7 +241,7 @@ func SetUpTestUser(t *testing.T, client GoCloak) {
 			}
 		} else {
 			FailIfErr(t, err, "CreateUser failed")
-			testUserID = *createdUserID
+			testUserID = createdUserID
 		}
 
 		err = client.SetPassword(
@@ -704,19 +704,19 @@ func TestGocloak_CreateListGetUpdateDeleteClient(t *testing.T) {
 		},
 	)
 	FailIfErr(t, err, "CreateClients failed")
-	FailIf(t, len(*clients) != 1, "GetClients should return exact 1 client")
-	t.Logf("Clients: %+v", *clients)
+	FailIf(t, len(clients) != 1, "GetClients should return exact 1 client")
+	t.Logf("Clients: %+v", clients)
 
 	// Getting exact client
 	createdClient, err := client.GetClient(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		(*clients)[0].ID,
+		clients[0].ID,
 	)
 	FailIfErr(t, err, "GetClient failed")
 	t.Logf("Created client: %+v", createdClient)
 	// Checking that GetClient returns same client
-	AssertEquals(t, (*clients)[0], *createdClient)
+	AssertEquals(t, clients[0], createdClient)
 
 	// Updating the client
 
@@ -741,7 +741,7 @@ func TestGocloak_CreateListGetUpdateDeleteClient(t *testing.T) {
 	updatedClient, err := client.GetClient(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		(*clients)[0].ID,
+		clients[0].ID,
 	)
 	FailIfErr(t, err, "GetClient failed")
 	t.Logf("Update client: %+v", createdClient)
@@ -764,7 +764,7 @@ func TestGocloak_CreateListGetUpdateDeleteClient(t *testing.T) {
 		},
 	)
 	FailIfErr(t, err, "CreateClients failed")
-	FailIf(t, len(*clients) != 0, "GetClients should not return any clients")
+	FailIf(t, len(clients) != 0, "GetClients should not return any clients")
 
 }
 
@@ -999,7 +999,7 @@ func TestGocloak_GetRealmRoles(t *testing.T) {
 		token.AccessToken,
 		cfg.GoCloak.Realm)
 	FailIfErr(t, err, "GetRealmRoles failed")
-	t.Logf("Roles: %+v", *roles)
+	t.Logf("Roles: %+v", roles)
 }
 
 func TestGocloak_UpdateRealmRole(t *testing.T) {
@@ -1106,8 +1106,8 @@ func TestGocloak_GetRealmRolesByUserID(t *testing.T) {
 		cfg.GoCloak.Realm,
 		userID)
 	FailIfErr(t, err, "GetRealmRolesByUserID failed")
-	t.Logf("User roles: %+v", *roles)
-	for _, r := range *roles {
+	t.Logf("User roles: %+v", roles)
+	for _, r := range roles {
 		if r.Name == role.Name {
 			return
 		}
@@ -1169,11 +1169,11 @@ func TestGocloak_DeleteRealmRoleFromUser(t *testing.T) {
 		cfg.GoCloak.Realm,
 		userID)
 	FailIfErr(t, err, "GetRealmRolesByUserID failed")
-	for _, r := range *roles {
+	for _, r := range roles {
 		FailIf(
 			t,
 			r.Name == role.Name,
-			"The role has been found in asigned roles. Role: %+v", role)
+			"The role has been found in assigned roles. Role: %+v", role)
 	}
 }
 
@@ -1246,7 +1246,7 @@ func CreateUser(t *testing.T, client GoCloak) (func(), string) {
 		cfg.GoCloak.Realm,
 		user)
 	FailIfErr(t, err, "CreateUser failed")
-	user.ID = *userID
+	user.ID = userID
 	t.Logf("Created User: %+v", user)
 	tearDown := func() {
 		err := client.DeleteUser(
@@ -1405,12 +1405,12 @@ func TestGocloak_GetUserGroups(t *testing.T) {
 	FailIfErr(t, err, "GetUserGroups failed")
 	FailIf(
 		t,
-		len(*groups) == 0,
+		len(groups) == 0,
 		"User is not in the Group")
 	AssertEquals(
 		t,
 		groupID,
-		(*groups)[0].ID)
+		groups[0].ID)
 }
 
 func TestGocloak_DeleteUser(t *testing.T) {
@@ -1476,12 +1476,12 @@ func TestGocloak_GetUsersByRoleName(t *testing.T) {
 
 	FailIf(
 		t,
-		len(*users) == 0,
+		len(users) == 0,
 		"User is not in the Group")
 	AssertEquals(
 		t,
 		userID,
-		(*users)[0].ID)
+		users[0].ID)
 }
 
 func TestGocloak_GetUserSessions(t *testing.T) {
@@ -1507,7 +1507,7 @@ func TestGocloak_GetUserSessions(t *testing.T) {
 		testUserID,
 	)
 	FailIfErr(t, err, "GetUserSessions failed")
-	FailIf(t, len(*sessions) == 0, "GetUserSessions returned an empty list")
+	FailIf(t, len(sessions) == 0, "GetUserSessions returned an empty list")
 }
 
 func TestGocloak_GetUserOfflineSessionsForClient(t *testing.T) {
@@ -1536,7 +1536,7 @@ func TestGocloak_GetUserOfflineSessionsForClient(t *testing.T) {
 		gocloakClientID,
 	)
 	FailIfErr(t, err, "GetUserOfflineSessionsForClient failed")
-	FailIf(t, len(*sessions) == 0, "GetUserOfflineSessionsForClient returned an empty list")
+	FailIf(t, len(sessions) == 0, "GetUserOfflineSessionsForClient returned an empty list")
 }
 
 func TestGocloak_GetClientUserSessions(t *testing.T) {
@@ -1562,7 +1562,7 @@ func TestGocloak_GetClientUserSessions(t *testing.T) {
 		gocloakClientID,
 	)
 	FailIfErr(t, err, "GetClientUserSessions failed")
-	FailIf(t, len(*sessions) == 0, "GetClientUserSessions returned an empty list")
+	FailIf(t, len(sessions) == 0, "GetClientUserSessions returned an empty list")
 }
 
 func TestGocloak_GetClientOfflineSessions(t *testing.T) {
@@ -1590,5 +1590,5 @@ func TestGocloak_GetClientOfflineSessions(t *testing.T) {
 		gocloakClientID,
 	)
 	FailIfErr(t, err, "GetClientOfflineSessions failed")
-	FailIf(t, len(*sessions) == 0, "GetClientOfflineSessions returned an empty list")
+	FailIf(t, len(sessions) == 0, "GetClientOfflineSessions returned an empty list")
 }

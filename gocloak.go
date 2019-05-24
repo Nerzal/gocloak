@@ -80,9 +80,9 @@ type GoCloak interface {
 	// GetKeyStoreConfig gets the keyStoreConfig
 	GetKeyStoreConfig(accessToken string, realm string) (*KeyStoreConfig, error)
 	// GetComponents gets components of the given realm
-	GetComponents(accessToken string, realm string) (*[]Component, error)
+	GetComponents(accessToken string, realm string) ([]*Component, error)
 	// GetGroups gets all groups of the given realm
-	GetGroups(accessToken string, realm string, params GetGroupsParams) (*[]Group, error)
+	GetGroups(accessToken string, realm string, params GetGroupsParams) ([]*Group, error)
 	// GetGroup gets the given group
 	GetGroup(accessToken string, realm, groupID string) (*Group, error)
 	// GetRoleMappingByGroupID gets the rolemapping for the given group id
@@ -90,15 +90,15 @@ type GoCloak interface {
 	// GetRoleMappingByUserID gets the rolemapping for the given user id
 	GetRoleMappingByUserID(accessToken string, realm string, userID string) (*MappingsRepresentation, error)
 	// GetClientRoles gets roles for the given client
-	GetClientRoles(accessToken string, realm string, clientID string) (*[]Role, error)
+	GetClientRoles(accessToken string, realm string, clientID string) ([]*Role, error)
 	// GetClientRole get a role for the given client in a realm by role name
 	GetClientRole(token string, realm string, clientID string, roleName string) (*Role, error)
 	// GetClients gets the clients in the realm
-	GetClients(accessToken string, realm string, params GetClientsParams) (*[]Client, error)
+	GetClients(accessToken string, realm string, params GetClientsParams) ([]*Client, error)
 	// GetClientOfflineSessions returns offline sessions associated with the client
-	GetClientOfflineSessions(token, realm, clientID string) (*[]UserSessionRepresentation, error)
+	GetClientOfflineSessions(token, realm, clientID string) ([]*UserSessionRepresentation, error)
 	// GetClientUserSessions returns user sessions associated with the client
-	GetClientUserSessions(token, realm, clientID string) (*[]UserSessionRepresentation, error)
+	GetClientUserSessions(token, realm, clientID string) ([]*UserSessionRepresentation, error)
 
 	// UserAttributeContains checks if the given attribute has the given value
 	UserAttributeContains(attributes map[string][]string, attribute string, value string) bool
@@ -110,11 +110,11 @@ type GoCloak interface {
 	// GetRealmRole returns a role from a realm by role's name
 	GetRealmRole(token string, realm string, roleName string) (*Role, error)
 	// GetRealmRoles get all roles of the given realm. It's an alias for the GetRoles function
-	GetRealmRoles(accessToken string, realm string) (*[]Role, error)
+	GetRealmRoles(accessToken string, realm string) ([]*Role, error)
 	// GetRealmRolesByUserID returns all roles assigned to the given user
-	GetRealmRolesByUserID(accessToken string, realm string, userID string) (*[]Role, error)
+	GetRealmRolesByUserID(accessToken string, realm string, userID string) ([]*Role, error)
 	// GetRealmRolesByGroupID returns all roles assigned to the given group
-	GetRealmRolesByGroupID(accessToken string, realm string, groupID string) (*[]Role, error)
+	GetRealmRolesByGroupID(accessToken string, realm string, groupID string) ([]*Role, error)
 	// UpdateRealmRole updates a role in a realm
 	UpdateRealmRole(token string, realm string, roleName string, role Role) error
 	// DeleteRealmRole deletes a role in a realm by role's name
@@ -139,7 +139,7 @@ type GoCloak interface {
 
 	// *** Users ***
 	// CreateUser creates a new user
-	CreateUser(token string, realm string, user User) (*string, error)
+	CreateUser(token string, realm string, user User) (string, error)
 	// DeleteUser deletes the given user
 	DeleteUser(accessToken string, realm, userID string) error
 	// GetUserByID gets the user with the given id
@@ -147,11 +147,11 @@ type GoCloak interface {
 	// GetUser count returns the userCount of the given realm
 	GetUserCount(accessToken string, realm string) (int, error)
 	// GetUsers gets all users of the given realm
-	GetUsers(accessToken string, realm string, params GetUsersParams) (*[]User, error)
+	GetUsers(accessToken string, realm string, params GetUsersParams) ([]*User, error)
 	// GetUserGroups gets the groups of the given user
-	GetUserGroups(accessToken string, realm string, userID string) (*[]UserGroup, error)
+	GetUserGroups(accessToken string, realm string, userID string) ([]*UserGroup, error)
 	// GetUsersByRoleName returns all users have a given role
-	GetUsersByRoleName(token string, realm string, roleName string) (*[]User, error)
+	GetUsersByRoleName(token string, realm string, roleName string) ([]*User, error)
 	// SetPassword sets a new password for the user with the given id. Needs elevated privileges
 	SetPassword(token string, userID string, realm string, password string, temporary bool) error
 	// UpdateUser updates the given user
@@ -161,7 +161,7 @@ type GoCloak interface {
 	// DeleteUserFromGroup deletes given user from given group
 	DeleteUserFromGroup(token string, realm string, userID string, groupID string) error
 	// GetUserSessions returns user sessions associated with the user
-	GetUserSessions(token, realm, userID string) (*[]UserSessionRepresentation, error)
+	GetUserSessions(token, realm, userID string) ([]*UserSessionRepresentation, error)
 	// GetUserOfflineSessionsForClient returns offline sessions associated with the user and client
-	GetUserOfflineSessionsForClient(token, realm, userID, clientID string) (*[]UserSessionRepresentation, error)
+	GetUserOfflineSessionsForClient(token, realm, userID, clientID string) ([]*UserSessionRepresentation, error)
 }
