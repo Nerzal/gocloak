@@ -363,10 +363,13 @@ func (client *gocloak) CreateClientScope(token string, realm string, scope Clien
 }
 
 // UpdateUser creates a new user
-func (client *gocloak) UpdateGroup(token string, realm string, group Group) error {
+func (client *gocloak) UpdateGroup(token string, realm string, updatedGroup Group) error {
+	if len(updatedGroup.ID) == 0 {
+		return errors.New("ID of a group required")
+	}
 	resp, err := client.getRequestWithBearerAuth(token).
-		SetBody(group).
-		Put(client.getAdminRealmURL(realm, "groups", group.ID))
+		SetBody(updatedGroup).
+		Put(client.getAdminRealmURL(realm, "groups", updatedGroup.ID))
 
 	return checkForError(resp, err)
 }
@@ -549,7 +552,7 @@ func (client *gocloak) GetGroup(token string, realm string, groupID string) (*Gr
 	var result Group
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetResult(&result).
-		Get(client.getAdminRealmURL(realm, "group", groupID))
+		Get(client.getAdminRealmURL(realm, "groups", groupID))
 
 	if err := checkForError(resp, err); err != nil {
 		return nil, err
