@@ -100,7 +100,7 @@ type GoCloak interface {
 	CreateComponent(accessToken string, realm string, component Component) error
 
 	UpdateUser(accessToken string, realm string, user User) error
-	UpdateGroup(accessToken string, realm string, group Group) error
+	UpdateGroup(accessToken string, realm string, updatedGroup Group) error
 	UpdateRole(accessToken string, realm string, clientID string, role Role) error
 	UpdateClient(accessToken string, realm string, updatedClient Client) error
 	UpdateClientScope(accessToken string, realm string, scope ClientScope) error

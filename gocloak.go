@@ -52,7 +52,7 @@ type GoCloak interface {
 	CreateComponent(accessToken string, realm string, component Component) error
 
 	// UpdateGroup updates the given group
-	UpdateGroup(accessToken string, realm string, group Group) error
+	UpdateGroup(accessToken string, realm string, updatedGroup Group) error
 	// UpdateRole updates the given role
 	UpdateRole(accessToken string, realm string, clientID string, role Role) error
 	// UpdateClient updates the given client

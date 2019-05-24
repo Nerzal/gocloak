@@ -175,7 +175,7 @@ func CreateGroup(t *testing.T, client GoCloak) (func(), string) {
 	cfg := GetConfig(t)
 	token := GetAdminToken(t, client)
 	group := Group{
-		Name: GetRandomName("MySuperCoolNewGroup"),
+		Name: GetRandomName("GroupName"),
 	}
 	err := client.CreateGroup(
 		token.AccessToken,
@@ -197,6 +197,7 @@ func CreateGroup(t *testing.T, client GoCloak) (func(), string) {
 		}
 	}
 	t.Logf("Created Group with ID: %s. Group: %+v", groupID, group)
+
 	tearDown := func() {
 		err := client.DeleteGroup(
 			token.AccessToken,
@@ -568,11 +569,48 @@ func TestGocloak_SetPassword(t *testing.T) {
 	FailIfErr(t, err, "Failed to set password")
 }
 
-func TestGocloak_CreateGroup(t *testing.T) {
+func TestGocloak_CreateListGetUpdateDeleteGroup(t *testing.T) {
 	t.Parallel()
+	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
 
-	tearDown, _ := CreateGroup(t, client)
+	// Create, List
+	tearDown, groupID := CreateGroup(t, client)
+
+	createdGroup, err := client.GetGroup(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		groupID,
+	)
+	FailIfErr(t, err, "GetGroup failed")
+	t.Logf("Created Group: %+v", createdGroup)
+	AssertEquals(t, groupID, createdGroup.ID)
+
+	err = client.UpdateGroup(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		Group{},
+	)
+	FailIf(t, err == nil, "Should fail because of missing ID of the group")
+
+	createdGroup.Name = GetRandomName("GroupName")
+	err = client.UpdateGroup(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		*createdGroup,
+	)
+	FailIfErr(t, err, "UpdateGroup failed")
+
+	updatedGroup, err := client.GetGroup(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		groupID,
+	)
+	FailIfErr(t, err, "GetGroup failed")
+	AssertEquals(t, createdGroup.Name, updatedGroup.Name)
+
+	// Delete
 	defer tearDown()
 }
 
