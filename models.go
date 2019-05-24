@@ -311,8 +311,10 @@ type ResourceServerRepresentation struct {
 	Scopes                        []ScopeRepresentation    `json:"scopes,omitempty"`
 }
 
+// PolicyEnforcementMode is an enum type for PolicyEnforcementMode of ResourceServerRepresentation
 type PolicyEnforcementMode int
 
+// PolicyEnforcementMode values
 const (
 	ENFORCING PolicyEnforcementMode = iota
 	PERMISSIVE
@@ -334,16 +336,20 @@ type PolicyRepresentation struct {
 	Type             string            `json:"type,omitempty"`
 }
 
+// DecisionStrategy is an enum type for DecisionStrategy of PolicyRepresentation
 type DecisionStrategy int
 
+// DecisionStrategy values
 const (
 	AFFIRMATIVE DecisionStrategy = iota
 	UNANIMOUS
 	CONSENSUS
 )
 
+// Logic is an enum type for Logic of PolicyRepresentation
 type Logic int
 
+// Logic values
 const (
 	POSITIVE Logic = iota
 	NEGATIVE

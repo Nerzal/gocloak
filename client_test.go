@@ -1480,11 +1480,11 @@ func TestGocloak_GetUserSessions(t *testing.T) {
 	_, err := client.GetToken(
 		cfg.GoCloak.Realm,
 		TokenOptions{
-			ClientID:      cfg.GoCloak.ClientID,
-			ClientSecret:  cfg.GoCloak.ClientSecret,
-			Username:      cfg.GoCloak.UserName,
-			Password:      cfg.GoCloak.Password,
-			GrantType:     "password",
+			ClientID:     cfg.GoCloak.ClientID,
+			ClientSecret: cfg.GoCloak.ClientSecret,
+			Username:     cfg.GoCloak.UserName,
+			Password:     cfg.GoCloak.Password,
+			GrantType:    "password",
 		},
 	)
 	FailIfErr(t, err, "Login failed")
@@ -1535,11 +1535,11 @@ func TestGocloak_GetClientUserSessions(t *testing.T) {
 	_, err := client.GetToken(
 		cfg.GoCloak.Realm,
 		TokenOptions{
-			ClientID:      cfg.GoCloak.ClientID,
-			ClientSecret:  cfg.GoCloak.ClientSecret,
-			Username:      cfg.GoCloak.UserName,
-			Password:      cfg.GoCloak.Password,
-			GrantType:     "password",
+			ClientID:     cfg.GoCloak.ClientID,
+			ClientSecret: cfg.GoCloak.ClientSecret,
+			Username:     cfg.GoCloak.UserName,
+			Password:     cfg.GoCloak.Password,
+			GrantType:    "password",
 		},
 	)
 	FailIfErr(t, err, "Login failed")
