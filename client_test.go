@@ -626,7 +626,7 @@ func TestGocloak_CreateClientScope(t *testing.T) {
 	FailIfErr(t, err, "DeleteClientScope failed")
 }
 
-func TestGocloak_CreateListGetDeleteClient(t *testing.T) {
+func TestGocloak_CreateListGetUpdateDeleteClient(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
@@ -640,6 +640,7 @@ func TestGocloak_CreateListGetDeleteClient(t *testing.T) {
 		cfg.GoCloak.Realm,
 		Client{
 			ClientID: clientID,
+			Name: GetRandomName("Name"),
 		},
 	)
 	FailIfErr(t, err, "CreateClient failed")
@@ -664,9 +665,37 @@ func TestGocloak_CreateListGetDeleteClient(t *testing.T) {
 	)
 	FailIfErr(t, err, "GetClient failed")
 	t.Logf("Created client: %+v", createdClient)
-
 	// Checking that GetClient returns same client
 	AssertEquals(t, (*clients)[0], *createdClient)
+
+	// Updating the client
+
+	// Should fail
+	err = client.UpdateClient(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		Client{},
+	)
+	FailIf(t, err == nil, "Should fail because of missing ID of the client")
+
+	// Update existing client
+	createdClient.Name = GetRandomName("Name")
+	err = client.UpdateClient(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		*createdClient,
+	)
+	FailIfErr(t, err, "GetClient failed")
+
+	// Getting updated client
+	updatedClient, err := client.GetClient(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		(*clients)[0].ID,
+	)
+	FailIfErr(t, err, "GetClient failed")
+	t.Logf("Update client: %+v", createdClient)
+	AssertEquals(t, *createdClient, *updatedClient)
 
 	// Deleting the client
 	err = client.DeleteClient(

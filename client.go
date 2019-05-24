@@ -371,11 +371,14 @@ func (client *gocloak) UpdateGroup(token string, realm string, group Group) erro
 	return checkForError(resp, err)
 }
 
-// UpdateUser creates a new user
-func (client *gocloak) UpdateClient(token string, realm string, newClient Client) error {
+// UpdateClient updates the given Client
+func (client *gocloak) UpdateClient(token string, realm string, updatedClient Client) error {
+	if len(updatedClient.ID) == 0 {
+		return errors.New("ID of a client required")
+	}
 	resp, err := client.getRequestWithBearerAuth(token).
-		SetBody(newClient).
-		Put(client.getAdminRealmURL(realm, "clients"))
+		SetBody(updatedClient).
+		Put(client.getAdminRealmURL(realm, "clients", updatedClient.ID))
 
 	return checkForError(resp, err)
 }
