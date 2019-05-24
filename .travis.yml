@@ -8,17 +8,26 @@ branches:
     - master
     - /^v\d+\.\d+(\.\d+)?$/
 
-before_install:
-  - docker pull jboss/keycloak
-  - docker run -d -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=secret -e KEYCLOAK_IMPORT=/tmp/gocloak-realm.json -v `pwd`/testdata/gocloak-realm.json:/tmp/gocloak-realm.json -p 8080:8080 --name keycloak jboss/keycloak
-  - docker ps
+stages:
+  - style
+  - test
 
-after_failure:
-  - docker logs keycloak
-
-script:
-  - go test -cover -v -race -coverprofile=coverage.txt -covermode=atomic
-
-after_success:
-  - bash <(curl -s https://codecov.io/bash)
-  
+jobs:
+  include:
+    - stage: style
+      name: "gofmt"
+      script: diff -u <(echo -n) <(gofmt -d -s .)
+    - name: "golint"
+      install: go get -u golang.org/x/lint/golint
+      script: golint -set_exit_status
+    - stage: test
+      before_install:
+        - docker pull jboss/keycloak
+        - docker run -d -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=secret -e KEYCLOAK_IMPORT=/tmp/gocloak-realm.json -v `pwd`/testdata/gocloak-realm.json:/tmp/gocloak-realm.json -p 8080:8080 --name keycloak jboss/keycloak
+      script:
+        - go test -cover -v -race -coverprofile=coverage.txt -covermode=atomic
+      after_success:
+        - bash <(curl -s https://codecov.io/bash)
+      after_failure:
+        - docker ps
+        - docker logs keycloak
