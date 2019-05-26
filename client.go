@@ -3,6 +3,7 @@ package gocloak
 import (
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -35,14 +36,19 @@ func makeURL(path ...string) string {
 	return strings.Join(path, urlSeparator)
 }
 
+func (client *gocloak) getRequest() *resty.Request {
+	var err HTTPErrorResponse
+	return client.restyClient.R().SetError(&err)
+}
+
 func (client *gocloak) getRequestWithBearerAuth(token string) *resty.Request {
-	return client.restyClient.R().
+	return client.getRequest().
 		SetAuthToken(token).
 		SetHeader("Content-Type", "application/json")
 }
 
 func (client *gocloak) getRequestWithBasicAuth(clientID string, clientSecret string) *resty.Request {
-	req := client.restyClient.R().
+	req := client.getRequest().
 		SetHeader("Content-Type", "application/x-www-form-urlencoded")
 	// Public client doesn't require Basic Auth
 	if len(clientID) > 0 && len(clientSecret) > 0 {
@@ -58,10 +64,17 @@ func checkForError(resp *resty.Response, err error) error {
 	}
 
 	if resp.IsError() {
-		if resp.StatusCode() == 409 {
-			return &ObjectAlreadyExists{}
+		var msg string
+		e := resp.Error().(*HTTPErrorResponse)
+		if len(e.ErrorMessage) > 0 {
+			msg = fmt.Sprintf("%s: %s", resp.Status(), e.ErrorMessage)
+		} else {
+			msg = resp.Status()
 		}
-		return errors.New(resp.Status())
+		if resp.StatusCode() == 409 {
+			return &ObjectAlreadyExists{ErrorMessage: msg}
+		}
+		return errors.New(msg)
 	}
 	return nil
 }
@@ -136,7 +149,7 @@ func (client *gocloak) GetUserInfo(accessToken string, realm string) (*UserInfo,
 
 func (client *gocloak) getNewCerts(realm string) (*CertResponse, error) {
 	var result CertResponse
-	resp, err := client.restyClient.R().
+	resp, err := client.getRequest().
 		SetResult(&result).
 		Get(client.getRealmURL(realm, openIDConnect, "certs"))
 
@@ -168,7 +181,7 @@ func (client *gocloak) GetCerts(realm string) (*CertResponse, error) {
 // GetIssuer gets the issuer of the given realm
 func (client *gocloak) GetIssuer(realm string) (*IssuerResponse, error) {
 	var result IssuerResponse
-	resp, err := client.restyClient.R().
+	resp, err := client.getRequest().
 		SetResult(&result).
 		Get(client.getRealmURL(realm))
 
@@ -239,7 +252,7 @@ func (client *gocloak) GetToken(realm string, options TokenOptions) (*JWT, error
 	if len(options.ClientSecret) > 0 {
 		req = client.getRequestWithBasicAuth(options.ClientID, options.ClientSecret)
 	} else {
-		req = client.restyClient.R()
+		req = client.getRequest()
 	}
 	resp, err := req.SetFormData(options.FormData()).
 		SetResult(&token).

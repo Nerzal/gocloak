@@ -54,8 +54,7 @@ const (
 )
 
 func FailIfErr(t *testing.T, err error, msg string) {
-	_, objectAlreadyExists := err.(*ObjectAlreadyExists)
-	if objectAlreadyExists {
+	if IsObjectAlreadyExists(err) {
 		return
 	}
 
@@ -87,6 +86,7 @@ func AssertEquals(t *testing.T, exp interface{}, act interface{}) {
 
 func GetConfig(t *testing.T) *Config {
 	configOnce.Do(func() {
+		rand.Seed(time.Now().UTC().UnixNano())
 		configFileName, ok := os.LookupEnv("GOCLOAK_TEST_CONFIG")
 		if !ok {
 			configFileName = filepath.Join("testdata", "config.json")
@@ -224,8 +224,8 @@ func SetUpTestUser(t *testing.T, client GoCloak) {
 			token.AccessToken,
 			cfg.GoCloak.Realm,
 			user)
-		if err != nil && err.Error() == "Conflict: Object already exists" {
-			err = nil
+		FailIfErr(t, err, "CreateUser failed")
+		if IsObjectAlreadyExists(err) {
 			users, err := client.GetUsers(
 				token.AccessToken,
 				cfg.GoCloak.Realm,
@@ -390,7 +390,7 @@ func TestGocloak_LoginClient_UnknownRealm(t *testing.T) {
 	FailIf(t, err == nil, "Login shouldn't be successful")
 
 	errorMessage := err.Error()
-	FailIf(t, errorMessage != "404 Not Found", "Unexpected error message: "+errorMessage)
+	AssertEquals(t, "404 Not Found", errorMessage)
 }
 
 func TestGocloak_GetIssuer(t *testing.T) {
@@ -781,21 +781,6 @@ func TestGocloak_GetGroups(t *testing.T) {
 	FailIfErr(t, err, "GetGroups failed")
 }
 
-func TestGocloak_GetClients(t *testing.T) {
-	t.Parallel()
-	cfg := GetConfig(t)
-	client := NewClientWithDebug(t)
-	token := GetAdminToken(t, client)
-
-	_, err := client.GetClients(
-		token.AccessToken,
-		cfg.GoCloak.Realm,
-		GetClientsParams{
-			ClientID: cfg.GoCloak.ClientID,
-		})
-	FailIfErr(t, err, "GetClients failed")
-}
-
 func TestGocloak_GetClientRoles(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
@@ -864,7 +849,7 @@ func TestGocloak_ExecuteActionsEmail_UpdatePassword(t *testing.T) {
 		params)
 
 	if err != nil {
-		if err.Error() == "500 Internal Server Error" {
+		if err.Error() == "500 Internal Server Error: Failed to send execute actions email" {
 			return
 		}
 		FailIfErr(t, err, "ExecuteActionsEmail failed")
