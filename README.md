@@ -29,6 +29,9 @@ If you are using a Keycloak Server version <4.8 please use the V1.0 release of g
 
 https://gopkg.in/nerzal/gocloak.v1
 
+## Contribution
+(WIP) https://github.com/Nerzal/gocloak/wiki/Contribute
+
 ## Usage
 
 ### Create New User
