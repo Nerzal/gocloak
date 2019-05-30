@@ -267,7 +267,7 @@ type Client struct {
 	AuthorizationServicesEnabled       bool                           `json:"authorizationServicesEnabled,omitempty"`
 	AuthorizationSettings              *ResourceServerRepresentation  `json:"authorizationSettings,omitempty"`
 	BaseURL                            string                         `json:"baseURL,omitempty"`
-	BaererOnly                         bool                           `json:"barerOnly,omitempty"`
+	BearerOnly                         bool                           `json:"bearerOnly,omitempty"`
 	ClientAuthenticatorType            string                         `json:"clientAuthenticatorType,omitempty"`
 	ClientID                           string                         `json:"clientId,omitempty"`
 	ConsentRequiered                   bool                           `json:"consentRequiered,omitempty"`
