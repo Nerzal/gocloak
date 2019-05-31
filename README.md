@@ -34,6 +34,25 @@ https://gopkg.in/nerzal/gocloak.v1
 
 ## Usage
 
+### Importing
+
+Since the version 3 you need to import the gocloak library using v3 suffix:
+
+```go
+	import "github.com/Nerzal/gocloak/v3"
+```
+
+#### Version 2:
+
+```go
+	go get gopkg.in/nerzal/gocloak@v2.1.0
+```
+
+```go
+	import "github.com/Nerzal/gocloak"
+```
+
+
 ### Create New User
 ```go
 	client := gocloak.NewClient("https://mycool.keycloak.instance")
