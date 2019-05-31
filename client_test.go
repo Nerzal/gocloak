@@ -321,6 +321,18 @@ func TestGocloak_RestyClient(t *testing.T) {
 // API tests
 // ---------
 
+func TestGocloak_GetServerInfo(t *testing.T) {
+	t.Parallel()
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	serverInfo, err := client.GetServerInfo(
+		token.AccessToken,
+	)
+	FailIfErr(t, err, "Failed to fetch server info")
+	t.Logf("Server Info: %+v", serverInfo)
+}
+
 func TestGocloak_GetUserInfo(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
@@ -330,8 +342,8 @@ func TestGocloak_GetUserInfo(t *testing.T) {
 	userInfo, err := client.GetUserInfo(
 		token.AccessToken,
 		cfg.GoCloak.Realm)
-	t.Log(userInfo)
 	FailIfErr(t, err, "Failed to fetch userinfo")
+	t.Log(userInfo)
 }
 
 func TestGocloak_RequestPermission(t *testing.T) {

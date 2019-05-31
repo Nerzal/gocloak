@@ -91,6 +91,7 @@ type GoCloak interface {
 	RetrospectToken(accessToken string, clientID, clientSecret string, realm string) (*RetrospecTokenResult, error)
 	GetIssuer(realm string) (*IssuerResponse, error)
 	GetCerts(realm string) (*CertResponse, error)
+	GetServerInfo(accessToken string) (*ServerInfoRepesentation, error)
 	GetUserInfo(accessToken string, realm string) (*UserInfo, error)
 	SetPassword(token string, userID string, realm string, password string, temporary bool) error
 	ExecuteActionsEmail(token string, realm string, params ExecuteActionsEmail) error
