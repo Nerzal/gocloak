@@ -229,13 +229,14 @@ type ClientScope struct {
 	Description           string                 `json:"description,omitempty"`
 	Protocol              string                 `json:"protocol,omitempty"`
 	ClientScopeAttributes *ClientScopeAttributes `json:"attributes,omitempty"`
-	ProtocolMappers       *ProtocolMappers       `json:"protocolMappers,omitempty"`
+	ProtocolMappers       []ProtocolMappers      `json:"protocolMappers,omitempty"`
 }
 
 // ClientScopeAttributes are attributes of client scopes
 type ClientScopeAttributes struct {
 	ConsentScreenText      string `json:"consent.screen.text,omitempty"`
 	DisplayOnConsentScreen string `json:"display.on.consent.screen,omitempty"`
+	IncludeInTokenScope    string `json:"include.in.token.scope,omitempty"`
 }
 
 // ProtocolMappers are protocolmappers
@@ -255,6 +256,7 @@ type ProtocolMappersConfig struct {
 	IDTokenClaim       string `json:"id.token.claim,omitempty"`
 	AccessTokenClaim   string `json:"access.token.claim,omitempty"`
 	ClaimName          string `json:"claim.name,omitempty"`
+	ClaimValue         string `json:"claim.value,omitempty"`
 	JSONTypeLabel      string `json:"jsonType.label,omitempty"`
 }
 
@@ -423,8 +425,8 @@ type RealmRepresentation struct {
 	BruteForceProtected                 bool              `json:"bruteForceProtected,omitempty"`
 	ClientAuthenticationFlow            string            `json:"clientAuthenticationFlow,omitempty"`
 	ClientScopeMappings                 map[string]string `json:"clientScopeMappings,omitempty"`
-	ClientScopes                        []interface{}     `json:"clientScopes,omitempty"`
-	Clients                             []interface{}     `json:"clients,omitempty"`
+	ClientScopes                        []ClientScope     `json:"clientScopes,omitempty"`
+	Clients                             []Client          `json:"clients,omitempty"`
 	Components                          interface{}       `json:"components,omitempty"`
 	DefaultDefaultClientScopes          []string          `json:"defaultDefaultClientScopes,omitempty"`
 	DefaultGroups                       []string          `json:"defaultGroups,omitempty"`
