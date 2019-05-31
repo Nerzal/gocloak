@@ -270,13 +270,13 @@ type Client struct {
 	BearerOnly                         bool                           `json:"bearerOnly,omitempty"`
 	ClientAuthenticatorType            string                         `json:"clientAuthenticatorType,omitempty"`
 	ClientID                           string                         `json:"clientId,omitempty"`
-	ConsentRequiered                   bool                           `json:"consentRequiered,omitempty"`
+	ConsentRequired                    bool                           `json:"consentRequired,omitempty"`
 	DefaultClientScopes                []string                       `json:"defaultClientScopes,omitempty"`
 	DefaultRoles                       []string                       `json:"defaultRoles,omitempty"`
 	Description                        string                         `json:"description,omitempty"`
 	DirectAccessGrantsEnabled          bool                           `json:"directAccessGrantsEnabled,omitempty"`
 	Enabled                            bool                           `json:"enabled,omitempty"`
-	FrontChannelLogout                 bool                           `json:"frontChannelLogout,omitempty"`
+	FrontChannelLogout                 bool                           `json:"frontchannelLogout,omitempty"`
 	FullScopeAllowed                   bool                           `json:"fullScopeAllowed,omitempty"`
 	ID                                 string                         `json:"id,omitempty"`
 	ImplicitFlowEnabled                bool                           `json:"implicitFlowEnabled,omitempty"`
