@@ -107,6 +107,19 @@ func (client *gocloak) getAdminRealmURL(realm string, path ...string) string {
 	return makeURL(path...)
 }
 
+func (client *gocloak) GetServerInfo(accessToken string) (*ServerInfoRepesentation, error) {
+	var result ServerInfoRepesentation
+	resp, err := client.getRequestWithBearerAuth(accessToken).
+		SetResult(&result).
+		Get(makeURL(client.basePath, "auth", "admin", "serverinfo"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
 // GetUserInfo calls the UserInfo endpoint
 func (client *gocloak) GetUserInfo(accessToken string, realm string) (*UserInfo, error) {
 	var result UserInfo

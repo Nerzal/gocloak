@@ -34,6 +34,8 @@ type GoCloak interface {
 	GetIssuer(realm string) (*IssuerResponse, error)
 	// GetCerts gets the public keys for the given realm
 	GetCerts(realm string) (*CertResponse, error)
+	// GetServerInfo returns the server info
+	GetServerInfo(accessToken string) (*ServerInfoRepesentation, error)
 	// GetUserInfo gets the user info for the given realm
 	GetUserInfo(accessToken string, realm string) (*UserInfo, error)
 

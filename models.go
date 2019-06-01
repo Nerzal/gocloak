@@ -565,3 +565,42 @@ type UserSessionRepresentation struct {
 	UserID     string            `json:"userId,omitempty"`
 	Username   string            `json:"username,omitempty"`
 }
+
+// SystemInfoRepresentation represents a system info
+type SystemInfoRepresentation struct {
+	FileEncoding   string `json:"fileEncoding"`
+	JavaHome       string `json:"javaHome"`
+	JavaRuntime    string `json:"javaRuntime,omitempty"`
+	JavaVendor     string `json:"javaVendor,omitempty"`
+	JavaVersion    string `json:"javaVersion,omitempty"`
+	JavaVM         string `json:"javaVm,omitempty"`
+	JavaVMVersion  string `json:"javaVmVersion,omitempty"`
+	OSArchitecture string `json:"osArchitecture,omitempty"`
+	OSName         string `json:"osName,omitempty"`
+	OSVersion      string `json:"osVersion,omitempty"`
+	ServerTime     string `json:"serverTime,omitempty"`
+	Uptime         string `json:"uptime,omitempty"`
+	UptimeMillis   int    `json:"uptimeMillis,omitempty"`
+	UserDir        string `json:"userDir,omitempty"`
+	UserLocale     string `json:"userLocale,omitempty"`
+	UserName       string `json:"userName,omitempty"`
+	UserTimezone   string `json:"userTimezone,omitempty"`
+	Version        string `json:"version,omitempty"`
+}
+
+// MemoryInfoRepresentation represents a memory info
+type MemoryInfoRepresentation struct {
+	Free           int    `json:"free,omitempty"`
+	FreeFormated   string `json:"freeFormated,omitempty"`
+	FreePercentage int    `json:"freePercentage,omitempty"`
+	Total          int    `json:"total,omitempty"`
+	TotalFormated  string `json:"totalFormated,omitempty"`
+	Used           int    `json:"used,omitempty"`
+	UsedFormated   string `json:"usedFormated,omitempty"`
+}
+
+// ServerInfoRepesentation represents a server info
+type ServerInfoRepesentation struct {
+	SystemInfo SystemInfoRepresentation `json:"systemInfo,omitempty"`
+	MemoryInfo MemoryInfoRepresentation `json:"memoryInfo"`
+}
