@@ -3,10 +3,11 @@ package gocloak
 import (
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
-	"github.com/Nerzal/gocloak/pkg/jwx"
+	"github.com/Nerzal/gocloak/v3/pkg/jwx"
 	"github.com/dgrijalva/jwt-go"
 	"gopkg.in/resty.v1"
 )
@@ -35,14 +36,19 @@ func makeURL(path ...string) string {
 	return strings.Join(path, urlSeparator)
 }
 
+func (client *gocloak) getRequest() *resty.Request {
+	var err HTTPErrorResponse
+	return client.restyClient.R().SetError(&err)
+}
+
 func (client *gocloak) getRequestWithBearerAuth(token string) *resty.Request {
-	return client.restyClient.R().
+	return client.getRequest().
 		SetAuthToken(token).
 		SetHeader("Content-Type", "application/json")
 }
 
 func (client *gocloak) getRequestWithBasicAuth(clientID string, clientSecret string) *resty.Request {
-	req := client.restyClient.R().
+	req := client.getRequest().
 		SetHeader("Content-Type", "application/x-www-form-urlencoded")
 	// Public client doesn't require Basic Auth
 	if len(clientID) > 0 && len(clientSecret) > 0 {
@@ -58,10 +64,17 @@ func checkForError(resp *resty.Response, err error) error {
 	}
 
 	if resp.IsError() {
-		if resp.StatusCode() == 409 {
-			return &ObjectAlreadyExists{}
+		var msg string
+		e := resp.Error().(*HTTPErrorResponse)
+		if len(e.ErrorMessage) > 0 {
+			msg = fmt.Sprintf("%s: %s", resp.Status(), e.ErrorMessage)
+		} else {
+			msg = resp.Status()
 		}
-		return errors.New(resp.Status())
+		if resp.StatusCode() == 409 {
+			return &ObjectAlreadyExists{ErrorMessage: msg}
+		}
+		return errors.New(msg)
 	}
 	return nil
 }
@@ -136,7 +149,7 @@ func (client *gocloak) GetUserInfo(accessToken string, realm string) (*UserInfo,
 
 func (client *gocloak) getNewCerts(realm string) (*CertResponse, error) {
 	var result CertResponse
-	resp, err := client.restyClient.R().
+	resp, err := client.getRequest().
 		SetResult(&result).
 		Get(client.getRealmURL(realm, openIDConnect, "certs"))
 
@@ -168,7 +181,7 @@ func (client *gocloak) GetCerts(realm string) (*CertResponse, error) {
 // GetIssuer gets the issuer of the given realm
 func (client *gocloak) GetIssuer(realm string) (*IssuerResponse, error) {
 	var result IssuerResponse
-	resp, err := client.restyClient.R().
+	resp, err := client.getRequest().
 		SetResult(&result).
 		Get(client.getRealmURL(realm))
 
@@ -239,7 +252,7 @@ func (client *gocloak) GetToken(realm string, options TokenOptions) (*JWT, error
 	if len(options.ClientSecret) > 0 {
 		req = client.getRequestWithBasicAuth(options.ClientID, options.ClientSecret)
 	} else {
-		req = client.restyClient.R()
+		req = client.getRequest()
 	}
 	resp, err := req.SetFormData(options.FormData()).
 		SetResult(&token).
@@ -487,8 +500,8 @@ func (client *gocloak) GetClientSecret(token string, realm string, clientID stri
 }
 
 // GetClientOfflineSessions returns offline sessions associated with the client
-func (client *gocloak) GetClientOfflineSessions(token, realm, clientID string) (*[]UserSessionRepresentation, error) {
-	var res []UserSessionRepresentation
+func (client *gocloak) GetClientOfflineSessions(token, realm, clientID string) ([]*UserSessionRepresentation, error) {
+	var res []*UserSessionRepresentation
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetResult(&res).
 		Get(client.getAdminRealmURL(realm, "clients", clientID, "offline-sessions"))
@@ -496,12 +509,12 @@ func (client *gocloak) GetClientOfflineSessions(token, realm, clientID string) (
 	if err := checkForError(resp, err); err != nil {
 		return nil, err
 	}
-	return &res, nil
+	return res, nil
 }
 
 // GetClientUserSessions returns user sessions associated with the client
-func (client *gocloak) GetClientUserSessions(token, realm, clientID string) (*[]UserSessionRepresentation, error) {
-	var res []UserSessionRepresentation
+func (client *gocloak) GetClientUserSessions(token, realm, clientID string) ([]*UserSessionRepresentation, error) {
+	var res []*UserSessionRepresentation
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetResult(&res).
 		Get(client.getAdminRealmURL(realm, "clients", clientID, "user-sessions"))
@@ -509,7 +522,7 @@ func (client *gocloak) GetClientUserSessions(token, realm, clientID string) (*[]
 	if err := checkForError(resp, err); err != nil {
 		return nil, err
 	}
-	return &res, nil
+	return res, nil
 }
 
 // GetKeyStoreConfig get keystoreconfig of the realm
@@ -527,8 +540,8 @@ func (client *gocloak) GetKeyStoreConfig(token string, realm string) (*KeyStoreC
 }
 
 // GetComponents get all components in realm
-func (client *gocloak) GetComponents(token string, realm string) (*[]Component, error) {
-	var result []Component
+func (client *gocloak) GetComponents(token string, realm string) ([]*Component, error) {
+	var result []*Component
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.getAdminRealmURL(realm, "components"))
@@ -537,7 +550,7 @@ func (client *gocloak) GetComponents(token string, realm string) (*[]Component, 
 		return nil, err
 	}
 
-	return &result, nil
+	return result, nil
 }
 
 func (client *gocloak) getRoleMappings(token string, realm string, path string, objectID string) (*MappingsRepresentation, error) {
@@ -578,8 +591,8 @@ func (client *gocloak) GetGroup(token string, realm string, groupID string) (*Gr
 }
 
 // GetGroups get all groups in realm
-func (client *gocloak) GetGroups(token string, realm string, params GetGroupsParams) (*[]Group, error) {
-	var result []Group
+func (client *gocloak) GetGroups(token string, realm string, params GetGroupsParams) ([]*Group, error) {
+	var result []*Group
 	queryParams, err := GetQueryParams(params)
 	if err != nil {
 		return nil, err
@@ -594,12 +607,12 @@ func (client *gocloak) GetGroups(token string, realm string, params GetGroupsPar
 		return nil, err
 	}
 
-	return &result, nil
+	return result, nil
 }
 
 // GetClientRoles get all roles for the given client in realm
-func (client *gocloak) GetClientRoles(token string, realm string, clientID string) (*[]Role, error) {
-	var result []Role
+func (client *gocloak) GetClientRoles(token string, realm string, clientID string) ([]*Role, error) {
+	var result []*Role
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.getAdminRealmURL(realm, "clients", clientID, "roles"))
@@ -608,7 +621,7 @@ func (client *gocloak) GetClientRoles(token string, realm string, clientID strin
 		return nil, err
 	}
 
-	return &result, nil
+	return result, nil
 }
 
 // GetClientRole get a role for the given client in a realm by role name
@@ -626,8 +639,8 @@ func (client *gocloak) GetClientRole(token string, realm string, clientID string
 }
 
 // GetClients gets all clients in realm
-func (client *gocloak) GetClients(token string, realm string, params GetClientsParams) (*[]Client, error) {
-	var result []Client
+func (client *gocloak) GetClients(token string, realm string, params GetClientsParams) ([]*Client, error) {
+	var result []*Client
 	queryParams, err := GetQueryParams(params)
 	if err != nil {
 		return nil, err
@@ -641,7 +654,7 @@ func (client *gocloak) GetClients(token string, realm string, params GetClientsP
 		return nil, err
 	}
 
-	return &result, nil
+	return result, nil
 }
 
 // UserAttributeContains checks if the given attribute value is set
@@ -684,8 +697,8 @@ func (client *gocloak) GetRealmRole(token string, realm string, roleName string)
 }
 
 // GetRealmRoles get all roles of the given realm.
-func (client *gocloak) GetRealmRoles(token string, realm string) (*[]Role, error) {
-	var result []Role
+func (client *gocloak) GetRealmRoles(token string, realm string) ([]*Role, error) {
+	var result []*Role
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.getAdminRealmURL(realm, "roles"))
@@ -694,12 +707,12 @@ func (client *gocloak) GetRealmRoles(token string, realm string) (*[]Role, error
 		return nil, err
 	}
 
-	return &result, nil
+	return result, nil
 }
 
 // GetRealmRolesByUserID returns all roles assigned to the given user
-func (client *gocloak) GetRealmRolesByUserID(token string, realm string, userID string) (*[]Role, error) {
-	var result []Role
+func (client *gocloak) GetRealmRolesByUserID(token string, realm string, userID string) ([]*Role, error) {
+	var result []*Role
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.getAdminRealmURL(realm, "users", userID, "role-mappings", "realm"))
@@ -708,12 +721,12 @@ func (client *gocloak) GetRealmRolesByUserID(token string, realm string, userID 
 		return nil, err
 	}
 
-	return &result, nil
+	return result, nil
 }
 
 // GetRealmRolesByGroupID returns all roles assigned to the given group
-func (client *gocloak) GetRealmRolesByGroupID(token string, realm string, groupID string) (*[]Role, error) {
-	var result []Role
+func (client *gocloak) GetRealmRolesByGroupID(token string, realm string, groupID string) ([]*Role, error) {
+	var result []*Role
 	resp, err := client.getRequestWithBearerAuth(token).
 		Get(client.getAdminRealmURL(realm, "groups", groupID, "role-mappings", "realm"))
 
@@ -721,7 +734,7 @@ func (client *gocloak) GetRealmRolesByGroupID(token string, realm string, groupI
 		return nil, err
 	}
 
-	return &result, nil
+	return result, nil
 }
 
 // UpdateRealmRole updates a role in a realm
@@ -814,20 +827,20 @@ func (client *gocloak) DeleteRealm(token string, realm string) error {
 // -----
 
 // CreateUser creates the given user in the given realm and returns it's userID
-func (client *gocloak) CreateUser(token string, realm string, user User) (*string, error) {
+func (client *gocloak) CreateUser(token string, realm string, user User) (string, error) {
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetBody(user).
 		Post(client.getAdminRealmURL(realm, "users"))
 
 	if err := checkForError(resp, err); err != nil {
-		return nil, err
+		return "", err
 	}
 
 	userPath := resp.Header().Get("Location")
 	splittedPath := strings.Split(userPath, urlSeparator)
 	userID := splittedPath[len(splittedPath)-1]
 
-	return &userID, nil
+	return userID, nil
 }
 
 // DeleteUser delete a given user
@@ -871,8 +884,8 @@ func (client *gocloak) GetUserCount(token string, realm string) (int, error) {
 }
 
 // GetUserGroups get all groups for user
-func (client *gocloak) GetUserGroups(token string, realm string, userID string) (*[]UserGroup, error) {
-	var result []UserGroup
+func (client *gocloak) GetUserGroups(token string, realm string, userID string) ([]*UserGroup, error) {
+	var result []*UserGroup
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.getAdminRealmURL(realm, "users", userID, "groups"))
@@ -881,12 +894,12 @@ func (client *gocloak) GetUserGroups(token string, realm string, userID string) 
 		return nil, err
 	}
 
-	return &result, nil
+	return result, nil
 }
 
 // GetUsers get all users in realm
-func (client *gocloak) GetUsers(token string, realm string, params GetUsersParams) (*[]User, error) {
-	var result []User
+func (client *gocloak) GetUsers(token string, realm string, params GetUsersParams) ([]*User, error) {
+	var result []*User
 	queryParams, err := GetQueryParams(params)
 	if err != nil {
 		return nil, err
@@ -901,12 +914,12 @@ func (client *gocloak) GetUsers(token string, realm string, params GetUsersParam
 		return nil, err
 	}
 
-	return &result, nil
+	return result, nil
 }
 
 // GetUsersByRoleName returns all users have a given role
-func (client *gocloak) GetUsersByRoleName(token string, realm string, roleName string) (*[]User, error) {
-	var result []User
+func (client *gocloak) GetUsersByRoleName(token string, realm string, roleName string) ([]*User, error) {
+	var result []*User
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.getAdminRealmURL(realm, "roles", roleName, "users"))
@@ -915,7 +928,7 @@ func (client *gocloak) GetUsersByRoleName(token string, realm string, roleName s
 		return nil, err
 	}
 
-	return &result, nil
+	return result, nil
 }
 
 // SetPassword sets a new password for the user with the given id. Needs elevated privileges
@@ -954,8 +967,8 @@ func (client *gocloak) DeleteUserFromGroup(token string, realm string, userID st
 }
 
 // GetUserSessions returns user sessions associated with the user
-func (client *gocloak) GetUserSessions(token, realm, userID string) (*[]UserSessionRepresentation, error) {
-	var res []UserSessionRepresentation
+func (client *gocloak) GetUserSessions(token, realm, userID string) ([]*UserSessionRepresentation, error) {
+	var res []*UserSessionRepresentation
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetResult(&res).
 		Get(client.getAdminRealmURL(realm, "users", userID, "sessions"))
@@ -963,12 +976,12 @@ func (client *gocloak) GetUserSessions(token, realm, userID string) (*[]UserSess
 	if err := checkForError(resp, err); err != nil {
 		return nil, err
 	}
-	return &res, nil
+	return res, nil
 }
 
 // GetUserOfflineSessionsForClient returns offline sessions associated with the user and client
-func (client *gocloak) GetUserOfflineSessionsForClient(token, realm, userID, clientID string) (*[]UserSessionRepresentation, error) {
-	var res []UserSessionRepresentation
+func (client *gocloak) GetUserOfflineSessionsForClient(token, realm, userID, clientID string) ([]*UserSessionRepresentation, error) {
+	var res []*UserSessionRepresentation
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetResult(&res).
 		Get(client.getAdminRealmURL(realm, "users", userID, "offline-sessions", clientID))
@@ -976,5 +989,5 @@ func (client *gocloak) GetUserOfflineSessionsForClient(token, realm, userID, cli
 	if err := checkForError(resp, err); err != nil {
 		return nil, err
 	}
-	return &res, nil
+	return res, nil
 }

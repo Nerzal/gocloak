@@ -195,9 +195,12 @@ func main() {
 
 		if *major {
 			newTag.Major += 1
+			newTag.Minor = 0
+			newTag.Patch = 0
 		}
 		if *minor || (!*major && !*patch) {
 			newTag.Minor += 1
+			newTag.Patch = 0
 		}
 		if *patch {
 			newTag.Patch += 1
