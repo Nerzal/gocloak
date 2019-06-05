@@ -772,7 +772,7 @@ func (client *gocloak) DeleteRealmRoleFromUser(token string, realm string, userI
 	return checkForError(resp, err)
 }
 
-// AddClientRoleToUser adds realm-level role mappings
+// AddClientRoleToUser adds client-level role mappings
 func (client *gocloak) AddClientRoleToUser(token string, realm string, clientID string, userID string, roles []Role) error {
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetBody(roles).
@@ -781,7 +781,7 @@ func (client *gocloak) AddClientRoleToUser(token string, realm string, clientID 
 	return checkForError(resp, err)
 }
 
-// DeleteClientRoleFromUser adds realm-level role mappings
+// DeleteClientRoleFromUser adds client-level role mappings
 func (client *gocloak) DeleteClientRoleFromUser(token string, realm string, clientID string, userID string, roles []Role) error {
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetBody(roles).
