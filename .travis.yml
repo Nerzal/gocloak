@@ -11,6 +11,8 @@ branches:
 stages:
   - style
   - test
+  - goreportcard
+
 
 jobs:
   include:
@@ -19,7 +21,9 @@ jobs:
       script: diff -u <(echo -n) <(gofmt -d -s .)
     - name: "golint"
       install: go get -u golang.org/x/lint/golint
-      script: golint -set_exit_status
+      script: golint -set_exit_status ./...
+    - name: "govet"
+      script: go vet ./...
     - stage: test
       before_install:
         - docker pull jboss/keycloak
@@ -31,3 +35,6 @@ jobs:
       after_failure:
         - docker ps
         - docker logs keycloak
+    - stage: goreportcard
+      script: curl --fail --request POST "https://goreportcard.com/checks" --data "repo=github.com/Nerzal/gocloak"
+      if: branch = master AND type = push

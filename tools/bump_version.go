@@ -12,16 +12,19 @@ import (
 	"strings"
 )
 
+// Version is a structure to represent a version
 type Version struct {
 	Major int
 	Minor int
 	Patch int
 }
 
+// String returns a string representation of version
 func (v *Version) String() string {
 	return fmt.Sprintf("v%d.%d.%d", v.Major, v.Minor, v.Patch)
 }
 
+// Parse converts a string representation of version
 func (v *Version) Parse(raw string) bool {
 	v.Major = 0
 	v.Minor = 0
@@ -56,6 +59,7 @@ func (v *Version) Parse(raw string) bool {
 	return true
 }
 
+// Less compares the v with another
 func (v *Version) Less(another *Version) bool {
 	return v.Major < another.Major || v.Minor < another.Minor || v.Patch < another.Patch
 }
@@ -194,16 +198,16 @@ func main() {
 		newTag = lastTag
 
 		if *major {
-			newTag.Major += 1
+			newTag.Major++
 			newTag.Minor = 0
 			newTag.Patch = 0
 		}
 		if *minor || (!*major && !*patch) {
-			newTag.Minor += 1
+			newTag.Minor++
 			newTag.Patch = 0
 		}
 		if *patch {
-			newTag.Patch += 1
+			newTag.Patch++
 		}
 	}
 	changeLog := getChangeLog(lastTag)
