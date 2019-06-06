@@ -64,6 +64,20 @@ func (v *Version) Less(another *Version) bool {
 	return v.Major < another.Major || v.Minor < another.Minor || v.Patch < another.Patch
 }
 
+// ByVersion is an interface to sort versions
+type ByVersion []Version
+
+// Len returns a length of array
+func (a ByVersion) Len() int { return len(a) }
+
+// Swap swaps i and j items
+func (a ByVersion) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+
+// Less checks that an i element less than a j element
+func (a ByVersion) Less(i, j int) bool {
+	return a[i].Major < a[j].Major && a[i].Minor < a[j].Minor && a[i].Patch < a[j].Patch
+}
+
 func git(input *strings.Reader, arg ...string) string {
 	cmd := exec.Command("git", arg...)
 	if input != nil {
@@ -82,21 +96,25 @@ func git(input *strings.Reader, arg ...string) string {
 	if stderr.Len() > 0 {
 		log.Fatal(stderr.String())
 	}
-	return stdout.String()
+	return strings.Trim(stdout.String(), "\n")
 }
 
 func getLastTags() Version {
-	var tags []*Version
+	var tags []Version
 	for _, tag := range strings.Split(git(nil, "tag", "--list"), "\n") {
-		var ver Version
-		if ver.Parse(tag) {
-			tags = append(tags, &ver)
+		tag = strings.TrimSpace(tag)
+		if len(tag) > 0 {
+			var ver Version
+			if ver.Parse(tag) {
+				tags = append(tags, ver)
+			}
 		}
 	}
-	sort.Slice(tags, func(i, j int) bool {
-		return !tags[i].Less(tags[j])
-	})
-	return *tags[0]
+	if len(tags) > 0 {
+		sort.Sort(ByVersion(tags))
+		return tags[len(tags)-1]
+	}
+	return Version{}
 }
 
 func getChangeLog(version Version) []string {
@@ -130,7 +148,7 @@ func makeAnnotation(tag Version, changeLog []string) string {
 	return strings.Join(annotation, "\n")
 }
 
-func bumpTag(tag Version, annotation string, sign bool) {
+func bumpTag(tag Version, annotation string, sign bool, ref string) {
 	input := strings.NewReader(annotation)
 	args := []string{
 		"tag",
@@ -138,7 +156,7 @@ func bumpTag(tag Version, annotation string, sign bool) {
 	if sign {
 		args = append(args, "--sign")
 	}
-	args = append(args, "-F-", tag.String())
+	args = append(args, "-F-", tag.String(), ref)
 	_ = git(
 		input,
 		args...,
@@ -169,25 +187,43 @@ func printUsage() {
 	printFlag("patch", "p")
 	printFlag("sign", "s")
 	printFlag("dry-run", "r")
+	printFlag("commit", "c")
+	printFlag("last-tag", "t")
 }
 
-func createFlag(name, short string, usage string) *bool {
+func createBoolFlag(name, short string, usage string) *bool {
 	p := flag.Bool(name, false, usage)
 	flag.BoolVar(p, short, false, "")
 	return p
 }
 
+func createStrFlag(name, short string, value string, usage string) *string {
+	p := flag.String(name, value, usage)
+	flag.StringVar(p, short, value, "")
+	return p
+}
+
 func main() {
-	major := createFlag("major", "m", "Increase major version")
-	minor := createFlag("minor", "n", "Increase minor version")
-	patch := createFlag("patch", "p", "Increase patch version")
-	sign := createFlag("sign", "s", "Make a GPG-signed tag, using the default e-mail address's key")
-	dryRun := createFlag("dry-run", "r", "Test run, prints an annotation of the tag")
+	major := createBoolFlag("major", "m", "Increase major version")
+	minor := createBoolFlag("minor", "n", "Increase minor version")
+	patch := createBoolFlag("patch", "p", "Increase patch version")
+	sign := createBoolFlag("sign", "s", "Make a GPG-signed tag, using the default e-mail address's key")
+	dryRun := createBoolFlag("dry-run", "r", "Test run, prints an annotation of the tag")
+	ref := createStrFlag("commit", "c", "HEAD", "The commit that the new tag will refer to")
+	tag := createStrFlag("last-tag", "t", "", "The last tag that the new tag will compare to")
 
 	flag.Usage = printUsage
 	flag.Parse()
 	args := flag.Args()
-	lastTag := getLastTags()
+	var lastTag Version
+	if len(*tag) > 0 {
+		if !lastTag.Parse(*tag) {
+			fmt.Printf("incorrect tag: %s\n", *tag)
+			os.Exit(1)
+		}
+	} else {
+		lastTag = getLastTags()
+	}
 	var newTag Version
 	if len(args) > 0 {
 		if !newTag.Parse(args[0]) {
@@ -219,6 +255,7 @@ func main() {
 			newTag,
 			annotation,
 			*sign,
+			*ref,
 		)
 		showNewTag(newTag)
 	}
