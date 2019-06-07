@@ -496,7 +496,7 @@ type RealmRepresentation struct {
 	UserFederationMappers               []interface{}     `json:"userFederationMappers,omitempty"`
 	UserFederationProviders             []interface{}     `json:"userFederationProviders,omitempty"`
 	UserManagedAccessAllowed            bool              `json:"userManagedAccessAllowed"`
-	Users                               []interface{}     `json:"users,omitempty"`
+	Users                               []User            `json:"users,omitempty"`
 	VerifyEmail                         bool              `json:"verifyEmail"`
 	WaitIncrementSeconds                int               `json:"waitIncrementSeconds,omitempty"`
 }
