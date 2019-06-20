@@ -640,7 +640,7 @@ func TestGocloak_CreateClientRole(t *testing.T) {
 	FailIfErr(t, err, "DeleteClientRole failed")
 }
 
-func TestGocloak_CreateClientScope(t *testing.T) {
+func TestGocloak_CreateGetDeleteClientScope(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
@@ -655,6 +655,16 @@ func TestGocloak_CreateClientScope(t *testing.T) {
 		cfg.GoCloak.Realm,
 		newScope)
 	FailIfErr(t, err, "CreateClientScope failed")
+
+        // Getting exact client
+        createdClientScope, err := client.GetClientScope(
+                token.AccessToken,
+                cfg.GoCloak.Realm,
+                newScope.ID)
+        FailIfErr(t, err, "GetClientScope failed")
+        t.Logf("Created clientScope : %+v", createdClientScope)
+        // Checking that GetClientScope returns same client scope
+        AssertEquals(t, newScope.ID, createdClientScope.ID)
 
 	err = client.DeleteClientScope(
 		token.AccessToken,
