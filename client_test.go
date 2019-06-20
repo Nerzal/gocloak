@@ -3,6 +3,7 @@ package gocloak
 import (
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -53,9 +54,9 @@ const (
 	gocloakClientID = "60be66a5-e007-464c-9b74-0e3c2e69e478"
 )
 
-func FailIfErr(t *testing.T, err error, msg string) {
-	_, objectAlreadyExists := err.(*ObjectAlreadyExists)
-	if objectAlreadyExists {
+func FailIfErr(t *testing.T, err error, msg string, args ...interface{}) {
+	if IsObjectAlreadyExists(err) {
+		t.Logf("ObjectAlreadyExists error: %s", err.Error())
 		return
 	}
 
@@ -63,8 +64,26 @@ func FailIfErr(t *testing.T, err error, msg string) {
 		_, file, line, _ := runtime.Caller(1)
 		if len(msg) == 0 {
 			msg = "unexpected error"
+		} else {
+			if len(args) > 0 {
+				msg = fmt.Sprintf(msg, args...)
+			}
 		}
 		t.Fatalf("%s:%d: %s: %s", filepath.Base(file), line, msg, err.Error())
+	}
+}
+
+func FailIfNotErr(t *testing.T, err error, msg string, args ...interface{}) {
+	if err == nil {
+		_, file, line, _ := runtime.Caller(1)
+		if len(msg) == 0 {
+			msg = "unexpected success"
+		} else {
+			if len(args) > 0 {
+				msg = fmt.Sprintf(msg, args...)
+			}
+		}
+		t.Fatalf("%s:%d: %s", filepath.Base(file), line, msg)
 	}
 }
 
@@ -87,6 +106,7 @@ func AssertEquals(t *testing.T, exp interface{}, act interface{}) {
 
 func GetConfig(t *testing.T) *Config {
 	configOnce.Do(func() {
+		rand.Seed(time.Now().UTC().UnixNano())
 		configFileName, ok := os.LookupEnv("GOCLOAK_TEST_CONFIG")
 		if !ok {
 			configFileName = filepath.Join("testdata", "config.json")
@@ -162,9 +182,9 @@ func GetClientByClientID(t *testing.T, client GoCloak, clientID string) *Client 
 			ClientID: clientID,
 		})
 	FailIfErr(t, err, "GetClients failed")
-	for _, fetchedClient := range *clients {
+	for _, fetchedClient := range clients {
 		if fetchedClient.ClientID == clientID {
-			return &fetchedClient
+			return fetchedClient
 		}
 	}
 	t.Fatal("Client not found")
@@ -190,7 +210,7 @@ func CreateGroup(t *testing.T, client GoCloak) (func(), string) {
 		})
 	FailIfErr(t, err, "GetGroups failed")
 	var groupID string
-	for _, fetchedGroup := range *groups {
+	for _, fetchedGroup := range groups {
 		if fetchedGroup.Name == group.Name {
 			groupID = fetchedGroup.ID
 			break
@@ -224,8 +244,8 @@ func SetUpTestUser(t *testing.T, client GoCloak) {
 			token.AccessToken,
 			cfg.GoCloak.Realm,
 			user)
-		if err != nil && err.Error() == "Conflict: Object already exists" {
-			err = nil
+		FailIfErr(t, err, "CreateUser failed")
+		if IsObjectAlreadyExists(err) {
 			users, err := client.GetUsers(
 				token.AccessToken,
 				cfg.GoCloak.Realm,
@@ -233,7 +253,7 @@ func SetUpTestUser(t *testing.T, client GoCloak) {
 					Username: cfg.GoCloak.UserName,
 				})
 			FailIfErr(t, err, "GetUsers failed")
-			for _, user := range *users {
+			for _, user := range users {
 				if user.Username == cfg.GoCloak.UserName {
 					testUserID = user.ID
 					break
@@ -241,7 +261,7 @@ func SetUpTestUser(t *testing.T, client GoCloak) {
 			}
 		} else {
 			FailIfErr(t, err, "CreateUser failed")
-			testUserID = *createdUserID
+			testUserID = createdUserID
 		}
 
 		err = client.SetPassword(
@@ -250,7 +270,6 @@ func SetUpTestUser(t *testing.T, client GoCloak) {
 			cfg.GoCloak.Realm,
 			cfg.GoCloak.Password,
 			false)
-		//client.GetRealmRole(token.AccessToken, cfg.GoCloak.Realm, "")
 		FailIfErr(t, err, "SetPassword failed")
 	})
 }
@@ -276,6 +295,34 @@ func NewClientWithDebug(t *testing.T) GoCloak {
 
 	return client
 }
+
+// FailRequest fails requests and returns an error
+//   err - returned error or nil to return the default error
+//   failN - number of requests to be failed
+//   skipN = number of requests to be executed and not failed by this function
+func FailRequest(client GoCloak, err error, failN, skipN int) GoCloak {
+	client.RestyClient().OnBeforeRequest(
+		func(c *resty.Client, r *resty.Request) error {
+			if skipN > 0 {
+				skipN--
+				return nil
+			}
+			if failN == 0 {
+				return nil
+			}
+			failN--
+			if err == nil {
+				err = fmt.Errorf("an error for request: %+v", r)
+			}
+			return err
+		},
+	)
+	return client
+}
+
+// -----
+// Tests
+// -----
 
 func TestGetQueryParams(t *testing.T) {
 	t.Parallel()
@@ -317,21 +364,51 @@ func TestGocloak_RestyClient(t *testing.T) {
 	)
 }
 
+func TestGocloak_checkForError(t *testing.T) {
+	t.Parallel()
+	client := NewClientWithDebug(t)
+	FailRequest(client, nil, 1, 0)
+	_, err := client.Login("", "", "", "", "")
+	FailIfNotErr(t, err, "All requests must fail with NewClientWithError")
+	t.Logf("Error: %s", err.Error())
+}
+
 // ---------
 // API tests
 // ---------
+
+func TestGocloak_GetServerInfo(t *testing.T) {
+	t.Parallel()
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	serverInfo, err := client.GetServerInfo(
+		token.AccessToken,
+	)
+	FailIfErr(t, err, "Failed to fetch server info")
+	t.Logf("Server Info: %+v", serverInfo)
+
+	FailRequest(client, nil, 1, 0)
+	_, err = client.GetServerInfo(
+		token.AccessToken,
+	)
+	FailIfNotErr(t, err, "")
+}
 
 func TestGocloak_GetUserInfo(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	token := GetClientToken(t, client)
-
 	userInfo, err := client.GetUserInfo(
 		token.AccessToken,
 		cfg.GoCloak.Realm)
-	t.Log(userInfo)
 	FailIfErr(t, err, "Failed to fetch userinfo")
+	t.Log(userInfo)
+	FailRequest(client, nil, 1, 0)
+	_, err = client.GetUserInfo(
+		token.AccessToken,
+		cfg.GoCloak.Realm)
+	FailIfNotErr(t, err, "")
 }
 
 func TestGocloak_RequestPermission(t *testing.T) {
@@ -363,8 +440,8 @@ func TestGocloak_GetCerts(t *testing.T) {
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	certs, err := client.GetCerts(cfg.GoCloak.Realm)
-	t.Log(certs)
 	FailIfErr(t, err, "get certs")
+	t.Log(certs)
 }
 
 func TestGocloak_LoginClient_UnknownRealm(t *testing.T) {
@@ -375,10 +452,8 @@ func TestGocloak_LoginClient_UnknownRealm(t *testing.T) {
 		cfg.GoCloak.ClientID,
 		cfg.GoCloak.ClientSecret,
 		"ThisRealmDoesNotExist")
-	FailIf(t, err == nil, "Login shouldn't be successful")
-
-	errorMessage := err.Error()
-	FailIf(t, errorMessage != "404 Not Found", "Unexpected error message: "+errorMessage)
+	FailIfNotErr(t, err, "Login shouldn't be successful")
+	AssertEquals(t, "404 Not Found", err.Error())
 }
 
 func TestGocloak_GetIssuer(t *testing.T) {
@@ -592,7 +667,7 @@ func TestGocloak_CreateListGetUpdateDeleteGroup(t *testing.T) {
 		cfg.GoCloak.Realm,
 		Group{},
 	)
-	FailIf(t, err == nil, "Should fail because of missing ID of the group")
+	FailIfNotErr(t, err, "Should fail because of missing ID of the group")
 
 	createdGroup.Name = GetRandomName("GroupName")
 	err = client.UpdateGroup(
@@ -702,19 +777,19 @@ func TestGocloak_CreateListGetUpdateDeleteClient(t *testing.T) {
 		},
 	)
 	FailIfErr(t, err, "CreateClients failed")
-	FailIf(t, len(*clients) != 1, "GetClients should return exact 1 client")
-	t.Logf("Clients: %+v", *clients)
+	FailIf(t, len(clients) != 1, "GetClients should return exact 1 client")
+	t.Logf("Clients: %+v", clients)
 
 	// Getting exact client
 	createdClient, err := client.GetClient(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		(*clients)[0].ID,
+		clients[0].ID,
 	)
 	FailIfErr(t, err, "GetClient failed")
 	t.Logf("Created client: %+v", createdClient)
 	// Checking that GetClient returns same client
-	AssertEquals(t, (*clients)[0], *createdClient)
+	AssertEquals(t, clients[0], createdClient)
 
 	// Updating the client
 
@@ -724,7 +799,7 @@ func TestGocloak_CreateListGetUpdateDeleteClient(t *testing.T) {
 		cfg.GoCloak.Realm,
 		Client{},
 	)
-	FailIf(t, err == nil, "Should fail because of missing ID of the client")
+	FailIfNotErr(t, err, "Should fail because of missing ID of the client")
 
 	// Update existing client
 	createdClient.Name = GetRandomName("Name")
@@ -739,7 +814,7 @@ func TestGocloak_CreateListGetUpdateDeleteClient(t *testing.T) {
 	updatedClient, err := client.GetClient(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		(*clients)[0].ID,
+		clients[0].ID,
 	)
 	FailIfErr(t, err, "GetClient failed")
 	t.Logf("Update client: %+v", createdClient)
@@ -762,7 +837,7 @@ func TestGocloak_CreateListGetUpdateDeleteClient(t *testing.T) {
 		},
 	)
 	FailIfErr(t, err, "CreateClients failed")
-	FailIf(t, len(*clients) != 0, "GetClients should not return any clients")
+	FailIf(t, len(clients) != 0, "GetClients should not return any clients")
 
 }
 
@@ -777,21 +852,6 @@ func TestGocloak_GetGroups(t *testing.T) {
 		cfg.GoCloak.Realm,
 		GetGroupsParams{})
 	FailIfErr(t, err, "GetGroups failed")
-}
-
-func TestGocloak_GetClients(t *testing.T) {
-	t.Parallel()
-	cfg := GetConfig(t)
-	client := NewClientWithDebug(t)
-	token := GetAdminToken(t, client)
-
-	_, err := client.GetClients(
-		token.AccessToken,
-		cfg.GoCloak.Realm,
-		GetClientsParams{
-			ClientID: cfg.GoCloak.ClientID,
-		})
-	FailIfErr(t, err, "GetClients failed")
 }
 
 func TestGocloak_GetClientRoles(t *testing.T) {
@@ -862,7 +922,7 @@ func TestGocloak_ExecuteActionsEmail_UpdatePassword(t *testing.T) {
 		params)
 
 	if err != nil {
-		if err.Error() == "500 Internal Server Error" {
+		if err.Error() == "500 Internal Server Error: Failed to send execute actions email" {
 			return
 		}
 		FailIfErr(t, err, "ExecuteActionsEmail failed")
@@ -997,7 +1057,7 @@ func TestGocloak_GetRealmRoles(t *testing.T) {
 		token.AccessToken,
 		cfg.GoCloak.Realm)
 	FailIfErr(t, err, "GetRealmRoles failed")
-	t.Logf("Roles: %+v", *roles)
+	t.Logf("Roles: %+v", roles)
 }
 
 func TestGocloak_UpdateRealmRole(t *testing.T) {
@@ -1021,9 +1081,9 @@ func TestGocloak_UpdateRealmRole(t *testing.T) {
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		oldRoleName)
-	FailIf(
+	FailIfNotErr(
 		t,
-		err == nil,
+		err,
 		"Role with old name was deleted successfully, but it shouldn't. Old role: %s; Updated role: %s",
 		oldRoleName, newRoleName)
 	err = client.DeleteRealmRole(
@@ -1104,8 +1164,8 @@ func TestGocloak_GetRealmRolesByUserID(t *testing.T) {
 		cfg.GoCloak.Realm,
 		userID)
 	FailIfErr(t, err, "GetRealmRolesByUserID failed")
-	t.Logf("User roles: %+v", *roles)
-	for _, r := range *roles {
+	t.Logf("User roles: %+v", roles)
+	for _, r := range roles {
 		if r.Name == role.Name {
 			return
 		}
@@ -1167,11 +1227,11 @@ func TestGocloak_DeleteRealmRoleFromUser(t *testing.T) {
 		cfg.GoCloak.Realm,
 		userID)
 	FailIfErr(t, err, "GetRealmRolesByUserID failed")
-	for _, r := range *roles {
+	for _, r := range roles {
 		FailIf(
 			t,
 			r.Name == role.Name,
-			"The role has been found in asigned roles. Role: %+v", role)
+			"The role has been found in assigned roles. Role: %+v", role)
 	}
 }
 
@@ -1244,7 +1304,7 @@ func CreateUser(t *testing.T, client GoCloak) (func(), string) {
 		cfg.GoCloak.Realm,
 		user)
 	FailIfErr(t, err, "CreateUser failed")
-	user.ID = *userID
+	user.ID = userID
 	t.Logf("Created User: %+v", user)
 	tearDown := func() {
 		err := client.DeleteUser(
@@ -1403,12 +1463,12 @@ func TestGocloak_GetUserGroups(t *testing.T) {
 	FailIfErr(t, err, "GetUserGroups failed")
 	FailIf(
 		t,
-		len(*groups) == 0,
+		len(groups) == 0,
 		"User is not in the Group")
 	AssertEquals(
 		t,
 		groupID,
-		(*groups)[0].ID)
+		groups[0].ID)
 }
 
 func TestGocloak_DeleteUser(t *testing.T) {
@@ -1474,12 +1534,12 @@ func TestGocloak_GetUsersByRoleName(t *testing.T) {
 
 	FailIf(
 		t,
-		len(*users) == 0,
+		len(users) == 0,
 		"User is not in the Group")
 	AssertEquals(
 		t,
 		userID,
-		(*users)[0].ID)
+		users[0].ID)
 }
 
 func TestGocloak_GetUserSessions(t *testing.T) {
@@ -1505,7 +1565,7 @@ func TestGocloak_GetUserSessions(t *testing.T) {
 		testUserID,
 	)
 	FailIfErr(t, err, "GetUserSessions failed")
-	FailIf(t, len(*sessions) == 0, "GetUserSessions returned an empty list")
+	FailIf(t, len(sessions) == 0, "GetUserSessions returned an empty list")
 }
 
 func TestGocloak_GetUserOfflineSessionsForClient(t *testing.T) {
@@ -1534,7 +1594,7 @@ func TestGocloak_GetUserOfflineSessionsForClient(t *testing.T) {
 		gocloakClientID,
 	)
 	FailIfErr(t, err, "GetUserOfflineSessionsForClient failed")
-	FailIf(t, len(*sessions) == 0, "GetUserOfflineSessionsForClient returned an empty list")
+	FailIf(t, len(sessions) == 0, "GetUserOfflineSessionsForClient returned an empty list")
 }
 
 func TestGocloak_GetClientUserSessions(t *testing.T) {
@@ -1560,7 +1620,7 @@ func TestGocloak_GetClientUserSessions(t *testing.T) {
 		gocloakClientID,
 	)
 	FailIfErr(t, err, "GetClientUserSessions failed")
-	FailIf(t, len(*sessions) == 0, "GetClientUserSessions returned an empty list")
+	FailIf(t, len(sessions) == 0, "GetClientUserSessions returned an empty list")
 }
 
 func TestGocloak_GetClientOfflineSessions(t *testing.T) {
@@ -1588,5 +1648,5 @@ func TestGocloak_GetClientOfflineSessions(t *testing.T) {
 		gocloakClientID,
 	)
 	FailIfErr(t, err, "GetClientOfflineSessions failed")
-	FailIf(t, len(*sessions) == 0, "GetClientOfflineSessions returned an empty list")
+	FailIf(t, len(sessions) == 0, "GetClientOfflineSessions returned an empty list")
 }

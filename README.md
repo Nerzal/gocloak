@@ -16,7 +16,33 @@ For Questions either raise an issue, or come to the [gopher-slack](https://invit
 
 If u are using the echo framework have a look at [gocloak-echo](https://github.com/Nerzal/gocloak-echo)
 
-### Keycloak Version < 4.8
+
+https://gopkg.in/nerzal/gocloak.v1
+
+## Contribution
+(WIP) https://github.com/Nerzal/gocloak/wiki/Contribute
+
+## Usage
+
+### Importing
+
+Since the version 3 you need to import the gocloak library using v3 suffix:
+
+```go
+	import "github.com/Nerzal/gocloak/v3"
+```
+
+#### Version 2:
+
+```go
+	go get gopkg.in/nerzal/gocloak@v2.1.0
+```
+
+```go
+	import "github.com/Nerzal/gocloak"
+```
+
+#### Keycloak Version < 4.8
 If you are using a Keycloak Server version <4.8 please use the V1.0 release of gocloak.
 
 ```go
@@ -27,12 +53,6 @@ If you are using a Keycloak Server version <4.8 please use the V1.0 release of g
 	import "gopkg.in/nerzal/gocloak.v1"
 ``` 
 
-https://gopkg.in/nerzal/gocloak.v1
-
-## Contribution
-(WIP) https://github.com/Nerzal/gocloak/wiki/Contribute
-
-## Usage
 
 ### Create New User
 ```go
@@ -91,11 +111,12 @@ type GoCloak interface {
 	RetrospectToken(accessToken string, clientID, clientSecret string, realm string) (*RetrospecTokenResult, error)
 	GetIssuer(realm string) (*IssuerResponse, error)
 	GetCerts(realm string) (*CertResponse, error)
+	GetServerInfo(accessToken string) (*ServerInfoRepesentation, error)
 	GetUserInfo(accessToken string, realm string) (*UserInfo, error)
 	SetPassword(token string, userID string, realm string, password string, temporary bool) error
 	ExecuteActionsEmail(token string, realm string, params ExecuteActionsEmail) error
 
-	CreateUser(token string, realm string, user User) (*string, error)
+	CreateUser(token string, realm string, user User) (string, error)
 	CreateGroup(accessToken string, realm string, group Group) error
 	CreateClientRole(accessToken string, realm string, clientID string, role Role) error
 	CreateClient(accessToken string, realm string, clientID Client) error
@@ -120,26 +141,26 @@ type GoCloak interface {
 	GetKeyStoreConfig(accessToken string, realm string) (*KeyStoreConfig, error)
 	GetUserByID(accessToken string, realm string, userID string) (*User, error)
 	GetUserCount(accessToken string, realm string) (int, error)
-	GetUsers(accessToken string, realm string, params GetUsersParams) (*[]User, error)
-	GetUserGroups(accessToken string, realm string, userID string) (*[]UserGroup, error)
-	GetComponents(accessToken string, realm string) (*[]Component, error)
-	GetGroups(accessToken string, realm string, params GetGroupsParams) (*[]Group, error)
+	GetUsers(accessToken string, realm string, params GetUsersParams) ([]*User, error)
+	GetUserGroups(accessToken string, realm string, userID string) ([]*UserGroup, error)
+	GetComponents(accessToken string, realm string) ([]*Component, error)
+	GetGroups(accessToken string, realm string, params GetGroupsParams) ([]*Group, error)
 	GetGroup(accessToken string, realm, groupID string) (*Group, error)
 	GetRoleMappingByGroupID(accessToken string, realm string, groupID string) (*MappingsRepresentation, error)
 	GetRoleMappingByUserID(accessToken string, realm string, userID string) (*MappingsRepresentation, error)
-	GetClientRoles(accessToken string, realm string, clientID string) (*[]Role, error)
+	GetClientRoles(accessToken string, realm string, clientID string) ([]*Role, error)
 	GetClientRole(token string, realm string, clientID string, roleName string) (*Role, error)
-	GetClients(accessToken string, realm string, params GetClientsParams) (*[]Client, error)
-	GetUsersByRoleName(token string, realm string, roleName string) (*[]User, error)
+	GetClients(accessToken string, realm string, params GetClientsParams) ([]*Client, error)
+	GetUsersByRoleName(token string, realm string, roleName string) ([]*User, error)
 	UserAttributeContains(attributes map[string][]string, attribute string, value string) bool
 
 	// *** Realm Roles ***
 
 	CreateRealmRole(token string, realm string, role Role) error
 	GetRealmRole(token string, realm string, roleName string) (*Role, error)
-	GetRealmRoles(accessToken string, realm string) (*[]Role, error)
-	GetRealmRolesByUserID(accessToken string, realm string, userID string) (*[]Role, error)
-	GetRealmRolesByGroupID(accessToken string, realm string, groupID string) (*[]Role, error)
+	GetRealmRoles(accessToken string, realm string) ([]*Role, error)
+	GetRealmRolesByUserID(accessToken string, realm string, userID string) ([]*Role, error)
+	GetRealmRolesByGroupID(accessToken string, realm string, groupID string) ([]*Role, error)
 	UpdateRealmRole(token string, realm string, roleName string, role Role) error
 	DeleteRealmRole(token string, realm string, roleName string) error
 	AddRealmRoleToUser(token string, realm string, userID string, roles []Role) error
@@ -153,10 +174,10 @@ type GoCloak interface {
 	CreateRealm(token string, realm RealmRepresentation) error
 	DeleteRealm(token string, realm string) error
 
-	GetClientUserSessions(token, realm, clientID string) (*[]UserSessionRepresentation, error)
-	GetClientOfflineSessions(token, realm, clientID string) (*[]UserSessionRepresentation, error)
-	GetUserSessions(token, realm, userID string) (*[]UserSessionRepresentation, error)
-	GetUserOfflineSessionsForClient(token, realm, userID, clientID string) (*[]UserSessionRepresentation, error)
+	GetClientUserSessions(token, realm, clientID string) ([]*UserSessionRepresentation, error)
+	GetClientOfflineSessions(token, realm, clientID string) ([]*UserSessionRepresentation, error)
+	GetUserSessions(token, realm, userID string) ([]*UserSessionRepresentation, error)
+	GetUserOfflineSessionsForClient(token, realm, userID, clientID string) ([]*UserSessionRepresentation, error)
 }
 ```
 
