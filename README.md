@@ -138,6 +138,7 @@ type GoCloak interface {
 
 	GetClient(accessToken string, realm string, clientID string) (*Client, error)
 	GetClientSecret(token string, realm string, clientID string) (*CredentialRepresentation, error)
+	RegenerateClientSecret(token string, realm string, clientID string) (*CredentialRepresentation, error)
 	GetKeyStoreConfig(accessToken string, realm string) (*KeyStoreConfig, error)
 	GetUserByID(accessToken string, realm string, userID string) (*User, error)
 	GetUserCount(accessToken string, realm string) (int, error)

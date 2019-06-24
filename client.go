@@ -499,6 +499,18 @@ func (client *gocloak) GetClientSecret(token string, realm string, clientID stri
 	return &result, nil
 }
 
+func (client *gocloak) RegenerateClientSecret(token string, realm string, clientID string) (*CredentialRepresentation, error) {
+	var result CredentialRepresentation
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Post(client.getAdminRealmURL(realm, "clients", clientID, "client-secret"))
+
+		if err := checkForError(resp, err); err != nil {
+			return nil, err
+		}
+	return &result, nil
+}
+
 // GetClientOfflineSessions returns offline sessions associated with the client
 func (client *gocloak) GetClientOfflineSessions(token, realm, clientID string) ([]*UserSessionRepresentation, error) {
 	var res []*UserSessionRepresentation
