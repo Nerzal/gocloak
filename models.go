@@ -86,8 +86,10 @@ type User struct {
 	FederationLink             string              `json:"federationLink,omitempty"`
 	Attributes                 map[string][]string `json:"attributes,omitempty"`
 	DisableableCredentialTypes []interface{}       `json:"disableableCredentialTypes,omitempty"`
-	RequiredActions            []interface{}       `json:"requiredActions,omitempty"`
+	RequiredActions            []string            `json:"requiredActions,omitempty"`
 	Access                     map[string]bool     `json:"access"`
+	ClientRoles                map[string][]string `json:"clientRoles,omitempty"`
+	RealmRoles                 []string            `json:"realmRoles,omitempty"`
 }
 
 // SetPasswordRequest sets a new password
