@@ -505,9 +505,9 @@ func (client *gocloak) RegenerateClientSecret(token string, realm string, client
 		SetResult(&result).
 		Post(client.getAdminRealmURL(realm, "clients", clientID, "client-secret"))
 
-		if err := checkForError(resp, err); err != nil {
-			return nil, err
-		}
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
 	return &result, nil
 }
 
