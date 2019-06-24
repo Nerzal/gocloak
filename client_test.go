@@ -1654,7 +1654,25 @@ func TestGoCloak_ClientSecret(t *testing.T) {
 	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
-	testClient := GetClientByClientID(t, client, "gocloak-client-secret")
+	testClient := Client{
+		ID:                      "2262b302-b4d4-47d4-89d1-b7a3313368ec",
+		ClientID:                "gocloak-client-secret",
+		Secret:                  "initial-secret-key",
+		ServiceAccountsEnabled:  true,
+		StandardFlowEnabled:     true,
+		Enabled:                 true,
+		FullScopeAllowed:        true,
+		Protocol:                "openid-connect",
+		RedirectURIs:            []string{"localhost"},
+		ClientAuthenticatorType: "client-secret",
+	}
+
+	err := client.CreateClient(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		testClient,
+	)
+	FailIfErr(t, err, "CreateClient failed")
 
 	oldCreds, err := client.GetClientSecret(
 		token.AccessToken,
