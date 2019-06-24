@@ -746,6 +746,33 @@ func TestGocloak_CreateClientScope(t *testing.T) {
 	FailIfErr(t, err, "DeleteClientScope failed")
 }
 
+func TestGocloak_GetClientScope(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	newScope := ClientScope{
+		ID:   "foo",
+		Name: "bar",
+	}
+	err := client.CreateClientScope(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		newScope)
+	FailIfErr(t, err, "CreateClientScope failed")
+
+	// Getting exact client scope
+	createdClientScope, err := client.GetClientScope(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		newScope.ID)
+	FailIfErr(t, err, "GetClientScope failed")
+	t.Logf("Created clientScope : %+v", createdClientScope)
+	// Checking that GetClientScope returns same client scope
+	AssertEquals(t, newScope.ID, createdClientScope.ID)
+}
+
 func TestGocloak_CreateListGetUpdateDeleteClient(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
