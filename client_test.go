@@ -104,6 +104,13 @@ func AssertEquals(t *testing.T, exp interface{}, act interface{}) {
 		"The expected and actual results are not equal.\nExpected: %+v.\nActual:   %+v", exp, act)
 }
 
+func AssertNotEquals(t *testing.T, exp interface{}, act interface{}) {
+	FailIf(
+		t,
+		reflect.DeepEqual(exp, act),
+		"The expected and actual results are equal.\nExpected: %+v.\nActual:   %+v", exp, act)
+}
+
 func GetConfig(t *testing.T) *Config {
 	configOnce.Do(func() {
 		rand.Seed(time.Now().UTC().UnixNano())
@@ -1666,4 +1673,47 @@ func TestGocloak_GetClientOfflineSessions(t *testing.T) {
 	)
 	FailIfErr(t, err, "GetClientOfflineSessions failed")
 	FailIf(t, len(sessions) == 0, "GetClientOfflineSessions returned an empty list")
+}
+
+func TestGoCloak_ClientSecret(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	testClient := Client{
+		ID:                      "2262b302-b4d4-47d4-89d1-b7a3313368ec",
+		ClientID:                "gocloak-client-secret",
+		Secret:                  "initial-secret-key",
+		ServiceAccountsEnabled:  true,
+		StandardFlowEnabled:     true,
+		Enabled:                 true,
+		FullScopeAllowed:        true,
+		Protocol:                "openid-connect",
+		RedirectURIs:            []string{"localhost"},
+		ClientAuthenticatorType: "client-secret",
+	}
+
+	err := client.CreateClient(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		testClient,
+	)
+	FailIfErr(t, err, "CreateClient failed")
+
+	oldCreds, err := client.GetClientSecret(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		testClient.ID,
+	)
+	FailIfErr(t, err, "GetClientSecret failed")
+
+	regeneratedCreds, err := client.RegenerateClientSecret(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		testClient.ID,
+	)
+	FailIfErr(t, err, "RegenerateClientSecret failed")
+
+	AssertNotEquals(t, oldCreds.Value, regeneratedCreds.Value)
 }

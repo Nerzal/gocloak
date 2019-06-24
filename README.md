@@ -139,6 +139,7 @@ type GoCloak interface {
 	GetClient(accessToken string, realm string, clientID string) (*Client, error)
 	GetClientScope(token string, realm string, scopeID string) (*ClientScope, error)
 	GetClientSecret(token string, realm string, clientID string) (*CredentialRepresentation, error)
+	RegenerateClientSecret(token string, realm string, clientID string) (*CredentialRepresentation, error)
 	GetKeyStoreConfig(accessToken string, realm string) (*KeyStoreConfig, error)
 	GetUserByID(accessToken string, realm string, userID string) (*User, error)
 	GetUserCount(accessToken string, realm string) (int, error)
@@ -186,8 +187,16 @@ type GoCloak interface {
 For local testing you need to start a docker container. Simply run following commands prior to starting the tests:
 
 ```bash
-docker pull jboss/keycloak
-docker run -d -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=secret -e KEYCLOAK_IMPORT=/tmp/gocloak-realm.json -v `pwd`/testdata/gocloak-realm.json:/tmp/gocloak-realm.json -p 8080:8080 --name keycloak jboss/keycloak
+docker pull quay.io/keycloak/keycloak
+docker run -d \
+	-e KEYCLOAK_USER=admin \
+	-e KEYCLOAK_PASSWORD=secret \
+	-e KEYCLOAK_IMPORT=/tmp/gocloak-realm.json \
+	-v `pwd`/testdata/gocloak-realm.json:/tmp/gocloak-realm.json \
+	-p 8080:8080 \
+	--name gocloak-test \
+	quay.io/keycloak/keycloak
+
 go test
 ```
 
@@ -198,6 +207,12 @@ export GOCLOAK_TEST_CONFIG=/path/to/gocloak/config.json
 
 All resources created as a result of unit tests will be deleted, except for the test user defined in the configuration file.
 
+To remove running docker container after completion of tests:
+
+```bash
+docker stop gocloak-test
+docker rm gocloak-test
+```
 
 ## License
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FNerzal%2Fgocloak.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FNerzal%2Fgocloak?ref=badge_large)

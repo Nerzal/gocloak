@@ -79,6 +79,8 @@ type GoCloak interface {
 	GetClientScope(token string, realm string, scopeID string) (*ClientScope, error)
 	// GetClientSecret returns a client's secret
 	GetClientSecret(token string, realm string, clientID string) (*CredentialRepresentation, error)
+	// RegenerateClientSecret creates a new client secret returning the updated CredentialRepresentation
+	RegenerateClientSecret(token string, realm string, clientID string) (*CredentialRepresentation, error)
 	// GetKeyStoreConfig gets the keyStoreConfig
 	GetKeyStoreConfig(accessToken string, realm string) (*KeyStoreConfig, error)
 	// GetComponents gets components of the given realm
