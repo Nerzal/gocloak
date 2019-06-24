@@ -137,6 +137,7 @@ type GoCloak interface {
 	DeleteClientScope(accessToken string, realm, scopeID string) error
 
 	GetClient(accessToken string, realm string, clientID string) (*Client, error)
+	GetClientScope(token string, realm string, scopeID string) (*ClientScope, error)
 	GetClientSecret(token string, realm string, clientID string) (*CredentialRepresentation, error)
 	GetKeyStoreConfig(accessToken string, realm string) (*KeyStoreConfig, error)
 	GetUserByID(accessToken string, realm string, userID string) (*User, error)
