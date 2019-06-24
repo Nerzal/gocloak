@@ -104,6 +104,13 @@ func AssertEquals(t *testing.T, exp interface{}, act interface{}) {
 		"The expected and actual results are not equal.\nExpected: %+v.\nActual:   %+v", exp, act)
 }
 
+func AssertNotEquals(t *testing.T, exp interface{}, act interface{}) {
+	FailIf(
+		t,
+		reflect.DeepEqual(exp, act),
+		"The expected and actual results are equal.\nExpected: %+v.\nActual:   %+v", exp, act)
+}
+
 func GetConfig(t *testing.T) *Config {
 	configOnce.Do(func() {
 		rand.Seed(time.Now().UTC().UnixNano())
@@ -1639,4 +1646,29 @@ func TestGocloak_GetClientOfflineSessions(t *testing.T) {
 	)
 	FailIfErr(t, err, "GetClientOfflineSessions failed")
 	FailIf(t, len(sessions) == 0, "GetClientOfflineSessions returned an empty list")
+}
+
+func TestGoCloak_ClientSecret(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	testClient := GetClientByClientID(t, client, "gocloak-client-secret")
+
+	oldCreds, err := client.GetClientSecret(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		testClient.ID,
+	)
+	FailIfErr(t, err, "GetClientSecret failed")
+
+	regeneratedCreds, err := client.RegenerateClientSecret(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		testClient.ID,
+	)
+	FailIfErr(t, err, "RegenerateClientSecret failed")
+
+	AssertNotEquals(t, oldCreds.Value, regeneratedCreds.Value)
 }
