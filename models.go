@@ -74,22 +74,24 @@ type RetrospecTokenResult struct {
 
 // User represents the Keycloak User Structure
 type User struct {
-	ID                         string              `json:"id,omitempty"`
-	CreatedTimestamp           int64               `json:"createdTimestamp,omitempty"`
-	Username                   string              `json:"username,omitempty"`
-	Enabled                    bool                `json:"enabled"`
-	Totp                       bool                `json:"totp"`
-	EmailVerified              bool                `json:"emailVerified"`
-	FirstName                  string              `json:"firstName,omitempty"`
-	LastName                   string              `json:"lastName,omitempty"`
-	Email                      string              `json:"email,omitempty"`
-	FederationLink             string              `json:"federationLink,omitempty"`
-	Attributes                 map[string][]string `json:"attributes,omitempty"`
-	DisableableCredentialTypes []interface{}       `json:"disableableCredentialTypes,omitempty"`
-	RequiredActions            []string            `json:"requiredActions,omitempty"`
-	Access                     map[string]bool     `json:"access"`
-	ClientRoles                map[string][]string `json:"clientRoles,omitempty"`
-	RealmRoles                 []string            `json:"realmRoles,omitempty"`
+	ID                         string                      `json:"id,omitempty"`
+	CreatedTimestamp           int64                       `json:"createdTimestamp,omitempty"`
+	Username                   string                      `json:"username,omitempty"`
+	Enabled                    bool                        `json:"enabled"`
+	Totp                       bool                        `json:"totp"`
+	EmailVerified              bool                        `json:"emailVerified"`
+	FirstName                  string                      `json:"firstName,omitempty"`
+	LastName                   string                      `json:"lastName,omitempty"`
+	Email                      string                      `json:"email,omitempty"`
+	FederationLink             string                      `json:"federationLink,omitempty"`
+	Attributes                 map[string][]string         `json:"attributes,omitempty"`
+	DisableableCredentialTypes []interface{}               `json:"disableableCredentialTypes,omitempty"`
+	RequiredActions            []string                    `json:"requiredActions,omitempty"`
+	Access                     map[string]bool             `json:"access"`
+	ClientRoles                map[string][]string         `json:"clientRoles,omitempty"`
+	RealmRoles                 []string                    `json:"realmRoles,omitempty"`
+	ServiceAccountClientID     string                      `json:"serviceAccountClientId,omitempty"`
+	Credentials                []*CredentialRepresentation `json:"credentials,omitempty"`
 }
 
 // SetPasswordRequest sets a new password
