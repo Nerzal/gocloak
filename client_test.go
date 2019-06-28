@@ -1717,3 +1717,17 @@ func TestGoCloak_ClientSecret(t *testing.T) {
 
 	AssertNotEquals(t, oldCreds.Value, regeneratedCreds.Value)
 }
+
+func TestGoCloak_ClientServiceAccount(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	serviceAccount, err := client.GetClientServiceAccount(token.AccessToken, cfg.GoCloak.Realm, gocloakClientID)
+	FailIfErr(t, err, "GetClientServiceAccount failed")
+
+	AssertNotEquals(t, "", serviceAccount.ID)
+	AssertNotEquals(t, gocloakClientID, serviceAccount.ID)
+	AssertEquals(t, "service-account-gocloak", serviceAccount.Username)
+}

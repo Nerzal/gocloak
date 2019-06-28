@@ -514,6 +514,20 @@ func (client *gocloak) GetClientSecret(token string, realm string, clientID stri
 	return &result, nil
 }
 
+// GetClientServiceAccount retrieves the service account "user" for a client if enabled
+func (client *gocloak) GetClientServiceAccount(token string, realm string, clientID string) (*User, error) {
+	var result User
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "clients", clientID, "service-account-user"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
 func (client *gocloak) RegenerateClientSecret(token string, realm string, clientID string) (*CredentialRepresentation, error) {
 	var result CredentialRepresentation
 	resp, err := client.getRequestWithBearerAuth(token).
