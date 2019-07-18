@@ -3,12 +3,9 @@ package jwx
 import (
 	"bytes"
 	"crypto/rsa"
-	"crypto/x509"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
-	"encoding/pem"
-	"errors"
 	"fmt"
 	"math/big"
 	"strings"
@@ -99,24 +96,4 @@ func DecodeAccessTokenCustomClaims(accessToken string, e string, n string, custo
 	})
 
 	return token2, err
-}
-
-func getRSAPublicKey(publicKey string) (*rsa.PublicKey, error) {
-	var builder strings.Builder
-	builder.WriteString("\n-----BEGIN PUBLIC KEY-----\n")
-	builder.WriteString(publicKey)
-	builder.WriteString("\n-----END PUBLIC KEY-----\n")
-
-	block, _ := pem.Decode([]byte(builder.String()))
-	if block == nil {
-		return nil, errors.New("failed to parse PEM block containing the public key")
-	}
-
-	pkey, _ := x509.ParsePKIXPublicKey(block.Bytes)
-	if pkey == nil {
-		return nil, errors.New("failed to parse public key")
-	}
-
-	rsaPublicKey := pkey.(*rsa.PublicKey)
-	return rsaPublicKey, nil
 }
