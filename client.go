@@ -317,6 +317,17 @@ func (client *gocloak) Logout(clientID, clientSecret, realm, refreshToken string
 	return checkForError(resp, err)
 }
 
+func (client *gocloak) LogoutPublicClient(clientID, realm, accessToken, refreshToken string) error {
+	resp, err := client.getRequestWithBearerAuth(accessToken).
+		SetFormData(map[string]string{
+			"client_id":     clientID,
+			"refresh_token": refreshToken,
+		}).
+		Post(client.getRealmURL(realm, logoutEndpoint))
+
+	return checkForError(resp, err)
+}
+
 // RequestPermission request a permission
 func (client *gocloak) RequestPermission(clientID, clientSecret, realm, username, password string, permission string) (*JWT, error) {
 	return client.GetToken(realm, TokenOptions{

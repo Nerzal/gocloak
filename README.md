@@ -102,6 +102,7 @@ If you are using a Keycloak Server version <4.8 please use the V1.0 release of g
 type GoCloak interface {
 	Login(clientID string, clientSecret string, realm string, username string, password string) (*JWT, error)
 	Logout(clientID, clientSecret, realm, refreshToken string) error
+	LogoutPublicClient(clientID, realm, accessToken, refreshToken string) error
 	LoginClient(clientID, clientSecret, realm string) (*JWT, error)
 	LoginAdmin(username, password, realm string) (*JWT, error)
 	RequestPermission(clientID string, clientSecret string, realm string, username string, password string, permission string) (*JWT, error)
