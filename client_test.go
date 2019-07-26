@@ -929,6 +929,21 @@ func TestGocloak_GetClientScope(t *testing.T) {
 	AssertEquals(t, newScope.ID, createdClientScope.ID)
 }
 
+func TestGocloak_GetClientScopes(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	// Getting client scopes
+	scopes, err := client.GetClientScopes(
+		token.AccessToken,
+		cfg.GoCloak.Realm)
+	FailIfErr(t, err, "GetClientScopes failed")
+	// Checking that GetClientScopes returns scopes
+	assert.NotZero(t, len(scopes), "there should be client scopes")
+}
+
 func TestGocloak_CreateListGetUpdateDeleteClient(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
