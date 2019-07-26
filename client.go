@@ -497,8 +497,8 @@ func (client *gocloak) GetClient(token string, realm string, clientID string) (*
 }
 
 // GetClientsDefaultScopes returns a list of the client's default scopes
-func (client *gocloak) GetClientsDefaultScopes(token string, realm string, clientID string) ([]ClientScope, error) {
-	var result []ClientScope
+func (client *gocloak) GetClientsDefaultScopes(token string, realm string, clientID string) ([]*ClientScope, error) {
+	var result []*ClientScope
 
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetResult(&result).
@@ -528,8 +528,8 @@ func (client *gocloak) RemoveDefaultScopeFromClient(token string, realm string, 
 }
 
 // GetClientsOptionalScopes returns a list of the client's optional scopes
-func (client *gocloak) GetClientsOptionalScopes(token string, realm string, clientID string) ([]ClientScope, error) {
-	var result []ClientScope
+func (client *gocloak) GetClientsOptionalScopes(token string, realm string, clientID string) ([]*ClientScope, error) {
+	var result []*ClientScope
 
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetResult(&result).
@@ -558,9 +558,9 @@ func (client *gocloak) RemoveOptionalScopeFromClient(token string, realm string,
 	return checkForError(resp, err)
 }
 
-// GetDefaultOptionalClientScopes returns a list of the client's optional scopes
-func (client *gocloak) GetDefaultOptionalClientScopes(token string, realm string) ([]ClientScope, error) {
-	var result []ClientScope
+// GetDefaultOptionalClientScopes returns a list of default realm optional scopes
+func (client *gocloak) GetDefaultOptionalClientScopes(token string, realm string) ([]*ClientScope, error) {
+	var result []*ClientScope
 
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetResult(&result).
@@ -573,9 +573,9 @@ func (client *gocloak) GetDefaultOptionalClientScopes(token string, realm string
 	return result, nil
 }
 
-// GetDefaultDefaultClientScopes returns a list of the client's optional scopes
-func (client *gocloak) GetDefaultDefaultClientScopes(token string, realm string) ([]ClientScope, error) {
-	var result []ClientScope
+// GetDefaultDefaultClientScopes returns a list of default realm default scopes
+func (client *gocloak) GetDefaultDefaultClientScopes(token string, realm string) ([]*ClientScope, error) {
+	var result []*ClientScope
 
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetResult(&result).
@@ -604,8 +604,8 @@ func (client *gocloak) GetClientScope(token string, realm string, scopeID string
 }
 
 // GetClientScopes returns all client scopes
-func (client *gocloak) GetClientScopes(token string, realm string) ([]ClientScope, error) {
-	var result []ClientScope
+func (client *gocloak) GetClientScopes(token string, realm string) ([]*ClientScope, error) {
+	var result []*ClientScope
 
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetResult(&result).

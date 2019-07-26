@@ -78,25 +78,25 @@ type GoCloak interface {
 	// GetClient returns a client
 	GetClient(accessToken string, realm string, clientID string) (*Client, error)
 	// GetClientsDefaultScopes returns a list of the client's default scopes
-	GetClientsDefaultScopes(token string, realm string, clientID string) ([]ClientScope, error)
+	GetClientsDefaultScopes(token string, realm string, clientID string) ([]*ClientScope, error)
 	// AddDefaultScopeToClient adds a client scope to the list of client's default scopes
 	AddDefaultScopeToClient(token string, realm string, clientID string, scopeID string) error
 	// RemoveDefaultScopeFromClient removes a client scope from the list of client's default scopes
 	RemoveDefaultScopeFromClient(token string, realm string, clientID string, scopeID string) error
 	// GetClientsOptionalScopes returns a list of the client's optional scopes
-	GetClientsOptionalScopes(token string, realm string, clientID string) ([]ClientScope, error)
+	GetClientsOptionalScopes(token string, realm string, clientID string) ([]*ClientScope, error)
 	// AddOptionalScopeToClient adds a client scope to the list of client's optional scopes
 	AddOptionalScopeToClient(token string, realm string, clientID string, scopeID string) error
 	// RemoveOptionalScopeFromClient deletes a client scope from the list of client's optional scopes
 	RemoveOptionalScopeFromClient(token string, realm string, clientID string, scopeID string) error
-	// GetDefaultOptionalClientScopes returns a list of the client's optional scopes
-	GetDefaultOptionalClientScopes(token string, realm string) ([]ClientScope, error)
-	// GetDefaultDefaultClientScopes returns a list of the client's optional scopes
-	GetDefaultDefaultClientScopes(token string, realm string) ([]ClientScope, error)
+	// GetDefaultOptionalClientScopes returns a list of default realm optional scopes
+	GetDefaultOptionalClientScopes(token string, realm string) ([]*ClientScope, error)
+	// GetDefaultDefaultClientScopes returns a list of default realm default scopes
+	GetDefaultDefaultClientScopes(token string, realm string) ([]*ClientScope, error)
 	// GetClientScope returns a clientscope
 	GetClientScope(token string, realm string, scopeID string) (*ClientScope, error)
 	// GetClientScopes returns all client scopes
-	GetClientScopes(token string, realm string) ([]ClientScope, error)
+	GetClientScopes(token string, realm string) ([]*ClientScope, error)
 	// GetClientSecret returns a client's secret
 	GetClientSecret(token string, realm string, clientID string) (*CredentialRepresentation, error)
 	// GetClientServiceAccount retrieves the service account "user" for a client if enabled
