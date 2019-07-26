@@ -138,7 +138,16 @@ type GoCloak interface {
 	DeleteClientScope(accessToken string, realm, scopeID string) error
 
 	GetClient(accessToken string, realm string, clientID string) (*Client, error)
+	GetClientsDefaultScopes(token string, realm string, clientID string) ([]*ClientScope, error)
+	AddDefaultScopeToClient(token string, realm string, clientID string, scopeID string) error
+	RemoveDefaultScopeFromClient(token string, realm string, clientID string, scopeID string) error
+	GetClientsOptionalScopes(token string, realm string, clientID string) ([]*ClientScope, error)
+	AddOptionalScopeToClient(token string, realm string, clientID string, scopeID string) error
+	RemoveOptionalScopeFromClient(token string, realm string, clientID string, scopeID string) error
+	GetDefaultOptionalClientScopes(token string, realm string) ([]*ClientScope, error)
+	GetDefaultDefaultClientScopes(token string, realm string) ([]*ClientScope, error)
 	GetClientScope(token string, realm string, scopeID string) (*ClientScope, error)
+	GetClientScopes(token string, realm string) ([]*ClientScope, error)
 	GetClientSecret(token string, realm string, clientID string) (*CredentialRepresentation, error)
 	GetClientServiceAccount(token string, realm string, clientID string) (*User, error)
 	RegenerateClientSecret(token string, realm string, clientID string) (*CredentialRepresentation, error)
