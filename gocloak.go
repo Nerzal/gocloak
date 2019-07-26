@@ -95,6 +95,8 @@ type GoCloak interface {
 	GetDefaultDefaultClientScopes(token string, realm string) ([]ClientScope, error)
 	// GetClientScope returns a clientscope
 	GetClientScope(token string, realm string, scopeID string) (*ClientScope, error)
+	// GetClientScopes returns all client scopes
+	GetClientScopes(token string, realm string) ([]ClientScope, error)
 	// GetClientSecret returns a client's secret
 	GetClientSecret(token string, realm string, clientID string) (*CredentialRepresentation, error)
 	// GetClientServiceAccount retrieves the service account "user" for a client if enabled

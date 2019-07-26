@@ -603,6 +603,21 @@ func (client *gocloak) GetClientScope(token string, realm string, scopeID string
 	return &result, nil
 }
 
+// GetClientScopes returns all client scopes
+func (client *gocloak) GetClientScopes(token string, realm string) ([]ClientScope, error) {
+	var result []ClientScope
+
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "client-scopes"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // GetClientSecret returns a client's secret
 func (client *gocloak) GetClientSecret(token string, realm string, clientID string) (*CredentialRepresentation, error) {
 	var result CredentialRepresentation
