@@ -496,6 +496,98 @@ func (client *gocloak) GetClient(token string, realm string, clientID string) (*
 	return &result, nil
 }
 
+// GetClientsDefaultScopes returns a list of the client's default scopes
+func (client *gocloak) GetClientsDefaultScopes(token string, realm string, clientID string) ([]ClientScope, error) {
+	var result []ClientScope
+
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "clients", clientID, "default-client-scopes"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// AddDefaultScopeToClient adds a client scope to the list of client's default scopes
+func (client *gocloak) AddDefaultScopeToClient(token string, realm string, clientID string, scopeID string) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		Put(client.getAdminRealmURL(realm, "clients", clientID, "default-client-scopes", scopeID))
+
+	return checkForError(resp, err)
+}
+
+// RemoveDefaultScopeFromClient removes a client scope from the list of client's default scopes
+func (client *gocloak) RemoveDefaultScopeFromClient(token string, realm string, clientID string, scopeID string) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		Delete(client.getAdminRealmURL(realm, "clients", clientID, "default-client-scopes", scopeID))
+
+	return checkForError(resp, err)
+}
+
+// GetClientsOptionalScopes returns a list of the client's optional scopes
+func (client *gocloak) GetClientsOptionalScopes(token string, realm string, clientID string) ([]ClientScope, error) {
+	var result []ClientScope
+
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "clients", clientID, "optional-client-scopes"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// AddOptionalScopeToClient adds a client scope to the list of client's optional scopes
+func (client *gocloak) AddOptionalScopeToClient(token string, realm string, clientID string, scopeID string) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		Put(client.getAdminRealmURL(realm, "clients", clientID, "optional-client-scopes", scopeID))
+
+	return checkForError(resp, err)
+}
+
+// RemoveOptionalScopeFromClient deletes a client scope from the list of client's optional scopes
+func (client *gocloak) RemoveOptionalScopeFromClient(token string, realm string, clientID string, scopeID string) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		Delete(client.getAdminRealmURL(realm, "clients", clientID, "optional-client-scopes", scopeID))
+
+	return checkForError(resp, err)
+}
+
+// GetDefaultOptionalClientScopes returns a list of the client's optional scopes
+func (client *gocloak) GetDefaultOptionalClientScopes(token string, realm string) ([]ClientScope, error) {
+	var result []ClientScope
+
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "default-optional-client-scopes"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// GetDefaultDefaultClientScopes returns a list of the client's optional scopes
+func (client *gocloak) GetDefaultDefaultClientScopes(token string, realm string) ([]ClientScope, error) {
+	var result []ClientScope
+
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "default-default-client-scopes"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // GetClientScope returns a clientscope
 func (client *gocloak) GetClientScope(token string, realm string, scopeID string) (*ClientScope, error) {
 	var result ClientScope
