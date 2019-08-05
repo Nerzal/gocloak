@@ -1818,6 +1818,38 @@ func TestGocloak_GetClientUserSessions(t *testing.T) {
 	FailIf(t, len(sessions) == 0, "GetClientUserSessions returned an empty list")
 }
 
+func TestGocloak_CreateDeleteClientProtocolMapper(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	testClient := GetClientByClientID(t, client, cfg.GoCloak.ClientID)
+	token := GetAdminToken(t, client)
+	id := "50d69716-86a4-41a7-93bd-f9d31f408ddb"
+	err := client.CreateClientProtocolMapper(token.AccessToken, cfg.GoCloak.Realm, cfg.GoCloak.ClientID, ProtocolMapperRepresentation{
+		ID:             id,
+		Name:           "test",
+		Protocol:       "openid-connect",
+		ProtocolMapper: "oidc-usermodel-attribute-mapper",
+		Config: map[string]string{
+			"access.token.claim":   "true",
+			"aggregate.attrs":      "",
+			"claim.name":           "test",
+			"id.token.claim":       "true",
+			"jsonType.label":       "String",
+			"multivalued":          "",
+			"user.attribute":       "test",
+			"userinfo.token.claim": "true",
+		},
+	})
+	FailIfErr(t, err, "CreateClientProtocolMapper failed")
+	testClientAfter := GetClientByClientID(t, client, cfg.GoCloak.ClientID)
+	FailIf(t, len(testClient.ProtocolMappers) >= len(testClientAfter.ProtocolMappers), "protocol mapper has not been created")
+	err = client.DeleteClientProtocolMapper(token.AccessToken, cfg.GoCloak.Realm, cfg.GoCloak.ClientID, id)
+	FailIfErr(t, err, "DeleteClientProtocolMapper failed")
+	testClientAgain := GetClientByClientID(t, client, cfg.GoCloak.ClientID)
+	FailIf(t, len(testClient.ProtocolMappers) != len(testClientAgain.ProtocolMappers), "protocol mapper has not been deleted")
+}
+
 func TestGocloak_GetClientOfflineSessions(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)

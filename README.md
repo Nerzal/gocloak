@@ -166,6 +166,8 @@ type GoCloak interface {
 	GetClients(accessToken string, realm string, params GetClientsParams) ([]*Client, error)
 	GetUsersByRoleName(token string, realm string, roleName string) ([]*User, error)
 	UserAttributeContains(attributes map[string][]string, attribute string, value string) bool
+	CreateClientProtocolMapper(token, realm, clientID string, mapper ProtocolMapperRepresentation) error
+	DeleteClientProtocolMapper(token, realm, clientID, mapperID string) error
 
 	// *** Realm Roles ***
 
