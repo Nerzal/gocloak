@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/stretchr/testify/assert"
 	"gopkg.in/resty.v1"
 )
 
@@ -746,6 +747,161 @@ func TestGocloak_CreateClientScope(t *testing.T) {
 	FailIfErr(t, err, "DeleteClientScope failed")
 }
 
+func TestGocloak_ListAddRemoveDefaultClientScopes(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	testClient := GetClientByClientID(t, client, cfg.GoCloak.ClientID)
+
+	newScope := ClientScope{
+		ID:       "96a70389-c88d-4687-8a00-41f5d09551e4",
+		Name:     "bardefault",
+		Protocol: "openid-connect",
+		ClientScopeAttributes: &ClientScopeAttributes{
+			IncludeInTokenScope: "true",
+		},
+	}
+
+	err := client.CreateClientScope(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		newScope)
+	FailIfErr(t, err, "CreateClientScope failed")
+
+	scopesBeforeAdding, err := client.GetClientsDefaultScopes(token.AccessToken,
+		cfg.GoCloak.Realm,
+		testClient.ID)
+	FailIfErr(t, err, "GetClientsDefaultScopes failed")
+
+	err = client.AddDefaultScopeToClient(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		testClient.ID,
+		newScope.ID)
+	FailIfErr(t, err, "AddDefaultScopeToClient failed")
+
+	scopesAfterAdding, err := client.GetClientsDefaultScopes(token.AccessToken,
+		cfg.GoCloak.Realm,
+		testClient.ID)
+	FailIfErr(t, err, "GetClientsDefaultScopes failed")
+
+	assert.NotEqual(t, len(scopesBeforeAdding), len(scopesAfterAdding), "scope should have been added")
+
+	err = client.RemoveDefaultScopeFromClient(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		testClient.ID,
+		newScope.ID)
+	FailIfErr(t, err, "RemoveDefaultScopeFromClient failed")
+
+	scopesAfterRemoving, err := client.GetClientsDefaultScopes(token.AccessToken,
+		cfg.GoCloak.Realm,
+		testClient.ID)
+	FailIfErr(t, err, "GetClientsDefaultScopes failed")
+
+	assert.Equal(t, len(scopesAfterRemoving), len(scopesBeforeAdding), "scope should have been removed")
+
+	err = client.DeleteClientScope(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		newScope.ID)
+
+	FailIfErr(t, err, "DeleteClientScope failed")
+}
+
+func TestGocloak_ListAddRemoveOptionalClientScopes(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	testClient := GetClientByClientID(t, client, cfg.GoCloak.ClientID)
+
+	newScope := ClientScope{
+		ID:       "01398f8f-8f37-4852-b2fc-3cff8f34d220",
+		Name:     "baroptional",
+		Protocol: "openid-connect",
+		ClientScopeAttributes: &ClientScopeAttributes{
+			IncludeInTokenScope: "true",
+		},
+	}
+	err := client.CreateClientScope(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		newScope)
+	FailIfErr(t, err, "CreateClientScope failed")
+
+	scopesBeforeAdding, err := client.GetClientsOptionalScopes(token.AccessToken,
+		cfg.GoCloak.Realm,
+		testClient.ID)
+	FailIfErr(t, err, "GetClientsOptionalScopes failed")
+
+	err = client.AddOptionalScopeToClient(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		testClient.ID,
+		newScope.ID)
+	FailIfErr(t, err, "AddOptionalScopeToClient failed")
+
+	scopesAfterAdding, err := client.GetClientsOptionalScopes(token.AccessToken,
+		cfg.GoCloak.Realm,
+		testClient.ID)
+	FailIfErr(t, err, "GetClientsOptionalScopes failed")
+
+	assert.NotEqual(t, len(scopesAfterAdding), len(scopesBeforeAdding), "scope should have been added")
+
+	err = client.RemoveOptionalScopeFromClient(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		testClient.ID,
+		newScope.ID)
+	FailIfErr(t, err, "RemoveOptionalScopeFromClient failed")
+
+	scopesAfterRemoving, err := client.GetClientsOptionalScopes(token.AccessToken,
+		cfg.GoCloak.Realm,
+		testClient.ID)
+	FailIfErr(t, err, "GetClientsOptionalScopes failed")
+
+	assert.Equal(t, len(scopesBeforeAdding), len(scopesAfterRemoving), "scope should have been removed")
+
+	err = client.DeleteClientScope(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		newScope.ID)
+
+	FailIfErr(t, err, "DeleteClientScope failed")
+}
+
+func TestGocloak_GetDefaultOptionalClientScopes(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	scopes, err := client.GetDefaultOptionalClientScopes(
+		token.AccessToken,
+		cfg.GoCloak.Realm)
+
+	FailIfErr(t, err, "GetDefaultOptionalClientScopes failed")
+
+	assert.NotEqual(t, 0, len(scopes), "there should be default optional client scopes")
+}
+
+func TestGocloak_GetDefaultDefaultClientScopes(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	scopes, err := client.GetDefaultDefaultClientScopes(
+		token.AccessToken,
+		cfg.GoCloak.Realm)
+
+	FailIfErr(t, err, "GetDefaultDefaultClientScopes failed")
+
+	assert.NotEqual(t, 0, len(scopes), "there should be default default client scopes")
+}
+
 func TestGocloak_GetClientScope(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
@@ -771,6 +927,21 @@ func TestGocloak_GetClientScope(t *testing.T) {
 	t.Logf("Created clientScope : %+v", createdClientScope)
 	// Checking that GetClientScope returns same client scope
 	AssertEquals(t, newScope.ID, createdClientScope.ID)
+}
+
+func TestGocloak_GetClientScopes(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	// Getting client scopes
+	scopes, err := client.GetClientScopes(
+		token.AccessToken,
+		cfg.GoCloak.Realm)
+	FailIfErr(t, err, "GetClientScopes failed")
+	// Checking that GetClientScopes returns scopes
+	assert.NotZero(t, len(scopes), "there should be client scopes")
 }
 
 func TestGocloak_CreateListGetUpdateDeleteClient(t *testing.T) {
