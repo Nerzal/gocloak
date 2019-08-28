@@ -684,6 +684,23 @@ func (client *gocloak) GetClientUserSessions(token, realm, clientID string) ([]*
 	return res, nil
 }
 
+// CreateClientProtocolMapper creates a protocol mapper in client scope
+func (client *gocloak) CreateClientProtocolMapper(token, realm, clientID string, mapper ProtocolMapperRepresentation) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetBody(mapper).
+		Post(client.getAdminRealmURL(realm, "clients", clientID, "protocol-mappers", "models"))
+
+	return checkForError(resp, err)
+}
+
+// DeleteClientProtocolMapper deletes a protocol mapper in client scope
+func (client *gocloak) DeleteClientProtocolMapper(token, realm, clientID, mapperID string) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		Delete(client.getAdminRealmURL(realm, "clients", clientID, "protocol-mappers", "models", mapperID))
+
+	return checkForError(resp, err)
+}
+
 // GetKeyStoreConfig get keystoreconfig of the realm
 func (client *gocloak) GetKeyStoreConfig(token string, realm string) (*KeyStoreConfig, error) {
 	var result KeyStoreConfig

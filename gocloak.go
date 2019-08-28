@@ -125,6 +125,10 @@ type GoCloak interface {
 	GetClientOfflineSessions(token, realm, clientID string) ([]*UserSessionRepresentation, error)
 	// GetClientUserSessions returns user sessions associated with the client
 	GetClientUserSessions(token, realm, clientID string) ([]*UserSessionRepresentation, error)
+	// CreateClientProtocolMapper creates a protocol mapper in client scope
+	CreateClientProtocolMapper(token, realm, clientID string, mapper ProtocolMapperRepresentation) error
+	// DeleteClientProtocolMapper deletes a protocol mapper in client scope
+	DeleteClientProtocolMapper(token, realm, clientID, mapperID string) error
 
 	// UserAttributeContains checks if the given attribute has the given value
 	UserAttributeContains(attributes map[string][]string, attribute string, value string) bool
