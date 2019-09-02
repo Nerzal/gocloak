@@ -46,8 +46,6 @@ type GoCloak interface {
 
 	// CreateGroup creates a new group
 	CreateGroup(accessToken string, realm string, group Group) error
-	// CreateClientRole creates a new role for a client
-	CreateClientRole(accessToken string, realm string, clientID string, role Role) error
 	// CreateClient creates a new client
 	CreateClient(accessToken string, realm string, clientID Client) error
 	// CreateClientScope creates a new clientScope
@@ -68,8 +66,6 @@ type GoCloak interface {
 	DeleteComponent(accessToken string, realm, componentID string) error
 	// DeleteGroup deletes the given group
 	DeleteGroup(accessToken string, realm, groupID string) error
-	// DeleteClientRole deletes the given role
-	DeleteClientRole(accessToken string, realm, clientID, roleName string) error
 	// DeleteClient deletes the given client
 	DeleteClient(accessToken string, realm, clientID string) error
 	// DeleteClientScope
@@ -115,10 +111,6 @@ type GoCloak interface {
 	GetRoleMappingByGroupID(accessToken string, realm string, groupID string) (*MappingsRepresentation, error)
 	// GetRoleMappingByUserID gets the rolemapping for the given user id
 	GetRoleMappingByUserID(accessToken string, realm string, userID string) (*MappingsRepresentation, error)
-	// GetClientRoles gets roles for the given client
-	GetClientRoles(accessToken string, realm string, clientID string) ([]*Role, error)
-	// GetClientRole get a role for the given client in a realm by role name
-	GetClientRole(token string, realm string, clientID string, roleName string) (*Role, error)
 	// GetClients gets the clients in the realm
 	GetClients(accessToken string, realm string, params GetClientsParams) ([]*Client, error)
 	// GetClientOfflineSessions returns offline sessions associated with the client
@@ -157,6 +149,21 @@ type GoCloak interface {
 	AddRealmRoleComposite(token string, realm string, roleName string, roles []Role) error
 	// AddRealmRoleComposite adds roles as composite
 	DeleteRealmRoleComposite(token string, realm string, roleName string, roles []Role) error
+
+	// *** Client Roles ***
+
+	// AddClientRoleToUser adds a client role to the user
+	AddClientRoleToUser(token string, realm string, clientID string, userID string, roles []Role) error
+	// CreateClientRole creates a new role for a client
+	CreateClientRole(accessToken string, realm string, clientID string, role Role) error
+	// DeleteClientRole deletes the given role
+	DeleteClientRole(accessToken string, realm, clientID, roleName string) error
+	// DeleteClientRoleFromUser removes a client role from from the user
+	DeleteClientRoleFromUser(token string, realm string, clientID string, userID string, roles []Role) error
+	// GetClientRoles gets roles for the given client
+	GetClientRoles(accessToken string, realm string, clientID string) ([]*Role, error)
+	// GetClientRole get a role for the given client in a realm by role name
+	GetClientRole(token string, realm string, clientID string, roleName string) (*Role, error)
 
 	// *** Realm ***
 

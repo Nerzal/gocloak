@@ -1934,3 +1934,59 @@ func TestGoCloak_ClientServiceAccount(t *testing.T) {
 	AssertNotEquals(t, gocloakClientID, serviceAccount.ID)
 	AssertEquals(t, "service-account-gocloak", serviceAccount.Username)
 }
+
+func TestGocloak_AddClientRoleToUser(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	SetUpTestUser(t, client)
+	_, err := client.GetToken(
+		cfg.GoCloak.Realm,
+		TokenOptions{
+			ClientID:     cfg.GoCloak.ClientID,
+			ClientSecret: cfg.GoCloak.ClientSecret,
+			Username:     cfg.GoCloak.UserName,
+			Password:     cfg.GoCloak.Password,
+			GrantType:    "password",
+		},
+	)
+	FailIfErr(t, err, "Login failed")
+	token := GetAdminToken(t, client)
+	rolesToAdd := []Role{{Name: "manage-users", ClientRole: true}, {Name: "view-users", ClientRole: true}}
+	err = client.AddClientRoleToUser(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		cfg.GoCloak.ClientID,
+		testUserID,
+		rolesToAdd,
+	)
+	FailIfErr(t, err, "AddClientRoleToUser failed")
+}
+
+func TestGocloak_DeleteClientRoleFromUser(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	SetUpTestUser(t, client)
+	_, err := client.GetToken(
+		cfg.GoCloak.Realm,
+		TokenOptions{
+			ClientID:     cfg.GoCloak.ClientID,
+			ClientSecret: cfg.GoCloak.ClientSecret,
+			Username:     cfg.GoCloak.UserName,
+			Password:     cfg.GoCloak.Password,
+			GrantType:    "password",
+		},
+	)
+	FailIfErr(t, err, "Login failed")
+	token := GetAdminToken(t, client)
+	rolesToRemove := []Role{{Name: "manage-users", ClientRole: true}, {Name: "view-users", ClientRole: true}}
+	err = client.DeleteClientRoleFromUser(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		cfg.GoCloak.ClientID,
+		testUserID,
+		rolesToRemove,
+	)
+	FailIfErr(t, err, "DeleteClientRoleFromUser failed")
+}

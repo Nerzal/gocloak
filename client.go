@@ -1167,3 +1167,21 @@ func (client *gocloak) GetUserOfflineSessionsForClient(token, realm, userID, cli
 	}
 	return res, nil
 }
+
+// AddClientRoleToUser adds client-level role mappings
+func (client *gocloak) AddClientRoleToUser(token string, realm string, clientID string, userID string, roles []Role) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetBody(roles).
+		Post(client.getAdminRealmURL(realm, "users", userID, "role-mappings", "clients", clientID))
+
+	return checkForError(resp, err)
+}
+
+// DeleteClientRoleFromUser adds client-level role mappings
+func (client *gocloak) DeleteClientRoleFromUser(token string, realm string, clientID string, userID string, roles []Role) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetBody(roles).
+		Delete(client.getAdminRealmURL(realm, "users", userID, "role-mappings", "clients", clientID))
+
+	return checkForError(resp, err)
+}
