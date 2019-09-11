@@ -1582,8 +1582,8 @@ func TestGocloak_GetUserCount(t *testing.T) {
 	count, err := client.GetUserCount(
 		token.AccessToken,
 		cfg.GoCloak.Realm)
-	FailIfErr(t, err, "GetUserCount failed")
 	t.Logf("Users in Realm: %d", count)
+	FailIfErr(t, err, "GetUserCount failed")
 }
 
 func TestGocloak_AddUserToGroup(t *testing.T) {
@@ -1825,26 +1825,36 @@ func TestGocloak_CreateDeleteClientProtocolMapper(t *testing.T) {
 	testClient := GetClientByClientID(t, client, cfg.GoCloak.ClientID)
 	token := GetAdminToken(t, client)
 	id := "50d69716-86a4-41a7-93bd-f9d31f408ddb"
-	err := client.CreateClientProtocolMapper(token.AccessToken, cfg.GoCloak.Realm, cfg.GoCloak.ClientID, ProtocolMapperRepresentation{
-		ID:             id,
-		Name:           "test",
-		Protocol:       "openid-connect",
-		ProtocolMapper: "oidc-usermodel-attribute-mapper",
-		Config: map[string]string{
-			"access.token.claim":   "true",
-			"aggregate.attrs":      "",
-			"claim.name":           "test",
-			"id.token.claim":       "true",
-			"jsonType.label":       "String",
-			"multivalued":          "",
-			"user.attribute":       "test",
-			"userinfo.token.claim": "true",
+	err := client.CreateClientProtocolMapper(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		testClient.ID,
+		ProtocolMapperRepresentation{
+			ID:             id,
+			Name:           "test",
+			Protocol:       "openid-connect",
+			ProtocolMapper: "oidc-usermodel-attribute-mapper",
+			Config: map[string]string{
+				"access.token.claim":   "true",
+				"aggregate.attrs":      "",
+				"claim.name":           "test",
+				"id.token.claim":       "true",
+				"jsonType.label":       "String",
+				"multivalued":          "",
+				"user.attribute":       "test",
+				"userinfo.token.claim": "true",
+			},
 		},
-	})
+	)
 	FailIfErr(t, err, "CreateClientProtocolMapper failed")
 	testClientAfter := GetClientByClientID(t, client, cfg.GoCloak.ClientID)
 	FailIf(t, len(testClient.ProtocolMappers) >= len(testClientAfter.ProtocolMappers), "protocol mapper has not been created")
-	err = client.DeleteClientProtocolMapper(token.AccessToken, cfg.GoCloak.Realm, cfg.GoCloak.ClientID, id)
+	err = client.DeleteClientProtocolMapper(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		testClient.ID,
+		id,
+	)
 	FailIfErr(t, err, "DeleteClientProtocolMapper failed")
 	testClientAgain := GetClientByClientID(t, client, cfg.GoCloak.ClientID)
 	FailIf(t, len(testClient.ProtocolMappers) != len(testClientAgain.ProtocolMappers), "protocol mapper has not been deleted")
