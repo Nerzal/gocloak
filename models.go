@@ -255,13 +255,16 @@ type ProtocolMappers struct {
 
 // ProtocolMappersConfig is a config of a protocol mapper
 type ProtocolMappersConfig struct {
-	UserinfoTokenClaim string `json:"userinfo.token.claim,omitempty"`
-	UserAttribute      string `json:"user.attribute,omitempty"`
-	IDTokenClaim       string `json:"id.token.claim,omitempty"`
-	AccessTokenClaim   string `json:"access.token.claim,omitempty"`
-	ClaimName          string `json:"claim.name,omitempty"`
-	ClaimValue         string `json:"claim.value,omitempty"`
-	JSONTypeLabel      string `json:"jsonType.label,omitempty"`
+	UserinfoTokenClaim                 string `json:"userinfo.token.claim,omitempty"`
+	UserAttribute                      string `json:"user.attribute,omitempty"`
+	IDTokenClaim                       string `json:"id.token.claim,omitempty"`
+	AccessTokenClaim                   string `json:"access.token.claim,omitempty"`
+	ClaimName                          string `json:"claim.name,omitempty"`
+	ClaimValue                         string `json:"claim.value,omitempty"`
+	JSONTypeLabel                      string `json:"jsonType.label,omitempty"`
+	Multivalued                        string `json:"multivalued,omitempty"`
+	UsermodelClientRoleMappingClientID string `json:"usermodel.clientRoleMapping.clientId,omitempty"`
+	IncludedClientAudience             string `json:"included.client.audience,omitempty"`
 }
 
 // Client is a ClientRepresentation
