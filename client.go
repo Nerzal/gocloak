@@ -116,7 +116,7 @@ func (client *gocloak) getRealmURL(realm string, path ...string) string {
 }
 
 func (client *gocloak) getAdminRealmURL(realm string, path ...string) string {
-	path = append([]string{client.basePath, authAdminRealms, realm}, path...)
+	path = append([]string{client.basePath, authRealms, realm}, path...)
 	return makeURL(path...)
 }
 
