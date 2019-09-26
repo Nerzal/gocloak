@@ -1,4 +1,4 @@
-module github.com/Nerzal/gocloak/v3
+module github.com/kfiles/gocloak
 
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
