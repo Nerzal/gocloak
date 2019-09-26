@@ -1999,4 +1999,71 @@ func TestGocloak_DeleteClientRoleFromUser(t *testing.T) {
 		rolesToRemove,
 	)
 	FailIfErr(t, err, "DeleteClientRoleFromUser failed")
+
+func TestGocloak_CreateDeleteClientScopeWithMappers(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	id := "ed2d7d24-2703-430d-9cac-0954e41ff809"
+	rolemapperID := "5e3b5207-f84f-484e-8ceb-695dd3e3c532"
+	audiencemapperID := "abef1b33-43c0-4547-ad86-25f7824a83e8"
+	err := client.CreateClientScope(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		ClientScope{
+			ID:          id,
+			Name:        "test-scope",
+			Description: "testing scope",
+			Protocol:    "openid-connect",
+			ClientScopeAttributes: &ClientScopeAttributes{
+				ConsentScreenText:      "false",
+				DisplayOnConsentScreen: "true",
+				IncludeInTokenScope:    "false",
+			},
+			ProtocolMappers: []ProtocolMappers{
+				{
+					ID:              rolemapperID,
+					Name:            "roles",
+					Protocol:        "openid-connect",
+					ProtocolMapper:  "oidc-usermodel-client-role-mapper",
+					ConsentRequired: false,
+					ProtocolMappersConfig: ProtocolMappersConfig{
+						UserinfoTokenClaim:                 "false",
+						AccessTokenClaim:                   "true",
+						IDTokenClaim:                       "true",
+						ClaimName:                          "test",
+						Multivalued:                        "true",
+						UsermodelClientRoleMappingClientID: "test",
+					},
+				},
+				{
+					ID:              audiencemapperID,
+					Name:            "audience",
+					Protocol:        "openid-connect",
+					ProtocolMapper:  "oidc-audience-mapper",
+					ConsentRequired: false,
+					ProtocolMappersConfig: ProtocolMappersConfig{
+						UserinfoTokenClaim:     "false",
+						IDTokenClaim:           "true",
+						AccessTokenClaim:       "true",
+						IncludedClientAudience: "test",
+					},
+				},
+			},
+		},
+	)
+	FailIfErr(t, err, "CreateClientScope failed")
+	clientScopeActual, err := client.GetClientScope(token.AccessToken, cfg.GoCloak.Realm, id)
+
+	FailIf(t, clientScopeActual == nil, "client scope has not been created")
+	FailIf(t, len(clientScopeActual.ProtocolMappers) != 2, "unexpected number of protocol mappers created")
+	err = client.DeleteClientScope(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		id,
+	)
+	FailIfErr(t, err, "DeleteClientProtocolMapper failed")
+	clientScopeActual, err = client.GetClientScope(token.AccessToken, cfg.GoCloak.Realm, id)
+	FailIf(t, clientScopeActual != nil, "client scope has not been deleted")
 }
