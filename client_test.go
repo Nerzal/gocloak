@@ -1999,6 +1999,7 @@ func TestGocloak_DeleteClientRoleFromUser(t *testing.T) {
 		rolesToRemove,
 	)
 	FailIfErr(t, err, "DeleteClientRoleFromUser failed")
+}
 
 func TestGocloak_CreateDeleteClientScopeWithMappers(t *testing.T) {
 	t.Parallel()
