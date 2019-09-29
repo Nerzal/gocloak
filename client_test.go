@@ -959,6 +959,7 @@ func TestGocloak_CreateListGetUpdateDeleteClient(t *testing.T) {
 		Client{
 			ClientID: clientID,
 			Name:     GetRandomName("Name"),
+			BaseURL:  "http://example.com",
 		},
 	)
 	FailIfErr(t, err, "CreateClient failed")
