@@ -369,6 +369,15 @@
         "phone",
         "offline_access"
       ]
+    },
+    {
+      "id": "6631a5c9-20b8-45aa-a271-eb6e8c8c4c99",
+      "name": "query-clients",
+      "description": "${role_query-clients}",
+      "composite": false,
+      "clientRole": true,
+      "containerId": "1b2971ab-bb47-49bb-802b-045f9f715785",
+      "attributes": {}
     }
   ],
   "clientScopes": [
