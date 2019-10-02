@@ -275,7 +275,7 @@ type Client struct {
 	AuthenticationFlowBindingOverrides map[string]string              `json:"authenticationFlowBindingOverrides,omitempty"`
 	AuthorizationServicesEnabled       bool                           `json:"authorizationServicesEnabled"`
 	AuthorizationSettings              *ResourceServerRepresentation  `json:"authorizationSettings,omitempty"`
-	BaseURL                            string                         `json:"baseURL,omitempty"`
+	BaseURL                            string                         `json:"baseUrl,omitempty"`
 	BearerOnly                         bool                           `json:"bearerOnly"`
 	ClientAuthenticatorType            string                         `json:"clientAuthenticatorType,omitempty"`
 	ClientID                           string                         `json:"clientId,omitempty"`
