@@ -7,9 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Nerzal/gocloak/v3/pkg/jwx"
 	"github.com/dgrijalva/jwt-go"
-	"gopkg.in/resty.v1"
+	"github.com/go-resty/resty/v2"
+
+	"github.com/Nerzal/gocloak/v3/pkg/jwx"
 )
 
 type gocloak struct {

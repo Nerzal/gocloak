@@ -2,7 +2,7 @@ package gocloak
 
 import (
 	"github.com/dgrijalva/jwt-go"
-	"gopkg.in/resty.v1"
+	"github.com/go-resty/resty/v2"
 )
 
 // GoCloak holds all methods a client should fulfill
