@@ -5,6 +5,10 @@ import (
 	"gopkg.in/resty.v1"
 )
 
+// Version number of gocloak
+// exported so implementations can include the version number in debug output
+const Version = "3.5.1"
+
 // GoCloak holds all methods a client should fulfill
 type GoCloak interface {
 	// RestyClient returns a resty client that gocloak uses

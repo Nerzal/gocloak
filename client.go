@@ -101,6 +101,11 @@ func NewClient(basePath string) GoCloak {
 		certsCache:  make(map[string]*CertResponse),
 		restyClient: resty.New(),
 	}
+
+	c.restyClient.SetHeaders(map[string]string{
+		"User-Agent": "gocloak/" + Version + " go-resty/" + resty.Version,
+	})
+
 	c.Config.CertsInvalidateTime = 10 * time.Minute
 
 	return &c
