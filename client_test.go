@@ -19,8 +19,8 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/resty.v1"
 )
 
 type configAdmin struct {
@@ -287,9 +287,20 @@ type RestyLogWriter struct {
 	t *testing.T
 }
 
-func (w *RestyLogWriter) Write(p []byte) (n int, err error) {
-	w.t.Log(string(p))
-	return len(p), nil
+func (w *RestyLogWriter) Errorf(format string, v ...interface{}) {
+	w.write("[ERROR] "+format, v...)
+}
+
+func (w *RestyLogWriter) Warnf(format string, v ...interface{}) {
+	w.write("[WARN] "+format, v...)
+}
+
+func (w *RestyLogWriter) Debugf(format string, v ...interface{}) {
+	w.write("[DEBUG] "+format, v...)
+}
+
+func (w *RestyLogWriter) write(format string, v ...interface{}) {
+	w.t.Logf(format, v...)
 }
 
 func NewClientWithDebug(t *testing.T) GoCloak {
@@ -367,7 +378,7 @@ func TestGocloak_RestyClient(t *testing.T) {
 	restyClient := client.RestyClient()
 	FailIf(
 		t,
-		restyClient == resty.DefaultClient,
+		restyClient == resty.New(),
 		"Resty client of the GoCloak client and the Default resty client are equal",
 	)
 }
