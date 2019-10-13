@@ -1504,6 +1504,15 @@
           "attributes": {}
         },
         {
+          "id": "6631a5c9-20b8-45aa-a271-eb6e8c8c4c99",
+          "name": "query-clients",
+          "description": "${role_query-clients}",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "60be66a5-e007-464c-9b74-0e3c2e69e478",
+          "attributes": {}
+        },
+        {
           "id": "07fc750f-6f21-4860-aab5-781dc9ff4efc",
           "name": "view-clients",
           "description": "${role_view-clients}",
@@ -1559,15 +1568,6 @@
           "id": "67d47b42-a932-40d9-9ead-2e63abe4629e",
           "name": "query-users",
           "description": "${role_query-users}",
-          "composite": false,
-          "clientRole": true,
-          "containerId": "60be66a5-e007-464c-9b74-0e3c2e69e478",
-          "attributes": {}
-        },
-        {
-          "id": "6631a5c9-20b8-45aa-a271-eb6e8c8c4c99",
-          "name": "query-clients",
-          "description": "${role_query-clients}",
           "composite": false,
           "clientRole": true,
           "containerId": "60be66a5-e007-464c-9b74-0e3c2e69e478",
