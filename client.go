@@ -242,9 +242,13 @@ func (client *gocloak) DecodeAccessTokenCustomClaims(accessToken string, realm s
 	if err != nil {
 		return nil, err
 	}
+
 	usedKey := findUsedKey(decodedHeader.Kid, certResult.Keys)
-	token, err := jwx.DecodeAccessTokenCustomClaims(accessToken, usedKey.E, usedKey.N, claims)
-	return token, err
+	if usedKey == nil {
+		return nil, errors.New("cannot find a key to decode the token")
+	}
+
+	return jwx.DecodeAccessTokenCustomClaims(accessToken, usedKey.E, usedKey.N, claims)
 }
 
 func (client *gocloak) GetToken(realm string, options TokenOptions) (*JWT, error) {
