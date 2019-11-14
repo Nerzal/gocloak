@@ -1,8 +1,8 @@
 package gocloak
 
 import (
-	"github.com/dgrijalva/jwt-go"
-	"github.com/go-resty/resty/v2"
+	jwt "github.com/dgrijalva/jwt-go"
+	resty "github.com/go-resty/resty/v2"
 )
 
 // GoCloak holds all methods a client should fulfill
@@ -162,6 +162,8 @@ type GoCloak interface {
 
 	// GetRealm returns top-level representation of the realm
 	GetRealm(token string, realm string) (*RealmRepresentation, error)
+	// GetRealms returns top-level representation of all realms
+	GetRealms(token string) ([]RealmRepresentation, error)
 	// CreateRealm creates a realm
 	CreateRealm(token string, realm RealmRepresentation) error
 	// DeleteRealm removes a realm
