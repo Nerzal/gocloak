@@ -988,8 +988,8 @@ func (client *gocloak) GetRealm(token string, realm string) (*RealmRepresentatio
 }
 
 // GetRealms returns top-level representation of all realms
-func (client *gocloak) GetRealms(token string) ([]RealmRepresentation, error) {
-	var result []RealmRepresentation
+func (client *gocloak) GetRealms(token string) ([]*RealmRepresentation, error) {
+	var result []*RealmRepresentation
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.getAdminRealmURL(""))

@@ -18,8 +18,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
-	"github.com/go-resty/resty/v2"
+	jwt "github.com/dgrijalva/jwt-go"
+	resty "github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -1161,6 +1161,17 @@ func TestGocloak_GetRealm(t *testing.T) {
 		cfg.GoCloak.Realm)
 	t.Logf("%+v", r)
 	FailIfErr(t, err, "GetRealm failed")
+}
+
+func TestGocloak_GetRealms(t *testing.T) {
+	t.Parallel()
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	r, err := client.GetRealms(
+		token.AccessToken)
+	t.Logf("%+v", r)
+	FailIfErr(t, err, "GetRealms failed")
 }
 
 // -----------
