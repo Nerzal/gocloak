@@ -1163,6 +1163,16 @@ func TestGocloak_GetRealm(t *testing.T) {
 	FailIfErr(t, err, "GetRealm failed")
 }
 
+func TestGocloak_GetRealms(t *testing.T) {
+	t.Parallel()
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	r, err := client.GetRealms(token.AccessToken)
+	t.Logf("%+v", r)
+	FailIfErr(t, err, "GetRealms failed")
+}
+
 // -----------
 // Realm
 // -----------
