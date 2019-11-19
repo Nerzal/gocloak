@@ -242,9 +242,13 @@ func (client *gocloak) DecodeAccessTokenCustomClaims(accessToken string, realm s
 	if err != nil {
 		return nil, err
 	}
+
 	usedKey := findUsedKey(decodedHeader.Kid, certResult.Keys)
-	token, err := jwx.DecodeAccessTokenCustomClaims(accessToken, usedKey.E, usedKey.N, claims)
-	return token, err
+	if usedKey == nil {
+		return nil, errors.New("cannot find a key to decode the token")
+	}
+
+	return jwx.DecodeAccessTokenCustomClaims(accessToken, usedKey.E, usedKey.N, claims)
 }
 
 func (client *gocloak) GetToken(realm string, options TokenOptions) (*JWT, error) {
@@ -981,6 +985,20 @@ func (client *gocloak) GetRealm(token string, realm string) (*RealmRepresentatio
 	}
 
 	return &result, nil
+}
+
+// GetRealms returns top-level representation of all realms
+func (client *gocloak) GetRealms(token string) ([]*RealmRepresentation, error) {
+	var result []*RealmRepresentation
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(""))
+
+	if err = checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 // CreateRealm creates a realm

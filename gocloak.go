@@ -169,6 +169,8 @@ type GoCloak interface {
 
 	// GetRealm returns top-level representation of the realm
 	GetRealm(token string, realm string) (*RealmRepresentation, error)
+	// GetRealms returns top-level representation of all realms
+	GetRealms(token string) ([]*RealmRepresentation, error)
 	// CreateRealm creates a realm
 	CreateRealm(token string, realm RealmRepresentation) error
 	// DeleteRealm removes a realm
