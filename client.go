@@ -987,6 +987,20 @@ func (client *gocloak) GetRealm(token string, realm string) (*RealmRepresentatio
 	return &result, nil
 }
 
+// GetRealms returns top-level representation of all realms
+func (client *gocloak) GetRealms(token string) ([]*RealmRepresentation, error) {
+	var result []*RealmRepresentation
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(""))
+
+	if err = checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // CreateRealm creates a realm
 func (client *gocloak) CreateRealm(token string, realm RealmRepresentation) error {
 	resp, err := client.getRequestWithBearerAuth(token).
