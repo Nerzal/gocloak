@@ -24,6 +24,36 @@ func GetQueryParams(s interface{}) (map[string]string, error) {
 	return res, nil
 }
 
+// StringOrArray represents a value that can either be a string or an array of strings
+type StringOrArray []string
+
+// UnmarshalJSON unmarshals a string or an array object from a JSON array or a JSON string
+func (s *StringOrArray) UnmarshalJSON(data []byte) error {
+	if len(data) > 1 && data[0] == '[' {
+		var obj []string
+		if err := json.Unmarshal(data, &obj); err != nil {
+			return err
+		}
+		*s = StringOrArray(obj)
+		return nil
+	}
+
+	var obj string
+	if err := json.Unmarshal(data, &obj); err != nil {
+		return err
+	}
+	*s = StringOrArray([]string{obj})
+	return nil
+}
+
+// MarshalJSON converts the array of strings to a JSON array or JSON string if there is only one item in the array
+func (s StringOrArray) MarshalJSON() ([]byte, error) {
+	if len(s) == 1 {
+		return json.Marshal([]string(s)[0])
+	}
+	return json.Marshal([]string(s))
+}
+
 // APIError represents an api error
 type APIError struct {
 	Code    int
@@ -65,7 +95,7 @@ type RetrospecTokenResult struct {
 	Exp         int               `json:"exp,omitempty"`
 	Nbf         int               `json:"nbf,omitempty"`
 	Iat         int               `json:"iat,omitempty"`
-	Aud         string            `json:"aud,omitempty"`
+	Aud         StringOrArray     `json:"aud,omitempty"`
 	Active      bool              `json:"active"`
 	AuthTime    int               `json:"auth_time,omitempty"`
 	Jti         string            `json:"jti,omitempty"`

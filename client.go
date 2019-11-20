@@ -63,12 +63,16 @@ func checkForError(resp *resty.Response, err error) error {
 	if err != nil {
 		return err
 	}
-
+	if resp == nil {
+		return errors.New("Empty response")
+	}
 	if resp.IsError() {
 		var msg string
 		e := resp.Error().(*HTTPErrorResponse)
-		if len(e.ErrorMessage) > 0 {
+		if e != nil && len(e.ErrorMessage) > 0 {
 			msg = fmt.Sprintf("%s: %s", resp.Status(), e.ErrorMessage)
+		} else if e != nil && len(e.Error) > 0 {
+			msg = fmt.Sprintf("%s: %s", resp.Status(), e.Error)
 		} else {
 			msg = resp.Status()
 		}
@@ -1014,6 +1018,13 @@ func (client *gocloak) CreateRealm(token string, realm RealmRepresentation) erro
 func (client *gocloak) DeleteRealm(token string, realm string) error {
 	resp, err := client.getRequestWithBearerAuth(token).
 		Delete(client.getAdminRealmURL(realm))
+	return checkForError(resp, err)
+}
+
+// ClearRealmCache clears realm cache
+func (client *gocloak) ClearRealmCache(token string, realm string) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		Post(client.getAdminRealmURL(realm, "clear-realm-cache"))
 	return checkForError(resp, err)
 }
 
