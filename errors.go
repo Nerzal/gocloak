@@ -18,4 +18,5 @@ func IsObjectAlreadyExists(err error) bool {
 // HTTPErrorResponse is a model of an error response
 type HTTPErrorResponse struct {
 	ErrorMessage string `json:"errorMessage,omitempty"`
+	Error        string `json:"error,omitempty"`
 }
