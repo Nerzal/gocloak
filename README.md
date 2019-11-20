@@ -47,11 +47,11 @@ If you are using a Keycloak Server version <4.8 please use the V1.0 release of g
 
 ```go
 	go get gopkg.in/nerzal/gocloak.v1
-``` 
+```
 
 ```go
 	import "gopkg.in/nerzal/gocloak.v1"
-``` 
+```
 
 
 ### Create New User
@@ -92,7 +92,7 @@ If you are using a Keycloak Server version <4.8 please use the V1.0 release of g
 	}
 
 	permissions := rptResult.Permissions
-	//Do something with the permissions ;) 
+	//Do something with the permissions ;)
 ```
 
 ## Features
@@ -189,6 +189,7 @@ type GoCloak interface {
 	GetRealms(token string) ([]*RealmRepresentation, error)
 	CreateRealm(token string, realm RealmRepresentation) error
 	DeleteRealm(token string, realm string) error
+	ClearRealmCache(token string, realm string) error
 
 	GetClientUserSessions(token, realm, clientID string) ([]*UserSessionRepresentation, error)
 	GetClientOfflineSessions(token, realm, clientID string) ([]*UserSessionRepresentation, error)
