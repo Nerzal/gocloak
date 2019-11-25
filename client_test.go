@@ -187,10 +187,13 @@ func CreateGroup(t *testing.T, client GoCloak) (func(), string) {
 	token := GetAdminToken(t, client)
 	group := Group{
 		Name: GetRandomNameP("GroupName"),
+<<<<<<< HEAD
 		Attributes: map[string][]string{
 			"foo": {"bar", "alice", "bob", "roflcopter"},
 			"bar": {"baz"},
 		},
+=======
+>>>>>>> Pointers
 	}
 	err := client.CreateGroup(
 		token.AccessToken,
