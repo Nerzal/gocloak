@@ -36,3 +36,52 @@ func TestStringOrArray_Marshal(t *testing.T) {
 	assert.NoError(t, err, "Marshalling failed for array of strings: %s", dataString)
 	assert.Equal(t, "[\"1\",\"2\",\"3\"]", string(jsonArray))
 }
+
+func TestGetQueryParams(t *testing.T) {
+	t.Parallel()
+
+	type TestParams struct {
+		IntField    *int    `json:"int_field,string,omitempty"`
+		StringField *string `json:"string_field,omitempty"`
+		BoolField   *bool   `json:"bool_field,string,omitempty"`
+	}
+
+	params, err := GetQueryParams(TestParams{})
+	assert.NoError(t, err)
+	assert.True(
+		t,
+		len(params) == 0,
+		"Params must be empty, but got: %+v",
+		params,
+	)
+
+	params, err = GetQueryParams(TestParams{
+		IntField:    IntP(1),
+		StringField: StringP("fake"),
+		BoolField:   BoolP(true),
+	})
+	assert.NoError(t, err)
+	assert.Equal(
+		t,
+		map[string]string{
+			"int_field":    "1",
+			"string_field": "fake",
+			"bool_field":   "true",
+		},
+		params,
+	)
+
+	params, err = GetQueryParams(TestParams{
+		StringField: StringP("fake"),
+		BoolField:   BoolP(false),
+	})
+	assert.NoError(t, err)
+	assert.Equal(
+		t,
+		map[string]string{
+			"string_field": "fake",
+			"bool_field":   "false",
+		},
+		params,
+	)
+}
