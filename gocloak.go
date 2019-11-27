@@ -9,6 +9,8 @@ import (
 type GoCloak interface {
 	// RestyClient returns a resty client that gocloak uses
 	RestyClient() *resty.Client
+	// Sets the resty Client that gocloak uses
+	SetRestyClient(restyClient resty.Client)
 
 	// GetToken returns a token
 	GetToken(realm string, options TokenOptions) (*JWT, error)

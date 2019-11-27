@@ -115,6 +115,10 @@ func (client *gocloak) RestyClient() *resty.Client {
 	return client.restyClient
 }
 
+func (client *gocloak) SetRestyClient(restyClient resty.Client) {
+	client.restyClient = &restyClient
+}
+
 func (client *gocloak) getRealmURL(realm string, path ...string) string {
 	path = append([]string{client.basePath, authRealms, realm}, path...)
 	return makeURL(path...)
