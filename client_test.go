@@ -1144,8 +1144,8 @@ func TestGocloak_GetGroupMembers(t *testing.T) {
 
 	assert.Equal(
 		t,
-		len(users),
 		1,
+		len(users),
 	)
 }
 
