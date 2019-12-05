@@ -1132,7 +1132,7 @@ func TestGocloak_GetGroupMembers(t *testing.T) {
 		userID,
 		groupID,
 	)
-	FailIfErr(t, err, "AddUserToGroup failed")
+	assert.NoError(t, err, "AddUserToGroup failed")
 
 	users, err := client.GetGroupMembers(
 		token.AccessToken,
@@ -1140,7 +1140,7 @@ func TestGocloak_GetGroupMembers(t *testing.T) {
 		groupID,
 		GetGroupsParams{},
 	)
-	FailIfErr(t, err, "AddUserToGroup failed")
+	assert.NoError(t, err, "AddUserToGroup failed")
 
 	AssertEquals(
 		t,
