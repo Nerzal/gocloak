@@ -1142,7 +1142,7 @@ func TestGocloak_GetGroupMembers(t *testing.T) {
 	)
 	assert.NoError(t, err, "AddUserToGroup failed")
 
-	AssertEquals(
+	assert.Equal(
 		t,
 		len(users),
 		1,
