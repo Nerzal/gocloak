@@ -1,7 +1,6 @@
 package gocloak
 
 import (
-	"github.com/dgrijalva/jwt-go"
 	"github.com/go-resty/resty/v2"
 )
 
@@ -109,6 +108,8 @@ type GoCloak interface {
 	GetGroups(accessToken string, realm string, params GetGroupsParams) ([]*Group, error)
 	// GetGroup gets the given group
 	GetGroup(accessToken string, realm, groupID string) (*Group, error)
+	// GetGroupMembers get a list of users of group with id in realm
+	GetGroupMembers(accessToken string, realm, groupID string, params GetGroupsParams) ([]*User, error)
 	// GetRoleMappingByGroupID gets the rolemapping for the given group id
 	GetRoleMappingByGroupID(accessToken string, realm string, groupID string) (*MappingsRepresentation, error)
 	// GetRoleMappingByUserID gets the rolemapping for the given user id
