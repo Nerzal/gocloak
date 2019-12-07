@@ -209,7 +209,8 @@ func CreateGroup(t *testing.T, client GoCloak) (func(), string) {
 	group := Group{
 		Name: GetRandomName("GroupName"),
 		Attributes: map[string][]string{
-			"hello": []string{"world"},
+			"foo": {"bar", "alice", "bob", "roflcopter"},
+			"bar": {"baz"},
 		},
 	}
 	err := client.CreateGroup(
@@ -1134,7 +1135,7 @@ func TestGocloak_GetGroupsFull(t *testing.T) {
 	)
 	assert.NoError(t, err, "GetGroup failed")
 
-	ok := client.UserAttributeContains(createdGroup.Attributes, "hello", "world")
+	ok := client.UserAttributeContains(createdGroup.Attributes, "foo", "alice")
 	assert.True(t, ok, "UserAttributeContains")
 }
 
