@@ -1128,6 +1128,34 @@ func TestGocloak_GetGroupsFull(t *testing.T) {
 	tearDown, groupID := CreateGroup(t, client)
 	defer tearDown()
 
+	groups, err := client.GetGroups(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		GetGroupsParams{
+			Full: true,
+		})
+	assert.NoError(t, err, "GetGroups failed")
+
+	for _, group := range groups {
+		if group.ID == groupID {
+			ok := client.UserAttributeContains(group.Attributes, "foo", "alice")
+			assert.True(t, ok, "UserAttributeContains")
+			return
+		}
+	}
+
+	assert.Fail(t, "CreateGroup failed")
+}
+
+func TestGocloak_GetGroupFull(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	tearDown, groupID := CreateGroup(t, client)
+	defer tearDown()
+
 	createdGroup, err := client.GetGroup(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
