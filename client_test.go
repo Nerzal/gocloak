@@ -1115,6 +1115,40 @@ func TestGocloak_GetGroups(t *testing.T) {
 	FailIfErr(t, err, "GetGroups failed")
 }
 
+func TestGocloak_GetGroupMembers(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	tearDownUser, userID := CreateUser(t, client)
+	defer tearDownUser()
+
+	tearDownGroup, groupID := CreateGroup(t, client)
+	defer tearDownGroup()
+
+	err := client.AddUserToGroup(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		userID,
+		groupID,
+	)
+	assert.NoError(t, err, "AddUserToGroup failed")
+
+	users, err := client.GetGroupMembers(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		groupID,
+		GetGroupsParams{},
+	)
+	assert.NoError(t, err, "AddUserToGroup failed")
+
+	assert.Equal(
+		t,
+		1,
+		len(users),
+	)
+}
+
 func TestGocloak_GetClientRoles(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)

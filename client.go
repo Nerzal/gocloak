@@ -7,10 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Nerzal/gocloak/v3/pkg/jwx"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-resty/resty/v2"
-
-	"github.com/Nerzal/gocloak/v3/pkg/jwx"
 )
 
 type gocloak struct {
@@ -791,6 +790,26 @@ func (client *gocloak) GetGroups(token string, realm string, params GetGroupsPar
 		SetResult(&result).
 		SetQueryParams(queryParams).
 		Get(client.getAdminRealmURL(realm, "groups"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// GetGroupMembers get a list of users of group with id in realm
+func (client *gocloak) GetGroupMembers(token string, realm string, groupID string, params GetGroupsParams) ([]*User, error) {
+	var result []*User
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		SetQueryParams(queryParams).
+		Get(client.getAdminRealmURL(realm, "groups", groupID, "members"))
 
 	if err := checkForError(resp, err); err != nil {
 		return nil, err
