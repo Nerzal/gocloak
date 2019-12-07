@@ -1144,7 +1144,7 @@ func TestGocloak_GetGroupsFull(t *testing.T) {
 		}
 	}
 
-	assert.Fail(t, "CreateGroup failed")
+	assert.Fail(t, "GetGroupsFull failed")
 }
 
 func TestGocloak_GetGroupFull(t *testing.T) {
