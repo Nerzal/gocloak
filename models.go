@@ -218,7 +218,6 @@ type ExecuteActionsEmail struct {
 
 // Group is a Group
 type Group struct {
-<<<<<<< HEAD
 	ID          *string             `json:"id,omitempty"`
 	Name        *string             `json:"name,omitempty"`
 	Path        *string             `json:"path,omitempty"`
@@ -227,12 +226,6 @@ type Group struct {
 	Access      map[string]bool     `json:"access,omitempty"`
 	ClientRoles map[string][]string `json:"clientRoles,omitempty"`
 	RealmRoles  []string            `json:"realmRoles,omitempty"`
-=======
-	ID        *string       `json:"id,omitempty"`
-	Name      *string       `json:"name,omitempty"`
-	Path      *string       `json:"path,omitempty"`
-	SubGroups []interface{} `json:"subGroups,omitempty"`
->>>>>>> Pointers
 }
 
 // GetGroupsParams represents the optional parameters for getting groups
@@ -240,10 +233,7 @@ type GetGroupsParams struct {
 	First  *int    `json:"first,string,omitempty"`
 	Max    *int    `json:"max,string,omitempty"`
 	Search *string `json:"search,omitempty"`
-<<<<<<< HEAD
 	Full   *bool   `json:"full,string,omitempty"`
-=======
->>>>>>> Pointers
 }
 
 // Role is a role
