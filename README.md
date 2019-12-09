@@ -119,6 +119,7 @@ type GoCloak interface {
 
 	CreateUser(token string, realm string, user User) (string, error)
 	CreateGroup(accessToken string, realm string, group Group) error
+	CreateChildGroup(token string, realm string, groupID string, group Group) (string, error)
 	CreateClientRole(accessToken string, realm string, clientID string, role Role) error
 	CreateClient(accessToken string, realm string, clientID Client) error
 	CreateClientScope(accessToken string, realm string, scope ClientScope) error

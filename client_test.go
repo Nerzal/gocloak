@@ -640,7 +640,7 @@ func TestGocloak_SetPassword(t *testing.T) {
 	FailIfErr(t, err, "Failed to set password")
 }
 
-func TestGocloak_CreateListGetUpdateDeleteGroup(t *testing.T) {
+func TestGocloak_CreateListGetUpdateDeleteGetChildGroup(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
@@ -683,6 +683,23 @@ func TestGocloak_CreateListGetUpdateDeleteGroup(t *testing.T) {
 	)
 	assert.NoError(t, err, "GetGroup failed")
 	assert.Equal(t, *(createdGroup.Name), *(updatedGroup.Name))
+
+	childGroupID, err := client.CreateChildGroup(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		groupID,
+		Group{
+			Name: GetRandomNameP("GroupName"),
+		},
+	)
+	assert.NoError(t, err, "CreateChildGroup failed")
+
+	_, err = client.GetGroup(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		childGroupID,
+	)
+	assert.NoError(t, err, "GetGroup failed")
 }
 
 func CreateClientRole(t *testing.T, client GoCloak) (func(), string) {
