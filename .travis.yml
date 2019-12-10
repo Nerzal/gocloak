@@ -38,5 +38,10 @@ jobs:
       script: curl --fail --request POST "https://goreportcard.com/checks" --data "repo=github.com/Nerzal/gocloak"
       if: branch = master AND type = push
     - stage: nancy
+      before_script:
+      - cd /tmp && mkdir tools && cd -
+      - sudo curl -s -L "https://github.com/sonatype-nexus-community/nancy/releases/download/0.0.5/nancy-linux.amd64-0.0.5" -o "/tmp/tools/nancy"
+      - sudo chmod +x /tmp/tools/nancy
+      - export PATH=$PATH:/tmp/tools/
       script: 
-        - nancy go.sum
+      - nancy go.sum
