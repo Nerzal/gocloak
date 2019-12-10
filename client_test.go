@@ -187,6 +187,10 @@ func CreateGroup(t *testing.T, client GoCloak) (func(), string) {
 	token := GetAdminToken(t, client)
 	group := Group{
 		Name: GetRandomNameP("GroupName"),
+		Attributes: map[string][]string{
+			"foo": {"bar", "alice", "bob", "roflcopter"},
+			"bar": {"baz"},
+		},
 	}
 	groupID, err := client.CreateGroup(
 		token.AccessToken,
@@ -1085,6 +1089,57 @@ func TestGocloak_GetGroups(t *testing.T) {
 		cfg.GoCloak.Realm,
 		GetGroupsParams{})
 	FailIfErr(t, err, "GetGroups failed")
+}
+
+func TestGocloak_GetGroupsFull(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	tearDown, groupID := CreateGroup(t, client)
+	defer tearDown()
+
+	groups, err := client.GetGroups(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		GetGroupsParams{
+			Full: BoolP(true),
+		})
+	assert.NoError(t, err, "GetGroups failed")
+
+	for _, group := range groups {
+		if NilOrEmpty(group.ID) {
+			continue
+		}
+		if *(group.ID) == groupID {
+			ok := client.UserAttributeContains(group.Attributes, "foo", "alice")
+			assert.True(t, ok, "UserAttributeContains")
+			return
+		}
+	}
+
+	assert.Fail(t, "GetGroupsFull failed")
+}
+
+func TestGocloak_GetGroupFull(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	tearDown, groupID := CreateGroup(t, client)
+	defer tearDown()
+
+	createdGroup, err := client.GetGroup(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		groupID,
+	)
+	assert.NoError(t, err, "GetGroup failed")
+
+	ok := client.UserAttributeContains(createdGroup.Attributes, "foo", "alice")
+	assert.True(t, ok, "UserAttributeContains")
 }
 
 func TestGocloak_GetGroupMembers(t *testing.T) {
