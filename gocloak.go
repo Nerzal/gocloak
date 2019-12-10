@@ -48,6 +48,8 @@ type GoCloak interface {
 
 	// CreateGroup creates a new group
 	CreateGroup(accessToken, realm string, group Group) (string, error)
+	// CreateChildGroup creates a new child group
+	CreateChildGroup(token string, realm string, groupID string, group Group) (string, error)
 	// CreateClient creates a new client
 	CreateClient(accessToken, realm string, clientID Client) (string, error)
 	// CreateClientScope creates a new clientScope

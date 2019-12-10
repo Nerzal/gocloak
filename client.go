@@ -382,6 +382,18 @@ func (client *gocloak) CreateGroup(token, realm string, group Group) (string, er
 	return getID(resp), nil
 }
 
+// CreateChildGroup creates a new child group
+func (client *gocloak) CreateChildGroup(token string, realm string, groupID string, group Group) (string, error) {
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetBody(group).
+		Post(client.getAdminRealmURL(realm, "groups", groupID, "children"))
+
+	if err := checkForError(resp, err); err != nil {
+		return "", err
+	}
+	return getID(resp), nil
+}
+
 func (client *gocloak) CreateComponent(token, realm string, component Component) (string, error) {
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetBody(component).
