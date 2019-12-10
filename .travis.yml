@@ -37,3 +37,6 @@ jobs:
     - stage: goreportcard
       script: curl --fail --request POST "https://goreportcard.com/checks" --data "repo=github.com/Nerzal/gocloak"
       if: branch = master AND type = push
+    - stage: nancy
+      script: 
+        - nancy go.sum
