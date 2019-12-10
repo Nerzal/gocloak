@@ -11,7 +11,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"reflect"
 	"runtime"
 	"strconv"
 	"strings"
@@ -75,20 +74,6 @@ func FailIfErr(t *testing.T, err error, msg string, args ...interface{}) {
 	}
 }
 
-func FailIfNotErr(t *testing.T, err error, msg string, args ...interface{}) {
-	if err == nil {
-		_, file, line, _ := runtime.Caller(1)
-		if len(msg) == 0 {
-			msg = "unexpected success"
-		} else {
-			if len(args) > 0 {
-				msg = fmt.Sprintf(msg, args...)
-			}
-		}
-		t.Fatalf("%s:%d: %s", filepath.Base(file), line, msg)
-	}
-}
-
 func FailIf(t *testing.T, cond bool, msg string, args ...interface{}) {
 	if cond {
 		if len(args) > 0 {
@@ -97,20 +82,6 @@ func FailIf(t *testing.T, cond bool, msg string, args ...interface{}) {
 			t.Fatal(msg)
 		}
 	}
-}
-
-func AssertEquals(t *testing.T, exp interface{}, act interface{}) {
-	FailIf(
-		t,
-		!reflect.DeepEqual(exp, act),
-		"The expected and actual results are not equal.\nExpected: %+v.\nActual:   %+v", exp, act)
-}
-
-func AssertNotEquals(t *testing.T, exp interface{}, act interface{}) {
-	FailIf(
-		t,
-		reflect.DeepEqual(exp, act),
-		"The expected and actual results are equal.\nExpected: %+v.\nActual:   %+v", exp, act)
 }
 
 func GetConfig(t *testing.T) *Config {
@@ -184,6 +155,11 @@ func GetRandomName(name string) string {
 	return name + strconv.Itoa(randomNumber)
 }
 
+func GetRandomNameP(name string) *string {
+	r := GetRandomName(name)
+	return &r
+}
+
 func GetClientByClientID(t *testing.T, client GoCloak, clientID string) *Client {
 	cfg := GetConfig(t)
 	token := GetAdminToken(t, client)
@@ -191,11 +167,14 @@ func GetClientByClientID(t *testing.T, client GoCloak, clientID string) *Client 
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		GetClientsParams{
-			ClientID: clientID,
+			ClientID: &clientID,
 		})
-	FailIfErr(t, err, "GetClients failed")
+	assert.NoError(t, err, "GetClients failed")
 	for _, fetchedClient := range clients {
-		if fetchedClient.ClientID == clientID {
+		if fetchedClient.ClientID == nil {
+			continue
+		}
+		if *(fetchedClient.ClientID) == clientID {
 			return fetchedClient
 		}
 	}
@@ -207,7 +186,7 @@ func CreateGroup(t *testing.T, client GoCloak) (func(), string) {
 	cfg := GetConfig(t)
 	token := GetAdminToken(t, client)
 	group := Group{
-		Name: GetRandomName("GroupName"),
+		Name: GetRandomNameP("GroupName"),
 		Attributes: map[string][]string{
 			"foo": {"bar", "alice", "bob", "roflcopter"},
 			"bar": {"baz"},
@@ -227,8 +206,11 @@ func CreateGroup(t *testing.T, client GoCloak) (func(), string) {
 	FailIfErr(t, err, "GetGroups failed")
 	var groupID string
 	for _, fetchedGroup := range groups {
-		if fetchedGroup.Name == group.Name {
-			groupID = fetchedGroup.ID
+		if fetchedGroup.Name == nil {
+			continue
+		}
+		if *(fetchedGroup.Name) == *(group.Name) {
+			groupID = PString(fetchedGroup.ID)
 			break
 		}
 	}
@@ -250,10 +232,10 @@ func SetUpTestUser(t *testing.T, client GoCloak) {
 		token := GetAdminToken(t, client)
 
 		user := User{
-			Username:      cfg.GoCloak.UserName,
-			Email:         cfg.GoCloak.UserName + "@localhost",
-			EmailVerified: true,
-			Enabled:       true,
+			Username:      StringP(cfg.GoCloak.UserName),
+			Email:         StringP(cfg.GoCloak.UserName + "@localhost"),
+			EmailVerified: BoolP(true),
+			Enabled:       BoolP(true),
 		}
 
 		createdUserID, err := client.CreateUser(
@@ -266,12 +248,12 @@ func SetUpTestUser(t *testing.T, client GoCloak) {
 				token.AccessToken,
 				cfg.GoCloak.Realm,
 				GetUsersParams{
-					Username: cfg.GoCloak.UserName,
+					Username: StringP(cfg.GoCloak.UserName),
 				})
 			FailIfErr(t, err, "GetUsers failed")
 			for _, user := range users {
-				if user.Username == cfg.GoCloak.UserName {
-					testUserID = user.ID
+				if PString(user.Username) == cfg.GoCloak.UserName {
+					testUserID = PString(user.ID)
 					break
 				}
 			}
@@ -381,44 +363,20 @@ func ClearRealmCache(t *testing.T, client GoCloak, realm ...string) {
 // Tests
 // -----
 
-func TestGetQueryParams(t *testing.T) {
-	t.Parallel()
-
-	type TestParams struct {
-		IntField    int    `json:"int_field,string,omitempty"`
-		StringField string `json:"string_field,omitempty"`
-		BoolField   bool   `json:"bool_field,string,omitempty"`
-	}
-
-	params, err := GetQueryParams(TestParams{})
-	FailIfErr(t, err, "GetQueryParams failed")
-	FailIf(
-		t,
-		len(params) > 0,
-		"Params must be empty, but got: %+v", params)
-
-	params, err = GetQueryParams(TestParams{
-		IntField:    1,
-		StringField: "fake",
-		BoolField:   true,
-	})
-	FailIfErr(t, err, "GetQueryParams failed")
-	AssertEquals(t, map[string]string{
-		"int_field":    "1",
-		"string_field": "fake",
-		"bool_field":   "true",
-	}, params)
-}
-
 func TestGocloak_RestyClient(t *testing.T) {
 	t.Parallel()
 	client := NewClientWithDebug(t)
 	restyClient := client.RestyClient()
-	FailIf(
-		t,
-		restyClient == resty.New(),
-		"Resty client of the GoCloak client and the Default resty client are equal",
-	)
+	assert.NotEqual(t, restyClient, resty.New())
+}
+
+func TestGocloak_SetRestyClient(t *testing.T) {
+	t.Parallel()
+	client := NewClientWithDebug(t)
+	newRestyClient := resty.New()
+	client.SetRestyClient(newRestyClient)
+	restyClient := client.RestyClient()
+	assert.Equal(t, newRestyClient, restyClient)
 }
 
 func TestGocloak_checkForError(t *testing.T) {
@@ -426,7 +384,7 @@ func TestGocloak_checkForError(t *testing.T) {
 	client := NewClientWithDebug(t)
 	FailRequest(client, nil, 1, 0)
 	_, err := client.Login("", "", "", "", "")
-	FailIfNotErr(t, err, "All requests must fail with NewClientWithError")
+	assert.Error(t, err, "All requests must fail with NewClientWithError")
 	t.Logf("Error: %s", err.Error())
 }
 
@@ -441,14 +399,14 @@ func TestGocloak_GetServerInfo(t *testing.T) {
 	serverInfo, err := client.GetServerInfo(
 		token.AccessToken,
 	)
-	FailIfErr(t, err, "Failed to fetch server info")
+	assert.NoError(t, err, "Failed to fetch server info")
 	t.Logf("Server Info: %+v", serverInfo)
 
 	FailRequest(client, nil, 1, 0)
 	_, err = client.GetServerInfo(
 		token.AccessToken,
 	)
-	FailIfNotErr(t, err, "")
+	assert.Error(t, err)
 }
 
 func TestGocloak_GetUserInfo(t *testing.T) {
@@ -459,13 +417,13 @@ func TestGocloak_GetUserInfo(t *testing.T) {
 	userInfo, err := client.GetUserInfo(
 		token.AccessToken,
 		cfg.GoCloak.Realm)
-	FailIfErr(t, err, "Failed to fetch userinfo")
+	assert.NoError(t, err, "Failed to fetch userinfo")
 	t.Log(userInfo)
 	FailRequest(client, nil, 1, 0)
 	_, err = client.GetUserInfo(
 		token.AccessToken,
 		cfg.GoCloak.Realm)
-	FailIfNotErr(t, err, "")
+	assert.Error(t, err, "")
 }
 
 func TestGocloak_RequestPermission(t *testing.T) {
@@ -489,7 +447,7 @@ func TestGocloak_RequestPermission(t *testing.T) {
 		cfg.GoCloak.Realm)
 	t.Log(rptResult)
 	FailIfErr(t, err, "inspection failed")
-	FailIf(t, !rptResult.Active, "Inactive Token oO")
+	FailIf(t, !PBool(rptResult.Active), "Inactive Token oO")
 }
 
 func TestGocloak_GetCerts(t *testing.T) {
@@ -534,7 +492,7 @@ func TestGocloak_RetrospectToken_InactiveToken(t *testing.T) {
 		cfg.GoCloak.Realm)
 	t.Log(rptResult)
 	FailIfErr(t, err, "inspection failed")
-	FailIf(t, rptResult.Active, "That should never happen. Token is active")
+	FailIf(t, PBool(rptResult.Active), "That should never happen. Token is active")
 
 }
 
@@ -551,7 +509,7 @@ func TestGocloak_RetrospectToken(t *testing.T) {
 		cfg.GoCloak.Realm)
 	t.Log(rptResult)
 	FailIfErr(t, err, "Inspection failed")
-	FailIf(t, !rptResult.Active, "Inactive Token oO")
+	FailIf(t, !PBool(rptResult.Active), "Inactive Token oO")
 }
 
 func TestGocloak_DecodeAccessToken(t *testing.T) {
@@ -562,10 +520,11 @@ func TestGocloak_DecodeAccessToken(t *testing.T) {
 
 	resultToken, claims, err := client.DecodeAccessToken(
 		token.AccessToken,
-		cfg.GoCloak.Realm)
+		cfg.GoCloak.Realm,
+	)
+	assert.NoError(t, err)
 	t.Log(resultToken)
 	t.Log(claims)
-	FailIfErr(t, err, "DecodeAccessToken")
 }
 
 func TestGocloak_DecodeAccessTokenCustomClaims(t *testing.T) {
@@ -578,10 +537,11 @@ func TestGocloak_DecodeAccessTokenCustomClaims(t *testing.T) {
 	resultToken, err := client.DecodeAccessTokenCustomClaims(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		claims)
+		claims,
+	)
+	assert.NoError(t, err)
 	t.Log(resultToken)
 	t.Log(claims)
-	FailIfErr(t, err, "DecodeAccessTokenCustomClaims")
 }
 
 func TestGocloak_RefreshToken(t *testing.T) {
@@ -646,19 +606,19 @@ func TestGocloak_GetToken(t *testing.T) {
 	newToken, err := client.GetToken(
 		cfg.GoCloak.Realm,
 		TokenOptions{
-			ClientID:      cfg.GoCloak.ClientID,
-			ClientSecret:  cfg.GoCloak.ClientSecret,
-			Username:      cfg.GoCloak.UserName,
-			Password:      cfg.GoCloak.Password,
-			GrantType:     "password",
+			ClientID:      &cfg.GoCloak.ClientID,
+			ClientSecret:  &cfg.GoCloak.ClientSecret,
+			Username:      &cfg.GoCloak.UserName,
+			Password:      &cfg.GoCloak.Password,
+			GrantType:     StringP("password"),
 			ResponseTypes: []string{"token", "id_token"},
 			Scopes:        []string{"openid", "offline_access"},
 		},
 	)
-	FailIfErr(t, err, "Login failed")
+	assert.NoError(t, err, "Login failed")
 	t.Logf("New token: %+v", *newToken)
-	FailIf(t, newToken.RefreshExpiresIn > 0, "Got a refresh token instead of offline")
-	FailIf(t, len(newToken.IDToken) == 0, "Got an empty if token")
+	assert.Equal(t, newToken.RefreshExpiresIn, 0, "Got a refresh token instead of offline")
+	assert.NotEmpty(t, newToken.IDToken, "Got an empty if token")
 }
 
 func TestGocloak_LoginClient(t *testing.T) {
@@ -707,43 +667,43 @@ func TestGocloak_CreateListGetUpdateDeleteGroup(t *testing.T) {
 	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
-	// Create, List
+	// Create
 	tearDown, groupID := CreateGroup(t, client)
+	// Delete
+	defer tearDown()
 
+	// List
 	createdGroup, err := client.GetGroup(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		groupID,
 	)
-	FailIfErr(t, err, "GetGroup failed")
+	assert.NoError(t, err, "GetGroup failed")
 	t.Logf("Created Group: %+v", createdGroup)
-	AssertEquals(t, groupID, createdGroup.ID)
+	assert.Equal(t, groupID, *(createdGroup.ID))
 
 	err = client.UpdateGroup(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		Group{},
 	)
-	FailIfNotErr(t, err, "Should fail because of missing ID of the group")
+	assert.Error(t, err, "Should fail because of missing ID of the group")
 
-	createdGroup.Name = GetRandomName("GroupName")
+	createdGroup.Name = GetRandomNameP("GroupName")
 	err = client.UpdateGroup(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		*createdGroup,
 	)
-	FailIfErr(t, err, "UpdateGroup failed")
+	assert.NoError(t, err, "UpdateGroup failed")
 
 	updatedGroup, err := client.GetGroup(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		groupID,
 	)
-	FailIfErr(t, err, "GetGroup failed")
-	AssertEquals(t, createdGroup.Name, updatedGroup.Name)
-
-	// Delete
-	defer tearDown()
+	assert.NoError(t, err, "GetGroup failed")
+	assert.Equal(t, *(createdGroup.Name), *(updatedGroup.Name))
 }
 
 func CreateClientRole(t *testing.T, client GoCloak) (func(), string) {
@@ -757,7 +717,7 @@ func CreateClientRole(t *testing.T, client GoCloak) (func(), string) {
 		cfg.GoCloak.Realm,
 		gocloakClientID,
 		Role{
-			Name: roleName,
+			Name: &roleName,
 		})
 	assert.NoError(t, err, "CreateClientRole failed")
 	tearDown := func() {
@@ -809,10 +769,11 @@ func CreateClientScope(t *testing.T, client GoCloak, scope *ClientScope) (func()
 	token := GetAdminToken(t, client)
 
 	if scope == nil {
-		scope = &ClientScope{}
+		scope = &ClientScope{
+			ID:   GetRandomNameP("client-scope-id-"),
+			Name: GetRandomNameP("client-scope-name-"),
+		}
 	}
-	scope.ID = GetRandomName("client-scope-id-")
-	scope.Name = GetRandomName("client-scope-name-")
 
 	t.Logf("Creating Client Scope: %+v", scope)
 	err := client.CreateClientScope(
@@ -825,11 +786,11 @@ func CreateClientScope(t *testing.T, client GoCloak, scope *ClientScope) (func()
 		err := client.DeleteClientScope(
 			token.AccessToken,
 			cfg.GoCloak.Realm,
-			scope.ID,
+			*(scope.ID),
 		)
 		assert.NoError(t, err, "DeleteClientScope failed")
 	}
-	return tearDown, scope.ID
+	return tearDown, *(scope.ID)
 }
 
 func TestGocloak_CreateClientScope_DeleteClientScope(t *testing.T) {
@@ -848,9 +809,11 @@ func TestGocloak_ListAddRemoveDefaultClientScopes(t *testing.T) {
 	defer ClearRealmCache(t, client)
 
 	scope := ClientScope{
-		Protocol: "openid-connect",
+		ID:       GetRandomNameP("client-scope-id-"),
+		Name:     GetRandomNameP("client-scope-name-"),
+		Protocol: StringP("openid-connect"),
 		ClientScopeAttributes: &ClientScopeAttributes{
-			IncludeInTokenScope: "true",
+			IncludeInTokenScope: StringP("true"),
 		},
 	}
 
@@ -907,9 +870,11 @@ func TestGocloak_ListAddRemoveOptionalClientScopes(t *testing.T) {
 	defer ClearRealmCache(t, client)
 
 	scope := ClientScope{
-		Protocol: "openid-connect",
+		ID:       GetRandomNameP("client-scope-id-"),
+		Name:     GetRandomNameP("client-scope-name-"),
+		Protocol: StringP("openid-connect"),
 		ClientScopeAttributes: &ClientScopeAttributes{
-			IncludeInTokenScope: "true",
+			IncludeInTokenScope: StringP("true"),
 		},
 	}
 	tearDown, scopeID := CreateClientScope(t, client, &scope)
@@ -995,7 +960,8 @@ func TestGocloak_GetClientScope(t *testing.T) {
 	)
 	assert.NoError(t, err, "GetClientScope failed")
 	// Checking that GetClientScope returns same client scope
-	assert.Equal(t, scopeID, createdClientScope.ID)
+	assert.NotNil(t, createdClientScope.ID)
+	assert.Equal(t, scopeID, *(createdClientScope.ID))
 }
 
 func TestGocloak_GetClientScopes(t *testing.T) {
@@ -1018,8 +984,8 @@ func TestGocloak_CreateListGetUpdateDeleteClient(t *testing.T) {
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
-	clientID := GetRandomName("ClientID")
-	t.Logf("Client ID: %s", clientID)
+	clientID := GetRandomNameP("ClientID")
+	t.Logf("Client ID: %s", *clientID)
 
 	// Creating a client
 	err := client.CreateClient(
@@ -1027,11 +993,11 @@ func TestGocloak_CreateListGetUpdateDeleteClient(t *testing.T) {
 		cfg.GoCloak.Realm,
 		Client{
 			ClientID: clientID,
-			Name:     GetRandomName("Name"),
-			BaseURL:  "http://example.com",
+			Name:     GetRandomNameP("Name"),
+			BaseURL:  StringP("http://example.com"),
 		},
 	)
-	FailIfErr(t, err, "CreateClient failed")
+	assert.NoError(t, err, "CreateClient failed")
 
 	// Looking for a created client
 	clients, err := client.GetClients(
@@ -1041,20 +1007,20 @@ func TestGocloak_CreateListGetUpdateDeleteClient(t *testing.T) {
 			ClientID: clientID,
 		},
 	)
-	FailIfErr(t, err, "CreateClients failed")
-	FailIf(t, len(clients) != 1, "GetClients should return exact 1 client")
+	assert.NoError(t, err, "CreateClients failed")
+	assert.Len(t, clients, 1, "GetClients should return exact 1 client")
 	t.Logf("Clients: %+v", clients)
 
 	// Getting exact client
 	createdClient, err := client.GetClient(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		clients[0].ID,
+		*(clients[0].ID),
 	)
-	FailIfErr(t, err, "GetClient failed")
+	assert.NoError(t, err, "GetClient failed")
 	t.Logf("Created client: %+v", createdClient)
 	// Checking that GetClient returns same client
-	AssertEquals(t, clients[0], createdClient)
+	assert.Equal(t, clients[0], createdClient)
 
 	// Updating the client
 
@@ -1064,34 +1030,34 @@ func TestGocloak_CreateListGetUpdateDeleteClient(t *testing.T) {
 		cfg.GoCloak.Realm,
 		Client{},
 	)
-	FailIfNotErr(t, err, "Should fail because of missing ID of the client")
+	assert.Error(t, err, "Should fail because of missing ID of the client")
 
 	// Update existing client
-	createdClient.Name = GetRandomName("Name")
+	createdClient.Name = GetRandomNameP("Name")
 	err = client.UpdateClient(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		*createdClient,
 	)
-	FailIfErr(t, err, "GetClient failed")
+	assert.NoError(t, err, "GetClient failed")
 
 	// Getting updated client
 	updatedClient, err := client.GetClient(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		clients[0].ID,
+		*(clients[0].ID),
 	)
-	FailIfErr(t, err, "GetClient failed")
+	assert.NoError(t, err, "GetClient failed")
 	t.Logf("Update client: %+v", createdClient)
-	AssertEquals(t, *createdClient, *updatedClient)
+	assert.Equal(t, *createdClient, *updatedClient)
 
 	// Deleting the client
 	err = client.DeleteClient(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		createdClient.ID,
+		*(createdClient.ID),
 	)
-	FailIfErr(t, err, "DeleteClient failed")
+	assert.NoError(t, err, "DeleteClient failed")
 
 	// Verifying that the client was deleted
 	clients, err = client.GetClients(
@@ -1101,9 +1067,8 @@ func TestGocloak_CreateListGetUpdateDeleteClient(t *testing.T) {
 			ClientID: clientID,
 		},
 	)
-	FailIfErr(t, err, "CreateClients failed")
-	FailIf(t, len(clients) != 0, "GetClients should not return any clients")
-
+	assert.NoError(t, err, "CreateClients failed")
+	assert.Len(t, clients, 0, "GetClients should not return any clients")
 }
 
 func TestGocloak_GetGroups(t *testing.T) {
@@ -1132,12 +1097,15 @@ func TestGocloak_GetGroupsFull(t *testing.T) {
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		GetGroupsParams{
-			Full: true,
+			Full: BoolP(true),
 		})
 	assert.NoError(t, err, "GetGroups failed")
 
 	for _, group := range groups {
-		if group.ID == groupID {
+		if NilOrEmpty(group.ID) {
+			continue
+		}
+		if *(group.ID) == groupID {
 			ok := client.UserAttributeContains(group.Attributes, "foo", "alice")
 			assert.True(t, ok, "UserAttributeContains")
 			return
@@ -1212,7 +1180,7 @@ func TestGocloak_GetClientRoles(t *testing.T) {
 	_, err := client.GetClientRoles(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		testClient.ID)
+		*(testClient.ID))
 	FailIfErr(t, err, "GetClientRoles failed")
 }
 
@@ -1258,8 +1226,8 @@ func TestGocloak_ExecuteActionsEmail_UpdatePassword(t *testing.T) {
 	defer tearDown()
 
 	params := ExecuteActionsEmail{
-		ClientID: cfg.GoCloak.ClientID,
-		UserID:   userID,
+		ClientID: &(cfg.GoCloak.ClientID),
+		UserID:   &userID,
 		Actions:  []string{"UPDATE_PASSWORD"},
 	}
 
@@ -1325,7 +1293,7 @@ func CreateRealm(t *testing.T, client GoCloak) (func(), string) {
 	err := client.CreateRealm(
 		token.AccessToken,
 		RealmRepresentation{
-			Realm: realmName,
+			Realm: &realmName,
 		})
 	FailIfErr(t, err, "CreateRealm failed")
 	tearDown := func() {
@@ -1364,8 +1332,8 @@ func CreateRealmRole(t *testing.T, client GoCloak) (func(), string) {
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		Role{
-			Name:        roleName,
-			ContainerID: "asd",
+			Name:        &roleName,
+			ContainerID: StringP("asd"),
 		})
 	FailIfErr(t, err, "CreateRealmRole failed")
 	tearDown := func() {
@@ -1402,7 +1370,7 @@ func TestGocloak_GetRealmRole(t *testing.T) {
 	t.Logf("Role: %+v", *role)
 	FailIf(
 		t,
-		role.Name != roleName,
+		*(role.Name) != roleName,
 		"GetRealmRole returns unexpected result. Expected: %s; Actual: %+v",
 		roleName, role)
 }
@@ -1437,14 +1405,14 @@ func TestGocloak_UpdateRealmRole(t *testing.T) {
 		cfg.GoCloak.Realm,
 		oldRoleName,
 		Role{
-			Name: newRoleName,
+			Name: &newRoleName,
 		})
-	FailIfErr(t, err, "UpdateRealmRole failed")
+	assert.NoError(t, err, "UpdateRealmRole failed")
 	err = client.DeleteRealmRole(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		oldRoleName)
-	FailIfNotErr(
+	assert.Error(
 		t,
 		err,
 		"Role with old name was deleted successfully, but it shouldn't. Old role: %s; Updated role: %s",
@@ -1453,7 +1421,7 @@ func TestGocloak_UpdateRealmRole(t *testing.T) {
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		newRoleName)
-	FailIfErr(t, err, "DeleteRealmRole failed")
+	assert.NoError(t, err, "DeleteRealmRole failed")
 }
 
 func TestGocloak_DeleteRealmRole(t *testing.T) {
@@ -1518,7 +1486,7 @@ func TestGocloak_GetRealmRolesByUserID(t *testing.T) {
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		roleName)
-	FailIfErr(t, err, "GetRealmRole failed")
+	assert.NoError(t, err)
 
 	err = client.AddRealmRoleToUser(
 		token.AccessToken,
@@ -1527,20 +1495,23 @@ func TestGocloak_GetRealmRolesByUserID(t *testing.T) {
 		[]Role{
 			*role,
 		})
-	FailIfErr(t, err, "AddRealmRoleToUser failed")
+	assert.NoError(t, err)
 
 	roles, err := client.GetRealmRolesByUserID(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		userID)
-	FailIfErr(t, err, "GetRealmRolesByUserID failed")
+	assert.NoError(t, err)
 	t.Logf("User roles: %+v", roles)
 	for _, r := range roles {
-		if r.Name == role.Name {
+		if r.Name == nil {
+			continue
+		}
+		if *(r.Name) == *(role.Name) {
 			return
 		}
 	}
-	t.Fatalf("The role has not been found in the assined roles. Role: %+v", *role)
+	assert.Fail(t, "The role has not been found in the assined roles. Role: %+v", *role)
 }
 
 func TestGocloak_GetRealmRolesByGroupID(t *testing.T) {
@@ -1612,10 +1583,10 @@ func CreateUser(t *testing.T, client GoCloak) (func(), string) {
 	token := GetAdminToken(t, client)
 
 	user := User{
-		FirstName: GetRandomName("FirstName"),
-		LastName:  GetRandomName("LastName"),
-		Email:     GetRandomName("email") + "@localhost",
-		Enabled:   true,
+		FirstName: GetRandomNameP("FirstName"),
+		LastName:  GetRandomNameP("LastName"),
+		Email:     StringP(GetRandomName("email") + "@localhost"),
+		Enabled:   BoolP(true),
 		Attributes: map[string][]string{
 			"foo": {"bar", "alice", "bob", "roflcopter"},
 			"bar": {"baz"},
@@ -1628,17 +1599,17 @@ func CreateUser(t *testing.T, client GoCloak) (func(), string) {
 		cfg.GoCloak.Realm,
 		user)
 	FailIfErr(t, err, "CreateUser failed")
-	user.ID = userID
+	user.ID = &userID
 	t.Logf("Created User: %+v", user)
 	tearDown := func() {
 		err := client.DeleteUser(
 			token.AccessToken,
 			cfg.GoCloak.Realm,
-			user.ID)
+			*(user.ID))
 		FailIfErr(t, err, "DeleteUser")
 	}
 
-	return tearDown, user.ID
+	return tearDown, *(user.ID)
 }
 
 func TestGocloak_CreateUser(t *testing.T) {
@@ -1696,7 +1667,7 @@ func TestGocloak_GetUsers(t *testing.T) {
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		GetUsersParams{
-			Username: cfg.GoCloak.UserName,
+			Username: &(cfg.GoCloak.UserName),
 		})
 	FailIfErr(t, err, "GetUsers failed")
 	t.Log(users)
@@ -1779,20 +1750,21 @@ func TestGocloak_GetUserGroups(t *testing.T) {
 		userID,
 		groupID,
 	)
-	FailIfErr(t, err, "AddUserToGroup failed")
+	assert.NoError(t, err)
 	groups, err := client.GetUserGroups(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		userID)
-	FailIfErr(t, err, "GetUserGroups failed")
-	FailIf(
+	assert.NoError(t, err)
+	assert.NotEqual(
 		t,
-		len(groups) == 0,
-		"User is not in the Group")
-	AssertEquals(
+		len(groups),
+		0,
+	)
+	assert.Equal(
 		t,
 		groupID,
-		groups[0].ID)
+		*(groups[0].ID))
 }
 
 func TestGocloak_DeleteUser(t *testing.T) {
@@ -1816,12 +1788,41 @@ func TestGocloak_UpdateUser(t *testing.T) {
 		cfg.GoCloak.Realm,
 		userID)
 	FailIfErr(t, err, "GetUserByID failed")
-	user.FirstName = GetRandomName("UpdateUserFirstName")
+	user.FirstName = GetRandomNameP("UpdateUserFirstName")
 	err = client.UpdateUser(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		*user)
 	FailIfErr(t, err, "UpdateUser failed")
+}
+
+func TestGocloak_UpdateUserSetEmptyEmail(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	tearDown, userID := CreateUser(t, client)
+	defer tearDown()
+	user, err := client.GetUserByID(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		userID,
+	)
+	assert.NoError(t, err)
+	user.Email = StringP("")
+	err = client.UpdateUser(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		*user)
+	assert.NoError(t, err)
+	user, err = client.GetUserByID(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		userID,
+	)
+	assert.NoError(t, err)
+	assert.Nil(t, user.Email)
 }
 
 func TestGocloak_GetUsersByRoleName(t *testing.T) {
@@ -1840,7 +1841,7 @@ func TestGocloak_GetUsersByRoleName(t *testing.T) {
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		roleName)
-	FailIfErr(t, err, "GetRealmRole failed")
+	assert.NoError(t, err)
 	err = client.AddRealmRoleToUser(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
@@ -1848,22 +1849,24 @@ func TestGocloak_GetUsersByRoleName(t *testing.T) {
 		[]Role{
 			*role,
 		})
-	FailIfErr(t, err, "AddRealmRoleToUser failed")
+	assert.NoError(t, err)
 
 	users, err := client.GetUsersByRoleName(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		roleName)
-	FailIfErr(t, err, "GetUsersByRoleName failed")
+	assert.NoError(t, err)
 
-	FailIf(
+	assert.NotEqual(
 		t,
-		len(users) == 0,
-		"User is not in the Group")
-	AssertEquals(
+		len(users),
+		0,
+	)
+	assert.Equal(
 		t,
 		userID,
-		users[0].ID)
+		*(users[0].ID),
+	)
 }
 
 func TestGocloak_GetUserSessions(t *testing.T) {
@@ -1874,11 +1877,11 @@ func TestGocloak_GetUserSessions(t *testing.T) {
 	_, err := client.GetToken(
 		cfg.GoCloak.Realm,
 		TokenOptions{
-			ClientID:     cfg.GoCloak.ClientID,
-			ClientSecret: cfg.GoCloak.ClientSecret,
-			Username:     cfg.GoCloak.UserName,
-			Password:     cfg.GoCloak.Password,
-			GrantType:    "password",
+			ClientID:     &(cfg.GoCloak.ClientID),
+			ClientSecret: &(cfg.GoCloak.ClientSecret),
+			Username:     &(cfg.GoCloak.UserName),
+			Password:     &(cfg.GoCloak.Password),
+			GrantType:    StringP("password"),
 		},
 	)
 	FailIfErr(t, err, "Login failed")
@@ -1900,11 +1903,11 @@ func TestGocloak_GetUserOfflineSessionsForClient(t *testing.T) {
 	_, err := client.GetToken(
 		cfg.GoCloak.Realm,
 		TokenOptions{
-			ClientID:      cfg.GoCloak.ClientID,
-			ClientSecret:  cfg.GoCloak.ClientSecret,
-			Username:      cfg.GoCloak.UserName,
-			Password:      cfg.GoCloak.Password,
-			GrantType:     "password",
+			ClientID:      &(cfg.GoCloak.ClientID),
+			ClientSecret:  &(cfg.GoCloak.ClientSecret),
+			Username:      &(cfg.GoCloak.UserName),
+			Password:      &(cfg.GoCloak.Password),
+			GrantType:     StringP("password"),
 			ResponseTypes: []string{"token", "id_token"},
 			Scopes:        []string{"openid", "offline_access"},
 		},
@@ -1929,11 +1932,11 @@ func TestGocloak_GetClientUserSessions(t *testing.T) {
 	_, err := client.GetToken(
 		cfg.GoCloak.Realm,
 		TokenOptions{
-			ClientID:     cfg.GoCloak.ClientID,
-			ClientSecret: cfg.GoCloak.ClientSecret,
-			Username:     cfg.GoCloak.UserName,
-			Password:     cfg.GoCloak.Password,
-			GrantType:    "password",
+			ClientID:     &(cfg.GoCloak.ClientID),
+			ClientSecret: &(cfg.GoCloak.ClientSecret),
+			Username:     &(cfg.GoCloak.UserName),
+			Password:     &(cfg.GoCloak.Password),
+			GrantType:    StringP("password"),
 		},
 	)
 	FailIfErr(t, err, "Login failed")
@@ -1957,12 +1960,12 @@ func TestGocloak_CreateDeleteClientProtocolMapper(t *testing.T) {
 	err := client.CreateClientProtocolMapper(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		testClient.ID,
+		*(testClient.ID),
 		ProtocolMapperRepresentation{
-			ID:             id,
-			Name:           "test",
-			Protocol:       "openid-connect",
-			ProtocolMapper: "oidc-usermodel-attribute-mapper",
+			ID:             &id,
+			Name:           StringP("test"),
+			Protocol:       StringP("openid-connect"),
+			ProtocolMapper: StringP("oidc-usermodel-attribute-mapper"),
 			Config: map[string]string{
 				"access.token.claim":   "true",
 				"aggregate.attrs":      "",
@@ -1981,7 +1984,7 @@ func TestGocloak_CreateDeleteClientProtocolMapper(t *testing.T) {
 	err = client.DeleteClientProtocolMapper(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		testClient.ID,
+		*(testClient.ID),
 		id,
 	)
 	FailIfErr(t, err, "DeleteClientProtocolMapper failed")
@@ -1997,11 +2000,11 @@ func TestGocloak_GetClientOfflineSessions(t *testing.T) {
 	_, err := client.GetToken(
 		cfg.GoCloak.Realm,
 		TokenOptions{
-			ClientID:      cfg.GoCloak.ClientID,
-			ClientSecret:  cfg.GoCloak.ClientSecret,
-			Username:      cfg.GoCloak.UserName,
-			Password:      cfg.GoCloak.Password,
-			GrantType:     "password",
+			ClientID:      &(cfg.GoCloak.ClientID),
+			ClientSecret:  &(cfg.GoCloak.ClientSecret),
+			Username:      &(cfg.GoCloak.UserName),
+			Password:      &(cfg.GoCloak.Password),
+			GrantType:     StringP("password"),
 			ResponseTypes: []string{"token", "id_token"},
 			Scopes:        []string{"openid", "offline_access"},
 		},
@@ -2024,16 +2027,16 @@ func TestGoCloak_ClientSecret(t *testing.T) {
 	token := GetAdminToken(t, client)
 
 	testClient := Client{
-		ID:                      GetRandomName("gocloak-client-secret-id-"),
-		ClientID:                GetRandomName("gocloak-client-secret-client-id-"),
-		Secret:                  "initial-secret-key",
-		ServiceAccountsEnabled:  true,
-		StandardFlowEnabled:     true,
-		Enabled:                 true,
-		FullScopeAllowed:        true,
-		Protocol:                "openid-connect",
+		ID:                      GetRandomNameP("gocloak-client-secret-id-"),
+		ClientID:                GetRandomNameP("gocloak-client-secret-client-id-"),
+		Secret:                  StringP("initial-secret-key"),
+		ServiceAccountsEnabled:  BoolP(true),
+		StandardFlowEnabled:     BoolP(true),
+		Enabled:                 BoolP(true),
+		FullScopeAllowed:        BoolP(true),
+		Protocol:                StringP("openid-connect"),
 		RedirectURIs:            []string{"localhost"},
-		ClientAuthenticatorType: "client-secret",
+		ClientAuthenticatorType: StringP("client-secret"),
 	}
 
 	err := client.CreateClient(
@@ -2041,25 +2044,25 @@ func TestGoCloak_ClientSecret(t *testing.T) {
 		cfg.GoCloak.Realm,
 		testClient,
 	)
-	FailIfErr(t, err, "CreateClient failed")
+	assert.NoError(t, err, "CreateClient failed")
 
 	oldCreds, err := client.GetClientSecret(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		testClient.ID,
+		*(testClient.ID),
 	)
-	FailIfErr(t, err, "GetClientSecret failed")
+	assert.NoError(t, err, "GetClientSecret failed")
 
 	regeneratedCreds, err := client.RegenerateClientSecret(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		testClient.ID,
+		*(testClient.ID),
 	)
-	FailIfErr(t, err, "RegenerateClientSecret failed")
+	assert.NoError(t, err, "RegenerateClientSecret failed")
 
-	AssertNotEquals(t, oldCreds.Value, regeneratedCreds.Value)
+	assert.NotEqual(t, oldCreds.Value, regeneratedCreds.Value)
 
-	err = client.DeleteClient(token.AccessToken, cfg.GoCloak.Realm, testClient.ID)
+	err = client.DeleteClient(token.AccessToken, cfg.GoCloak.Realm, *(testClient.ID))
 	assert.NoError(t, err, "DeleteClient failed")
 }
 
@@ -2070,11 +2073,12 @@ func TestGoCloak_ClientServiceAccount(t *testing.T) {
 	token := GetAdminToken(t, client)
 
 	serviceAccount, err := client.GetClientServiceAccount(token.AccessToken, cfg.GoCloak.Realm, gocloakClientID)
-	FailIfErr(t, err, "GetClientServiceAccount failed")
+	assert.NoError(t, err)
 
-	AssertNotEquals(t, "", serviceAccount.ID)
-	AssertNotEquals(t, gocloakClientID, serviceAccount.ID)
-	AssertEquals(t, "service-account-gocloak", serviceAccount.Username)
+	assert.NotNil(t, serviceAccount.ID)
+	assert.NotNil(t, serviceAccount.Username)
+	assert.NotEqual(t, gocloakClientID, *(serviceAccount.ID))
+	assert.Equal(t, "service-account-gocloak", *(serviceAccount.Username))
 }
 
 func TestGocloak_AddClientRoleToUser_DeleteClientRoleFromUser(t *testing.T) {
@@ -2136,42 +2140,42 @@ func TestGocloak_CreateDeleteClientScopeWithMappers(t *testing.T) {
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		ClientScope{
-			ID:          id,
-			Name:        "test-scope",
-			Description: "testing scope",
-			Protocol:    "openid-connect",
+			ID:          &id,
+			Name:        StringP("test-scope"),
+			Description: StringP("testing scope"),
+			Protocol:    StringP("openid-connect"),
 			ClientScopeAttributes: &ClientScopeAttributes{
-				ConsentScreenText:      "false",
-				DisplayOnConsentScreen: "true",
-				IncludeInTokenScope:    "false",
+				ConsentScreenText:      StringP("false"),
+				DisplayOnConsentScreen: StringP("true"),
+				IncludeInTokenScope:    StringP("false"),
 			},
-			ProtocolMappers: []ProtocolMappers{
+			ProtocolMappers: []*ProtocolMappers{
 				{
-					ID:              rolemapperID,
-					Name:            "roles",
-					Protocol:        "openid-connect",
-					ProtocolMapper:  "oidc-usermodel-client-role-mapper",
-					ConsentRequired: false,
-					ProtocolMappersConfig: ProtocolMappersConfig{
-						UserinfoTokenClaim:                 "false",
-						AccessTokenClaim:                   "true",
-						IDTokenClaim:                       "true",
-						ClaimName:                          "test",
-						Multivalued:                        "true",
-						UsermodelClientRoleMappingClientID: "test",
+					ID:              &rolemapperID,
+					Name:            StringP("roles"),
+					Protocol:        StringP("openid-connect"),
+					ProtocolMapper:  StringP("oidc-usermodel-client-role-mapper"),
+					ConsentRequired: BoolP(false),
+					ProtocolMappersConfig: &ProtocolMappersConfig{
+						UserinfoTokenClaim:                 StringP("false"),
+						AccessTokenClaim:                   StringP("true"),
+						IDTokenClaim:                       StringP("true"),
+						ClaimName:                          StringP("test"),
+						Multivalued:                        StringP("true"),
+						UsermodelClientRoleMappingClientID: StringP("test"),
 					},
 				},
 				{
-					ID:              audiencemapperID,
-					Name:            "audience",
-					Protocol:        "openid-connect",
-					ProtocolMapper:  "oidc-audience-mapper",
-					ConsentRequired: false,
-					ProtocolMappersConfig: ProtocolMappersConfig{
-						UserinfoTokenClaim:     "false",
-						IDTokenClaim:           "true",
-						AccessTokenClaim:       "true",
-						IncludedClientAudience: "test",
+					ID:              &audiencemapperID,
+					Name:            StringP("audience"),
+					Protocol:        StringP("openid-connect"),
+					ProtocolMapper:  StringP("oidc-audience-mapper"),
+					ConsentRequired: BoolP(false),
+					ProtocolMappersConfig: &ProtocolMappersConfig{
+						UserinfoTokenClaim:     StringP("false"),
+						IDTokenClaim:           StringP("true"),
+						AccessTokenClaim:       StringP("true"),
+						IncludedClientAudience: StringP("test"),
 					},
 				},
 			},
@@ -2179,6 +2183,7 @@ func TestGocloak_CreateDeleteClientScopeWithMappers(t *testing.T) {
 	)
 	assert.NoError(t, err, "CreateClientScope failed")
 	clientScopeActual, err := client.GetClientScope(token.AccessToken, cfg.GoCloak.Realm, id)
+	assert.NoError(t, err)
 
 	assert.NotNil(t, clientScopeActual, "client scope has not been created")
 	assert.Len(t, clientScopeActual.ProtocolMappers, 2, "unexpected number of protocol mappers created")
@@ -2189,5 +2194,6 @@ func TestGocloak_CreateDeleteClientScopeWithMappers(t *testing.T) {
 	)
 	assert.NoError(t, err, "DeleteClientScope failed")
 	clientScopeActual, err = client.GetClientScope(token.AccessToken, cfg.GoCloak.Realm, id)
+	assert.EqualError(t, err, "404 Not Found: Could not find client scope")
 	assert.Nil(t, clientScopeActual, "client scope has not been deleted")
 }

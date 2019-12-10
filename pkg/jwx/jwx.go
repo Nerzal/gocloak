@@ -31,15 +31,15 @@ func DecodeAccessTokenHeader(token string) (*DecodedAccessTokenHeader, error) {
 	return result, nil
 }
 
-func decodePublicKey(e, n string) (*rsa.PublicKey, error) {
-	decN, err := base64.RawURLEncoding.DecodeString(n)
+func decodePublicKey(e, n *string) (*rsa.PublicKey, error) {
+	decN, err := base64.RawURLEncoding.DecodeString(*n)
 	if err != nil {
 		return nil, err
 	}
 	nInt := big.NewInt(0)
 	nInt.SetBytes(decN)
 
-	decE, err := base64.RawURLEncoding.DecodeString(e)
+	decE, err := base64.RawURLEncoding.DecodeString(*e)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func decodePublicKey(e, n string) (*rsa.PublicKey, error) {
 }
 
 // DecodeAccessToken currently only supports RSA - sorry for that
-func DecodeAccessToken(accessToken string, e string, n string) (*jwt.Token, *jwt.MapClaims, error) {
+func DecodeAccessToken(accessToken string, e, n *string) (*jwt.Token, *jwt.MapClaims, error) {
 	rsaPublicKey, err := decodePublicKey(e, n)
 	if err != nil {
 		return nil, nil, err
@@ -81,7 +81,7 @@ func DecodeAccessToken(accessToken string, e string, n string) (*jwt.Token, *jwt
 }
 
 // DecodeAccessTokenCustomClaims currently only supports RSA - sorry for that
-func DecodeAccessTokenCustomClaims(accessToken string, e string, n string, customClaims jwt.Claims) (*jwt.Token, error) {
+func DecodeAccessTokenCustomClaims(accessToken string, e, n *string, customClaims jwt.Claims) (*jwt.Token, error) {
 	rsaPublicKey, err := decodePublicKey(e, n)
 	if err != nil {
 		return nil, err

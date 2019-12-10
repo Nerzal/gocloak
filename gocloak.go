@@ -10,7 +10,7 @@ type GoCloak interface {
 	// RestyClient returns a resty client that gocloak uses
 	RestyClient() *resty.Client
 	// Sets the resty Client that gocloak uses
-	SetRestyClient(restyClient resty.Client)
+	SetRestyClient(restyClient *resty.Client)
 
 	// GetToken returns a token
 	GetToken(realm string, options TokenOptions) (*JWT, error)
@@ -161,7 +161,7 @@ type GoCloak interface {
 	// CreateClientRole creates a new role for a client
 	CreateClientRole(accessToken string, realm string, clientID string, role Role) error
 	// DeleteClientRole deletes the given role
-	DeleteClientRole(accessToken string, realm, clientID, roleName string) error
+	DeleteClientRole(accessToken, realm, clientID, roleName string) error
 	// DeleteClientRoleFromUser removes a client role from from the user
 	DeleteClientRoleFromUser(token string, realm string, clientID string, userID string, roles []Role) error
 	// GetClientRoles gets roles for the given client
