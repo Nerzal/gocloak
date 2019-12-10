@@ -47,13 +47,13 @@ type GoCloak interface {
 	ExecuteActionsEmail(token string, realm string, params ExecuteActionsEmail) error
 
 	// CreateGroup creates a new group
-	CreateGroup(accessToken string, realm string, group Group) error
+	CreateGroup(accessToken, realm string, group Group) (string, error)
 	// CreateClient creates a new client
-	CreateClient(accessToken string, realm string, clientID Client) error
+	CreateClient(accessToken, realm string, clientID Client) (string, error)
 	// CreateClientScope creates a new clientScope
-	CreateClientScope(accessToken string, realm string, scope ClientScope) error
+	CreateClientScope(accessToken, realm string, scope ClientScope) (string, error)
 	// CreateComponent creates a new component
-	CreateComponent(accessToken string, realm string, component Component) error
+	CreateComponent(accessToken, realm string, component Component) (string, error)
 
 	// UpdateGroup updates the given group
 	UpdateGroup(accessToken string, realm string, updatedGroup Group) error
@@ -122,7 +122,7 @@ type GoCloak interface {
 	// GetClientUserSessions returns user sessions associated with the client
 	GetClientUserSessions(token, realm, clientID string) ([]*UserSessionRepresentation, error)
 	// CreateClientProtocolMapper creates a protocol mapper in client scope
-	CreateClientProtocolMapper(token, realm, clientID string, mapper ProtocolMapperRepresentation) error
+	CreateClientProtocolMapper(token, realm, clientID string, mapper ProtocolMapperRepresentation) (string, error)
 	// DeleteClientProtocolMapper deletes a protocol mapper in client scope
 	DeleteClientProtocolMapper(token, realm, clientID, mapperID string) error
 
@@ -132,7 +132,7 @@ type GoCloak interface {
 	// *** Realm Roles ***
 
 	// CreateRealmRole creates a role in a realm
-	CreateRealmRole(token string, realm string, role Role) error
+	CreateRealmRole(token, realm string, role Role) (string, error)
 	// GetRealmRole returns a role from a realm by role's name
 	GetRealmRole(token string, realm string, roleName string) (*Role, error)
 	// GetRealmRoles get all roles of the given realm. It's an alias for the GetRoles function
@@ -159,7 +159,7 @@ type GoCloak interface {
 	// AddClientRoleToUser adds a client role to the user
 	AddClientRoleToUser(token string, realm string, clientID string, userID string, roles []Role) error
 	// CreateClientRole creates a new role for a client
-	CreateClientRole(accessToken string, realm string, clientID string, role Role) error
+	CreateClientRole(accessToken, realm, clientID string, role Role) (string, error)
 	// DeleteClientRole deletes the given role
 	DeleteClientRole(accessToken, realm, clientID, roleName string) error
 	// DeleteClientRoleFromUser removes a client role from from the user
@@ -176,7 +176,7 @@ type GoCloak interface {
 	// GetRealms returns top-level representation of all realms
 	GetRealms(token string) ([]*RealmRepresentation, error)
 	// CreateRealm creates a realm
-	CreateRealm(token string, realm RealmRepresentation) error
+	CreateRealm(token string, realm RealmRepresentation) (string, error)
 	// DeleteRealm removes a realm
 	DeleteRealm(token string, realm string) error
 	// ClearRealmCache clears realm cache
