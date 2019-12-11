@@ -63,7 +63,7 @@ func checkForError(resp *resty.Response, err error) error {
 		return err
 	}
 	if resp == nil {
-		return errors.New("Empty response")
+		return errors.New("empty response")
 	}
 	if resp.IsError() {
 		var msg string
