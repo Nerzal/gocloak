@@ -1265,3 +1265,61 @@ func (client *gocloak) DeleteClientRoleFromUser(token string, realm string, clie
 
 	return checkForError(resp, err)
 }
+
+// ------------------
+// Identity Providers
+// ------------------
+
+// CreateIdentityProvider creates an identity provider in a realm
+func (client *gocloak) CreateIdentityProvider(token string, realm string, providerRep IdentityProviderRepresentation) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetBody(providerRep).
+		Post(client.getAdminRealmURL(realm, "identity-provider", "instances"))
+
+	return checkForError(resp, err)
+}
+
+// GetIdentityProviders returns list of identity providers in a realm
+func (client *gocloak) GetIdentityProviders(token string, realm string) (*[]IdentityProviderRepresentation, error) {
+	result := []IdentityProviderRepresentation{}
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "identity-provider", "instances"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// GetIdentityProvider gets the identity provider in a realm
+func (client *gocloak) GetIdentityProvider(token string, realm string, alias string) (*IdentityProviderRepresentation, error) {
+	result := IdentityProviderRepresentation{}
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "identity-provider", "instances", alias))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// UpdateIdentityProvider updates the identity provider in a realm
+func (client *gocloak) UpdateIdentityProvider(token string, realm string, alias string, providerRep IdentityProviderRepresentation) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetBody(providerRep).
+		Put(client.getAdminRealmURL(realm, "identity-provider", "instances", alias))
+
+	return checkForError(resp, err)
+}
+
+// DeleteIdentityProvider deletes the identity provider in a realm
+func (client *gocloak) DeleteIdentityProvider(token string, realm string, alias string) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		Delete(client.getAdminRealmURL(realm, "identity-provider", "instances", alias))
+
+	return checkForError(resp, err)
+}

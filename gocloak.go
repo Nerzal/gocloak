@@ -211,4 +211,16 @@ type GoCloak interface {
 	GetUserSessions(token, realm, userID string) ([]*UserSessionRepresentation, error)
 	// GetUserOfflineSessionsForClient returns offline sessions associated with the user and client
 	GetUserOfflineSessionsForClient(token, realm, userID, clientID string) ([]*UserSessionRepresentation, error)
+
+	// *** Identity Provider **
+	// CreateIdentityProvider creates an identity provider in a realm
+	CreateIdentityProvider(token string, realm string, providerRep IdentityProviderRepresentation) error
+	// GetIdentityProviders gets identity providers in a realm
+	GetIdentityProviders(token string, realm string) (*[]IdentityProviderRepresentation, error)
+	// GetIdentityProvider gets the identity provider in a realm
+	GetIdentityProvider(token string, realm string, alias string) (*IdentityProviderRepresentation, error)
+	// UpdateIdentityProvider updates the identity provider in a realm
+	UpdateIdentityProvider(token string, realm string, alias string, providerRep IdentityProviderRepresentation) error
+	// DeleteIdentityProvider deletes the identity provider in a realm
+	DeleteIdentityProvider(token string, realm string, alias string) error
 }
