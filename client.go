@@ -1271,17 +1271,21 @@ func (client *gocloak) DeleteClientRoleFromUser(token string, realm string, clie
 // ------------------
 
 // CreateIdentityProvider creates an identity provider in a realm
-func (client *gocloak) CreateIdentityProvider(token string, realm string, providerRep IdentityProviderRepresentation) error {
+func (client *gocloak) CreateIdentityProvider(token string, realm string, providerRep IdentityProviderRepresentation) (string, error) {
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetBody(providerRep).
 		Post(client.getAdminRealmURL(realm, "identity-provider", "instances"))
 
-	return checkForError(resp, err)
+	if err := checkForError(resp, err); err != nil {
+		return "", err
+	}
+
+	return getID(resp), nil
 }
 
 // GetIdentityProviders returns list of identity providers in a realm
-func (client *gocloak) GetIdentityProviders(token string, realm string) (*[]IdentityProviderRepresentation, error) {
-	result := []IdentityProviderRepresentation{}
+func (client *gocloak) GetIdentityProviders(token string, realm string) ([]*IdentityProviderRepresentation, error) {
+	result := []*IdentityProviderRepresentation{}
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.getAdminRealmURL(realm, "identity-provider", "instances"))
@@ -1290,7 +1294,7 @@ func (client *gocloak) GetIdentityProviders(token string, realm string) (*[]Iden
 		return nil, err
 	}
 
-	return &result, nil
+	return result, nil
 }
 
 // GetIdentityProvider gets the identity provider in a realm

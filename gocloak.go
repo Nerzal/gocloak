@@ -214,9 +214,9 @@ type GoCloak interface {
 
 	// *** Identity Provider **
 	// CreateIdentityProvider creates an identity provider in a realm
-	CreateIdentityProvider(token string, realm string, providerRep IdentityProviderRepresentation) error
+	CreateIdentityProvider(token string, realm string, providerRep IdentityProviderRepresentation) (string, error)
 	// GetIdentityProviders gets identity providers in a realm
-	GetIdentityProviders(token string, realm string) (*[]IdentityProviderRepresentation, error)
+	GetIdentityProviders(token string, realm string) ([]*IdentityProviderRepresentation, error)
 	// GetIdentityProvider gets the identity provider in a realm
 	GetIdentityProvider(token string, realm string, alias string) (*IdentityProviderRepresentation, error)
 	// UpdateIdentityProvider updates the identity provider in a realm
