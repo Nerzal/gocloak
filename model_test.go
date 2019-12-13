@@ -28,12 +28,12 @@ func TestStringOrArray_Marshal(t *testing.T) {
 	t.Parallel()
 	dataString := StringOrArray{"123"}
 	jsonString, err := json.Marshal(&dataString)
-	assert.NoErrorf(t, err, "Marshalling failed for one string: %s", dataString)
+	assert.NoErrorf(t, err, "Marshaling failed for one string: %s", dataString)
 	assert.Equal(t, "\"123\"", string(jsonString))
 
 	dataArray := StringOrArray{"1", "2", "3"}
 	jsonArray, err := json.Marshal(&dataArray)
-	assert.NoError(t, err, "Marshalling failed for array of strings: %s", dataString)
+	assert.NoError(t, err, "Marshaling failed for array of strings: %s", dataString)
 	assert.Equal(t, "[\"1\",\"2\",\"3\"]", string(jsonArray))
 }
 
