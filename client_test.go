@@ -2256,3 +2256,141 @@ func TestGocloak_CreateDeleteClientScopeWithMappers(t *testing.T) {
 	assert.EqualError(t, err, "404 Not Found: Could not find client scope")
 	assert.Nil(t, clientScopeActual, "client scope has not been deleted")
 }
+
+// -----------------
+// identity provider
+// -----------------
+
+func TestGocloak_CreateProvider(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	defer ClearRealmCache(t, client)
+
+	t.Run("create google provider", func(t *testing.T) {
+		repr := IdentityProviderRepresentation{
+			Alias:                     StringP("google"),
+			DisplayName:               StringP("Google"),
+			Enabled:                   BoolP(true),
+			ProviderID:                StringP("google"),
+			TrustEmail:                BoolP(true),
+			FirstBrokerLoginFlowAlias: StringP("first broker login"),
+			Config: map[string]string{
+				"clientId":     cfg.GoCloak.ClientID,
+				"clientSecret": cfg.GoCloak.ClientSecret,
+				"hostedDomain": "test.io",
+			},
+		}
+		provider, err := client.CreateIdentityProvider(token.AccessToken, cfg.GoCloak.Realm, repr)
+		assert.NoError(t, err)
+		assert.Equal(t, "google", provider)
+	})
+
+	t.Run("create azure provider", func(t *testing.T) {
+		repr := IdentityProviderRepresentation{
+			Alias:                     StringP("azure-oidc"),
+			DisplayName:               StringP("Azure"),
+			Enabled:                   BoolP(true),
+			ProviderID:                StringP("oidc"),
+			TrustEmail:                BoolP(true),
+			FirstBrokerLoginFlowAlias: StringP("first broker login"),
+			Config: map[string]string{
+				"clientId":         cfg.GoCloak.ClientID,
+				"clientSecret":     cfg.GoCloak.ClientSecret,
+				"authorizationUrl": "authorization-url",
+				"tokenUrl":         "token-url",
+				"logoutUrl":        "logout-url",
+				"userInfoUrl":      "userinfo-url",
+				"issuer":           "test-issuer",
+				"jwksUrl":          "jwks-url",
+			},
+		}
+		provider, err := client.CreateIdentityProvider(token.AccessToken, cfg.GoCloak.Realm, repr)
+		assert.NoError(t, err)
+		assert.Equal(t, "azure-oidc", provider)
+	})
+
+	t.Run("create OIDC V1.0 provider", func(t *testing.T) {
+		repr := IdentityProviderRepresentation{
+			Alias:                     StringP("oidc"),
+			DisplayName:               StringP("custom-oidc"),
+			Enabled:                   BoolP(true),
+			ProviderID:                StringP("oidc"),
+			TrustEmail:                BoolP(true),
+			FirstBrokerLoginFlowAlias: StringP("first broker login"),
+			Config: map[string]string{
+				"clientId":                 cfg.GoCloak.ClientID,
+				"clientSecret":             cfg.GoCloak.ClientSecret,
+				"authorizationUrl":         "authorization-url",
+				"tokenUrl":                 "token-url",
+				"logoutUrl":                "logout-url",
+				"userInfoUrl":              "userinfo-url",
+				"issuer":                   "test-issuer",
+				"loginHint":                "true",
+				"validateSignature":        "true",
+				"backchannelLogout":        "false",
+				"useJwksUrl":               "true",
+				"uiLocales":                "true",
+				"disableUserInfo":          "true",
+				"defaultScopes":            "default-scope",
+				"prompt":                   "false",
+				"allowedClockSkew":         "10",
+				"forwardedQueryParameters": "forwarded-query-parameters",
+			},
+		}
+		provider, err := client.CreateIdentityProvider(token.AccessToken, cfg.GoCloak.Realm, repr)
+		assert.NoError(t, err)
+		assert.Equal(t, "oidc", provider)
+	})
+
+	t.Run("Update google provider", func(t *testing.T) {
+		repr := IdentityProviderRepresentation{
+			Alias:                     StringP("google"),
+			DisplayName:               StringP("Google"),
+			Enabled:                   BoolP(true),
+			ProviderID:                StringP("google"),
+			TrustEmail:                BoolP(true),
+			FirstBrokerLoginFlowAlias: StringP("first broker login"),
+			Config: map[string]string{
+				"clientId":     cfg.GoCloak.ClientID,
+				"clientSecret": cfg.GoCloak.ClientSecret,
+				"hostedDomain": "updated-test.io",
+			},
+		}
+		err := client.UpdateIdentityProvider(token.AccessToken, cfg.GoCloak.Realm, "google", repr)
+		assert.NoError(t, err)
+
+		// listing identity providers here must now show three
+		providers, err := client.GetIdentityProviders(token.AccessToken, cfg.GoCloak.Realm)
+		assert.NoError(t, err)
+		assert.Equal(t, 3, len(providers))
+	})
+
+	t.Run("Delete google provider", func(t *testing.T) {
+		err := client.DeleteIdentityProvider(token.AccessToken, cfg.GoCloak.Realm, "google")
+		assert.NoError(t, err)
+	})
+
+	t.Run("List providers", func(t *testing.T) {
+		providers, err := client.GetIdentityProviders(token.AccessToken, cfg.GoCloak.Realm)
+		assert.NoError(t, err)
+		assert.Equal(t, 2, len(providers))
+	})
+
+	t.Run("Get Azure provider", func(t *testing.T) {
+		provider, err := client.GetIdentityProvider(token.AccessToken, cfg.GoCloak.Realm, "azure-oidc")
+		assert.NoError(t, err)
+		assert.Equal(t, "azure-oidc", *(provider.Alias))
+	})
+
+	t.Run("Delete Azure provider", func(t *testing.T) {
+		err := client.DeleteIdentityProvider(token.AccessToken, cfg.GoCloak.Realm, "azure-oidc")
+		assert.NoError(t, err)
+	})
+
+	t.Run("Delete OIDC V1.0 provider", func(t *testing.T) {
+		err := client.DeleteIdentityProvider(token.AccessToken, cfg.GoCloak.Realm, "oidc")
+		assert.NoError(t, err)
+	})
+}
