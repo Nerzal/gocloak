@@ -604,6 +604,39 @@ func TestGocloak_GetToken(t *testing.T) {
 	assert.NotEmpty(t, newToken.IDToken, "Got an empty if token")
 }
 
+func TestGocloak_GetRequestingPartyToken(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	SetUpTestUser(t, client)
+	newToken, err := client.GetToken(
+		cfg.GoCloak.Realm,
+		TokenOptions{
+			ClientID:      &cfg.GoCloak.ClientID,
+			ClientSecret:  &cfg.GoCloak.ClientSecret,
+			Username:      &cfg.GoCloak.UserName,
+			Password:      &cfg.GoCloak.Password,
+			GrantType:     StringP("password"),
+			ResponseTypes: []string{"token", "id_token"},
+			Scopes:        []string{"openid", "offline_access"},
+		},
+	)
+	assert.NoError(t, err, "Login failed")
+	t.Logf("New token: %+v", *newToken)
+	assert.Equal(t, newToken.RefreshExpiresIn, 0, "Got a refresh token instead of offline")
+	assert.NotEmpty(t, newToken.IDToken, "Got an empty if token")
+
+	rpt, err := client.GetRequestingPartyToken(
+		newToken.AccessToken,
+		cfg.GoCloak.Realm,
+		RequestingPartyTokenOptions{
+			Audience: &cfg.GoCloak.ClientID,
+		},
+	)
+	assert.NoError(t, err, "Get requesting party token failed")
+	t.Logf("New RPT: %+v", *rpt)
+}
+
 func TestGocloak_LoginClient(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)

@@ -599,6 +599,36 @@ func (t *TokenOptions) FormData() map[string]string {
 	return res
 }
 
+// RequestingPartyTokenOptions represents the options to obtain a requesting party token
+type RequestingPartyTokenOptions struct {
+	GrantType                   *string  `json:"grant_type"`
+	Ticket                      *string  `json:"ticket,omitempty"`
+	ClaimToken                  *string  `json:"claim_token,omitempty"`
+	ClaimTokenFormat            *string  `json:"claim_token_format,omitempty"`
+	RPT                         *string  `json:"rpt,omitempty"`
+	Permissions                 []string `json:"-"`
+	Audience                    *string  `json:"audience,omitempty"`
+	ResponseIncludeResourceName *bool    `json:"response_include_resource_name,string"`
+	ResponsePermissionsLimit    *uint32  `json:"response_include_resource_name,omitempty"`
+	SubmitRequest               *bool    `json:"submit_request,string,omitempty"`
+	ResponseMode                *string  `json:"response_mode,omitempty"`
+}
+
+// RequestingPartyTokenOptions returns a map of options to be used in SetFormData function
+func (t *RequestingPartyTokenOptions) FormData() map[string]string {
+	if NilOrEmpty(t.GrantType) { // required grant type for RPT
+		t.GrantType = StringP("urn:ietf:params:oauth:grant-type:uma-ticket")
+	}
+	if t.ResponseIncludeResourceName == nil { // defaults to true if no value set
+		t.ResponseIncludeResourceName = BoolP(true)
+	}
+
+	m, _ := json.Marshal(t)
+	var res map[string]string
+	_ = json.Unmarshal(m, &res)
+	return res
+}
+
 // UserSessionRepresentation represents a list of user's sessions
 type UserSessionRepresentation struct {
 	Clients    map[string]string `json:"clients,omitempty"`

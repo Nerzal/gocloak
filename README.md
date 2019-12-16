@@ -87,6 +87,8 @@ or v3 (latest release is v3.10.0):
 ```go
 // GoCloak holds all methods a client should fullfill
 type GoCloak interface {
+	GetRequestingPartyToken(token, realm string, options RequestingPartyTokenOptions) (*JWT, error)
+
 	Login(clientID string, clientSecret string, realm string, username string, password string) (*JWT, error)
 	Logout(clientID, clientSecret, realm, refreshToken string) error
 	LogoutPublicClient(clientID, realm, accessToken, refreshToken string) error
