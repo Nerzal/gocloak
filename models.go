@@ -609,12 +609,12 @@ type RequestingPartyTokenOptions struct {
 	Permissions                 []string `json:"-"`
 	Audience                    *string  `json:"audience,omitempty"`
 	ResponseIncludeResourceName *bool    `json:"response_include_resource_name,string"`
-	ResponsePermissionsLimit    *uint32  `json:"response_include_resource_name,omitempty"`
+	ResponsePermissionsLimit    *uint32  `json:"response_permissions_limit,omitempty"`
 	SubmitRequest               *bool    `json:"submit_request,string,omitempty"`
 	ResponseMode                *string  `json:"response_mode,omitempty"`
 }
 
-// RequestingPartyTokenOptions returns a map of options to be used in SetFormData function
+// FormData returns a map of options to be used in SetFormData function
 func (t *RequestingPartyTokenOptions) FormData() map[string]string {
 	if NilOrEmpty(t.GrantType) { // required grant type for RPT
 		t.GrantType = StringP("urn:ietf:params:oauth:grant-type:uma-ticket")
