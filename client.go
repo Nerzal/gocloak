@@ -178,6 +178,7 @@ func (client *gocloak) getNewCerts(realm string) (*CertResponse, error) {
 // GetCerts fetches certificates for the given realm from the public /open-id-connect/certs endpoint
 func (client *gocloak) GetCerts(realm string) (*CertResponse, error) {
 	client.certsLock.Lock()
+	defer client.certsLock.Unlock()
 	if cert, ok := client.certsCache[realm]; ok {
 		return cert, nil
 	}
@@ -186,7 +187,6 @@ func (client *gocloak) GetCerts(realm string) (*CertResponse, error) {
 		return nil, err
 	}
 	client.certsCache[realm] = cert
-	client.certsLock.Unlock()
 
 	timer := time.NewTimer(client.Config.CertsInvalidateTime)
 	go func() {
