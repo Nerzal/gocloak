@@ -618,13 +618,12 @@ func TestGocloak_GetRequestingPartyToken(t *testing.T) {
 			Password:      &cfg.GoCloak.Password,
 			GrantType:     StringP("password"),
 			ResponseTypes: []string{"token", "id_token"},
-			Scopes:        []string{"openid", "offline_access"},
+			Scopes:        []string{"openid"},
 		},
 	)
 	assert.NoError(t, err, "Login failed")
 	t.Logf("New token: %+v", *newToken)
-	assert.Equal(t, newToken.RefreshExpiresIn, 0, "Got a refresh token instead of offline")
-	assert.NotEmpty(t, newToken.IDToken, "Got an empty if token")
+	assert.NotEmpty(t, newToken.IDToken, "Got an empty id token")
 
 	rpt, err := client.GetRequestingPartyToken(
 		newToken.AccessToken,
