@@ -24,35 +24,22 @@ https://gopkg.in/nerzal/gocloak.v1
 
 ## Usage
 
+There are a lot of backward incompatible changes in v4:
+* all functions what create an object now return an ID of the created object. The return statement of those functions has been changed from (error) to (string, error)
+* All structures now use pointers instead of general types (bool -> *bool, string -> *string). It has been done to properly use omitempty tag, otherwise it was impossible to set a false value for any of the bool propertires.
+
+
 ### Importing
 
-Since the version 3 you need to import the gocloak library using v3 suffix:
+```go
+	import "github.com/Nerzal/gocloak/v4"
+```
+
+or v3 (latest release is v3.10.0):
 
 ```go
 	import "github.com/Nerzal/gocloak/v3"
 ```
-
-#### Version 2:
-
-```go
-	go get gopkg.in/nerzal/gocloak@v2.1.0
-```
-
-```go
-	import "github.com/Nerzal/gocloak"
-```
-
-#### Keycloak Version < 4.8
-If you are using a Keycloak Server version <4.8 please use the V1.0 release of gocloak.
-
-```go
-	go get gopkg.in/nerzal/gocloak.v1
-```
-
-```go
-	import "gopkg.in/nerzal/gocloak.v1"
-```
-
 
 ### Create New User
 ```go
