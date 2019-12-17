@@ -368,36 +368,18 @@ const (
 // PolicyRepresentation is a representation of a Policy
 type PolicyRepresentation struct {
 	Config           map[string]string `json:"config,omitempty"`
-	DecisionStrategy *DecisionStrategy `json:"decisionStrategy,omitempty"`
+	DecisionStrategy *string           `json:"decisionStrategy,omitempty"`
 	Description      *string           `json:"description,omitempty"`
 	ID               *string           `json:"id,omitempty"`
-	Logic            *Logic            `json:"logic,omitempty"`
+	Logic            *string           `json:"logic,omitempty"`
 	Name             *string           `json:"name,omitempty"`
 	Owner            *string           `json:"owner,omitempty"`
 	Policies         []string          `json:"policies,omitempty"`
 	Resources        []string          `json:"resources,omitempty"`
 	Scopes           []string          `json:"scopes,omitempty"`
 	Type             *string           `json:"type,omitempty"`
+	Code             *string           `json:"code,omitempty"`
 }
-
-// DecisionStrategy is an enum type for DecisionStrategy of PolicyRepresentation
-type DecisionStrategy int
-
-// DecisionStrategy values
-const (
-	AFFIRMATIVE DecisionStrategy = iota
-	UNANIMOUS
-	CONSENSUS
-)
-
-// Logic is an enum type for Logic of PolicyRepresentation
-type Logic int
-
-// Logic values
-const (
-	POSITIVE Logic = iota
-	NEGATIVE
-)
 
 // ResourceRepresentation is a representation of a Resource
 type ResourceRepresentation struct {
@@ -713,4 +695,14 @@ type GetScopeParams struct {
 	First *int    `json:"first,omitempty"`
 	Max   *int    `json:"max,omitempty"`
 	Name  *string `json:"name,omitempty"`
+}
+
+// GetPolicyParams represents the optional parameters for getting policies
+// TODO: more policy params?
+type GetPolicyParams struct {
+	First      *int    `json:"first,omitempty"`
+	Max        *int    `json:"max,omitempty"`
+	Name       *string `json:"name,omitempty"`
+	Permission *bool   `json:"permission,omitempty"`
+	Type       *string `json:"type,omitempty"`
 }

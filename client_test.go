@@ -268,6 +268,34 @@ func CreateScope(t *testing.T, client GoCloak, clientID string) (func(), string)
 	return tearDown, *(createdScope.ID)
 }
 
+func CreatePolicy(t *testing.T, client GoCloak, clientID string) (func(), string) {
+	cfg := GetConfig(t)
+	token := GetAdminToken(t, client)
+	policy := PolicyRepresentation{
+		Name: GetRandomNameP("PolicyName"),
+		Description: StringP("Policy Description"),
+		Type: StringP("js"),
+		Code: StringP("$evaluation.grant();"),
+	}
+	createdPolicy, err := client.CreatePolicy(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		clientID,
+		policy)
+	assert.NoError(t, err, "CreatePolicy failed")
+	t.Logf("Created Policy ID: %s ", *(createdPolicy.ID))
+
+	tearDown := func() {
+		err := client.DeletePolicy(
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			clientID,
+			*(createdPolicy.ID))
+		FailIfErr(t, err, "DeletePolicy failed")
+	}
+	return tearDown, *(createdPolicy.ID)
+}
+
 func SetUpTestUser(t *testing.T, client GoCloak) {
 	setupOnce.Do(func() {
 		cfg := GetConfig(t)
@@ -2602,4 +2630,61 @@ func TestGocloak_CreateListGetUpdateDeleteScope(t *testing.T) {
 	)
 	assert.NoError(t, err, "GetScope failed")
 	assert.Equal(t, *(createdScope.Name), *(updatedScope.Name))
+}
+
+func TestGocloak_CreateListGetUpdateDeletePolicy(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	clients, err := client.GetClients(token.AccessToken, cfg.GoCloak.Realm, GetClientsParams{
+		ClientID: StringP(cfg.GoCloak.ClientID),
+	})
+	assert.NoError(t, err, "GetClients failed")
+	assert.Equal(t, 1, len(clients), "GetClients failed")
+
+	clientID := *(clients[0].ID)
+
+	// Create
+	tearDown, policyID := CreatePolicy(t, client, clientID)
+	// Delete
+	defer tearDown()
+
+	// List
+	createdPolicy, err := client.GetPolicy(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		clientID,
+		policyID,
+	)
+	assert.NoError(t, err, "GetPolicy failed")
+	t.Logf("Created Policy: %+v", *(createdPolicy.ID))
+	assert.Equal(t, policyID, *(createdPolicy.ID))
+
+	err = client.UpdatePolicy(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		clientID,
+		PolicyRepresentation{},
+	)
+	assert.Error(t, err, "Should fail because of missing ID of the policy")
+
+	createdPolicy.Name = GetRandomNameP("PolicyName")
+	err = client.UpdatePolicy(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		clientID,
+		*createdPolicy,
+	)
+	assert.NoError(t, err, "UpdatePolicy failed")
+
+	updatedPolicy, err := client.GetPolicy(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		clientID,
+		policyID,
+	)
+	assert.NoError(t, err, "GetPolicy failed")
+	assert.Equal(t, *(createdPolicy.Name), *(updatedPolicy.Name))
 }

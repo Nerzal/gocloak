@@ -248,4 +248,15 @@ type GoCloak interface {
 	UpdateScope(token string, realm string, clientID string, resource ScopeRepresentation) error
 	// DeleteScope deletes a scope associated with the client
 	DeleteScope(token string, realm string, clientID string, scopeID string) error
+
+	// GetPolicy returns a client's policy with the given id
+	GetPolicy(token string, realm string, clientID string, policyID string) (*PolicyRepresentation, error)
+	// GetPolicies returns a policy associated with the client
+	GetPolicies(token string, realm string, clientID string, params GetPolicyParams) ([]*PolicyRepresentation, error)
+	// CreatePolicy creates a policy associated with the client
+	CreatePolicy(token string, realm string, clientID string, policy PolicyRepresentation) (*PolicyRepresentation, error)
+	// UpdatePolicy updates a policy associated with the client
+	UpdatePolicy(token string, realm string, clientID string, policy PolicyRepresentation) error
+	// DeletePolicy deletes a policy associated with the client
+	DeletePolicy(token string, realm string, clientID string, policyID string) error
 }

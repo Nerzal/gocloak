@@ -1497,3 +1497,86 @@ func (client *gocloak) DeleteScope(token string, realm string, clientID string, 
 
 	return checkForError(resp, err)
 }
+
+// GetPolicy returns a client's policy with the given id
+func (client *gocloak) GetPolicy(token string, realm string, clientID string, policyID string) (*PolicyRepresentation, error) {
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetHeader("Content-Type", "application/json").
+		Get(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "policy", policyID))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	var foundPolicy *PolicyRepresentation
+	err = json.Unmarshal(resp.Body(), &foundPolicy)
+	return foundPolicy, err
+}
+
+// GetPolicies returns a policy associated with the client
+func (client *gocloak) GetPolicies(token string, realm string, clientID string, params GetPolicyParams) ([]*PolicyRepresentation, error) {
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, err
+	}
+
+	var adminURL string
+	if NilOrEmpty(params.Type) {
+		adminURL = client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "policy")
+	} else {
+		client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "policy", *(params.Type))
+	}
+
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetHeader("Content-Type", "application/json").
+		SetQueryParams(queryParams).
+		Get(adminURL)
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	var policies []*PolicyRepresentation
+	err = json.Unmarshal(resp.Body(), &policies)
+	return policies, err
+}
+
+// CreatePolicy creates a policy associated with the client
+func (client *gocloak) CreatePolicy(token string, realm string, clientID string, policy PolicyRepresentation) (*PolicyRepresentation, error) {
+	if NilOrEmpty(policy.Type) {
+		return nil, errors.New("Type of a policy required")
+	}
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetHeader("Content-Type", "application/json").
+		SetBody(policy).
+		Post(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "policy", *(policy.Type)))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	var createdPolicy *PolicyRepresentation
+	err = json.Unmarshal(resp.Body(), &createdPolicy)
+	return createdPolicy, err
+}
+
+// UpdatePolicy updates a policy associated with the client
+func (client *gocloak) UpdatePolicy(token string, realm string, clientID string, policy PolicyRepresentation) error {
+	if NilOrEmpty(policy.ID) {
+		return errors.New("ID of a policy required")
+	}
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetHeader("Content-Type", "application/json").
+		SetBody(policy).
+		Put(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "policy", *(policy.ID)))
+
+	return checkForError(resp, err)
+}
+
+// DeletePolicy deletes a policy associated with the client
+func (client *gocloak) DeletePolicy(token string, realm string, clientID string, policyID string) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		Delete(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "policy", policyID))
+
+	return checkForError(resp, err)
+}
