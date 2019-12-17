@@ -228,13 +228,13 @@ type GoCloak interface {
 
 	// *** Protection API ***
 	// GetResource returns a client's resource with the given id
-	GetResource(token string, realm string, clientID string, resourceID string) (*Resource, error)
+	GetResource(token string, realm string, clientID string, resourceID string) (*ResourceRepresentation, error)
 	// GetResources returns resource associated with the client
-	GetResources(token string, realm string, clientID string, params GetResourceParams) ([]*Resource, error)
+	GetResources(token string, realm string, clientID string, params GetResourceParams) ([]*ResourceRepresentation, error)
 	// CreateResource creates a resource associated with the client
-	CreateResource(token string, realm string, clientID string, resource Resource) (*Resource, error)
+	CreateResource(token string, realm string, clientID string, resource ResourceRepresentation) (*ResourceRepresentation, error)
 	// UpdateResource updates a resource associated with the client
-	UpdateResource(token string, realm string, clientID string, resource Resource) error
+	UpdateResource(token string, realm string, clientID string, resource ResourceRepresentation) error
 	// DeleteResource deletes a resource associated with the client
 	DeleteResource(token string, realm string, clientID string, resourceID string) error
 }

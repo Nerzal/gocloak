@@ -212,7 +212,7 @@ func CreateGroup(t *testing.T, client GoCloak) (func(), string) {
 func CreateResource(t *testing.T, client GoCloak, clientID string) (func(), string) {
 	cfg := GetConfig(t)
 	token := GetAdminToken(t, client)
-	resource := Resource{
+	resource := ResourceRepresentation{
 		Name: GetRandomNameP("ResourceName"),
 		DisplayName: StringP("Resource Display Name"),
 		Type: StringP("urn:gocloak:resources:test"),
@@ -2497,7 +2497,7 @@ func TestGocloak_CreateListGetUpdateDeleteResource(t *testing.T) {
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		clientID,
-		Resource{},
+		ResourceRepresentation{},
 	)
 	assert.Error(t, err, "Should fail because of missing ID of the resource")
 

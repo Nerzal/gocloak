@@ -1355,7 +1355,7 @@ func (client *gocloak) DeleteIdentityProvider(token string, realm string, alias 
 }
 
 // GetResource returns a client's resource with the given id
-func (client *gocloak) GetResource(token string, realm string, clientID string, resourceID string) (*Resource, error) {
+func (client *gocloak) GetResource(token string, realm string, clientID string, resourceID string) (*ResourceRepresentation, error) {
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetHeader("Content-Type", "application/json").
 		Get(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "resource", resourceID))
@@ -1364,13 +1364,13 @@ func (client *gocloak) GetResource(token string, realm string, clientID string, 
 		return nil, err
 	}
 
-	var foundResource *Resource
+	var foundResource *ResourceRepresentation
 	err = json.Unmarshal(resp.Body(), &foundResource)
 	return foundResource, err
 }
 
 // GetResources returns resource associated with the client
-func (client *gocloak) GetResources(token string, realm string, clientID string, params GetResourceParams) ([]*Resource, error) {
+func (client *gocloak) GetResources(token string, realm string, clientID string, params GetResourceParams) ([]*ResourceRepresentation, error) {
 	queryParams, err := GetQueryParams(params)
 	if err != nil {
 		return nil, err
@@ -1384,13 +1384,13 @@ func (client *gocloak) GetResources(token string, realm string, clientID string,
 		return nil, err
 	}
 
-	var resources []*Resource
+	var resources []*ResourceRepresentation
 	err = json.Unmarshal(resp.Body(), &resources)
 	return resources, err
 }
 
 // CreateResource creates a resource associated with the client
-func (client *gocloak) CreateResource(token, realm string, clientID string, resource Resource) (*Resource, error) {
+func (client *gocloak) CreateResource(token, realm string, clientID string, resource ResourceRepresentation) (*ResourceRepresentation, error) {
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetHeader("Content-Type", "application/json").
 		SetBody(resource).
@@ -1400,13 +1400,13 @@ func (client *gocloak) CreateResource(token, realm string, clientID string, reso
 		return nil, err
 	}
 
-	var createdResource *Resource
+	var createdResource *ResourceRepresentation
 	err = json.Unmarshal(resp.Body(), &createdResource)
 	return createdResource, err
 }
 
 // UpdateResource updates a resource associated with the client
-func (client *gocloak) UpdateResource(token string, realm string, clientID string, resource Resource) error {
+func (client *gocloak) UpdateResource(token string, realm string, clientID string, resource ResourceRepresentation) error {
 	if NilOrEmpty(resource.ID) {
 		return errors.New("ID of a resource required")
 	}

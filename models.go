@@ -401,8 +401,8 @@ const (
 
 // ResourceRepresentation is a representation of a Resource
 type ResourceRepresentation struct {
-	ID                 *string                `json:"id,omitempty"` //TODO: is marked "_optional" in template, input error or deliberate?
-	Attributes         map[string]string      `json:"attributes,omitempty"`
+	ID                 *string                `json:"_id,omitempty"` //TODO: is marked "_optional" in template, input error or deliberate?
+	Attributes         map[string][]string    `json:"attributes,omitempty"`
 	DisplayName        *string                `json:"displayName,omitempty"`
 	IconURI            *string                `json:"icon_uri,omitempty"` //TODO: With "_" because that's how it's written down in the template
 	Name               *string                `json:"name,omitempty"`
@@ -705,30 +705,4 @@ type GetResourceParams struct {
 	Type  *string `json:"type,omitempty"`
 	URI   *string `json:"uri,omitempty"`
 	Scope *string `json:"scope,omitempty"`
-}
-
-// AuthorizationScope represents an authorization scope
-type AuthorizationScope struct {
-	ID   *string `json:"id"`
-	Name *string `json:"name"`
-}
-
-// ResourceOwner represents a resource's owner
-type ResourceOwner struct {
-	ID   *string `json:"id"`
-	Name *string `json:"name"`
-}
-
-// Resource represents a resource
-type Resource struct {
-	ID                 *string               `json:"_id,omitempty"`
-	Name               *string               `json:"name"`
-	DisplayName        *string               `json:"displayName,omitempty"`
-	Type               *string               `json:"type,omitempty"`
-	IconURI            *string               `json:"icon_uri,omitempty"`
-	URIs               []string              `json:"uris,omitempty"`
-	Scopes             []*AuthorizationScope `json:"scopes,omitempty"`
-	Owner              *ResourceOwner        `json:"owner,omitempty"`
-	OwnerManagedAccess *bool                 `json:"ownerManagedAccess,omitempty"`
-	Attributes         map[string][]string   `json:"attributes,omitempty"`
 }
