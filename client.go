@@ -1369,7 +1369,7 @@ func (client *gocloak) GetResource(token string, realm string, clientID string, 
 	return foundResource, err
 }
 
-// GetResources returns resource associated with the client
+// GetResources returns a resource associated with the client
 func (client *gocloak) GetResources(token string, realm string, clientID string, params GetResourceParams) ([]*ResourceRepresentation, error) {
 	queryParams, err := GetQueryParams(params)
 	if err != nil {
@@ -1422,6 +1422,78 @@ func (client *gocloak) UpdateResource(token string, realm string, clientID strin
 func (client *gocloak) DeleteResource(token string, realm string, clientID string, resourceID string) error {
 	resp, err := client.getRequestWithBearerAuth(token).
 		Delete(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "resource", resourceID))
+
+	return checkForError(resp, err)
+}
+
+// GetScope returns a client's scope with the given id
+func (client *gocloak) GetScope(token string, realm string, clientID string, scopeID string) (*ScopeRepresentation, error) {
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetHeader("Content-Type", "application/json").
+		Get(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "scope", scopeID))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	var foundScope *ScopeRepresentation
+	err = json.Unmarshal(resp.Body(), &foundScope)
+	return foundScope, err
+}
+
+// GetScopes returns a scope associated with the client
+func (client *gocloak) GetScopes(token string, realm string, clientID string, params GetScopeParams) ([]*ScopeRepresentation, error) {
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetHeader("Content-Type", "application/json").
+		SetQueryParams(queryParams).
+		Get(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "scope"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	var scopes []*ScopeRepresentation
+	err = json.Unmarshal(resp.Body(), &scopes)
+	return scopes, err
+}
+
+// CreateScope creates a scope associated with the client
+func (client *gocloak) CreateScope(token string, realm string, clientID string, scope ScopeRepresentation) (*ScopeRepresentation, error) {
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetHeader("Content-Type", "application/json").
+		SetBody(scope).
+		Post(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "scope"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	var createdScope *ScopeRepresentation
+	err = json.Unmarshal(resp.Body(), &createdScope)
+	return createdScope, err
+}
+
+// UpdateScope updates a scope associated with the client
+func (client *gocloak) UpdateScope(token string, realm string, clientID string, scope ScopeRepresentation) error {
+	if NilOrEmpty(scope.ID) {
+		return errors.New("ID of a scope required")
+	}
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetHeader("Content-Type", "application/json").
+		SetBody(scope).
+		Put(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "scope", *(scope.ID)))
+
+	return checkForError(resp, err)
+}
+
+// DeleteScope deletes a scope associated with the client
+func (client *gocloak) DeleteScope(token string, realm string, clientID string, scopeID string) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		Delete(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "scope", scopeID))
 
 	return checkForError(resp, err)
 }

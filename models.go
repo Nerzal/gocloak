@@ -706,3 +706,11 @@ type GetResourceParams struct {
 	URI   *string `json:"uri,omitempty"`
 	Scope *string `json:"scope,omitempty"`
 }
+
+// GetScopeParams represents the optional parameters for getting scopes
+type GetScopeParams struct {
+	Deep  *bool   `json:"deep,omitempty"`
+	First *int    `json:"first,omitempty"`
+	Max   *int    `json:"max,omitempty"`
+	Name  *string `json:"name,omitempty"`
+}

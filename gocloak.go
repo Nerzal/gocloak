@@ -229,7 +229,7 @@ type GoCloak interface {
 	// *** Protection API ***
 	// GetResource returns a client's resource with the given id
 	GetResource(token string, realm string, clientID string, resourceID string) (*ResourceRepresentation, error)
-	// GetResources returns resource associated with the client
+	// GetResources a returns resource associated with the client
 	GetResources(token string, realm string, clientID string, params GetResourceParams) ([]*ResourceRepresentation, error)
 	// CreateResource creates a resource associated with the client
 	CreateResource(token string, realm string, clientID string, resource ResourceRepresentation) (*ResourceRepresentation, error)
@@ -237,4 +237,15 @@ type GoCloak interface {
 	UpdateResource(token string, realm string, clientID string, resource ResourceRepresentation) error
 	// DeleteResource deletes a resource associated with the client
 	DeleteResource(token string, realm string, clientID string, resourceID string) error
+
+	// GetScope returns a client's scope with the given id
+	GetScope(token string, realm string, clientID string, scopeID string) (*ScopeRepresentation, error)
+	// GetScopes returns a scope associated with the client
+	GetScopes(token string, realm string, clientID string, params GetScopeParams) ([]*ScopeRepresentation, error)
+	// CreateScope creates a scope associated with the client
+	CreateScope(token string, realm string, clientID string, scope ScopeRepresentation) (*ScopeRepresentation, error)
+	// UpdateScope updates a scope associated with the client
+	UpdateScope(token string, realm string, clientID string, resource ScopeRepresentation) error
+	// DeleteScope deletes a scope associated with the client
+	DeleteScope(token string, realm string, clientID string, scopeID string) error
 }

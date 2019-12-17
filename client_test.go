@@ -241,6 +241,33 @@ func CreateResource(t *testing.T, client GoCloak, clientID string) (func(), stri
 	return tearDown, *(createdResource.ID)
 }
 
+func CreateScope(t *testing.T, client GoCloak, clientID string) (func(), string) {
+	cfg := GetConfig(t)
+	token := GetAdminToken(t, client)
+	scope := ScopeRepresentation{
+		Name: GetRandomNameP("ScopeName"),
+		DisplayName: StringP("Scope Display Name"),
+		IconURI: StringP("/scope/test/icon"),
+	}
+	createdScope, err := client.CreateScope(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		clientID,
+		scope)
+	assert.NoError(t, err, "CreateScope failed")
+	t.Logf("Created Scope ID: %s ", *(createdScope.ID))
+
+	tearDown := func() {
+		err := client.DeleteScope(
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			clientID,
+			*(createdScope.ID))
+		FailIfErr(t, err, "DeleteScope failed")
+	}
+	return tearDown, *(createdScope.ID)
+}
+
 func SetUpTestUser(t *testing.T, client GoCloak) {
 	setupOnce.Do(func() {
 		cfg := GetConfig(t)
@@ -2518,4 +2545,61 @@ func TestGocloak_CreateListGetUpdateDeleteResource(t *testing.T) {
 	)
 	assert.NoError(t, err, "GetResource failed")
 	assert.Equal(t, *(createdResource.Name), *(updatedResource.Name))
+}
+
+func TestGocloak_CreateListGetUpdateDeleteScope(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	clients, err := client.GetClients(token.AccessToken, cfg.GoCloak.Realm, GetClientsParams{
+		ClientID: StringP(cfg.GoCloak.ClientID),
+	})
+	assert.NoError(t, err, "GetClients failed")
+	assert.Equal(t, 1, len(clients), "GetClients failed")
+
+	clientID := *(clients[0].ID)
+
+	// Create
+	tearDown, scopeID := CreateScope(t, client, clientID)
+	// Delete
+	defer tearDown()
+
+	// List
+	createdScope, err := client.GetScope(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		clientID,
+		scopeID,
+	)
+	assert.NoError(t, err, "GetScope failed")
+	t.Logf("Created Scope: %+v", *(createdScope.ID))
+	assert.Equal(t, scopeID, *(createdScope.ID))
+
+	err = client.UpdateScope(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		clientID,
+		ScopeRepresentation{},
+	)
+	assert.Error(t, err, "Should fail because of missing ID of the scope")
+
+	createdScope.Name = GetRandomNameP("ScopeName")
+	err = client.UpdateScope(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		clientID,
+		*createdScope,
+	)
+	assert.NoError(t, err, "UpdateScope failed")
+
+	updatedScope, err := client.GetScope(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		clientID,
+		scopeID,
+	)
+	assert.NoError(t, err, "GetScope failed")
+	assert.Equal(t, *(createdScope.Name), *(updatedScope.Name))
 }
