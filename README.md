@@ -186,6 +186,13 @@ type GoCloak interface {
 	GetClientOfflineSessions(token, realm, clientID string) ([]*UserSessionRepresentation, error)
 	GetUserSessions(token, realm, userID string) ([]*UserSessionRepresentation, error)
 	GetUserOfflineSessionsForClient(token, realm, userID, clientID string) ([]*UserSessionRepresentation, error)
+
+	// *** Protection ***
+	GetResource(token string, realm string, clientID string, resourceID string) (*Resource, error)
+	GetResources(token string, realm string, clientID string) ([]*Resource, error)
+	CreateResource(token string, realm string, clientID string, resource Resource) (*Resource, error)
+	UpdateResource(token string, realm string, clientID string, resource Resource) error
+	DeleteResource(token string, realm string, clientID string, resourceID string) error
 }
 ```
 

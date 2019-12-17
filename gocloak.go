@@ -225,4 +225,16 @@ type GoCloak interface {
 	UpdateIdentityProvider(token string, realm string, alias string, providerRep IdentityProviderRepresentation) error
 	// DeleteIdentityProvider deletes the identity provider in a realm
 	DeleteIdentityProvider(token string, realm string, alias string) error
+
+	// *** Protection API ***
+	// GetResource returns a client's resource with the given id
+	GetResource(token string, realm string, clientID string, resourceID string) (*Resource, error)
+	// GetResources returns resource associated with the client
+	GetResources(token string, realm string, clientID string, params GetResourceParams) ([]*Resource, error)
+	// CreateResource creates a resource associated with the client
+	CreateResource(token string, realm string, clientID string, resource Resource) (*Resource, error)
+	// UpdateResource updates a resource associated with the client
+	UpdateResource(token string, realm string, clientID string, resource Resource) error
+	// DeleteResource deletes a resource associated with the client
+	DeleteResource(token string, realm string, clientID string, resourceID string) error
 }

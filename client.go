@@ -2,6 +2,7 @@ package gocloak
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -1349,6 +1350,78 @@ func (client *gocloak) UpdateIdentityProvider(token string, realm string, alias 
 func (client *gocloak) DeleteIdentityProvider(token string, realm string, alias string) error {
 	resp, err := client.getRequestWithBearerAuth(token).
 		Delete(client.getAdminRealmURL(realm, "identity-provider", "instances", alias))
+
+	return checkForError(resp, err)
+}
+
+// GetResource returns a client's resource with the given id
+func (client *gocloak) GetResource(token string, realm string, clientID string, resourceID string) (*Resource, error) {
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetHeader("Content-Type", "application/json").
+		Get(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "resource", resourceID))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	var foundResource *Resource
+	err = json.Unmarshal(resp.Body(), &foundResource)
+	return foundResource, err
+}
+
+// GetResources returns resource associated with the client
+func (client *gocloak) GetResources(token string, realm string, clientID string, params GetResourceParams) ([]*Resource, error) {
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetHeader("Content-Type", "application/json").
+		SetQueryParams(queryParams).
+		Get(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "resource"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	var resources []*Resource
+	err = json.Unmarshal(resp.Body(), &resources)
+	return resources, err
+}
+
+// CreateResource creates a resource associated with the client
+func (client *gocloak) CreateResource(token, realm string, clientID string, resource Resource) (*Resource, error) {
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetHeader("Content-Type", "application/json").
+		SetBody(resource).
+		Post(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "resource"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	var createdResource *Resource
+	err = json.Unmarshal(resp.Body(), &createdResource)
+	return createdResource, err
+}
+
+// UpdateResource updates a resource associated with the client
+func (client *gocloak) UpdateResource(token string, realm string, clientID string, resource Resource) error {
+	if NilOrEmpty(resource.ID) {
+		return errors.New("ID of a resource required")
+	}
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetHeader("Content-Type", "application/json").
+		SetBody(resource).
+		Put(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "resource", *(resource.ID)))
+
+	return checkForError(resp, err)
+}
+
+// DeleteResource deletes a resource associated with the client
+func (client *gocloak) DeleteResource(token string, realm string, clientID string, resourceID string) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		Delete(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "resource", resourceID))
 
 	return checkForError(resp, err)
 }

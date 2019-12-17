@@ -209,6 +209,38 @@ func CreateGroup(t *testing.T, client GoCloak) (func(), string) {
 	return tearDown, groupID
 }
 
+func CreateResource(t *testing.T, client GoCloak, clientID string) (func(), string) {
+	cfg := GetConfig(t)
+	token := GetAdminToken(t, client)
+	resource := Resource{
+		Name: GetRandomNameP("ResourceName"),
+		DisplayName: StringP("Resource Display Name"),
+		Type: StringP("urn:gocloak:resources:test"),
+		IconURI: StringP("/resource/test/icon"),
+		Attributes: map[string][]string{
+			"foo": {"bar", "alice", "bob", "roflcopter"},
+			"bar": {"baz"},
+		},
+	}
+	createdResource, err := client.CreateResource(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		clientID,
+		resource)
+	assert.NoError(t, err, "CreateResource failed")
+	t.Logf("Created Resource ID: %s ", *(createdResource.ID))
+
+	tearDown := func() {
+		err := client.DeleteResource(
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			clientID,
+			*(createdResource.ID))
+		FailIfErr(t, err, "DeleteResource failed")
+	}
+	return tearDown, *(createdResource.ID)
+}
+
 func SetUpTestUser(t *testing.T, client GoCloak) {
 	setupOnce.Do(func() {
 		cfg := GetConfig(t)
@@ -2425,4 +2457,65 @@ func TestGocloak_CreateProvider(t *testing.T) {
 		err := client.DeleteIdentityProvider(token.AccessToken, cfg.GoCloak.Realm, "oidc")
 		assert.NoError(t, err)
 	})
+}
+
+// -----------------
+// Protection API
+// -----------------
+
+func TestGocloak_CreateListGetUpdateDeleteResource(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	clients, err := client.GetClients(token.AccessToken, cfg.GoCloak.Realm, GetClientsParams{
+		ClientID: StringP(cfg.GoCloak.ClientID),
+	})
+	assert.NoError(t, err, "GetClients failed")
+	assert.Equal(t, 1, len(clients), "GetClients failed")
+
+	clientID := *(clients[0].ID)
+
+	// Create
+	tearDown, resourceID := CreateResource(t, client, clientID)
+	// Delete
+	defer tearDown()
+
+	// List
+	createdResource, err := client.GetResource(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		clientID,
+		resourceID,
+	)
+	assert.NoError(t, err, "GetResource failed")
+	t.Logf("Created Resource: %+v", *(createdResource.ID))
+	assert.Equal(t, resourceID, *(createdResource.ID))
+
+	err = client.UpdateResource(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		clientID,
+		Resource{},
+	)
+	assert.Error(t, err, "Should fail because of missing ID of the resource")
+
+	createdResource.Name = GetRandomNameP("ResourceName")
+	err = client.UpdateResource(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		clientID,
+		*createdResource,
+	)
+	assert.NoError(t, err, "UpdateResource failed")
+
+	updatedResource, err := client.GetResource(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		clientID,
+		resourceID,
+	)
+	assert.NoError(t, err, "GetResource failed")
+	assert.Equal(t, *(createdResource.Name), *(updatedResource.Name))
 }
