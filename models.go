@@ -355,6 +355,11 @@ type ResourceServerRepresentation struct {
 	Scopes                        []*ScopeRepresentation    `json:"scopes,omitempty"`
 }
 
+type RoleDefinition struct {
+	ID      *string `json:"id"`
+	Private *bool   `json:"private,omitempty"`
+}
+
 // PolicyEnforcementMode is an enum type for PolicyEnforcementMode of ResourceServerRepresentation
 type PolicyEnforcementMode int
 
@@ -365,33 +370,108 @@ const (
 	DISABLED
 )
 
+type Logic string
+
+const (
+	POSITIVE Logic = "POSITIVE"
+	NEGATIVE Logic = "NEGATIVE"
+)
+
 // PolicyRepresentation is a representation of a Policy
 type PolicyRepresentation struct {
 	Config           map[string]string `json:"config,omitempty"`
-	DecisionStrategy *string           `json:"decisionStrategy,omitempty"`
+	DecisionStrategy DecisionStrategy  `json:"decisionStrategy,omitempty"`
 	Description      *string           `json:"description,omitempty"`
 	ID               *string           `json:"id,omitempty"`
-	Logic            *string           `json:"logic,omitempty"`
+	Logic            Logic             `json:"logic,omitempty"`
 	Name             *string           `json:"name,omitempty"`
 	Owner            *string           `json:"owner,omitempty"`
-	Policies         []string          `json:"policies,omitempty"`
 	Resources        []string          `json:"resources,omitempty"`
 	Scopes           []string          `json:"scopes,omitempty"`
 	Type             *string           `json:"type,omitempty"`
-	Code             *string           `json:"code,omitempty"`
+	RolePolicyRepresentation
+	JSPolicyRepresentation
+	ClientPolicyRepresentation
+	TimePolicyRepresentation
+	UserPolicyRepresentation
+	AggregatedPolicyRepresentation
+	GroupPolicyRepresentation
+}
+
+// DecisionStrategy is an enum type for DecisionStrategy of PolicyRepresentation
+type DecisionStrategy string
+
+// DecisionStrategy values
+const (
+	AFFIRMATIVE DecisionStrategy = "AFFIRMATIVE"
+	UNANIMOUS   DecisionStrategy = "UNANIMOUS"
+	CONSENSUS   DecisionStrategy = "CONSENSUS"
+)
+
+type RolePolicyRepresentation struct {
+	Roles []*RoleDefinition `json:"roles,omitempty"`
+}
+
+type JSPolicyRepresentation struct {
+	Code *string `json:"code,omitempty"`
+}
+
+type ClientPolicyRepresentation struct {
+	Clients []string `json:"clients,omitempty"`
+}
+
+type TimePolicyRepresentation struct {
+	NotBefore    *string `json:"notBefore,omitempty"`
+	NotOnOrAfter *string `json:"notOnOrAfter,omitempty"`
+	DayMonth     *string `json:"dayMonth,omitempty"`
+	DayMonthEnd  *string `json:"dayMonthEnd,omitempty"`
+	Month        *string `json:"month,omitempty"`
+	MonthEnd     *string `json:"monthEnd,omitempty"`
+	Year         *string `json:"year,omitempty"`
+	YearEnd      *string `json:"yearEnd,omitempty"`
+	Hour         *string `json:"hour,omitempty"`
+	HourEnd      *string `json:"hourEnd,omitempty"`
+	Minute       *string `json:"minute,omitempty"`
+	MinuteEnd    *string `json:"minuteEnd,omitempty"`
+}
+
+type UserPolicyRepresentation struct {
+	Users []string `json:"users,omitempty"`
+}
+
+type AggregatedPolicyRepresentation struct {
+	Policies []string `json:"policies,omitempty"`
+}
+
+type GroupPolicyRepresentation struct {
+	Groups      []*GroupDefinition `json:"groups,omitempty"`
+	GroupsClaim *string            `json:"groupsClaim,omitempty"`
+}
+
+type GroupDefinition struct {
+	ID             *string `json:"id"`
+	Path           *string `json:"path,omitempty"`
+	ExtendChildren *bool   `json:"extendChildren,omitempty"`
 }
 
 // ResourceRepresentation is a representation of a Resource
 type ResourceRepresentation struct {
-	ID                 *string                `json:"_id,omitempty"` //TODO: is marked "_optional" in template, input error or deliberate?
-	Attributes         map[string][]string    `json:"attributes,omitempty"`
-	DisplayName        *string                `json:"displayName,omitempty"`
-	IconURI            *string                `json:"icon_uri,omitempty"` //TODO: With "_" because that's how it's written down in the template
-	Name               *string                `json:"name,omitempty"`
-	OwnerManagedAccess *bool                  `json:"ownerManagedAccess"`
-	Scopes             []*ScopeRepresentation `json:"scopes,omitempty"`
-	Type               *string                `json:"type,omitempty"`
-	URIs               []string               `json:"uris,omitempty"`
+	ID                 *string                      `json:"_id,omitempty"` //TODO: is marked "_optional" in template, input error or deliberate?
+	Attributes         map[string][]string          `json:"attributes,omitempty"`
+	DisplayName        *string                      `json:"displayName,omitempty"`
+	IconURI            *string                      `json:"icon_uri,omitempty"` //TODO: With "_" because that's how it's written down in the template
+	Name               *string                      `json:"name,omitempty"`
+	Owner              *ResourceOwnerRepresentation `json:"owner"`
+	OwnerManagedAccess *bool                        `json:"ownerManagedAccess"`
+	Scopes             []*ScopeRepresentation       `json:"scopes,omitempty"`
+	Type               *string                      `json:"type,omitempty"`
+	URIs               []string                     `json:"uris,omitempty"`
+}
+
+// ResourceOwnerRepresentation represents a resource's owner
+type ResourceOwnerRepresentation struct {
+	ID   *string `json:"id"`
+	Name *string `json:"name"`
 }
 
 // ScopeRepresentation is a represents a Scope
@@ -705,4 +785,14 @@ type GetPolicyParams struct {
 	Name       *string `json:"name,omitempty"`
 	Permission *bool   `json:"permission,omitempty"`
 	Type       *string `json:"type,omitempty"`
+}
+
+type PermissionRepresentation struct {
+	PolicyRepresentation
+	// DecisionStrategy *string `json:"decisionStrategy,omitempty"`
+	// Description      *string `json:"description,omitempty"`
+	// ID               *string `json:"id,omitempty"`
+	// Logic            *string `json:"logic,omitempty"`
+	ResourceType *string `json:"resource_type,omitempty"`
+	// Type             *string `json:"type,omitempty"`
 }
