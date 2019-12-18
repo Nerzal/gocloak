@@ -799,6 +799,16 @@ type GetPolicyParams struct {
 	Type       *string `json:"type,omitempty"`
 }
 
+// GetPermissionParams represents the optional parameters for getting permissions
+type GetPermissionParams struct {
+	First    *int    `json:"first,omitempty"`
+	Max      *int    `json:"max,omitempty"`
+	Name     *string `json:"name,omitempty"`
+	Resource *string `json:"name,omitempty"`
+	Scope    *string `json:"scope,omitempty"`
+	Type     *string `json:"type,omitempty"`
+}
+
 // PermissionRepresentation is a representation of a Permission
 type PermissionRepresentation struct {
 	DecisionStrategy DecisionStrategy `json:"decisionStrategy,omitempty"`

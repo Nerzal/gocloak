@@ -205,6 +205,12 @@ type GoCloak interface {
 	CreatePolicy(token string, realm string, clientID string, policy PolicyRepresentation) (*PolicyRepresentation, error)
 	UpdatePolicy(token string, realm string, clientID string, policy PolicyRepresentation) error
 	DeletePolicy(token string, realm string, clientID string, policyID string) error
+
+	GetPermission(token string, realm string, clientID string, permissionID string) (*PermissionRepresentation, error)
+	GetPermissions(token string, realm string, clientID string, params GetPermissionParams) ([]*PermissionRepresentation, error)
+	CreatePermission(token string, realm string, clientID string, permission PermissionRepresentation) (*PermissionRepresentation, error)
+	UpdatePermission(token string, realm string, clientID string, permission PermissionRepresentation) error
+	DeletePermission(token string, realm string, clientID string, permissionID string) error
 }
 ```
 
