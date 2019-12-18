@@ -355,6 +355,7 @@ type ResourceServerRepresentation struct {
 	Scopes                        []*ScopeRepresentation    `json:"scopes,omitempty"`
 }
 
+// RoleDefinition represents a role in a RolePolicyRepresentation
 type RoleDefinition struct {
 	ID      *string `json:"id"`
 	Private *bool   `json:"private,omitempty"`
@@ -370,8 +371,10 @@ const (
 	DISABLED
 )
 
+// Logic is an enum type for policy logic
 type Logic string
 
+// Logic values
 const (
 	POSITIVE Logic = "POSITIVE"
 	NEGATIVE Logic = "NEGATIVE"
@@ -409,18 +412,22 @@ const (
 	CONSENSUS   DecisionStrategy = "CONSENSUS"
 )
 
+// RolePolicyRepresentation represents role based policies
 type RolePolicyRepresentation struct {
 	Roles []*RoleDefinition `json:"roles,omitempty"`
 }
 
+// JSPolicyRepresentation represents js based policies
 type JSPolicyRepresentation struct {
 	Code *string `json:"code,omitempty"`
 }
 
+// ClientPolicyRepresentation represents client based policies
 type ClientPolicyRepresentation struct {
 	Clients []string `json:"clients,omitempty"`
 }
 
+// TimePolicyRepresentation represents time based policies
 type TimePolicyRepresentation struct {
 	NotBefore    *string `json:"notBefore,omitempty"`
 	NotOnOrAfter *string `json:"notOnOrAfter,omitempty"`
@@ -436,19 +443,23 @@ type TimePolicyRepresentation struct {
 	MinuteEnd    *string `json:"minuteEnd,omitempty"`
 }
 
+// UserPolicyRepresentation represents user based policies
 type UserPolicyRepresentation struct {
 	Users []string `json:"users,omitempty"`
 }
 
+// AggregatedPolicyRepresentation represents aggregated policies
 type AggregatedPolicyRepresentation struct {
 	Policies []string `json:"policies,omitempty"`
 }
 
+// GroupPolicyRepresentation represents group based policies
 type GroupPolicyRepresentation struct {
 	Groups      []*GroupDefinition `json:"groups,omitempty"`
 	GroupsClaim *string            `json:"groupsClaim,omitempty"`
 }
 
+// GroupDefinition represents a group in a GroupPolicyRepresentation
 type GroupDefinition struct {
 	ID             *string `json:"id"`
 	Path           *string `json:"path,omitempty"`
@@ -788,6 +799,7 @@ type GetPolicyParams struct {
 	Type       *string `json:"type,omitempty"`
 }
 
+// PermissionRepresentation is a representation of a Permission
 type PermissionRepresentation struct {
 	DecisionStrategy DecisionStrategy `json:"decisionStrategy,omitempty"`
 	Description      *string          `json:"description,omitempty"`
