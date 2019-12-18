@@ -2745,7 +2745,7 @@ func TestGocloak_RolePolicy(t *testing.T) {
 		Logic:       NEGATIVE,
 		RolePolicyRepresentation: RolePolicyRepresentation{
 			Roles: []*RoleDefinition{
-				&RoleDefinition{
+				{
 					ID: roles[0].ID,
 				},
 			},
@@ -2961,7 +2961,7 @@ func TestGocloak_GroupPolicy(t *testing.T) {
 		Type:        StringP("group"),
 		GroupPolicyRepresentation: GroupPolicyRepresentation{
 			Groups: []*GroupDefinition{
-				&GroupDefinition{
+				{
 					ID: StringP(groupID),
 				},
 			},
