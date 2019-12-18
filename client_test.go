@@ -2864,9 +2864,8 @@ func TestGocloak_UserPolicy(t *testing.T) {
 
 	clientID := *(clients[0].ID)
 
-	users, err := client.GetUsers(token.AccessToken, cfg.GoCloak.Realm, GetUsersParams{})
-	assert.NoError(t, err, "GetUsers failed")
-	assert.GreaterOrEqual(t, len(users), 1, "GetUsers failed")
+	tearDownUser, userID := CreateUser(t, client)
+	defer tearDownUser()
 
 	// Create
 	tearDown, _ := CreatePolicy(t, client, clientID, PolicyRepresentation{
@@ -2875,7 +2874,7 @@ func TestGocloak_UserPolicy(t *testing.T) {
 		Type:        StringP("user"),
 		UserPolicyRepresentation: UserPolicyRepresentation{
 			Users: []string{
-				*(users[0].ID),
+				userID,
 			},
 		},
 	})
