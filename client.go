@@ -1643,8 +1643,6 @@ func (client *gocloak) CreatePermission(token string, realm string, clientID str
 	return createdPermission, err
 }
 
-
-
 // UpdatePermission updates a permission associated with the client
 func (client *gocloak) UpdatePermission(token string, realm string, clientID string, permission PermissionRepresentation) error {
 	if NilOrEmpty(permission.ID) {
