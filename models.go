@@ -804,7 +804,7 @@ type GetPermissionParams struct {
 	First    *int    `json:"first,omitempty"`
 	Max      *int    `json:"max,omitempty"`
 	Name     *string `json:"name,omitempty"`
-	Resource *string `json:"name,omitempty"`
+	Resource *string `json:"resource,omitempty"`
 	Scope    *string `json:"scope,omitempty"`
 	Type     *string `json:"type,omitempty"`
 }
