@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -287,6 +288,23 @@ func (client *gocloak) GetToken(realm string, options TokenOptions) (*JWT, error
 	}
 
 	return &token, nil
+}
+
+// GetRequestingPartyToken returns a requesting party token with permissions granted by the server
+func (client *gocloak) GetRequestingPartyToken(token, realm string, options RequestingPartyTokenOptions) (*JWT, error) {
+	var res JWT
+
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetFormData(options.FormData()).
+		SetFormDataFromValues(url.Values{"permission": options.Permissions}).
+		SetResult(&res).
+		Post(client.getRealmURL(realm, tokenEndpoint))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return &res, nil
 }
 
 // RefreshToken refreshes the given token
