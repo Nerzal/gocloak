@@ -386,6 +386,7 @@ type PolicyRepresentation struct {
 	Logic            Logic             `json:"logic,omitempty"`
 	Name             *string           `json:"name,omitempty"`
 	Owner            *string           `json:"owner,omitempty"`
+	Policies         []string          `json:"policies,omitempty"`
 	Resources        []string          `json:"resources,omitempty"`
 	Scopes           []string          `json:"scopes,omitempty"`
 	Type             *string           `json:"type,omitempty"`
@@ -788,11 +789,14 @@ type GetPolicyParams struct {
 }
 
 type PermissionRepresentation struct {
-	PolicyRepresentation
-	// DecisionStrategy *string `json:"decisionStrategy,omitempty"`
-	// Description      *string `json:"description,omitempty"`
-	// ID               *string `json:"id,omitempty"`
-	// Logic            *string `json:"logic,omitempty"`
-	ResourceType *string `json:"resource_type,omitempty"`
-	// Type             *string `json:"type,omitempty"`
+	DecisionStrategy DecisionStrategy `json:"decisionStrategy,omitempty"`
+	Description      *string          `json:"description,omitempty"`
+	ID               *string          `json:"id,omitempty"`
+	Logic            Logic            `json:"logic,omitempty"`
+	Name             *string          `json:"name,omitempty"`
+	Policies         []string         `json:"policies,omitempty"`
+	Resources        []string         `json:"resources,omitempty"`
+	ResourceType     *string          `json:"resource_type,omitempty"`
+	Scopes           []string         `json:"scopes,omitempty"`
+	Type             *string          `json:"type,omitempty"`
 }

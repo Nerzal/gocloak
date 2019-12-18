@@ -213,14 +213,19 @@ func CreateResource(t *testing.T, client GoCloak, clientID string) (func(), stri
 	cfg := GetConfig(t)
 	token := GetAdminToken(t, client)
 	resource := ResourceRepresentation{
-		Name: GetRandomNameP("ResourceName"),
+		Name:        GetRandomNameP("ResourceName"),
 		DisplayName: StringP("Resource Display Name"),
-		Type: StringP("urn:gocloak:resources:test"),
-		IconURI: StringP("/resource/test/icon"),
+		Type:        StringP("urn:gocloak:resources:test"),
+		IconURI:     StringP("/resource/test/icon"),
 		Attributes: map[string][]string{
 			"foo": {"bar", "alice", "bob", "roflcopter"},
 			"bar": {"baz"},
 		},
+		URIs: []string{
+			"/resource/1",
+			"/resource/2",
+		},
+		OwnerManagedAccess: BoolP(true),
 	}
 	createdResource, err := client.CreateResource(
 		token.AccessToken,
@@ -245,9 +250,9 @@ func CreateScope(t *testing.T, client GoCloak, clientID string) (func(), string)
 	cfg := GetConfig(t)
 	token := GetAdminToken(t, client)
 	scope := ScopeRepresentation{
-		Name: GetRandomNameP("ScopeName"),
+		Name:        GetRandomNameP("ScopeName"),
 		DisplayName: StringP("Scope Display Name"),
-		IconURI: StringP("/scope/test/icon"),
+		IconURI:     StringP("/scope/test/icon"),
 	}
 	createdScope, err := client.CreateScope(
 		token.AccessToken,
@@ -268,15 +273,9 @@ func CreateScope(t *testing.T, client GoCloak, clientID string) (func(), string)
 	return tearDown, *(createdScope.ID)
 }
 
-func CreatePolicy(t *testing.T, client GoCloak, clientID string) (func(), string) {
+func CreatePolicy(t *testing.T, client GoCloak, clientID string, policy PolicyRepresentation) (func(), string) {
 	cfg := GetConfig(t)
 	token := GetAdminToken(t, client)
-	policy := PolicyRepresentation{
-		Name: GetRandomNameP("PolicyName"),
-		Description: StringP("Policy Description"),
-		Type: StringP("js"),
-		Code: StringP("$evaluation.grant();"),
-	}
 	createdPolicy, err := client.CreatePolicy(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
@@ -2544,6 +2543,7 @@ func TestGocloak_CreateListGetUpdateDeleteResource(t *testing.T) {
 		clientID,
 		resourceID,
 	)
+
 	assert.NoError(t, err, "GetResource failed")
 	t.Logf("Created Resource: %+v", *(createdResource.ID))
 	assert.Equal(t, resourceID, *(createdResource.ID))
@@ -2647,7 +2647,15 @@ func TestGocloak_CreateListGetUpdateDeletePolicy(t *testing.T) {
 	clientID := *(clients[0].ID)
 
 	// Create
-	tearDown, policyID := CreatePolicy(t, client, clientID)
+	tearDown, policyID := CreatePolicy(t, client, clientID, PolicyRepresentation{
+		Name:        GetRandomNameP("PolicyName"),
+		Description: StringP("Policy Description"),
+		Type:        StringP("js"),
+		Logic:       NEGATIVE,
+		JSPolicyRepresentation: JSPolicyRepresentation{
+			Code: StringP("$evaluation.grant();"),
+		},
+	})
 	// Delete
 	defer tearDown()
 
@@ -2687,4 +2695,258 @@ func TestGocloak_CreateListGetUpdateDeletePolicy(t *testing.T) {
 	)
 	assert.NoError(t, err, "GetPolicy failed")
 	assert.Equal(t, *(createdPolicy.Name), *(updatedPolicy.Name))
+}
+
+func TestGocloak_RolePolicy(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	clients, err := client.GetClients(token.AccessToken, cfg.GoCloak.Realm, GetClientsParams{
+		ClientID: StringP(cfg.GoCloak.ClientID),
+	})
+	assert.NoError(t, err, "GetClients failed")
+	assert.Equal(t, 1, len(clients), "GetClients failed")
+
+	clientID := *(clients[0].ID)
+
+	roles, err := client.GetRealmRoles(token.AccessToken, cfg.GoCloak.Realm)
+	assert.NoError(t, err, "GetRealmRoles failed")
+	assert.GreaterOrEqual(t, len(roles), 1, "GetRealmRoles failed")
+
+	// Create
+	tearDown, _ := CreatePolicy(t, client, clientID, PolicyRepresentation{
+		Name:        GetRandomNameP("PolicyName"),
+		Description: StringP("Role Policy"),
+		Type:        StringP("role"),
+		Logic:       NEGATIVE,
+		RolePolicyRepresentation: RolePolicyRepresentation{
+			Roles:[]*RoleDefinition{
+				&RoleDefinition{
+					ID: roles[0].ID,
+				},
+			},
+		},
+	})
+	// Delete
+	defer tearDown()
+}
+
+func TestGocloak_JSPolicy(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	clients, err := client.GetClients(token.AccessToken, cfg.GoCloak.Realm, GetClientsParams{
+		ClientID: StringP(cfg.GoCloak.ClientID),
+	})
+	assert.NoError(t, err, "GetClients failed")
+	assert.Equal(t, 1, len(clients), "GetClients failed")
+
+	clientID := *(clients[0].ID)
+
+	// Create
+	tearDown, _ := CreatePolicy(t, client, clientID, PolicyRepresentation{
+		Name:        GetRandomNameP("PolicyName"),
+		Description: StringP("JS Policy"),
+		Type:        StringP("js"),
+		Logic:       POSITIVE,
+		JSPolicyRepresentation: JSPolicyRepresentation{
+			Code: StringP("$evaluation.grant();"),
+		},
+	})
+	// Delete
+	defer tearDown()
+}
+
+func TestGocloak_ClientPolicy(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	clients, err := client.GetClients(token.AccessToken, cfg.GoCloak.Realm, GetClientsParams{
+		ClientID: StringP(cfg.GoCloak.ClientID),
+	})
+	assert.NoError(t, err, "GetClients failed")
+	assert.Equal(t, 1, len(clients), "GetClients failed")
+
+	clientID := *(clients[0].ID)
+
+	// Create
+	tearDown, _ := CreatePolicy(t, client, clientID, PolicyRepresentation{
+		Name:        GetRandomNameP("PolicyName"),
+		Description: StringP("Client Policy"),
+		Type:        StringP("client"),
+		ClientPolicyRepresentation: ClientPolicyRepresentation{
+			Clients: []string{
+				clientID,
+			},
+		},
+	})
+	// Delete
+	defer tearDown()
+}
+
+
+
+func TestGocloak_TimePolicy(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	clients, err := client.GetClients(token.AccessToken, cfg.GoCloak.Realm, GetClientsParams{
+		ClientID: StringP(cfg.GoCloak.ClientID),
+	})
+	assert.NoError(t, err, "GetClients failed")
+	assert.Equal(t, 1, len(clients), "GetClients failed")
+
+	clientID := *(clients[0].ID)
+
+	// Create
+	tearDown, _ := CreatePolicy(t, client, clientID, PolicyRepresentation{
+		Name:        GetRandomNameP("PolicyName"),
+		Description: StringP("Time Policy"),
+		Type:        StringP("time"),
+		TimePolicyRepresentation: TimePolicyRepresentation{
+			NotBefore: StringP("2019-12-30 12:00:00"),
+			NotOnOrAfter: StringP("2020-12-30 12:00:00"),
+			DayMonth: StringP("1"),
+			DayMonthEnd: StringP("31"),
+			Month: StringP("1"),
+			MonthEnd: StringP("12"),
+			Year: StringP("1900"),
+			YearEnd: StringP("2100"),
+			Hour: StringP("1"),
+			HourEnd: StringP("24"),
+			Minute: StringP("0"),
+			MinuteEnd: StringP("60"),
+		},
+	})
+	// Delete
+	defer tearDown()
+}
+
+func TestGocloak_UserPolicy(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	clients, err := client.GetClients(token.AccessToken, cfg.GoCloak.Realm, GetClientsParams{
+		ClientID: StringP(cfg.GoCloak.ClientID),
+	})
+	assert.NoError(t, err, "GetClients failed")
+	assert.Equal(t, 1, len(clients), "GetClients failed")
+
+	clientID := *(clients[0].ID)
+
+	users, err := client.GetUsers(token.AccessToken, cfg.GoCloak.Realm, GetUsersParams{})
+	assert.NoError(t, err, "GetUsers failed")
+	assert.GreaterOrEqual(t, len(users), 1, "GetUsers failed")
+
+	// Create
+	tearDown, _ := CreatePolicy(t, client, clientID, PolicyRepresentation{
+		Name:        GetRandomNameP("PolicyName"),
+		Description: StringP("User Policy"),
+		Type:        StringP("user"),
+		UserPolicyRepresentation: UserPolicyRepresentation{
+			Users: []string{
+				*(users[0].ID),
+			},
+		},
+	})
+	// Delete
+	defer tearDown()
+}
+
+func TestGocloak_AggregatedPolicy(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	clients, err := client.GetClients(token.AccessToken, cfg.GoCloak.Realm, GetClientsParams{
+		ClientID: StringP(cfg.GoCloak.ClientID),
+	})
+	assert.NoError(t, err, "GetClients failed")
+	assert.Equal(t, 1, len(clients), "GetClients failed")
+
+	clientID := *(clients[0].ID)
+
+	tearDownClient, clientPolicyID := CreatePolicy(t, client, clientID, PolicyRepresentation{
+		Name:        GetRandomNameP("PolicyName"),
+		Description: StringP("Client Policy"),
+		Type:        StringP("client"),
+		ClientPolicyRepresentation: ClientPolicyRepresentation{
+			Clients: []string{
+				clientID,
+			},
+		},
+	})
+	defer tearDownClient()
+
+	tearDownJS, jsPolicyID := CreatePolicy(t, client, clientID, PolicyRepresentation{
+		Name:        GetRandomNameP("PolicyName"),
+		Description: StringP("JS Policy"),
+		Type:        StringP("js"),
+		Logic:       POSITIVE,
+		JSPolicyRepresentation: JSPolicyRepresentation{
+			Code: StringP("$evaluation.grant();"),
+		},
+	})
+	// Delete
+	defer tearDownJS()
+
+	// Create
+	tearDown, _ := CreatePolicy(t, client, clientID, PolicyRepresentation{
+		Name:        GetRandomNameP("PolicyName"),
+		Description: StringP("Aggregated Policy"),
+		Type:        StringP("aggregate"),
+		AggregatedPolicyRepresentation: AggregatedPolicyRepresentation{
+			Policies: []string{
+				clientPolicyID,
+				jsPolicyID,
+			},
+		},
+	})
+	// Delete
+	defer tearDown()
+}
+
+func TestGocloak_GroupPolicy(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	clients, err := client.GetClients(token.AccessToken, cfg.GoCloak.Realm, GetClientsParams{
+		ClientID: StringP(cfg.GoCloak.ClientID),
+	})
+	assert.NoError(t, err, "GetClients failed")
+	assert.Equal(t, 1, len(clients), "GetClients failed")
+
+	clientID := *(clients[0].ID)
+
+	tearDownGroup, groupID := CreateGroup(t, client)
+	defer tearDownGroup()
+
+	// Create
+	tearDown, _ := CreatePolicy(t, client, clientID, PolicyRepresentation{
+		Name:        GetRandomNameP("PolicyName"),
+		Description: StringP("Group Policy"),
+		Type:        StringP("group"),
+		GroupPolicyRepresentation: GroupPolicyRepresentation{
+			Groups: []*GroupDefinition{
+				&GroupDefinition{
+						ID: StringP(groupID),
+				},
+			},
+		},
+	})
+	// Delete
+	defer tearDown()
 }
