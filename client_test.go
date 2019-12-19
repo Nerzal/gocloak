@@ -241,7 +241,7 @@ func CreateResource(t *testing.T, client GoCloak, clientID string) (func(), stri
 			cfg.GoCloak.Realm,
 			clientID,
 			*(createdResource.ID))
-		FailIfErr(t, err, "DeleteResource failed")
+		assert.NoError(t, err, "DeleteResource failed")
 	}
 	return tearDown, *(createdResource.ID)
 }
@@ -268,7 +268,7 @@ func CreateScope(t *testing.T, client GoCloak, clientID string) (func(), string)
 			cfg.GoCloak.Realm,
 			clientID,
 			*(createdScope.ID))
-		FailIfErr(t, err, "DeleteScope failed")
+		assert.NoError(t, err, "DeleteScope failed")
 	}
 	return tearDown, *(createdScope.ID)
 }
@@ -290,7 +290,7 @@ func CreatePolicy(t *testing.T, client GoCloak, clientID string, policy PolicyRe
 			cfg.GoCloak.Realm,
 			clientID,
 			*(createdPolicy.ID))
-		FailIfErr(t, err, "DeletePolicy failed")
+		assert.NoError(t, err, "DeletePolicy failed")
 	}
 	return tearDown, *(createdPolicy.ID)
 }
@@ -312,7 +312,7 @@ func CreatePermission(t *testing.T, client GoCloak, clientID string, permission 
 			cfg.GoCloak.Realm,
 			clientID,
 			*(createdPermission.ID))
-		FailIfErr(t, err, "DeletePermission failed")
+		assert.NoError(t, err, "DeletePermission failed")
 	}
 	return tearDown, *(createdPermission.ID)
 }
