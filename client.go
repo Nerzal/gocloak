@@ -1352,3 +1352,286 @@ func (client *gocloak) DeleteIdentityProvider(token string, realm string, alias 
 
 	return checkForError(resp, err)
 }
+
+// GetResource returns a client's resource with the given id
+func (client *gocloak) GetResource(token string, realm string, clientID string, resourceID string) (*ResourceRepresentation, error) {
+	var result ResourceRepresentation
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "resource", resourceID))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+	return &result, err
+}
+
+// GetResources returns resources associated with the client
+func (client *gocloak) GetResources(token string, realm string, clientID string, params GetResourceParams) ([]*ResourceRepresentation, error) {
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, err
+	}
+	var result []*ResourceRepresentation
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		SetQueryParams(queryParams).
+		Get(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "resource"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+	return result, err
+}
+
+// CreateResource creates a resource associated with the client
+func (client *gocloak) CreateResource(token, realm string, clientID string, resource ResourceRepresentation) (*ResourceRepresentation, error) {
+	var result ResourceRepresentation
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		SetBody(resource).
+		Post(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "resource"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return &result, err
+}
+
+// UpdateResource updates a resource associated with the client
+func (client *gocloak) UpdateResource(token string, realm string, clientID string, resource ResourceRepresentation) error {
+	if NilOrEmpty(resource.ID) {
+		return errors.New("ID of a resource required")
+	}
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetBody(resource).
+		Put(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "resource", *(resource.ID)))
+
+	return checkForError(resp, err)
+}
+
+// DeleteResource deletes a resource associated with the client
+func (client *gocloak) DeleteResource(token string, realm string, clientID string, resourceID string) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		Delete(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "resource", resourceID))
+
+	return checkForError(resp, err)
+}
+
+// GetScope returns a client's scope with the given id
+func (client *gocloak) GetScope(token string, realm string, clientID string, scopeID string) (*ScopeRepresentation, error) {
+	var result ScopeRepresentation
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "scope", scopeID))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+	return &result, err
+}
+
+// GetScopes returns scopes associated with the client
+func (client *gocloak) GetScopes(token string, realm string, clientID string, params GetScopeParams) ([]*ScopeRepresentation, error) {
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, err
+	}
+	var result []*ScopeRepresentation
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		SetQueryParams(queryParams).
+		Get(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "scope"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+	return result, err
+}
+
+// CreateScope creates a scope associated with the client
+func (client *gocloak) CreateScope(token string, realm string, clientID string, scope ScopeRepresentation) (*ScopeRepresentation, error) {
+	var result ScopeRepresentation
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		SetBody(scope).
+		Post(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "scope"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+	return &result, err
+}
+
+// UpdateScope updates a scope associated with the client
+func (client *gocloak) UpdateScope(token string, realm string, clientID string, scope ScopeRepresentation) error {
+	if NilOrEmpty(scope.ID) {
+		return errors.New("ID of a scope required")
+	}
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetBody(scope).
+		Put(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "scope", *(scope.ID)))
+
+	return checkForError(resp, err)
+}
+
+// DeleteScope deletes a scope associated with the client
+func (client *gocloak) DeleteScope(token string, realm string, clientID string, scopeID string) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		Delete(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "scope", scopeID))
+
+	return checkForError(resp, err)
+}
+
+// GetPolicy returns a client's policy with the given id
+func (client *gocloak) GetPolicy(token string, realm string, clientID string, policyID string) (*PolicyRepresentation, error) {
+	var result PolicyRepresentation
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "policy", policyID))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+	return &result, err
+}
+
+// GetPolicies returns policies associated with the client
+func (client *gocloak) GetPolicies(token string, realm string, clientID string, params GetPolicyParams) ([]*PolicyRepresentation, error) {
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, err
+	}
+
+	var adminURL string
+	if NilOrEmpty(params.Type) {
+		adminURL = client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "policy")
+	} else {
+		client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "policy", *(params.Type))
+	}
+
+	var result []*PolicyRepresentation
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		SetQueryParams(queryParams).
+		Get(adminURL)
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+	return result, err
+}
+
+// CreatePolicy creates a policy associated with the client
+func (client *gocloak) CreatePolicy(token string, realm string, clientID string, policy PolicyRepresentation) (*PolicyRepresentation, error) {
+	if NilOrEmpty(policy.Type) {
+		return nil, errors.New("Type of a policy required")
+	}
+	var result PolicyRepresentation
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		SetBody(policy).
+		Post(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "policy", *(policy.Type)))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+	return &result, err
+}
+
+// UpdatePolicy updates a policy associated with the client
+func (client *gocloak) UpdatePolicy(token string, realm string, clientID string, policy PolicyRepresentation) error {
+	if NilOrEmpty(policy.ID) {
+		return errors.New("ID of a policy required")
+	}
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetBody(policy).
+		Put(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "policy", *(policy.ID)))
+
+	return checkForError(resp, err)
+}
+
+// DeletePolicy deletes a policy associated with the client
+func (client *gocloak) DeletePolicy(token string, realm string, clientID string, policyID string) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		Delete(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "policy", policyID))
+
+	return checkForError(resp, err)
+}
+
+// GetPermission returns a client's permission with the given id
+func (client *gocloak) GetPermission(token string, realm string, clientID string, permissionID string) (*PermissionRepresentation, error) {
+	var result PermissionRepresentation
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "permission", permissionID))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+	return &result, err
+}
+
+// GetPolicies returns permissions associated with the client
+func (client *gocloak) GetPermissions(token string, realm string, clientID string, params GetPermissionParams) ([]*PermissionRepresentation, error) {
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, err
+	}
+
+	var adminURL string
+	if NilOrEmpty(params.Type) {
+		adminURL = client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "permission")
+	} else {
+		client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "permission", *(params.Type))
+	}
+
+	var result []*PermissionRepresentation
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		SetQueryParams(queryParams).
+		Get(adminURL)
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+	return result, err
+}
+
+// CreatePermission creates a permission associated with the client
+func (client *gocloak) CreatePermission(token string, realm string, clientID string, permission PermissionRepresentation) (*PermissionRepresentation, error) {
+	if NilOrEmpty(permission.Type) {
+		return nil, errors.New("Type of a permission required")
+	}
+	var result PermissionRepresentation
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		SetBody(permission).
+		Post(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "permission", *(permission.Type)))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+	return &result, err
+}
+
+// UpdatePermission updates a permission associated with the client
+func (client *gocloak) UpdatePermission(token string, realm string, clientID string, permission PermissionRepresentation) error {
+	if NilOrEmpty(permission.ID) {
+		return errors.New("ID of a permission required")
+	}
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetBody(permission).
+		Put(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "permission", *(permission.ID)))
+
+	return checkForError(resp, err)
+}
+
+// DeletePermission deletes a policy associated with the client
+func (client *gocloak) DeletePermission(token string, realm string, clientID string, permissionID string) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		Delete(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "permission", permissionID))
+
+	return checkForError(resp, err)
+}

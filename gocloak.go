@@ -225,4 +225,49 @@ type GoCloak interface {
 	UpdateIdentityProvider(token string, realm string, alias string, providerRep IdentityProviderRepresentation) error
 	// DeleteIdentityProvider deletes the identity provider in a realm
 	DeleteIdentityProvider(token string, realm string, alias string) error
+
+	// *** Protection API ***
+	// GetResource returns a client's resource with the given id
+	GetResource(token string, realm string, clientID string, resourceID string) (*ResourceRepresentation, error)
+	// GetResources a returns resources associated with the client
+	GetResources(token string, realm string, clientID string, params GetResourceParams) ([]*ResourceRepresentation, error)
+	// CreateResource creates a resource associated with the client
+	CreateResource(token string, realm string, clientID string, resource ResourceRepresentation) (*ResourceRepresentation, error)
+	// UpdateResource updates a resource associated with the client
+	UpdateResource(token string, realm string, clientID string, resource ResourceRepresentation) error
+	// DeleteResource deletes a resource associated with the client
+	DeleteResource(token string, realm string, clientID string, resourceID string) error
+
+	// GetScope returns a client's scope with the given id
+	GetScope(token string, realm string, clientID string, scopeID string) (*ScopeRepresentation, error)
+	// GetScopes returns scopes associated with the client
+	GetScopes(token string, realm string, clientID string, params GetScopeParams) ([]*ScopeRepresentation, error)
+	// CreateScope creates a scope associated with the client
+	CreateScope(token string, realm string, clientID string, scope ScopeRepresentation) (*ScopeRepresentation, error)
+	// UpdateScope updates a scope associated with the client
+	UpdateScope(token string, realm string, clientID string, resource ScopeRepresentation) error
+	// DeleteScope deletes a scope associated with the client
+	DeleteScope(token string, realm string, clientID string, scopeID string) error
+
+	// GetPolicy returns a client's policy with the given id
+	GetPolicy(token string, realm string, clientID string, policyID string) (*PolicyRepresentation, error)
+	// GetPolicies returns policies associated with the client
+	GetPolicies(token string, realm string, clientID string, params GetPolicyParams) ([]*PolicyRepresentation, error)
+	// CreatePolicy creates a policy associated with the client
+	CreatePolicy(token string, realm string, clientID string, policy PolicyRepresentation) (*PolicyRepresentation, error)
+	// UpdatePolicy updates a policy associated with the client
+	UpdatePolicy(token string, realm string, clientID string, policy PolicyRepresentation) error
+	// DeletePolicy deletes a policy associated with the client
+	DeletePolicy(token string, realm string, clientID string, policyID string) error
+
+	// GetPermission returns a client's permission with the given id
+	GetPermission(token string, realm string, clientID string, permissionID string) (*PermissionRepresentation, error)
+	// GetPermissions returns permissions associated with the client
+	GetPermissions(token string, realm string, clientID string, params GetPermissionParams) ([]*PermissionRepresentation, error)
+	// CreatePermission creates a permission associated with the client
+	CreatePermission(token string, realm string, clientID string, permission PermissionRepresentation) (*PermissionRepresentation, error)
+	// UpdatePermission updates a permission associated with the client
+	UpdatePermission(token string, realm string, clientID string, permission PermissionRepresentation) error
+	// DeletePermission deletes a permission associated with the client
+	DeletePermission(token string, realm string, clientID string, permissionID string) error
 }

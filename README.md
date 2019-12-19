@@ -186,6 +186,31 @@ type GoCloak interface {
 	GetClientOfflineSessions(token, realm, clientID string) ([]*UserSessionRepresentation, error)
 	GetUserSessions(token, realm, userID string) ([]*UserSessionRepresentation, error)
 	GetUserOfflineSessionsForClient(token, realm, userID, clientID string) ([]*UserSessionRepresentation, error)
+
+	// *** Protection API ***
+	GetResource(token string, realm string, clientID string, resourceID string) (*Resource, error)
+	GetResources(token string, realm string, clientID string) ([]*Resource, error)
+	CreateResource(token string, realm string, clientID string, resource Resource) (*Resource, error)
+	UpdateResource(token string, realm string, clientID string, resource Resource) error
+	DeleteResource(token string, realm string, clientID string, resourceID string) error
+
+	GetScope(token string, realm string, clientID string, scopeID string) (*ScopeRepresentation, error)
+	GetScopes(token string, realm string, clientID string, params GetScopeParams) ([]*ScopeRepresentation, error)
+	CreateScope(token string, realm string, clientID string, scope ScopeRepresentation) (*ScopeRepresentation, error)
+	UpdateScope(token string, realm string, clientID string, resource ScopeRepresentation) error
+	DeleteScope(token string, realm string, clientID string, scopeID string) error
+
+	GetPolicy(token string, realm string, clientID string, policyID string) (*PolicyRepresentation, error)
+	GetPolicies(token string, realm string, clientID string, params GetPolicyParams) ([]*PolicyRepresentation, error)
+	CreatePolicy(token string, realm string, clientID string, policy PolicyRepresentation) (*PolicyRepresentation, error)
+	UpdatePolicy(token string, realm string, clientID string, policy PolicyRepresentation) error
+	DeletePolicy(token string, realm string, clientID string, policyID string) error
+
+	GetPermission(token string, realm string, clientID string, permissionID string) (*PermissionRepresentation, error)
+	GetPermissions(token string, realm string, clientID string, params GetPermissionParams) ([]*PermissionRepresentation, error)
+	CreatePermission(token string, realm string, clientID string, permission PermissionRepresentation) (*PermissionRepresentation, error)
+	UpdatePermission(token string, realm string, clientID string, permission PermissionRepresentation) error
+	DeletePermission(token string, realm string, clientID string, permissionID string) error
 }
 ```
 

@@ -355,6 +355,12 @@ type ResourceServerRepresentation struct {
 	Scopes                        []*ScopeRepresentation    `json:"scopes,omitempty"`
 }
 
+// RoleDefinition represents a role in a RolePolicyRepresentation
+type RoleDefinition struct {
+	ID      *string `json:"id"`
+	Private *bool   `json:"private,omitempty"`
+}
+
 // PolicyEnforcementMode is an enum type for PolicyEnforcementMode of ResourceServerRepresentation
 type PolicyEnforcementMode int
 
@@ -363,6 +369,25 @@ const (
 	ENFORCING PolicyEnforcementMode = iota
 	PERMISSIVE
 	DISABLED
+)
+
+// Logic is an enum type for policy logic
+type Logic string
+
+// Logic values
+var (
+	POSITIVE *Logic = LogicP("POSITIVE")
+	NEGATIVE *Logic = LogicP("NEGATIVE")
+)
+
+// DecisionStrategy is an enum type for DecisionStrategy of PolicyRepresentation
+type DecisionStrategy string
+
+// DecisionStrategy values
+var (
+	AFFIRMATIVE *DecisionStrategy = DecisionStrategyP("AFFIRMATIVE")
+	UNANIMOUS   *DecisionStrategy = DecisionStrategyP("UNANIMOUS")
+	CONSENSUS   *DecisionStrategy = DecisionStrategyP("CONSENSUS")
 )
 
 // PolicyRepresentation is a representation of a Policy
@@ -378,38 +403,87 @@ type PolicyRepresentation struct {
 	Resources        []string          `json:"resources,omitempty"`
 	Scopes           []string          `json:"scopes,omitempty"`
 	Type             *string           `json:"type,omitempty"`
+	RolePolicyRepresentation
+	JSPolicyRepresentation
+	ClientPolicyRepresentation
+	TimePolicyRepresentation
+	UserPolicyRepresentation
+	AggregatedPolicyRepresentation
+	GroupPolicyRepresentation
 }
 
-// DecisionStrategy is an enum type for DecisionStrategy of PolicyRepresentation
-type DecisionStrategy int
+// RolePolicyRepresentation represents role based policies
+type RolePolicyRepresentation struct {
+	Roles []*RoleDefinition `json:"roles,omitempty"`
+}
 
-// DecisionStrategy values
-const (
-	AFFIRMATIVE DecisionStrategy = iota
-	UNANIMOUS
-	CONSENSUS
-)
+// JSPolicyRepresentation represents js based policies
+type JSPolicyRepresentation struct {
+	Code *string `json:"code,omitempty"`
+}
 
-// Logic is an enum type for Logic of PolicyRepresentation
-type Logic int
+// ClientPolicyRepresentation represents client based policies
+type ClientPolicyRepresentation struct {
+	Clients []string `json:"clients,omitempty"`
+}
 
-// Logic values
-const (
-	POSITIVE Logic = iota
-	NEGATIVE
-)
+// TimePolicyRepresentation represents time based policies
+type TimePolicyRepresentation struct {
+	NotBefore    *string `json:"notBefore,omitempty"`
+	NotOnOrAfter *string `json:"notOnOrAfter,omitempty"`
+	DayMonth     *string `json:"dayMonth,omitempty"`
+	DayMonthEnd  *string `json:"dayMonthEnd,omitempty"`
+	Month        *string `json:"month,omitempty"`
+	MonthEnd     *string `json:"monthEnd,omitempty"`
+	Year         *string `json:"year,omitempty"`
+	YearEnd      *string `json:"yearEnd,omitempty"`
+	Hour         *string `json:"hour,omitempty"`
+	HourEnd      *string `json:"hourEnd,omitempty"`
+	Minute       *string `json:"minute,omitempty"`
+	MinuteEnd    *string `json:"minuteEnd,omitempty"`
+}
+
+// UserPolicyRepresentation represents user based policies
+type UserPolicyRepresentation struct {
+	Users []string `json:"users,omitempty"`
+}
+
+// AggregatedPolicyRepresentation represents aggregated policies
+type AggregatedPolicyRepresentation struct {
+	Policies []string `json:"policies,omitempty"`
+}
+
+// GroupPolicyRepresentation represents group based policies
+type GroupPolicyRepresentation struct {
+	Groups      []*GroupDefinition `json:"groups,omitempty"`
+	GroupsClaim *string            `json:"groupsClaim,omitempty"`
+}
+
+// GroupDefinition represents a group in a GroupPolicyRepresentation
+type GroupDefinition struct {
+	ID             *string `json:"id"`
+	Path           *string `json:"path,omitempty"`
+	ExtendChildren *bool   `json:"extendChildren,omitempty"`
+}
 
 // ResourceRepresentation is a representation of a Resource
 type ResourceRepresentation struct {
-	ID                 *string                `json:"id,omitempty"` //TODO: is marked "_optional" in template, input error or deliberate?
-	Attributes         map[string]string      `json:"attributes,omitempty"`
-	DisplayName        *string                `json:"displayName,omitempty"`
-	IconURI            *string                `json:"icon_uri,omitempty"` //TODO: With "_" because that's how it's written down in the template
-	Name               *string                `json:"name,omitempty"`
-	OwnerManagedAccess *bool                  `json:"ownerManagedAccess"`
-	Scopes             []*ScopeRepresentation `json:"scopes,omitempty"`
-	Type               *string                `json:"type,omitempty"`
-	URIs               []string               `json:"uris,omitempty"`
+	ID                 *string                      `json:"_id,omitempty"` //TODO: is marked "_optional" in template, input error or deliberate?
+	Attributes         map[string][]string          `json:"attributes,omitempty"`
+	DisplayName        *string                      `json:"displayName,omitempty"`
+	IconURI            *string                      `json:"icon_uri,omitempty"` //TODO: With "_" because that's how it's written down in the template
+	Name               *string                      `json:"name,omitempty"`
+	Owner              *ResourceOwnerRepresentation `json:"owner"`
+	OwnerManagedAccess *bool                        `json:"ownerManagedAccess"`
+	Scopes             []*ScopeRepresentation       `json:"scopes,omitempty"`
+	Type               *string                      `json:"type,omitempty"`
+	URIs               []string                     `json:"uris,omitempty"`
+}
+
+// ResourceOwnerRepresentation represents a resource's owner
+type ResourceOwnerRepresentation struct {
+	ID   *string `json:"id"`
+	Name *string `json:"name"`
 }
 
 // ScopeRepresentation is a represents a Scope
@@ -693,4 +767,58 @@ type IdentityProviderRepresentation struct {
 	ProviderID                *string           `json:"providerId,omitempty"`
 	StoreToken                *bool             `json:"storeToken,omitempty"`
 	TrustEmail                *bool             `json:"trustEmail,omitempty"`
+}
+
+// GetResourceParams represents the optional parameters for getting resources
+type GetResourceParams struct {
+	Deep  *bool   `json:"deep,omitempty"`
+	First *int    `json:"first,omitempty"`
+	Max   *int    `json:"max,omitempty"`
+	Name  *string `json:"name,omitempty"`
+	Owner *string `json:"owner,omitempty"`
+	Type  *string `json:"type,omitempty"`
+	URI   *string `json:"uri,omitempty"`
+	Scope *string `json:"scope,omitempty"`
+}
+
+// GetScopeParams represents the optional parameters for getting scopes
+type GetScopeParams struct {
+	Deep  *bool   `json:"deep,omitempty"`
+	First *int    `json:"first,omitempty"`
+	Max   *int    `json:"max,omitempty"`
+	Name  *string `json:"name,omitempty"`
+}
+
+// GetPolicyParams represents the optional parameters for getting policies
+// TODO: more policy params?
+type GetPolicyParams struct {
+	First      *int    `json:"first,omitempty"`
+	Max        *int    `json:"max,omitempty"`
+	Name       *string `json:"name,omitempty"`
+	Permission *bool   `json:"permission,omitempty"`
+	Type       *string `json:"type,omitempty"`
+}
+
+// GetPermissionParams represents the optional parameters for getting permissions
+type GetPermissionParams struct {
+	First    *int    `json:"first,omitempty"`
+	Max      *int    `json:"max,omitempty"`
+	Name     *string `json:"name,omitempty"`
+	Resource *string `json:"resource,omitempty"`
+	Scope    *string `json:"scope,omitempty"`
+	Type     *string `json:"type,omitempty"`
+}
+
+// PermissionRepresentation is a representation of a Permission
+type PermissionRepresentation struct {
+	DecisionStrategy *DecisionStrategy `json:"decisionStrategy,omitempty"`
+	Description      *string           `json:"description,omitempty"`
+	ID               *string           `json:"id,omitempty"`
+	Logic            *Logic            `json:"logic,omitempty"`
+	Name             *string           `json:"name,omitempty"`
+	Policies         []string          `json:"policies,omitempty"`
+	Resources        []string          `json:"resources,omitempty"`
+	ResourceType     *string           `json:"resource_type,omitempty"`
+	Scopes           []string          `json:"scopes,omitempty"`
+	Type             *string           `json:"type,omitempty"`
 }

@@ -77,3 +77,13 @@ func PFloat64(value *float64) float64 {
 func NilOrEmpty(value *string) bool {
 	return value == nil || len(*value) == 0
 }
+
+// DecisionStrategyP returns a pointer for a DecisionStrategy value
+func DecisionStrategyP(value DecisionStrategy) *DecisionStrategy {
+	return &value
+}
+
+// LogicP returns a pointer for a LogicP value
+func LogicP(value Logic) *Logic {
+	return &value
+}
