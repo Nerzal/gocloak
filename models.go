@@ -375,18 +375,28 @@ const (
 type Logic string
 
 // Logic values
-const (
-	POSITIVE Logic = "POSITIVE"
-	NEGATIVE Logic = "NEGATIVE"
+var (
+	POSITIVE *Logic = LogicP("POSITIVE")
+	NEGATIVE *Logic = LogicP("NEGATIVE")
+)
+
+// DecisionStrategy is an enum type for DecisionStrategy of PolicyRepresentation
+type DecisionStrategy string
+
+// DecisionStrategy values
+var (
+	AFFIRMATIVE *DecisionStrategy = DecisionStrategyP("AFFIRMATIVE")
+	UNANIMOUS   *DecisionStrategy = DecisionStrategyP("UNANIMOUS")
+	CONSENSUS   *DecisionStrategy = DecisionStrategyP("CONSENSUS")
 )
 
 // PolicyRepresentation is a representation of a Policy
 type PolicyRepresentation struct {
 	Config           map[string]string `json:"config,omitempty"`
-	DecisionStrategy DecisionStrategy  `json:"decisionStrategy,omitempty"`
+	DecisionStrategy *DecisionStrategy `json:"decisionStrategy,omitempty"`
 	Description      *string           `json:"description,omitempty"`
 	ID               *string           `json:"id,omitempty"`
-	Logic            Logic             `json:"logic,omitempty"`
+	Logic            *Logic            `json:"logic,omitempty"`
 	Name             *string           `json:"name,omitempty"`
 	Owner            *string           `json:"owner,omitempty"`
 	Policies         []string          `json:"policies,omitempty"`
@@ -401,16 +411,6 @@ type PolicyRepresentation struct {
 	AggregatedPolicyRepresentation
 	GroupPolicyRepresentation
 }
-
-// DecisionStrategy is an enum type for DecisionStrategy of PolicyRepresentation
-type DecisionStrategy string
-
-// DecisionStrategy values
-const (
-	AFFIRMATIVE DecisionStrategy = "AFFIRMATIVE"
-	UNANIMOUS   DecisionStrategy = "UNANIMOUS"
-	CONSENSUS   DecisionStrategy = "CONSENSUS"
-)
 
 // RolePolicyRepresentation represents role based policies
 type RolePolicyRepresentation struct {
@@ -811,14 +811,14 @@ type GetPermissionParams struct {
 
 // PermissionRepresentation is a representation of a Permission
 type PermissionRepresentation struct {
-	DecisionStrategy DecisionStrategy `json:"decisionStrategy,omitempty"`
-	Description      *string          `json:"description,omitempty"`
-	ID               *string          `json:"id,omitempty"`
-	Logic            Logic            `json:"logic,omitempty"`
-	Name             *string          `json:"name,omitempty"`
-	Policies         []string         `json:"policies,omitempty"`
-	Resources        []string         `json:"resources,omitempty"`
-	ResourceType     *string          `json:"resource_type,omitempty"`
-	Scopes           []string         `json:"scopes,omitempty"`
-	Type             *string          `json:"type,omitempty"`
+	DecisionStrategy *DecisionStrategy `json:"decisionStrategy,omitempty"`
+	Description      *string           `json:"description,omitempty"`
+	ID               *string           `json:"id,omitempty"`
+	Logic            *Logic             `json:"logic,omitempty"`
+	Name             *string           `json:"name,omitempty"`
+	Policies         []string          `json:"policies,omitempty"`
+	Resources        []string          `json:"resources,omitempty"`
+	ResourceType     *string           `json:"resource_type,omitempty"`
+	Scopes           []string          `json:"scopes,omitempty"`
+	Type             *string           `json:"type,omitempty"`
 }
