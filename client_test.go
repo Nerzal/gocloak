@@ -742,6 +742,9 @@ func TestGocloak_GetRequestingPartyToken(t *testing.T) {
 	)
 	assert.NoError(t, err, "Get requesting party token failed")
 	t.Logf("New RPT: %+v", *rpt)
+
+	_, err = client.RetrospectToken(rpt.AccessToken, cfg.GoCloak.ClientID, cfg.GoCloak.ClientSecret, cfg.GoCloak.Realm)
+	assert.NoError(t, err, "RetrospectToken failed")
 }
 
 func TestGocloak_LoginClient(t *testing.T) {

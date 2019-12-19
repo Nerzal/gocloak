@@ -89,17 +89,25 @@ type IssuerResponse struct {
 	TokensNotBefore *int    `json:"tokens-not-before,omitempty"`
 }
 
+// ResourcePermission represents a permission granted to a resource
+type ResourcePermission struct {
+	RSID           *string  `json:"rsid"`
+	RSName         *string  `json:"rsname,omitempty"`
+	Scopes         []string `json:"scopes,omitempty"`
+	ResourceScopes []string `json:"resource_scopes,omitempty"`
+}
+
 // RetrospecTokenResult is returned when a token was checked
 type RetrospecTokenResult struct {
-	Permissions map[string]string `json:"permissions,omitempty"`
-	Exp         *int              `json:"exp,omitempty"`
-	Nbf         *int              `json:"nbf,omitempty"`
-	Iat         *int              `json:"iat,omitempty"`
-	Aud         *StringOrArray    `json:"aud,omitempty"`
-	Active      *bool             `json:"active"`
-	AuthTime    *int              `json:"auth_time,omitempty"`
-	Jti         *string           `json:"jti,omitempty"`
-	Type        *string           `json:"typ,omitempty"`
+	Permissions []*ResourcePermission `json:"permissions,omitempty"`
+	Exp         *int                  `json:"exp,omitempty"`
+	Nbf         *int                  `json:"nbf,omitempty"`
+	Iat         *int                  `json:"iat,omitempty"`
+	Aud         *StringOrArray        `json:"aud,omitempty"`
+	Active      *bool                 `json:"active"`
+	AuthTime    *int                  `json:"auth_time,omitempty"`
+	Jti         *string               `json:"jti,omitempty"`
+	Type        *string               `json:"typ,omitempty"`
 }
 
 // User represents the Keycloak User Structure
