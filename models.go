@@ -814,7 +814,7 @@ type PermissionRepresentation struct {
 	DecisionStrategy *DecisionStrategy `json:"decisionStrategy,omitempty"`
 	Description      *string           `json:"description,omitempty"`
 	ID               *string           `json:"id,omitempty"`
-	Logic            *Logic             `json:"logic,omitempty"`
+	Logic            *Logic            `json:"logic,omitempty"`
 	Name             *string           `json:"name,omitempty"`
 	Policies         []string          `json:"policies,omitempty"`
 	Resources        []string          `json:"resources,omitempty"`
