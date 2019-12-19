@@ -2562,6 +2562,20 @@ func TestGocloak_CreateListGetUpdateDeleteResource(t *testing.T) {
 	t.Logf("Created Resource: %+v", *(createdResource.ID))
 	assert.Equal(t, resourceID, *(createdResource.ID))
 
+	// Looking for a created resource
+	resources, err := client.GetResources(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		GetResourceParams{
+			Name: createdResource.Name,
+		},
+	)
+	assert.NoError(t, err, "GetResources failed")
+	assert.Len(t, resources, 1, "GetResources should return exact 1 resource")
+	assert.Equal(t, *(createdResource.ID), *(resources[0].ID))
+	t.Logf("Resources: %+v", resources)
+
 	err = client.UpdateResource(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
@@ -2610,6 +2624,20 @@ func TestGocloak_CreateListGetUpdateDeleteScope(t *testing.T) {
 	assert.NoError(t, err, "GetScope failed")
 	t.Logf("Created Scope: %+v", *(createdScope.ID))
 	assert.Equal(t, scopeID, *(createdScope.ID))
+
+	// Looking for a created scope
+	scopes, err := client.GetScopes(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		GetScopeParams{
+			Name: createdScope.Name,
+		},
+	)
+	assert.NoError(t, err, "GetScopes failed")
+	assert.Len(t, scopes, 1, "GetScopes should return exact 1 scope")
+	assert.Equal(t, *(createdScope.ID), *(scopes[0].ID))
+	t.Logf("Scopes: %+v", scopes)
 
 	err = client.UpdateScope(
 		token.AccessToken,
@@ -2667,6 +2695,20 @@ func TestGocloak_CreateListGetUpdateDeletePolicy(t *testing.T) {
 	assert.NoError(t, err, "GetPolicy failed")
 	t.Logf("Created Policy: %+v", *(createdPolicy.ID))
 	assert.Equal(t, policyID, *(createdPolicy.ID))
+
+	// Looking for a created policy
+	policies, err := client.GetPolicies(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		GetPolicyParams{
+			Name: createdPolicy.Name,
+		},
+	)
+	assert.NoError(t, err, "GetPolicies failed")
+	assert.Len(t, policies, 1, "GetPolicies should return exact 1 policy")
+	assert.Equal(t, *(createdPolicy.ID), *(policies[0].ID))
+	t.Logf("Policies: %+v", policies)
 
 	err = client.UpdatePolicy(
 		token.AccessToken,
@@ -2926,6 +2968,20 @@ func TestGocloak_CreateListGetUpdateDeletePermission(t *testing.T) {
 	assert.NoError(t, err, "GetPermission failed")
 	t.Logf("Created Permission: %+v", *(createdPermission.ID))
 	assert.Equal(t, permissionID, *(createdPermission.ID))
+
+	// Looking for a created permission
+	permissions, err := client.GetPermissions(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		GetPermissionParams{
+			Name: createdPermission.Name,
+		},
+	)
+	assert.NoError(t, err, "GetPermissions failed")
+	assert.Len(t, permissions, 1, "GetPermissions should return exact 1 permission")
+	assert.Equal(t, *(createdPermission.ID), *(permissions[0].ID))
+	t.Logf("Permissions: %+v", permissions)
 
 	err = client.UpdatePermission(
 		token.AccessToken,
