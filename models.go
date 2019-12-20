@@ -91,7 +91,8 @@ type IssuerResponse struct {
 
 // ResourcePermission represents a permission granted to a resource
 type ResourcePermission struct {
-	RSID           *string  `json:"rsid"`
+	RSID           *string  `json:"rsid,omitempty"`
+	ResourceID     *string  `json:"resource_id,omitempty"`
 	RSName         *string  `json:"rsname,omitempty"`
 	Scopes         []string `json:"scopes,omitempty"`
 	ResourceScopes []string `json:"resource_scopes,omitempty"`
