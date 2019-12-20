@@ -370,18 +370,6 @@ func (client *gocloak) LogoutPublicClient(clientID, realm, accessToken, refreshT
 	return checkForError(resp, err)
 }
 
-// RequestPermission request a permission
-func (client *gocloak) RequestPermission(clientID, clientSecret, realm, username, password string, permission string) (*JWT, error) {
-	return client.GetToken(realm, TokenOptions{
-		ClientID:     &clientID,
-		ClientSecret: &clientSecret,
-		GrantType:    StringP("password"),
-		Username:     &username,
-		Password:     &password,
-		Permission:   &permission,
-	})
-}
-
 // ExecuteActionsEmail executes an actions email
 func (client *gocloak) ExecuteActionsEmail(token, realm string, params ExecuteActionsEmail) error {
 	queryParams, err := GetQueryParams(params)

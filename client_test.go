@@ -522,23 +522,40 @@ func TestGocloak_RequestPermission(t *testing.T) {
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	SetUpTestUser(t, client)
-	token, err := client.RequestPermission(
+	token, err := client.Login(
 		cfg.GoCloak.ClientID,
 		cfg.GoCloak.ClientSecret,
 		cfg.GoCloak.Realm,
 		cfg.GoCloak.UserName,
-		cfg.GoCloak.Password,
-		"Permission foo # 3")
-	FailIfErr(t, err, "login failed")
+		cfg.GoCloak.Password)
+	assert.NoError(t, err, "login failed")
+
+	rpt, err := client.GetRequestingPartyToken(token.AccessToken, cfg.GoCloak.Realm, RequestingPartyTokenOptions{
+		Audience: StringP(cfg.GoCloak.ClientID),
+		Permissions: []string{
+			"Fake Resource",
+		},
+	})
+	assert.Error(t, err, "GetRequestingPartyToken failed")
+
+	rpt, err = client.GetRequestingPartyToken(token.AccessToken, cfg.GoCloak.Realm, RequestingPartyTokenOptions{
+		Audience: StringP(cfg.GoCloak.ClientID),
+		Permissions: []string{
+			"Default Resource",
+		},
+	})
+	assert.NoError(t, err, "GetRequestingPartyToken failed")
 
 	rptResult, err := client.RetrospectToken(
-		token.AccessToken,
+		rpt.AccessToken,
 		cfg.GoCloak.ClientID,
 		cfg.GoCloak.ClientSecret,
 		cfg.GoCloak.Realm)
 	t.Log(rptResult)
-	FailIfErr(t, err, "inspection failed")
-	FailIf(t, !PBool(rptResult.Active), "Inactive Token oO")
+	assert.NoError(t, err, "inspection failed")
+	assert.True(t, PBool(rptResult.Active), "Inactive Token oO")
+	assert.Equal(t, 1, len(rptResult.Permissions), "GetRequestingPartyToken failed")
+	assert.Equal(t, "Default Resource", *(rptResult.Permissions[0].RSName), "GetRequestingPartyToken failed")
 }
 
 func TestGocloak_GetCerts(t *testing.T) {
