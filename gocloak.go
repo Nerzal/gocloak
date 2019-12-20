@@ -26,8 +26,6 @@ type GoCloak interface {
 	LoginClient(clientID, clientSecret, realm string) (*JWT, error)
 	// LoginAdmin login as admin
 	LoginAdmin(username, password, realm string) (*JWT, error)
-	// RequestPermission sends a request to the token endpoint with permission parameter
-	RequestPermission(clientID, clientSecret, realm, username, password, permission string) (*JWT, error)
 	// RefreshToken used to refresh the token
 	RefreshToken(refreshToken string, clientID, clientSecret, realm string) (*JWT, error)
 	// DecodeAccessToken decodes the accessToken
