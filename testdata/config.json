@@ -3,7 +3,7 @@
   "proxy": "",
   "admin": {
     "username": "admin",
-    "password": "secret",
+    "password": "admin",
     "realm": "master"
   },
   "gocloak": {

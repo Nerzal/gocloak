@@ -2343,6 +2343,54 @@ func TestGocloak_AddClientRoleToUser_DeleteClientRoleFromUser(t *testing.T) {
 	assert.NoError(t, err, "DeleteClientRoleFromUser failed")
 }
 
+func TestGocloak_AddClientRoleToGroup_DeleteClientRoleFromGroup(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	SetUpTestUser(t, client)
+	tearDown1, roleName1 := CreateClientRole(t, client)
+	defer tearDown1()
+	token := GetAdminToken(t, client)
+	role1, err := client.GetClientRole(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		roleName1,
+	)
+	assert.NoError(t, err, "GetClientRole failed")
+	tearDown2, roleName2 := CreateClientRole(t, client)
+	defer tearDown2()
+	role2, err := client.GetClientRole(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		roleName2,
+	)
+	assert.NoError(t, err, "GetClientRole failed")
+
+	tearDownGroup, groupID := CreateGroup(t, client)
+	defer tearDownGroup()
+
+	roles := []Role{*role1, *role2}
+	err = client.AddClientRoleToGroup(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		groupID,
+		roles,
+	)
+	assert.NoError(t, err, "AddClientRoleToGroup failed")
+
+	err = client.DeleteClientRoleFromGroup(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		groupID,
+		roles,
+	)
+	assert.NoError(t, err, "DeleteClientRoleFromGroup failed")
+}
+
 func TestGocloak_AddDeleteClientRoleComposite(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)

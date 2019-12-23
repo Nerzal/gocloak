@@ -1270,11 +1270,29 @@ func (client *gocloak) AddClientRoleToUser(token string, realm string, clientID 
 	return checkForError(resp, err)
 }
 
+// AddClientRoleToGroup adds a client role to the group
+func (client *gocloak) AddClientRoleToGroup(token string, realm string, clientID string, groupID string, roles []Role) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetBody(roles).
+		Post(client.getAdminRealmURL(realm, "groups", groupID, "role-mappings", "clients", clientID))
+
+	return checkForError(resp, err)
+}
+
 // DeleteClientRoleFromUser adds client-level role mappings
 func (client *gocloak) DeleteClientRoleFromUser(token string, realm string, clientID string, userID string, roles []Role) error {
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetBody(roles).
 		Delete(client.getAdminRealmURL(realm, "users", userID, "role-mappings", "clients", clientID))
+
+	return checkForError(resp, err)
+}
+
+// DeleteClientRoleFromGroup removes a client role from from the group
+func (client *gocloak) DeleteClientRoleFromGroup(token string, realm string, clientID string, groupID string, roles []Role) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetBody(roles).
+		Delete(client.getAdminRealmURL(realm, "groups", groupID, "role-mappings", "clients", clientID))
 
 	return checkForError(resp, err)
 }
