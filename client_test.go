@@ -55,7 +55,7 @@ const (
 	gocloakClientID = "60be66a5-e007-464c-9b74-0e3c2e69e478"
 )
 
-func FailIfErr(t *testing.T, err error, msg string, args ...interface{}) {
+func FailIfErr(t testing.TB, err error, msg string, args ...interface{}) {
 	if IsObjectAlreadyExists(err) {
 		t.Logf("ObjectAlreadyExists error: %s", err.Error())
 		return
@@ -74,7 +74,7 @@ func FailIfErr(t *testing.T, err error, msg string, args ...interface{}) {
 	}
 }
 
-func FailIf(t *testing.T, cond bool, msg string, args ...interface{}) {
+func FailIf(t testing.TB, cond bool, msg string, args ...interface{}) {
 	if cond {
 		if len(args) > 0 {
 			t.Fatalf(msg, args...)
@@ -84,7 +84,7 @@ func FailIf(t *testing.T, cond bool, msg string, args ...interface{}) {
 	}
 }
 
-func GetConfig(t *testing.T) *Config {
+func GetConfig(t testing.TB) *Config {
 	configOnce.Do(func() {
 		rand.Seed(time.Now().UTC().UnixNano())
 		configFileName, ok := os.LookupEnv("GOCLOAK_TEST_CONFIG")
@@ -138,13 +138,13 @@ func GetUserToken(t *testing.T, client GoCloak) *JWT {
 	return token
 }
 
-func GetAdminToken(t *testing.T, client GoCloak) *JWT {
+func GetAdminToken(t testing.TB, client GoCloak) *JWT {
 	cfg := GetConfig(t)
 	token, err := client.LoginAdmin(
 		cfg.Admin.UserName,
 		cfg.Admin.Password,
 		cfg.Admin.Realm)
-	FailIfErr(t, err, "Login failed")
+	assert.NoError(t, err, "Login failed")
 	return token
 }
 
@@ -317,7 +317,7 @@ func CreatePermission(t *testing.T, client GoCloak, clientID string, permission 
 	return tearDown, *(createdPermission.ID)
 }
 
-func SetUpTestUser(t *testing.T, client GoCloak) {
+func SetUpTestUser(t testing.TB, client GoCloak) {
 	setupOnce.Do(func() {
 		cfg := GetConfig(t)
 		token := GetAdminToken(t, client)
@@ -365,7 +365,7 @@ func SetUpTestUser(t *testing.T, client GoCloak) {
 
 type RestyLogWriter struct {
 	io.Writer
-	t *testing.T
+	t testing.TB
 }
 
 func (w *RestyLogWriter) Errorf(format string, v ...interface{}) {
@@ -384,7 +384,7 @@ func (w *RestyLogWriter) write(format string, v ...interface{}) {
 	w.t.Logf(format, v...)
 }
 
-func NewClientWithDebug(t *testing.T) GoCloak {
+func NewClientWithDebug(t testing.TB) GoCloak {
 	cfg := GetConfig(t)
 	client := NewClient(cfg.HostName)
 	restyClient := client.RestyClient()
@@ -438,7 +438,7 @@ func FailRequest(client GoCloak, err error, failN, skipN int) GoCloak {
 	return client
 }
 
-func ClearRealmCache(t *testing.T, client GoCloak, realm ...string) {
+func ClearRealmCache(t testing.TB, client GoCloak, realm ...string) {
 	cfg := GetConfig(t)
 	token := GetAdminToken(t, client)
 	if len(realm) == 0 {
@@ -447,6 +447,10 @@ func ClearRealmCache(t *testing.T, client GoCloak, realm ...string) {
 	for _, r := range realm {
 		err := client.ClearRealmCache(token.AccessToken, r)
 		assert.NoError(t, err, "ClearRealmCache failed for a realm: %s", r)
+		err = client.ClearUserCache(token.AccessToken, r)
+		assert.NoError(t, err, "ClearUserCache failed for a realm: %s", r)
+		err = client.ClearKeysCache(token.AccessToken, r)
+		assert.NoError(t, err, "ClearKeysCache failed for a realm: %s", r)
 	}
 }
 
@@ -785,7 +789,7 @@ func TestGocloak_LoginAdmin(t *testing.T) {
 		cfg.Admin.UserName,
 		cfg.Admin.Password,
 		cfg.Admin.Realm)
-	FailIfErr(t, err, "LoginAdmin failed")
+	assert.NoError(t, err, "LoginAdmin failed")
 }
 
 func TestGocloak_SetPassword(t *testing.T) {
@@ -964,7 +968,6 @@ func CreateClientScope(t *testing.T, client GoCloak, scope *ClientScope) (func()
 func TestGocloak_CreateClientScope_DeleteClientScope(t *testing.T) {
 	t.Parallel()
 	client := NewClientWithDebug(t)
-	defer ClearRealmCache(t, client)
 	tearDown, _ := CreateClientScope(t, client, nil)
 	tearDown()
 }
@@ -974,7 +977,6 @@ func TestGocloak_ListAddRemoveDefaultClientScopes(t *testing.T) {
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
-	defer ClearRealmCache(t, client)
 
 	scope := ClientScope{
 		ID:       GetRandomNameP("client-scope-id-"),
@@ -1035,7 +1037,6 @@ func TestGocloak_ListAddRemoveOptionalClientScopes(t *testing.T) {
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
-	defer ClearRealmCache(t, client)
 
 	scope := ClientScope{
 		ID:       GetRandomNameP("client-scope-id-"),
@@ -1701,48 +1702,28 @@ func TestGocloak_GetRealmRolesByGroupID(t *testing.T) {
 	FailIfErr(t, err, "GetRealmRolesByGroupID failed")
 }
 
-func TestGocloak_AddRealmRoleComposite(t *testing.T) {
+func TestGocloak_AddRealmRoleComposite_DeleteRealmRoleComposite(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
-	tearDown, compositeRole := CreateRealmRole(t, client)
+	tearDown, compositeRoleName := CreateRealmRole(t, client)
 	defer tearDown()
 
-	tearDown, role := CreateRealmRole(t, client)
+	tearDown, roleName := CreateRealmRole(t, client)
 	defer tearDown()
 
-	roleModel, err := client.GetRealmRole(token.AccessToken, cfg.GoCloak.Realm, role)
-	FailIfErr(t, err, "Can't get just created role with GetRealmRole")
+	role, err := client.GetRealmRole(token.AccessToken, cfg.GoCloak.Realm, roleName)
+	assert.NoError(t, err, "Can't get just created role with GetRealmRole")
 
 	err = client.AddRealmRoleComposite(token.AccessToken,
-		cfg.GoCloak.Realm, compositeRole, []Role{*roleModel})
-	FailIfErr(t, err, "AddRealmRoleComposite failed")
-}
-
-func TestGocloak_DeleteRealmRoleComposite(t *testing.T) {
-	t.Parallel()
-	cfg := GetConfig(t)
-	client := NewClientWithDebug(t)
-	token := GetAdminToken(t, client)
-
-	tearDown, compositeRole := CreateRealmRole(t, client)
-	defer tearDown()
-
-	tearDown, role := CreateRealmRole(t, client)
-	defer tearDown()
-
-	roleModel, err := client.GetRealmRole(token.AccessToken, cfg.GoCloak.Realm, role)
-	FailIfErr(t, err, "Can't get just created role with GetRealmRole")
-
-	err = client.AddRealmRoleComposite(token.AccessToken,
-		cfg.GoCloak.Realm, compositeRole, []Role{*roleModel})
-	FailIfErr(t, err, "AddRealmRoleComposite failed")
+		cfg.GoCloak.Realm, compositeRoleName, []Role{*role})
+	assert.NoError(t, err)
 
 	err = client.DeleteRealmRoleComposite(token.AccessToken,
-		cfg.GoCloak.Realm, compositeRole, []Role{*roleModel})
-	FailIfErr(t, err, "DeleteRealmRoleComposite failed")
+		cfg.GoCloak.Realm, compositeRoleName, []Role{*role})
+	assert.NoError(t, err)
 }
 
 // -----
@@ -2425,7 +2406,6 @@ func TestGocloak_CreateDeleteClientScopeWithMappers(t *testing.T) {
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
-	defer ClearRealmCache(t, client)
 
 	id := GetRandomName("client-scope-id-")
 	rolemapperID := GetRandomName("client-rolemapper-id-")
@@ -2503,7 +2483,6 @@ func TestGocloak_CreateProvider(t *testing.T) {
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
-	defer ClearRealmCache(t, client)
 
 	t.Run("create google provider", func(t *testing.T) {
 		repr := IdentityProviderRepresentation{
