@@ -537,6 +537,7 @@ func TestGocloak_RequestPermission(t *testing.T) {
 		},
 	})
 	assert.Error(t, err, "GetRequestingPartyToken failed")
+	assert.Nil(t, rpt)
 
 	rpt, err = client.GetRequestingPartyToken(token.AccessToken, cfg.GoCloak.Realm, RequestingPartyTokenOptions{
 		Audience: StringP(cfg.GoCloak.ClientID),
@@ -545,6 +546,7 @@ func TestGocloak_RequestPermission(t *testing.T) {
 		},
 	})
 	assert.NoError(t, err, "GetRequestingPartyToken failed")
+	assert.NotNil(t, rpt)
 
 	rptResult, err := client.RetrospectToken(
 		rpt.AccessToken,
