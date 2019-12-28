@@ -7,17 +7,14 @@
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FNerzal%2Fgocloak.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2FNerzal%2Fgocloak?ref=badge_shield)
 
 
+Golang Keycloak API Package
 
-golang keycloak client
+This client is based on: [go-keycloak](https://github.com/PhilippHeuer/go-keycloak)
 
-This client is based on : [go-keycloak](https://github.com/PhilippHeuer/go-keycloak)
-
-For Questions either raise an issue, or come to the [gopher-slack](https://invite.slack.golangbridge.org/) into the channel #gocloak
+For Questions either raise an issue, or come to the [gopher-slack](https://invite.slack.golangbridge.org/) into the channel [#gocloak](https://gophers.slack.com/app_redirect?channel=gocloak)
 
 If u are using the echo framework have a look at [gocloak-echo](https://github.com/Nerzal/gocloak-echo)
 
-
-https://gopkg.in/nerzal/gocloak.v1
 
 ## Contribution
 (WIP) https://github.com/Nerzal/gocloak/wiki/Contribute
