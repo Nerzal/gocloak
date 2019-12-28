@@ -209,6 +209,114 @@ func CreateGroup(t *testing.T, client GoCloak) (func(), string) {
 	return tearDown, groupID
 }
 
+func CreateResource(t *testing.T, client GoCloak, clientID string) (func(), string) {
+	cfg := GetConfig(t)
+	token := GetAdminToken(t, client)
+	resource := ResourceRepresentation{
+		Name:        GetRandomNameP("ResourceName"),
+		DisplayName: StringP("Resource Display Name"),
+		Type:        StringP("urn:gocloak:resources:test"),
+		IconURI:     StringP("/resource/test/icon"),
+		Attributes: map[string][]string{
+			"foo": {"bar", "alice", "bob", "roflcopter"},
+			"bar": {"baz"},
+		},
+		URIs: []string{
+			"/resource/1",
+			"/resource/2",
+		},
+		OwnerManagedAccess: BoolP(true),
+	}
+	createdResource, err := client.CreateResource(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		clientID,
+		resource)
+	assert.NoError(t, err, "CreateResource failed")
+	t.Logf("Created Resource ID: %s ", *(createdResource.ID))
+
+	tearDown := func() {
+		err := client.DeleteResource(
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			clientID,
+			*(createdResource.ID))
+		assert.NoError(t, err, "DeleteResource failed")
+	}
+	return tearDown, *(createdResource.ID)
+}
+
+func CreateScope(t *testing.T, client GoCloak, clientID string) (func(), string) {
+	cfg := GetConfig(t)
+	token := GetAdminToken(t, client)
+	scope := ScopeRepresentation{
+		Name:        GetRandomNameP("ScopeName"),
+		DisplayName: StringP("Scope Display Name"),
+		IconURI:     StringP("/scope/test/icon"),
+	}
+	createdScope, err := client.CreateScope(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		clientID,
+		scope)
+	assert.NoError(t, err, "CreateScope failed")
+	t.Logf("Created Scope ID: %s ", *(createdScope.ID))
+
+	tearDown := func() {
+		err := client.DeleteScope(
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			clientID,
+			*(createdScope.ID))
+		assert.NoError(t, err, "DeleteScope failed")
+	}
+	return tearDown, *(createdScope.ID)
+}
+
+func CreatePolicy(t *testing.T, client GoCloak, clientID string, policy PolicyRepresentation) (func(), string) {
+	cfg := GetConfig(t)
+	token := GetAdminToken(t, client)
+	createdPolicy, err := client.CreatePolicy(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		clientID,
+		policy)
+	assert.NoError(t, err, "CreatePolicy failed")
+	t.Logf("Created Policy ID: %s ", *(createdPolicy.ID))
+
+	tearDown := func() {
+		err := client.DeletePolicy(
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			clientID,
+			*(createdPolicy.ID))
+		assert.NoError(t, err, "DeletePolicy failed")
+	}
+	return tearDown, *(createdPolicy.ID)
+}
+
+func CreatePermission(t *testing.T, client GoCloak, clientID string, permission PermissionRepresentation) (func(), string) {
+	cfg := GetConfig(t)
+	token := GetAdminToken(t, client)
+	createdPermission, err := client.CreatePermission(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		clientID,
+		permission)
+	assert.NoError(t, err, "CreatePermission failed")
+	t.Logf("Created Permission ID: %s ", *(createdPermission.ID))
+
+	tearDown := func() {
+		err := client.DeletePermission(
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			clientID,
+			*(createdPermission.ID))
+		assert.NoError(t, err, "DeletePermission failed")
+	}
+	return tearDown, *(createdPermission.ID)
+}
+
 func SetUpTestUser(t *testing.T, client GoCloak) {
 	setupOnce.Do(func() {
 		cfg := GetConfig(t)
@@ -414,23 +522,42 @@ func TestGocloak_RequestPermission(t *testing.T) {
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	SetUpTestUser(t, client)
-	token, err := client.RequestPermission(
+	token, err := client.Login(
 		cfg.GoCloak.ClientID,
 		cfg.GoCloak.ClientSecret,
 		cfg.GoCloak.Realm,
 		cfg.GoCloak.UserName,
-		cfg.GoCloak.Password,
-		"Permission foo # 3")
-	FailIfErr(t, err, "login failed")
+		cfg.GoCloak.Password)
+	assert.NoError(t, err, "login failed")
+
+	rpt, err := client.GetRequestingPartyToken(token.AccessToken, cfg.GoCloak.Realm, RequestingPartyTokenOptions{
+		Audience: StringP(cfg.GoCloak.ClientID),
+		Permissions: []string{
+			"Fake Resource",
+		},
+	})
+	assert.Error(t, err, "GetRequestingPartyToken failed")
+	assert.Nil(t, rpt)
+
+	rpt, err = client.GetRequestingPartyToken(token.AccessToken, cfg.GoCloak.Realm, RequestingPartyTokenOptions{
+		Audience: StringP(cfg.GoCloak.ClientID),
+		Permissions: []string{
+			"Default Resource",
+		},
+	})
+	assert.NoError(t, err, "GetRequestingPartyToken failed")
+	assert.NotNil(t, rpt)
 
 	rptResult, err := client.RetrospectToken(
-		token.AccessToken,
+		rpt.AccessToken,
 		cfg.GoCloak.ClientID,
 		cfg.GoCloak.ClientSecret,
 		cfg.GoCloak.Realm)
 	t.Log(rptResult)
-	FailIfErr(t, err, "inspection failed")
-	FailIf(t, !PBool(rptResult.Active), "Inactive Token oO")
+	assert.NoError(t, err, "inspection failed")
+	assert.True(t, PBool(rptResult.Active), "Inactive Token oO")
+	assert.Equal(t, 1, len(rptResult.Permissions), "GetRequestingPartyToken failed")
+	assert.Equal(t, "Default Resource", *(rptResult.Permissions[0].RSName), "GetRequestingPartyToken failed")
 }
 
 func TestGocloak_GetCerts(t *testing.T) {
@@ -602,6 +729,41 @@ func TestGocloak_GetToken(t *testing.T) {
 	t.Logf("New token: %+v", *newToken)
 	assert.Equal(t, newToken.RefreshExpiresIn, 0, "Got a refresh token instead of offline")
 	assert.NotEmpty(t, newToken.IDToken, "Got an empty if token")
+}
+
+func TestGocloak_GetRequestingPartyToken(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	SetUpTestUser(t, client)
+	newToken, err := client.GetToken(
+		cfg.GoCloak.Realm,
+		TokenOptions{
+			ClientID:      &cfg.GoCloak.ClientID,
+			ClientSecret:  &cfg.GoCloak.ClientSecret,
+			Username:      &cfg.GoCloak.UserName,
+			Password:      &cfg.GoCloak.Password,
+			GrantType:     StringP("password"),
+			ResponseTypes: []string{"token", "id_token"},
+			Scopes:        []string{"openid"},
+		},
+	)
+	assert.NoError(t, err, "Login failed")
+	t.Logf("New token: %+v", *newToken)
+	assert.NotEmpty(t, newToken.IDToken, "Got an empty id token")
+
+	rpt, err := client.GetRequestingPartyToken(
+		newToken.AccessToken,
+		cfg.GoCloak.Realm,
+		RequestingPartyTokenOptions{
+			Audience: &cfg.GoCloak.ClientID,
+		},
+	)
+	assert.NoError(t, err, "Get requesting party token failed")
+	t.Logf("New RPT: %+v", *rpt)
+
+	_, err = client.RetrospectToken(rpt.AccessToken, cfg.GoCloak.ClientID, cfg.GoCloak.ClientSecret, cfg.GoCloak.Realm)
+	assert.NoError(t, err, "RetrospectToken failed")
 }
 
 func TestGocloak_LoginClient(t *testing.T) {
@@ -2183,6 +2345,81 @@ func TestGocloak_AddClientRoleToUser_DeleteClientRoleFromUser(t *testing.T) {
 	assert.NoError(t, err, "DeleteClientRoleFromUser failed")
 }
 
+func TestGocloak_AddClientRoleToGroup_DeleteClientRoleFromGroup(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	SetUpTestUser(t, client)
+	tearDown1, roleName1 := CreateClientRole(t, client)
+	defer tearDown1()
+	token := GetAdminToken(t, client)
+	role1, err := client.GetClientRole(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		roleName1,
+	)
+	assert.NoError(t, err, "GetClientRole failed")
+	tearDown2, roleName2 := CreateClientRole(t, client)
+	defer tearDown2()
+	role2, err := client.GetClientRole(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		roleName2,
+	)
+	assert.NoError(t, err, "GetClientRole failed")
+
+	tearDownGroup, groupID := CreateGroup(t, client)
+	defer tearDownGroup()
+
+	roles := []Role{*role1, *role2}
+	err = client.AddClientRoleToGroup(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		groupID,
+		roles,
+	)
+	assert.NoError(t, err, "AddClientRoleToGroup failed")
+
+	err = client.DeleteClientRoleFromGroup(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		groupID,
+		roles,
+	)
+	assert.NoError(t, err, "DeleteClientRoleFromGroup failed")
+}
+
+func TestGocloak_AddDeleteClientRoleComposite(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	tearDown, compositeRole := CreateClientRole(t, client)
+	defer tearDown()
+
+	tearDown, role := CreateClientRole(t, client)
+	defer tearDown()
+
+	compositeRoleModel, err := client.GetClientRole(token.AccessToken, cfg.GoCloak.Realm, gocloakClientID, compositeRole)
+	assert.NoError(t, err, "Can't get just created role with GetClientRole")
+
+	roleModel, err := client.GetClientRole(token.AccessToken, cfg.GoCloak.Realm, gocloakClientID, role)
+	assert.NoError(t, err, "Can't get just created role with GetClientRole")
+
+	err = client.AddClientRoleComposite(token.AccessToken,
+		cfg.GoCloak.Realm, *(compositeRoleModel.ID), []Role{*roleModel})
+	assert.NoError(t, err, "AddClientRoleComposite failed")
+
+	err = client.DeleteClientRoleComposite(token.AccessToken,
+		cfg.GoCloak.Realm, *(compositeRoleModel.ID), []Role{*roleModel})
+	assert.NoError(t, err, "DeleteClientRoleComposite failed")
+}
+
 func TestGocloak_CreateDeleteClientScopeWithMappers(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
@@ -2393,4 +2630,479 @@ func TestGocloak_CreateProvider(t *testing.T) {
 		err := client.DeleteIdentityProvider(token.AccessToken, cfg.GoCloak.Realm, "oidc")
 		assert.NoError(t, err)
 	})
+}
+
+// -----------------
+// Protection API
+// -----------------
+
+func TestGocloak_CreateListGetUpdateDeleteResource(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	// Create
+	tearDown, resourceID := CreateResource(t, client, gocloakClientID)
+	// Delete
+	defer tearDown()
+
+	// List
+	createdResource, err := client.GetResource(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		resourceID,
+	)
+
+	assert.NoError(t, err, "GetResource failed")
+	t.Logf("Created Resource: %+v", *(createdResource.ID))
+	assert.Equal(t, resourceID, *(createdResource.ID))
+
+	// Looking for a created resource
+	resources, err := client.GetResources(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		GetResourceParams{
+			Name: createdResource.Name,
+		},
+	)
+	assert.NoError(t, err, "GetResources failed")
+	assert.Len(t, resources, 1, "GetResources should return exact 1 resource")
+	assert.Equal(t, *(createdResource.ID), *(resources[0].ID))
+	t.Logf("Resources: %+v", resources)
+
+	err = client.UpdateResource(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		ResourceRepresentation{},
+	)
+	assert.Error(t, err, "Should fail because of missing ID of the resource")
+
+	createdResource.Name = GetRandomNameP("ResourceName")
+	err = client.UpdateResource(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		*createdResource,
+	)
+	assert.NoError(t, err, "UpdateResource failed")
+
+	updatedResource, err := client.GetResource(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		resourceID,
+	)
+	assert.NoError(t, err, "GetResource failed")
+	assert.Equal(t, *(createdResource.Name), *(updatedResource.Name))
+}
+
+func TestGocloak_CreateListGetUpdateDeleteScope(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	// Create
+	tearDown, scopeID := CreateScope(t, client, gocloakClientID)
+	// Delete
+	defer tearDown()
+
+	// List
+	createdScope, err := client.GetScope(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		scopeID,
+	)
+	assert.NoError(t, err, "GetScope failed")
+	t.Logf("Created Scope: %+v", *(createdScope.ID))
+	assert.Equal(t, scopeID, *(createdScope.ID))
+
+	// Looking for a created scope
+	scopes, err := client.GetScopes(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		GetScopeParams{
+			Name: createdScope.Name,
+		},
+	)
+	assert.NoError(t, err, "GetScopes failed")
+	assert.Len(t, scopes, 1, "GetScopes should return exact 1 scope")
+	assert.Equal(t, *(createdScope.ID), *(scopes[0].ID))
+	t.Logf("Scopes: %+v", scopes)
+
+	err = client.UpdateScope(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		ScopeRepresentation{},
+	)
+	assert.Error(t, err, "Should fail because of missing ID of the scope")
+
+	createdScope.Name = GetRandomNameP("ScopeName")
+	err = client.UpdateScope(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		*createdScope,
+	)
+	assert.NoError(t, err, "UpdateScope failed")
+
+	updatedScope, err := client.GetScope(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		scopeID,
+	)
+	assert.NoError(t, err, "GetScope failed")
+	assert.Equal(t, *(createdScope.Name), *(updatedScope.Name))
+}
+
+func TestGocloak_CreateListGetUpdateDeletePolicy(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	// Create
+	tearDown, policyID := CreatePolicy(t, client, gocloakClientID, PolicyRepresentation{
+		Name:        GetRandomNameP("PolicyName"),
+		Description: StringP("Policy Description"),
+		Type:        StringP("js"),
+		Logic:       NEGATIVE,
+		JSPolicyRepresentation: JSPolicyRepresentation{
+			Code: StringP("$evaluation.grant();"),
+		},
+	})
+	// Delete
+	defer tearDown()
+
+	// List
+	createdPolicy, err := client.GetPolicy(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		policyID,
+	)
+	assert.NoError(t, err, "GetPolicy failed")
+	t.Logf("Created Policy: %+v", *(createdPolicy.ID))
+	assert.Equal(t, policyID, *(createdPolicy.ID))
+
+	// Looking for a created policy
+	policies, err := client.GetPolicies(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		GetPolicyParams{
+			Name: createdPolicy.Name,
+		},
+	)
+	assert.NoError(t, err, "GetPolicies failed")
+	assert.Len(t, policies, 1, "GetPolicies should return exact 1 policy")
+	assert.Equal(t, *(createdPolicy.ID), *(policies[0].ID))
+	t.Logf("Policies: %+v", policies)
+
+	err = client.UpdatePolicy(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		PolicyRepresentation{},
+	)
+	assert.Error(t, err, "Should fail because of missing ID of the policy")
+
+	createdPolicy.Name = GetRandomNameP("PolicyName")
+	err = client.UpdatePolicy(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		*createdPolicy,
+	)
+	assert.NoError(t, err, "UpdatePolicy failed")
+
+	updatedPolicy, err := client.GetPolicy(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		policyID,
+	)
+	assert.NoError(t, err, "GetPolicy failed")
+	assert.Equal(t, *(createdPolicy.Name), *(updatedPolicy.Name))
+}
+
+func TestGocloak_RolePolicy(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	roles, err := client.GetRealmRoles(token.AccessToken, cfg.GoCloak.Realm)
+	assert.NoError(t, err, "GetRealmRoles failed")
+	assert.GreaterOrEqual(t, len(roles), 1, "GetRealmRoles failed")
+
+	// Create
+	tearDown, _ := CreatePolicy(t, client, gocloakClientID, PolicyRepresentation{
+		Name:        GetRandomNameP("PolicyName"),
+		Description: StringP("Role Policy"),
+		Type:        StringP("role"),
+		Logic:       NEGATIVE,
+		RolePolicyRepresentation: RolePolicyRepresentation{
+			Roles: []*RoleDefinition{
+				{
+					ID: roles[0].ID,
+				},
+			},
+		},
+	})
+	// Delete
+	defer tearDown()
+}
+
+func TestGocloak_JSPolicy(t *testing.T) {
+	t.Parallel()
+	client := NewClientWithDebug(t)
+
+	// Create
+	tearDown, _ := CreatePolicy(t, client, gocloakClientID, PolicyRepresentation{
+		Name:        GetRandomNameP("PolicyName"),
+		Description: StringP("JS Policy"),
+		Type:        StringP("js"),
+		Logic:       POSITIVE,
+		JSPolicyRepresentation: JSPolicyRepresentation{
+			Code: StringP("$evaluation.grant();"),
+		},
+	})
+	// Delete
+	defer tearDown()
+}
+
+func TestGocloak_ClientPolicy(t *testing.T) {
+	t.Parallel()
+	client := NewClientWithDebug(t)
+
+	// Create
+	tearDown, _ := CreatePolicy(t, client, gocloakClientID, PolicyRepresentation{
+		Name:        GetRandomNameP("PolicyName"),
+		Description: StringP("Client Policy"),
+		Type:        StringP("client"),
+		ClientPolicyRepresentation: ClientPolicyRepresentation{
+			Clients: []string{
+				gocloakClientID,
+			},
+		},
+	})
+	// Delete
+	defer tearDown()
+}
+
+func TestGocloak_TimePolicy(t *testing.T) {
+	t.Parallel()
+	client := NewClientWithDebug(t)
+
+	// Create
+	tearDown, _ := CreatePolicy(t, client, gocloakClientID, PolicyRepresentation{
+		Name:        GetRandomNameP("PolicyName"),
+		Description: StringP("Time Policy"),
+		Type:        StringP("time"),
+		TimePolicyRepresentation: TimePolicyRepresentation{
+			NotBefore:    StringP("2019-12-30 12:00:00"),
+			NotOnOrAfter: StringP("2020-12-30 12:00:00"),
+			DayMonth:     StringP("1"),
+			DayMonthEnd:  StringP("31"),
+			Month:        StringP("1"),
+			MonthEnd:     StringP("12"),
+			Year:         StringP("1900"),
+			YearEnd:      StringP("2100"),
+			Hour:         StringP("1"),
+			HourEnd:      StringP("24"),
+			Minute:       StringP("0"),
+			MinuteEnd:    StringP("60"),
+		},
+	})
+	// Delete
+	defer tearDown()
+}
+
+func TestGocloak_UserPolicy(t *testing.T) {
+	t.Parallel()
+	client := NewClientWithDebug(t)
+
+	tearDownUser, userID := CreateUser(t, client)
+	defer tearDownUser()
+
+	// Create
+	tearDown, _ := CreatePolicy(t, client, gocloakClientID, PolicyRepresentation{
+		Name:        GetRandomNameP("PolicyName"),
+		Description: StringP("User Policy"),
+		Type:        StringP("user"),
+		UserPolicyRepresentation: UserPolicyRepresentation{
+			Users: []string{
+				userID,
+			},
+		},
+	})
+	// Delete
+	defer tearDown()
+}
+
+func TestGocloak_AggregatedPolicy(t *testing.T) {
+	t.Parallel()
+	client := NewClientWithDebug(t)
+
+	tearDownClient, clientPolicyID := CreatePolicy(t, client, gocloakClientID, PolicyRepresentation{
+		Name:        GetRandomNameP("PolicyName"),
+		Description: StringP("Client Policy"),
+		Type:        StringP("client"),
+		ClientPolicyRepresentation: ClientPolicyRepresentation{
+			Clients: []string{
+				gocloakClientID,
+			},
+		},
+	})
+	defer tearDownClient()
+
+	tearDownJS, jsPolicyID := CreatePolicy(t, client, gocloakClientID, PolicyRepresentation{
+		Name:        GetRandomNameP("PolicyName"),
+		Description: StringP("JS Policy"),
+		Type:        StringP("js"),
+		Logic:       POSITIVE,
+		JSPolicyRepresentation: JSPolicyRepresentation{
+			Code: StringP("$evaluation.grant();"),
+		},
+	})
+	// Delete
+	defer tearDownJS()
+
+	// Create
+	tearDown, _ := CreatePolicy(t, client, gocloakClientID, PolicyRepresentation{
+		Name:        GetRandomNameP("PolicyName"),
+		Description: StringP("Aggregated Policy"),
+		Type:        StringP("aggregate"),
+		AggregatedPolicyRepresentation: AggregatedPolicyRepresentation{
+			Policies: []string{
+				clientPolicyID,
+				jsPolicyID,
+			},
+		},
+	})
+	// Delete
+	defer tearDown()
+}
+
+func TestGocloak_GroupPolicy(t *testing.T) {
+	t.Parallel()
+	client := NewClientWithDebug(t)
+
+	tearDownGroup, groupID := CreateGroup(t, client)
+	defer tearDownGroup()
+
+	// Create
+	tearDown, _ := CreatePolicy(t, client, gocloakClientID, PolicyRepresentation{
+		Name:        GetRandomNameP("PolicyName"),
+		Description: StringP("Group Policy"),
+		Type:        StringP("group"),
+		GroupPolicyRepresentation: GroupPolicyRepresentation{
+			Groups: []*GroupDefinition{
+				{
+					ID: StringP(groupID),
+				},
+			},
+		},
+	})
+	// Delete
+	defer tearDown()
+}
+
+func TestGocloak_CreateListGetUpdateDeletePermission(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	// Create
+	tearDownResource, resourceID := CreateResource(t, client, gocloakClientID)
+	// Delete
+	defer tearDownResource()
+
+	tearDownPolicy, policyID := CreatePolicy(t, client, gocloakClientID, PolicyRepresentation{
+		Name:        GetRandomNameP("PolicyName"),
+		Description: StringP("JS Policy"),
+		Type:        StringP("js"),
+		Logic:       POSITIVE,
+		JSPolicyRepresentation: JSPolicyRepresentation{
+			Code: StringP("$evaluation.grant();"),
+		},
+	})
+	// Delete
+	defer tearDownPolicy()
+
+	// Create
+	tearDown, permissionID := CreatePermission(t, client, gocloakClientID, PermissionRepresentation{
+		Name:        GetRandomNameP("PermissionName"),
+		Description: StringP("Permission Description"),
+		Type:        StringP("resource"),
+		Policies: []string{
+			policyID,
+		},
+		Resources: []string{
+			resourceID,
+		},
+	})
+	// Delete
+	defer tearDown()
+
+	// List
+	createdPermission, err := client.GetPermission(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		permissionID,
+	)
+	assert.NoError(t, err, "GetPermission failed")
+	t.Logf("Created Permission: %+v", *(createdPermission.ID))
+	assert.Equal(t, permissionID, *(createdPermission.ID))
+
+	// Looking for a created permission
+	permissions, err := client.GetPermissions(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		GetPermissionParams{
+			Name: createdPermission.Name,
+		},
+	)
+	assert.NoError(t, err, "GetPermissions failed")
+	assert.Len(t, permissions, 1, "GetPermissions should return exact 1 permission")
+	assert.Equal(t, *(createdPermission.ID), *(permissions[0].ID))
+	t.Logf("Permissions: %+v", permissions)
+
+	err = client.UpdatePermission(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		PermissionRepresentation{},
+	)
+	assert.Error(t, err, "Should fail because of missing ID of the permission")
+
+	createdPermission.Name = GetRandomNameP("PermissionName")
+	err = client.UpdatePermission(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		*createdPermission,
+	)
+	assert.NoError(t, err, "UpdatePermission failed")
+
+	updatedPermission, err := client.GetPermission(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		permissionID,
+	)
+	assert.NoError(t, err, "GetPermission failed")
+	assert.Equal(t, *(createdPermission.Name), *(updatedPermission.Name))
 }
