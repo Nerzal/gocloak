@@ -2345,6 +2345,33 @@ func TestGocloak_AddClientRoleToUser_DeleteClientRoleFromUser(t *testing.T) {
 	assert.NoError(t, err, "DeleteClientRoleFromUser failed")
 }
 
+func TestGocloak_AddDeleteClientRoleComposite(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	tearDown, compositeRole := CreateClientRole(t, client)
+	defer tearDown()
+
+	tearDown, role := CreateClientRole(t, client)
+	defer tearDown()
+
+	compositeRoleModel, err := client.GetClientRole(token.AccessToken, cfg.GoCloak.Realm, gocloakClientID, compositeRole)
+	assert.NoError(t, err, "Can't get just created role with GetClientRole")
+
+	roleModel, err := client.GetClientRole(token.AccessToken, cfg.GoCloak.Realm, gocloakClientID, role)
+	assert.NoError(t, err, "Can't get just created role with GetClientRole")
+
+	err = client.AddClientRoleComposite(token.AccessToken,
+		cfg.GoCloak.Realm, *(compositeRoleModel.ID), []Role{*roleModel})
+	assert.NoError(t, err, "AddClientRoleComposite failed")
+
+	err = client.DeleteClientRoleComposite(token.AccessToken,
+		cfg.GoCloak.Realm, *(compositeRoleModel.ID), []Role{*roleModel})
+	assert.NoError(t, err, "DeleteClientRoleComposite failed")
+}
+
 func TestGocloak_CreateDeleteClientScopeWithMappers(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)

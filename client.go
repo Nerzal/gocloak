@@ -1279,6 +1279,24 @@ func (client *gocloak) DeleteClientRoleFromUser(token string, realm string, clie
 	return checkForError(resp, err)
 }
 
+// AddClientRoleComposite adds roles as composite
+func (client *gocloak) AddClientRoleComposite(token string, realm string, roleID string, roles []Role) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetBody(roles).
+		Post(client.getAdminRealmURL(realm, "roles-by-id", roleID, "composites"))
+
+	return checkForError(resp, err)
+}
+
+// DeleteClientRoleComposite deletes composites from a role
+func (client *gocloak) DeleteClientRoleComposite(token string, realm string, roleID string, roles []Role) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetBody(roles).
+		Delete(client.getAdminRealmURL(realm, "roles-by-id", roleID, "composites"))
+
+	return checkForError(resp, err)
+}
+
 // ------------------
 // Identity Providers
 // ------------------

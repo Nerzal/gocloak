@@ -170,6 +170,10 @@ type GoCloak interface {
 	GetClientRoles(accessToken string, realm string, clientID string) ([]*Role, error)
 	// GetClientRole get a role for the given client in a realm by role name
 	GetClientRole(token string, realm string, clientID string, roleName string) (*Role, error)
+	// AddClientRoleComposite adds roles as composite
+	AddClientRoleComposite(token string, realm string, roleID string, roles []Role) error
+	// DeleteClientRoleComposite deletes composites from a role
+	DeleteClientRoleComposite(token string, realm string, roleID string, roles []Role) error
 
 	// *** Realm ***
 
