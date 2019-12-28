@@ -173,6 +173,12 @@ type GoCloak interface {
 	AddRealmRoleComposite(token string, realm string, roleName string, roles []Role) error
 	DeleteRealmRoleComposite(token string, realm string, roleName string, roles []Role) error
 
+
+	// *** Client Roles ***
+
+	AddClientRoleToGroup(token string, realm string, clientID string, groupID string, roles []Role) error
+	DeleteClientRoleFromGroup(token string, realm string, clientID string, groupID string, roles []Role) error
+
 	// *** Realm ***
 
 	GetRealm(token string, realm string) (*RealmRepresentation, error)
