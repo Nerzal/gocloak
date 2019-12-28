@@ -1514,7 +1514,7 @@ func (client *gocloak) GetPolicies(token string, realm string, clientID string, 
 // CreatePolicy creates a policy associated with the client
 func (client *gocloak) CreatePolicy(token string, realm string, clientID string, policy PolicyRepresentation) (*PolicyRepresentation, error) {
 	if NilOrEmpty(policy.Type) {
-		return nil, errors.New("Type of a policy required")
+		return nil, errors.New("type of a policy required")
 	}
 	var result PolicyRepresentation
 	resp, err := client.getRequestWithBearerAuth(token).
@@ -1590,7 +1590,7 @@ func (client *gocloak) GetPermissions(token string, realm string, clientID strin
 // CreatePermission creates a permission associated with the client
 func (client *gocloak) CreatePermission(token string, realm string, clientID string, permission PermissionRepresentation) (*PermissionRepresentation, error) {
 	if NilOrEmpty(permission.Type) {
-		return nil, errors.New("Type of a permission required")
+		return nil, errors.New("type of a permission required")
 	}
 	var result PermissionRepresentation
 	resp, err := client.getRequestWithBearerAuth(token).
