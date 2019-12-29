@@ -1,0 +1,71 @@
+name: Tests
+on:
+  - push
+  - pull_request
+env:
+  LINT_VERSION: "v1.21.0"
+  NANCY_VERSION: "v0.0.39"
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13.x
+      - name: Checkout code
+        uses: actions/checkout@v1
+      - name: Cache Tools
+        id: cache-tools
+        uses: actions/cache@v1
+        with:
+          path: ~/tools
+          key: ${{ runner.os }}-tools-${LINT_VERSION}-${NANCY_VERSION}
+      - name: Install Tools
+        if: steps.cache-tools.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/tools
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ~/tools ${LINT_VERSION}
+          curl -L https://github.com/sonatype-nexus-community/nancy/releases/download/${NANCY_VERSION}/nancy-linux.amd64-${NANCY_VERSION} -o ~/tools/nancy
+          chmod +x ~/tools/nancy
+      - name: Update PATH
+        run: echo "::add-path::~/tools"
+      - name: Lint
+        run: golangci-lint run ./...
+      - name: Nancy
+        run: nancy go.sum
+      - name: Run Keycloak
+        run: |
+          docker pull quay.io/keycloak/keycloak
+          docker run -d -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=secret -e KEYCLOAK_IMPORT=/tmp/gocloak-realm.json -v "`pwd`/testdata/gocloak-realm.json:/tmp/gocloak-realm.json" -p 8080:8080 --name keycloak quay.io/keycloak/keycloak -Dkeycloak.profile.feature.upload_scripts=enabled
+          sleep 10
+      - name: Unit Tests
+        run: |
+          go test -race -cover -coverprofile=coverage.txt -covermode=atomic -cpu 1,2 -bench . -benchmem > test.log
+          cat test.log
+      - name: Failed Logs
+        if: failure()
+        run: |
+          cat test.log
+          docker ps
+          docker logs keycloak
+      - name: CodeCov
+        run: bash <(curl -s https://codecov.io/bash)
+
+      # Publish benchmarks for the master branch only
+      - name: Store Benchmark Result
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        uses: rhysd/github-action-benchmark@v1
+        with:
+          # What benchmark tool the output.txt came from
+          tool: "go"
+          # Where the output from the benchmark tool is stored
+          output-file-path: test.log
+          # Push and deploy GitHub pages branch automatically
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+
+      # Updating go repord card for master branch only
+      - name: GoReportCard
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: curl --fail --request POST "https://goreportcard.com/checks" --data "repo=github.com/Nerzal/gocloak"
