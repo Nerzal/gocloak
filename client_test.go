@@ -2071,26 +2071,28 @@ func TestGocloak_GetClientUserSessions(t *testing.T) {
 	assert.False(t, len(sessions) == 0, "GetClientUserSessions returned an empty list")
 }
 
+func findProtocolMapperByID(client *Client, id string) *ProtocolMapperRepresentation {
+	for _, protocolMapper := range client.ProtocolMappers {
+		if protocolMapper == nil || NilOrEmpty(protocolMapper.ID) {
+			continue
+		}
+		if *(protocolMapper.ID) == id {
+			return protocolMapper
+		}
+	}
+	return nil
+}
+
 func TestGocloak_CreateDeleteClientProtocolMapper(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	id := GetRandomName("protocol-mapper-id-")
-	testClient := GetClientByClientID(t, client, cfg.GoCloak.ClientID)
 
-	found := false
-	for _, protocolMapper := range testClient.ProtocolMappers {
-		if protocolMapper == nil || NilOrEmpty(protocolMapper.ID) {
-			continue
-		}
-		if *(protocolMapper.ID) == id {
-			found = true
-			break
-		}
-	}
-	assert.False(
+	testClient := GetClientByClientID(t, client, cfg.GoCloak.ClientID)
+	assert.Nil(
 		t,
-		found,
+		findProtocolMapperByID(testClient, id),
 		"default client should not have a protocol mapper with ID: %s", id,
 	)
 
@@ -2118,21 +2120,11 @@ func TestGocloak_CreateDeleteClientProtocolMapper(t *testing.T) {
 	)
 	assert.NoError(t, err, "CreateClientProtocolMapper failed")
 	assert.Equal(t, id, createdID)
-	testClientAfter := GetClientByClientID(t, client, cfg.GoCloak.ClientID)
 
-	found = false
-	for _, protocolMapper := range testClientAfter.ProtocolMappers {
-		if protocolMapper == nil || NilOrEmpty(protocolMapper.ID) {
-			continue
-		}
-		if *(protocolMapper.ID) == id {
-			found = true
-			break
-		}
-	}
-	assert.True(
+	testClientAfter := GetClientByClientID(t, client, cfg.GoCloak.ClientID)
+	assert.NotNil(
 		t,
-		found,
+		findProtocolMapperByID(testClientAfter, id),
 		"protocol mapper has not been created",
 	)
 	err = client.DeleteClientProtocolMapper(
@@ -2142,21 +2134,11 @@ func TestGocloak_CreateDeleteClientProtocolMapper(t *testing.T) {
 		id,
 	)
 	assert.NoError(t, err, "DeleteClientProtocolMapper failed")
-	testClientAgain := GetClientByClientID(t, client, cfg.GoCloak.ClientID)
 
-	found = false
-	for _, protocolMapper := range testClientAgain.ProtocolMappers {
-		if protocolMapper == nil || NilOrEmpty(protocolMapper.ID) {
-			continue
-		}
-		if *(protocolMapper.ID) == id {
-			found = true
-			break
-		}
-	}
-	assert.False(
+	testClientAgain := GetClientByClientID(t, client, cfg.GoCloak.ClientID)
+	assert.Nil(
 		t,
-		found,
+		findProtocolMapperByID(testClientAgain, id),
 		"default client should not have a protocol mapper with ID: %s", id,
 	)
 }

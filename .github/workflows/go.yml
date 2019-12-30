@@ -3,7 +3,7 @@ on:
   - push
   - pull_request
 env:
-  LINT_VERSION: "v1.21.0"
+  LINT_VERSION: "v1.22.2"
   NANCY_VERSION: "v0.0.39"
 jobs:
   tests:
