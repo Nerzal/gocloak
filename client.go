@@ -1187,7 +1187,7 @@ func (client *gocloak) GetUsers(token string, realm string, params GetUsersParam
 }
 
 // GetUsersByRoleName returns all users have a given role
-func (client *gocloak) GetUsersByRoleName(token string, realm string, roleName string, params GetUsersByRoleParams) ([]*User, error) {
+func (client *gocloak) GetUsersByRoleName(token string, realm string, roleName string) ([]*User, error) {
 	var result []*User
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetResult(&result).

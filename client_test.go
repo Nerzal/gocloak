@@ -2025,8 +2025,7 @@ func TestGocloak_GetUsersByRoleName(t *testing.T) {
 	users, err := client.GetUsersByRoleName(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		roleName,
-		GetUsersByRoleParams{})
+		roleName)
 	assert.NoError(t, err)
 
 	assert.NotEqual(
