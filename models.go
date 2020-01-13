@@ -818,6 +818,12 @@ type GetPermissionParams struct {
 	Type     *string `json:"type,omitempty"`
 }
 
+// GetUsersByRoleParams represents the optional parameters for getting users by role
+type GetUsersByRoleParams struct {
+	First *int `json:"first,string,omitempty"`
+	Max   *int `json:"max,string,omitempty"`
+}
+
 // PermissionRepresentation is a representation of a Permission
 type PermissionRepresentation struct {
 	DecisionStrategy *DecisionStrategy `json:"decisionStrategy,omitempty"`
