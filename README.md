@@ -48,7 +48,7 @@ or v3 (latest release is v3.10.0):
 	user := gocloak.User{
 		FirstName: "Bob",
 		LastName:  "Uncle",
-		EMail:     "something@really.wrong",
+		Email:     "something@really.wrong",
 		Enabled:   true,
 		Username:  "CoolGuy",
 	}
@@ -155,6 +155,7 @@ type GoCloak interface {
 	AddClientRoleComposite(token string, realm string, roleID string, roles []Role) error
 	DeleteClientRoleComposite(token string, realm string, roleID string, roles []Role) error
 	GetUsersByRoleName(token string, realm string, roleName string) ([]*User, error)
+	GetUsersByClientRoleName(token string, realm string, clientID string, roleName string, params GetUsersByRoleParams) ([]*User, error)
 	UserAttributeContains(attributes map[string][]string, attribute string, value string) bool
 	CreateClientProtocolMapper(token, realm, clientID string, mapper ProtocolMapperRepresentation) error
 	DeleteClientProtocolMapper(token, realm, clientID, mapperID string) error

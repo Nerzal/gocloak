@@ -1256,6 +1256,26 @@ func (client *gocloak) GetUsersByRoleName(token string, realm string, roleName s
 	return result, nil
 }
 
+// GetUsersByClientRoleName returns all users have a given client role
+func (client *gocloak) GetUsersByClientRoleName(token string, realm string, clientID string, roleName string, params GetUsersByRoleParams) ([]*User, error) {
+	var result []*User
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		SetQueryParams(queryParams).
+		Get(client.getAdminRealmURL(realm, "clients", clientID, "roles", roleName, "users"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // SetPassword sets a new password for the user with the given id. Needs elevated privileges
 func (client *gocloak) SetPassword(token string, userID string, realm string, password string, temporary bool) error {
 	requestBody := SetPasswordRequest{Password: &password, Temporary: &temporary, Type: StringP("password")}

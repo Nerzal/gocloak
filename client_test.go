@@ -2040,6 +2040,54 @@ func TestGocloak_GetUsersByRoleName(t *testing.T) {
 	)
 }
 
+func TestGocloak_GetUsersByClientRoleName(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	tearDownUser, userID := CreateUser(t, client)
+	defer tearDownUser()
+
+	tearDownRole, roleName := CreateClientRole(t, client)
+	defer tearDownRole()
+
+	role, err := client.GetClientRole(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		roleName)
+	assert.NoError(t, err)
+	err = client.AddClientRoleToUser(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		userID,
+		[]Role{
+			*role,
+		})
+	assert.NoError(t, err)
+
+	users, err := client.GetUsersByClientRoleName(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		roleName,
+		GetUsersByRoleParams{})
+	assert.NoError(t, err)
+
+	assert.NotEqual(
+		t,
+		len(users),
+		0,
+	)
+	assert.Equal(
+		t,
+		userID,
+		*(users[0].ID),
+	)
+}
+
 func TestGocloak_GetUserSessions(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
