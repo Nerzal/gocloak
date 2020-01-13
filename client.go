@@ -871,6 +871,62 @@ func (client *gocloak) GetClientRoles(token string, realm string, clientID strin
 	return result, nil
 }
 
+// GetRealmRolesByUserID returns all client roles assigned to the given user
+func (client *gocloak) GetClientRolesByUserID(token string, realm string, clientID string, userID string) ([]*Role, error) {
+	var result []*Role
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "users", userID, "role-mappings", "clients", clientID))
+
+	if err = checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// GetClientRolesByGroupID returns all client roles assigned to the given group
+func (client *gocloak) GetClientRolesByGroupID(token string, realm string, clientID string, groupID string) ([]*Role, error) {
+	var result []*Role
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "groups", groupID, "role-mappings", "clients", clientID))
+
+	if err = checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// GetCompositeClientRolesByUserID returns all client roles and composite roles assigned to the given user
+func (client *gocloak) GetCompositeClientRolesByUserID(token string, realm string, clientID string, userID string) ([]*Role, error) {
+	var result []*Role
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "users", userID, "role-mappings", "clients", clientID, "composite"))
+
+	if err = checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// GetCompositeClientRolesByGroupID returns all client roles and composite roles assigned to the given group
+func (client *gocloak) GetCompositeClientRolesByGroupID(token string, realm string, clientID string, groupID string) ([]*Role, error) {
+	var result []*Role
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "groups", groupID, "role-mappings", "clients", clientID, "composite"))
+
+	if err = checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // GetClientRole get a role for the given client in a realm by role name
 func (client *gocloak) GetClientRole(token string, realm string, clientID string, roleName string) (*Role, error) {
 	var result Role
@@ -1206,6 +1262,26 @@ func (client *gocloak) GetUsersByRoleName(token string, realm string, roleName s
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.getAdminRealmURL(realm, "roles", roleName, "users"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// GetUsersByClientRoleName returns all users have a given client role
+func (client *gocloak) GetUsersByClientRoleName(token string, realm string, clientID string, roleName string, params GetUsersByRoleParams) ([]*User, error) {
+	var result []*User
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		SetQueryParams(queryParams).
+		Get(client.getAdminRealmURL(realm, "clients", clientID, "roles", roleName, "users"))
 
 	if err := checkForError(resp, err); err != nil {
 		return nil, err
