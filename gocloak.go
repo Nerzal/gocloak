@@ -172,6 +172,14 @@ type GoCloak interface {
 	DeleteClientRoleFromGroup(token string, realm string, clientID string, groupID string, roles []Role) error
 	// GetClientRoles gets roles for the given client
 	GetClientRoles(accessToken string, realm string, clientID string) ([]*Role, error)
+	// GetRealmRolesByUserID returns all client roles assigned to the given user
+	GetClientRolesByUserID(token string, realm string, clientID string, userID string) ([]*Role, error)
+	// GetClientRolesByGroupID returns all client roles assigned to the given group
+	GetClientRolesByGroupID(token string, realm string, clientID string, groupID string) ([]*Role, error)
+	// GetCompositeClientRolesByUserID returns all client roles and composite roles assigned to the given user
+	GetCompositeClientRolesByUserID(token string, realm string, clientID string, userID string) ([]*Role, error)
+	// GetCompositeClientRolesByGroupID returns all client roles and composite roles assigned to the given group
+	GetCompositeClientRolesByGroupID(token string, realm string, clientID string, groupID string) ([]*Role, error)
 	// GetClientRole get a role for the given client in a realm by role name
 	GetClientRole(token string, realm string, clientID string, roleName string) (*Role, error)
 	// AddClientRoleComposite adds roles as composite
