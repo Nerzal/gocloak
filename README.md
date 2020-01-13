@@ -48,7 +48,7 @@ or v3 (latest release is v3.10.0):
 	user := gocloak.User{
 		FirstName: "Bob",
 		LastName:  "Uncle",
-		EMail:     "something@really.wrong",
+		Email:     "something@really.wrong",
 		Enabled:   true,
 		Username:  "CoolGuy",
 	}
