@@ -28,7 +28,8 @@ jobs:
         - docker pull quay.io/keycloak/keycloak
         - docker run -d -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=secret -e KEYCLOAK_IMPORT=/tmp/gocloak-realm.json -v "`pwd`/testdata/gocloak-realm.json:/tmp/gocloak-realm.json" -p 8080:8080 --name keycloak quay.io/keycloak/keycloak -Dkeycloak.profile.feature.upload_scripts=enabled
       script:
-        - go test -cover -race -coverprofile=coverage.txt -covermode=atomic
+        - go test -cover -race -coverprofile=coverage.txt -covermode=atomic -bench . -benchmem > test.log
+        - cat test.log
       after_success:
         - bash <(curl -s https://codecov.io/bash)
       after_failure:

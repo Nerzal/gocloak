@@ -199,6 +199,10 @@ type GoCloak interface {
 	DeleteRealm(token string, realm string) error
 	// ClearRealmCache clears realm cache
 	ClearRealmCache(token string, realm string) error
+	// ClearUserCache clears realm cache
+	ClearUserCache(token string, realm string) error
+	// ClearKeysCache clears realm cache
+	ClearKeysCache(token string, realm string) error
 
 	// *** Users ***
 	// CreateUser creates a new user

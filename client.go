@@ -1152,6 +1152,20 @@ func (client *gocloak) ClearRealmCache(token string, realm string) error {
 	return checkForError(resp, err)
 }
 
+// ClearUserCache clears realm cache
+func (client *gocloak) ClearUserCache(token string, realm string) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		Post(client.getAdminRealmURL(realm, "clear-user-cache"))
+	return checkForError(resp, err)
+}
+
+// ClearKeysCache clears realm cache
+func (client *gocloak) ClearKeysCache(token string, realm string) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		Post(client.getAdminRealmURL(realm, "clear-keys-cache"))
+	return checkForError(resp, err)
+}
+
 // -----
 // Users
 // -----

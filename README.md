@@ -2,7 +2,8 @@
 [![codebeat badge](https://codebeat.co/badges/c699bc56-aa5f-4cf5-893f-5cf564391b94)](https://codebeat.co/projects/github-com-nerzal-gocloak-master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Nerzal/gocloak)](https://goreportcard.com/report/github.com/Nerzal/gocloak)
 [![Go Doc](https://godoc.org/github.com/Nerzal/gocloak?status.svg)](https://godoc.org/github.com/Nerzal/gocloak)
-[![Build Status](https://travis-ci.com/Nerzal/gocloak.svg?branch=master)](https://travis-ci.com/Nerzal/gocloak)
+[![Build Status](https://github.com/Nerzal/gocloak/workflows/Tests/badge.svg)](https://github.com/Nerzal/gocloak/actions?query=branch%3Amaster+event%3Apush)
+[![GitHub release](https://img.shields.io/github/tag/Nerzal/gocloak.svg)](https://GitHub.com/Nerzal/gocloak/releases/)
 [![codecov](https://codecov.io/gh/Nerzal/gocloak/branch/master/graph/badge.svg)](https://codecov.io/gh/Nerzal/gocloak)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FNerzal%2Fgocloak.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2FNerzal%2Fgocloak?ref=badge_shield)
 
@@ -14,6 +15,8 @@ This client is based on: [go-keycloak](https://github.com/PhilippHeuer/go-keyclo
 For Questions either raise an issue, or come to the [gopher-slack](https://invite.slack.golangbridge.org/) into the channel [#gocloak](https://gophers.slack.com/app_redirect?channel=gocloak)
 
 If u are using the echo framework have a look at [gocloak-echo](https://github.com/Nerzal/gocloak-echo)
+
+Benchmarks: https://nerzal.github.io/gocloak/dev/bench/
 
 
 ## Contribution
@@ -191,6 +194,8 @@ type GoCloak interface {
 	CreateRealm(token string, realm RealmRepresentation) error
 	DeleteRealm(token string, realm string) error
 	ClearRealmCache(token string, realm string) error
+	ClearUserCache(token string, realm string) error
+	ClearKeysCache(token string, realm string) error
 
 	GetClientUserSessions(token, realm, clientID string) ([]*UserSessionRepresentation, error)
 	GetClientOfflineSessions(token, realm, clientID string) ([]*UserSessionRepresentation, error)
