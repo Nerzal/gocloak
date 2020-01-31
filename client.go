@@ -744,6 +744,15 @@ func (client *gocloak) CreateClientProtocolMapper(token, realm, clientID string,
 	return getID(resp), nil
 }
 
+// UpdateClientProtocolMapper updates a protocol mapper in client scope
+func (client *gocloak) UpdateClientProtocolMapper(token, realm, clientID string, mapperID string, mapper ProtocolMapperRepresentation) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetBody(mapper).
+		Put(client.getAdminRealmURL(realm, "clients", clientID, "protocol-mappers", "models", mapperID))
+
+	return checkForError(resp, err)
+}
+
 // DeleteClientProtocolMapper deletes a protocol mapper in client scope
 func (client *gocloak) DeleteClientProtocolMapper(token, realm, clientID, mapperID string) error {
 	resp, err := client.getRequestWithBearerAuth(token).

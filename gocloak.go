@@ -125,6 +125,8 @@ type GoCloak interface {
 	GetClientUserSessions(token, realm, clientID string) ([]*UserSessionRepresentation, error)
 	// CreateClientProtocolMapper creates a protocol mapper in client scope
 	CreateClientProtocolMapper(token, realm, clientID string, mapper ProtocolMapperRepresentation) (string, error)
+	// CreateClientProtocolMapper updates a protocol mapper in client scope
+	UpdateClientProtocolMapper(token, realm, clientID string, mapperID string, mapper ProtocolMapperRepresentation) error
 	// DeleteClientProtocolMapper deletes a protocol mapper in client scope
 	DeleteClientProtocolMapper(token, realm, clientID, mapperID string) error
 

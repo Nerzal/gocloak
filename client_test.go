@@ -2131,7 +2131,7 @@ func findProtocolMapperByID(client *Client, id string) *ProtocolMapperRepresenta
 	return nil
 }
 
-func TestGocloak_CreateDeleteClientProtocolMapper(t *testing.T) {
+func TestGocloak_CreateUpdateDeleteClientProtocolMapper(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
@@ -2175,6 +2175,38 @@ func TestGocloak_CreateDeleteClientProtocolMapper(t *testing.T) {
 		findProtocolMapperByID(testClientAfter, id),
 		"protocol mapper has not been created",
 	)
+
+	err = client.UpdateClientProtocolMapper(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		*(testClient.ID),
+		createdID,
+		ProtocolMapperRepresentation{
+			ID:             &id,
+			Name:           StringP("test"),
+			Protocol:       StringP("openid-connect"),
+			ProtocolMapper: StringP("oidc-usermodel-attribute-mapper"),
+			Config: map[string]string{
+				"access.token.claim":   "true",
+				"aggregate.attrs":      "",
+				"claim.name":           "testUpdated",
+				"id.token.claim":       "true",
+				"jsonType.label":       "String",
+				"multivalued":          "",
+				"user.attribute":       "test",
+				"userinfo.token.claim": "true",
+			},
+		},
+	)
+	assert.NoError(t, err, "UpdateClientProtocolMapper failed")
+
+	testClientAfterUpdate := GetClientByClientID(t, client, cfg.GoCloak.ClientID)
+	assert.Equal(
+		t,
+		findProtocolMapperByID(testClientAfterUpdate, id).Config["claim.name"],
+		"testUpdated",
+	)
+
 	err = client.DeleteClientProtocolMapper(
 		token.AccessToken,
 		cfg.GoCloak.Realm,
