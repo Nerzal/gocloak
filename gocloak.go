@@ -178,6 +178,8 @@ type GoCloak interface {
 	GetClientRolesByUserID(token string, realm string, clientID string, userID string) ([]*Role, error)
 	// GetClientRolesByGroupID returns all client roles assigned to the given group
 	GetClientRolesByGroupID(token string, realm string, clientID string, groupID string) ([]*Role, error)
+	// GetCompositeClientRolesByRoleID returns all client composite roles associated with the given client role
+	GetCompositeClientRolesByRoleID(token string, realm string, clientID string, roleID string) ([]*Role, error)
 	// GetCompositeClientRolesByUserID returns all client roles and composite roles assigned to the given user
 	GetCompositeClientRolesByUserID(token string, realm string, clientID string, userID string) ([]*Role, error)
 	// GetCompositeClientRolesByGroupID returns all client roles and composite roles assigned to the given group
