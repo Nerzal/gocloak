@@ -25,8 +25,8 @@ jobs:
       script: go vet ./...
     - stage: test
       before_install:
-        - docker pull quay.io/keycloak/keycloak
-        - docker run -d -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=secret -e KEYCLOAK_IMPORT=/tmp/gocloak-realm.json -v "`pwd`/testdata/gocloak-realm.json:/tmp/gocloak-realm.json" -p 8080:8080 --name keycloak quay.io/keycloak/keycloak -Dkeycloak.profile.feature.upload_scripts=enabled
+        - docker pull quay.io/keycloak/keycloak:8.0.1
+        - docker run -d -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=secret -e KEYCLOAK_IMPORT=/tmp/gocloak-realm.json -v "`pwd`/testdata/gocloak-realm.json:/tmp/gocloak-realm.json" -p 8080:8080 --name keycloak quay.io/keycloak/keycloak:8.0.1 -Dkeycloak.profile.feature.upload_scripts=enabled
       script:
         - go test -cover -race -coverprofile=coverage.txt -covermode=atomic -bench . -benchmem > test.log
         - cat test.log
