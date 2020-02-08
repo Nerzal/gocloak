@@ -1613,6 +1613,39 @@ func TestGocloak_AddRealmRoleToUser_DeleteRealmRoleFromUser(t *testing.T) {
 	assert.NoError(t, err, "DeleteRealmRoleFromUser failed")
 }
 
+func TestGocloak_AddRealmRoleToGroup_DeleteRealmRoleFromGroup(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	tearDownGroup, groupID := CreateGroup(t, client)
+	defer tearDownGroup()
+	tearDownRole, roleName := CreateRealmRole(t, client)
+	defer tearDownRole()
+	role, err := client.GetRealmRole(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		roleName)
+	assert.NoError(t, err, "GetRealmRole failed")
+
+	roles := []Role{*role}
+	err = client.AddRealmRoleToGroup(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		groupID,
+		roles,
+	)
+	assert.NoError(t, err, "AddRealmRoleToGroup failed")
+	err = client.DeleteRealmRoleFromGroup(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		groupID,
+		roles,
+	)
+	assert.NoError(t, err, "DeleteRealmRoleFromGroup failed")
+}
+
 func TestGocloak_GetRealmRolesByUserID(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
