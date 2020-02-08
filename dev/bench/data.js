@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1580493254489,
+  "lastUpdate": 1581203439686,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -96,6 +96,54 @@ window.BENCHMARK_DATA = {
             "value": 43616771,
             "unit": "ns/op\t   53470 B/op\t     182 allocs/op",
             "extra": "27 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "theel.tobias@gmx.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bad3584f59b883a143d0999691b9496872557ff6",
+          "message": "Merge pull request #141 from Nerzal/keycloak-8.0.1\n\nUsing keycloak 8.0.1 in tests",
+          "timestamp": "2020-02-09T00:07:48+01:00",
+          "tree_id": "08fcdbe4abd9fc9823bc830b1fdc8c38bfd3acb1",
+          "url": "https://github.com/Nerzal/gocloak/commit/bad3584f59b883a143d0999691b9496872557ff6"
+        },
+        "date": 1581203439344,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 97703833,
+            "unit": "ns/op\t   68760 B/op\t     185 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 102664844,
+            "unit": "ns/op\t   43998 B/op\t     182 allocs/op",
+            "extra": "12 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 97232808,
+            "unit": "ns/op\t   74672 B/op\t     182 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 62370732,
+            "unit": "ns/op\t   52516 B/op\t     184 allocs/op",
+            "extra": "18 times\n2 procs"
           }
         ]
       }
