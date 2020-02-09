@@ -908,6 +908,20 @@ func (client *gocloak) GetClientRolesByGroupID(token string, realm string, clien
 	return result, nil
 }
 
+// GetCompositeClientRolesByRoleID returns all client composite roles associated with the given client role
+func (client *gocloak) GetCompositeClientRolesByRoleID(token string, realm string, clientID string, roleID string) ([]*Role, error) {
+	var result []*Role
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "roles-by-id", roleID, "composites", "clients", clientID))
+
+	if err = checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // GetCompositeClientRolesByUserID returns all client roles and composite roles assigned to the given user
 func (client *gocloak) GetCompositeClientRolesByUserID(token string, realm string, clientID string, userID string) ([]*Role, error) {
 	var result []*Role

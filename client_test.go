@@ -2548,6 +2548,12 @@ func TestGocloak_AddDeleteClientRoleComposite(t *testing.T) {
 		cfg.GoCloak.Realm, *(compositeRoleModel.ID), []Role{*roleModel})
 	assert.NoError(t, err, "AddClientRoleComposite failed")
 
+	compositeRoles, err := client.GetCompositeClientRolesByRoleID(token.AccessToken,
+		cfg.GoCloak.Realm, gocloakClientID, *(compositeRoleModel.ID))
+	assert.NoError(t, err, "GetCompositeClientRolesByRoleID failed")
+	assert.GreaterOrEqual(t, len(compositeRoles), 1, "GetCompositeClientRolesByRoleID didn't return any composite roles")
+	assert.Equal(t, *(roleModel.ID), *(compositeRoles[0].ID), "GetCompositeClientRolesByRoleID returned wrong composite role")
+
 	err = client.DeleteClientRoleComposite(token.AccessToken,
 		cfg.GoCloak.Realm, *(compositeRoleModel.ID), []Role{*roleModel})
 	assert.NoError(t, err, "DeleteClientRoleComposite failed")
