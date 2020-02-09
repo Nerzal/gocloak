@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1581260446357,
+  "lastUpdate": 1581261950597,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -240,6 +240,54 @@ window.BENCHMARK_DATA = {
             "value": 49443855,
             "unit": "ns/op\t   70101 B/op\t     182 allocs/op",
             "extra": "24 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.info",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a7c121e2c634ae016c703e5db3e446f91f68a664",
+          "message": "Merge pull request #134 from SVilgelm/remove-travis\n\nRemove .travis.yml",
+          "timestamp": "2020-02-09T09:23:35-06:00",
+          "tree_id": "8cd4ff89e819763537d30ed0222f9c3678c6224e",
+          "url": "https://github.com/Nerzal/gocloak/commit/a7c121e2c634ae016c703e5db3e446f91f68a664"
+        },
+        "date": 1581261950289,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 91699270,
+            "unit": "ns/op\t   56294 B/op\t     183 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 90316344,
+            "unit": "ns/op\t   53527 B/op\t     183 allocs/op",
+            "extra": "13 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 90095496,
+            "unit": "ns/op\t   59538 B/op\t     184 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 58104722,
+            "unit": "ns/op\t   54507 B/op\t     182 allocs/op",
+            "extra": "20 times\n2 procs"
           }
         ]
       }
