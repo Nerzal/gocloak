@@ -50,7 +50,10 @@ jobs:
           docker ps
           docker logs keycloak
       - name: CodeCov
+        if: github.repository == 'Nerzal/gocloak' && github.event == 'push'
         run: bash <(curl -s https://codecov.io/bash)
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       # Publish benchmarks for the master branch only
       - name: Store Benchmark Result
