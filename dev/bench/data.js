@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1581203439686,
+  "lastUpdate": 1581208232816,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -144,6 +144,54 @@ window.BENCHMARK_DATA = {
             "value": 62370732,
             "unit": "ns/op\t   52516 B/op\t     184 allocs/op",
             "extra": "18 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.info",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a587a05061a2a14bd67ec1e5232160ac707c1355",
+          "message": "Merge pull request #140 from agorman/get-composite-client-roles\n\nAdding GetCompositeClientRolesByRoleID method",
+          "timestamp": "2020-02-08T18:28:13-06:00",
+          "tree_id": "51d2f771d9dbca19e06535674712e82a991d57da",
+          "url": "https://github.com/Nerzal/gocloak/commit/a587a05061a2a14bd67ec1e5232160ac707c1355"
+        },
+        "date": 1581208232433,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 88050831,
+            "unit": "ns/op\t   56115 B/op\t     182 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 91259825,
+            "unit": "ns/op\t   64976 B/op\t     185 allocs/op",
+            "extra": "13 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 88056838,
+            "unit": "ns/op\t   50678 B/op\t     183 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 56963482,
+            "unit": "ns/op\t   58410 B/op\t     184 allocs/op",
+            "extra": "20 times\n2 procs"
           }
         ]
       }
