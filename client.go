@@ -1179,6 +1179,15 @@ func (client *gocloak) CreateRealm(token string, realm RealmRepresentation) (str
 	return getID(resp), nil
 }
 
+// UpdateRealm updates a given realm
+func (client *gocloak) UpdateRealm(token string, realm RealmRepresentation) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetBody(realm).
+		Put(client.getAdminRealmURL(PString(realm.Realm)))
+
+	return checkForError(resp, err)
+}
+
 // DeleteRealm removes a realm
 func (client *gocloak) DeleteRealm(token string, realm string) error {
 	resp, err := client.getRequestWithBearerAuth(token).
