@@ -1452,6 +1452,22 @@ func TestGocloak_CreateRealm(t *testing.T) {
 	defer tearDown()
 }
 
+func TestGocloak_UpdateRealm(t *testing.T) {
+	t.Parallel()
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	tearDown, realmID := CreateRealm(t, client)
+	defer tearDown()
+
+	realm, err := client.GetRealm(token.AccessToken, realmID)
+	assert.NoError(t, err, "GetRealm failed")
+
+	realm.Enabled = BoolP(false)
+	err = client.UpdateRealm(token.AccessToken, *realm)
+	assert.NoError(t, err, "UpdateRealm failed")
+}
+
 func TestGocloak_ClearRealmCache(t *testing.T) {
 	t.Parallel()
 	client := NewClientWithDebug(t)
