@@ -149,6 +149,9 @@ type GoCloak interface {
 	GetComponents(accessToken string, realm string) ([]*Component, error)
 	GetGroups(accessToken string, realm string, params GetGroupsParams) ([]*Group, error)
 	GetGroup(accessToken string, realm, groupID string) (*Group, error)
+	GetDefaultGroups(accessToken string, realm string) ([]*Group, error)
+	AddDefaultGroup(accessToken string, realm string, groupID string) error
+	RemoveDefaultGroup(accessToken string, realm string, groupID string) error	
 	GetGroupMembers(accessToken string, realm, groupID string, params GetGroupsParams) ([]*User, error)
 	GetRoleMappingByGroupID(accessToken string, realm string, groupID string) (*MappingsRepresentation, error)
 	GetRoleMappingByUserID(accessToken string, realm string, userID string) (*MappingsRepresentation, error)
