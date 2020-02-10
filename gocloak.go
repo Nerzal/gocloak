@@ -107,6 +107,12 @@ type GoCloak interface {
 	GetKeyStoreConfig(accessToken string, realm string) (*KeyStoreConfig, error)
 	// GetComponents gets components of the given realm
 	GetComponents(accessToken string, realm string) ([]*Component, error)
+	// GetDefaultGroups returns a list of default groups
+	GetDefaultGroups(accessToken string, realm string) ([]*Group, error)
+	// AddDefaultGroup adds group to the list of default groups
+	AddDefaultGroup(accessToken string, realm string, groupID string) error
+	// RemoveDefaultGroup removes group from the list of default groups
+	RemoveDefaultGroup(accessToken string, realm string, groupID string) error
 	// GetGroups gets all groups of the given realm
 	GetGroups(accessToken string, realm string, params GetGroupsParams) ([]*Group, error)
 	// GetGroup gets the given group

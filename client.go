@@ -789,6 +789,37 @@ func (client *gocloak) GetComponents(token string, realm string) ([]*Component, 
 	return result, nil
 }
 
+// GetDefaultGroups returns a list of default groups
+func (client *gocloak) GetDefaultGroups(token string, realm string) ([]*Group, error) {
+	var result []*Group
+
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "default-groups"))
+
+	if err := checkForError(resp, err); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// AddDefaultGroup adds group to the list of default groups
+func (client *gocloak) AddDefaultGroup(token string, realm string, groupID string) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		Put(client.getAdminRealmURL(realm, "default-groups", groupID))
+
+	return checkForError(resp, err)
+}
+
+// RemoveDefaultGroup removes group from the list of default groups
+func (client *gocloak) RemoveDefaultGroup(token string, realm string, groupID string) error {
+	resp, err := client.getRequestWithBearerAuth(token).
+		Delete(client.getAdminRealmURL(realm, "default-groups", groupID))
+
+	return checkForError(resp, err)
+}
+
 func (client *gocloak) getRoleMappings(token string, realm string, path string, objectID string) (*MappingsRepresentation, error) {
 	var result MappingsRepresentation
 	resp, err := client.getRequestWithBearerAuth(token).

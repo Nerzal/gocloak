@@ -1308,6 +1308,52 @@ func TestGocloak_GetGroupMembers(t *testing.T) {
 	)
 }
 
+func TestGocloak_ListAddRemoveDefaultGroups(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	tearDown, groupID := CreateGroup(t, client)
+	defer tearDown()
+
+	groupsBeforeAdding, err := client.GetDefaultGroups(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+	)
+	assert.NoError(t, err, "GetDefaultGroups failed")
+
+	err = client.AddDefaultGroup(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		groupID,
+	)
+	assert.NoError(t, err, "AddDefaultGroup failed")
+
+	groupsAfterAdding, err := client.GetDefaultGroups(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+	)
+	assert.NoError(t, err, "GetDefaultGroups failed")
+
+	assert.NotEqual(t, len(groupsBeforeAdding), len(groupsAfterAdding), "group should have been added")
+
+	err = client.RemoveDefaultGroup(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		groupID,
+	)
+	assert.NoError(t, err, "RemoveDefaultGroup failed")
+
+	groupsAfterRemoving, err := client.GetDefaultGroups(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+	)
+	assert.NoError(t, err, "GetDefaultGroups failed")
+
+	assert.Equal(t, len(groupsAfterRemoving), len(groupsBeforeAdding), "group should have been removed")
+}
+
 func TestGocloak_GetClientRoles(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
