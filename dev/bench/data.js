@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1581261950597,
+  "lastUpdate": 1581366969650,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -288,6 +288,54 @@ window.BENCHMARK_DATA = {
             "value": 58104722,
             "unit": "ns/op\t   54507 B/op\t     182 allocs/op",
             "extra": "20 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.info",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f2db20af7716766d0f485fa2b1f4324c86134db2",
+          "message": "Merge pull request #143 from dlisin/master\n\nAdding GetDefaultGroups, AddDefaultGroup, RemoveDefaultGroup methods",
+          "timestamp": "2020-02-10T14:34:01-06:00",
+          "tree_id": "3a87b3ca2dc496bece9393755e062af16d9592e7",
+          "url": "https://github.com/Nerzal/gocloak/commit/f2db20af7716766d0f485fa2b1f4324c86134db2"
+        },
+        "date": 1581366969317,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 76862817,
+            "unit": "ns/op\t   56277 B/op\t     183 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 71876538,
+            "unit": "ns/op\t   56373 B/op\t     184 allocs/op",
+            "extra": "14 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 74087709,
+            "unit": "ns/op\t   46450 B/op\t     183 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 49572834,
+            "unit": "ns/op\t   53205 B/op\t     181 allocs/op",
+            "extra": "25 times\n2 procs"
           }
         ]
       }
