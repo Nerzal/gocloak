@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1581366969650,
+  "lastUpdate": 1582028929761,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -336,6 +336,54 @@ window.BENCHMARK_DATA = {
             "value": 49572834,
             "unit": "ns/op\t   53205 B/op\t     181 allocs/op",
             "extra": "25 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.info",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2f4c873339d2b4d45711b8d24822f1071991826a",
+          "message": "Merge pull request #145 from KosToZyB/master\n\nFixed example in README.md",
+          "timestamp": "2020-02-18T06:26:31-06:00",
+          "tree_id": "0b259db418de056b8a0ebb9af469cd1f78100483",
+          "url": "https://github.com/Nerzal/gocloak/commit/2f4c873339d2b4d45711b8d24822f1071991826a"
+        },
+        "date": 1582028929415,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 91040582,
+            "unit": "ns/op\t   64864 B/op\t     184 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 88488359,
+            "unit": "ns/op\t   50697 B/op\t     184 allocs/op",
+            "extra": "13 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 100446244,
+            "unit": "ns/op\t   47648 B/op\t     181 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 59484164,
+            "unit": "ns/op\t   52703 B/op\t     181 allocs/op",
+            "extra": "20 times\n2 procs"
           }
         ]
       }
