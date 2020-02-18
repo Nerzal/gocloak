@@ -55,7 +55,7 @@ or v3 (latest release is v3.10.0):
 		Enabled:   true,
 		Username:  "CoolGuy",
 	}
-	client.CreateUser(token.AccessToken, "realm", user)
+	_, err = client.CreateUser(token.AccessToken, "realm", user)
 	if err != nil {
 		panic("Oh no!, failed to create user :(")
 	}
