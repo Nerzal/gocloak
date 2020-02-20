@@ -2,57 +2,44 @@
 [![codebeat badge](https://codebeat.co/badges/c699bc56-aa5f-4cf5-893f-5cf564391b94)](https://codebeat.co/projects/github-com-nerzal-gocloak-master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Nerzal/gocloak)](https://goreportcard.com/report/github.com/Nerzal/gocloak)
 [![Go Doc](https://godoc.org/github.com/Nerzal/gocloak?status.svg)](https://godoc.org/github.com/Nerzal/gocloak)
-[![Build Status](https://travis-ci.com/Nerzal/gocloak.svg?branch=master)](https://travis-ci.com/Nerzal/gocloak)
+[![Build Status](https://github.com/Nerzal/gocloak/workflows/Tests/badge.svg)](https://github.com/Nerzal/gocloak/actions?query=branch%3Amaster+event%3Apush)
+[![GitHub release](https://img.shields.io/github/tag/Nerzal/gocloak.svg)](https://GitHub.com/Nerzal/gocloak/releases/)
 [![codecov](https://codecov.io/gh/Nerzal/gocloak/branch/master/graph/badge.svg)](https://codecov.io/gh/Nerzal/gocloak)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FNerzal%2Fgocloak.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2FNerzal%2Fgocloak?ref=badge_shield)
 
 
+Golang Keycloak API Package
 
-golang keycloak client
+This client is based on: [go-keycloak](https://github.com/PhilippHeuer/go-keycloak)
 
-This client is based on : [go-keycloak](https://github.com/PhilippHeuer/go-keycloak)
-
-For Questions either raise an issue, or come to the [gopher-slack](https://invite.slack.golangbridge.org/) into the channel #gocloak
+For Questions either raise an issue, or come to the [gopher-slack](https://invite.slack.golangbridge.org/) into the channel [#gocloak](https://gophers.slack.com/app_redirect?channel=gocloak)
 
 If u are using the echo framework have a look at [gocloak-echo](https://github.com/Nerzal/gocloak-echo)
 
+Benchmarks: https://nerzal.github.io/gocloak/dev/bench/
 
-https://gopkg.in/nerzal/gocloak.v1
 
 ## Contribution
 (WIP) https://github.com/Nerzal/gocloak/wiki/Contribute
 
 ## Usage
 
+There are a lot of backward incompatible changes in v4:
+* all functions what create an object now return an ID of the created object. The return statement of those functions has been changed from (error) to (string, error)
+* All structures now use pointers instead of general types (bool -> *bool, string -> *string). It has been done to properly use omitempty tag, otherwise it was impossible to set a false value for any of the bool propertires.
+
+
 ### Importing
 
-Since the version 3 you need to import the gocloak library using v3 suffix:
+```go
+	import "github.com/Nerzal/gocloak/v4"
+```
+
+or v3 (latest release is v3.10.0):
 
 ```go
 	import "github.com/Nerzal/gocloak/v3"
 ```
-
-#### Version 2:
-
-```go
-	go get gopkg.in/nerzal/gocloak@v2.1.0
-```
-
-```go
-	import "github.com/Nerzal/gocloak"
-```
-
-#### Keycloak Version < 4.8
-If you are using a Keycloak Server version <4.8 please use the V1.0 release of gocloak.
-
-```go
-	go get gopkg.in/nerzal/gocloak.v1
-```
-
-```go
-	import "gopkg.in/nerzal/gocloak.v1"
-```
-
 
 ### Create New User
 ```go
@@ -64,11 +51,11 @@ If you are using a Keycloak Server version <4.8 please use the V1.0 release of g
 	user := gocloak.User{
 		FirstName: "Bob",
 		LastName:  "Uncle",
-		EMail:     "something@really.wrong",
+		Email:     "something@really.wrong",
 		Enabled:   true,
 		Username:  "CoolGuy",
 	}
-	client.CreateUser(token.AccessToken, "realm", user)
+	_, err = client.CreateUser(token.AccessToken, "realm", user)
 	if err != nil {
 		panic("Oh no!, failed to create user :(")
 	}
@@ -100,6 +87,8 @@ If you are using a Keycloak Server version <4.8 please use the V1.0 release of g
 ```go
 // GoCloak holds all methods a client should fullfill
 type GoCloak interface {
+	GetRequestingPartyToken(token, realm string, options RequestingPartyTokenOptions) (*JWT, error)
+
 	Login(clientID string, clientSecret string, realm string, username string, password string) (*JWT, error)
 	Logout(clientID, clientSecret, realm, refreshToken string) error
 	LogoutPublicClient(clientID, realm, accessToken, refreshToken string) error
@@ -160,15 +149,22 @@ type GoCloak interface {
 	GetComponents(accessToken string, realm string) ([]*Component, error)
 	GetGroups(accessToken string, realm string, params GetGroupsParams) ([]*Group, error)
 	GetGroup(accessToken string, realm, groupID string) (*Group, error)
+	GetDefaultGroups(accessToken string, realm string) ([]*Group, error)
+	AddDefaultGroup(accessToken string, realm string, groupID string) error
+	RemoveDefaultGroup(accessToken string, realm string, groupID string) error	
 	GetGroupMembers(accessToken string, realm, groupID string, params GetGroupsParams) ([]*User, error)
 	GetRoleMappingByGroupID(accessToken string, realm string, groupID string) (*MappingsRepresentation, error)
 	GetRoleMappingByUserID(accessToken string, realm string, userID string) (*MappingsRepresentation, error)
 	GetClientRoles(accessToken string, realm string, clientID string) ([]*Role, error)
 	GetClientRole(token string, realm string, clientID string, roleName string) (*Role, error)
 	GetClients(accessToken string, realm string, params GetClientsParams) ([]*Client, error)
+	AddClientRoleComposite(token string, realm string, roleID string, roles []Role) error
+	DeleteClientRoleComposite(token string, realm string, roleID string, roles []Role) error
 	GetUsersByRoleName(token string, realm string, roleName string) ([]*User, error)
+	GetUsersByClientRoleName(token string, realm string, clientID string, roleName string, params GetUsersByRoleParams) ([]*User, error)
 	UserAttributeContains(attributes map[string][]string, attribute string, value string) bool
 	CreateClientProtocolMapper(token, realm, clientID string, mapper ProtocolMapperRepresentation) error
+	UpdateClientProtocolMapper(token, realm, clientID string, mapperID string, mapper ProtocolMapperRepresentation) error
 	DeleteClientProtocolMapper(token, realm, clientID, mapperID string) error
 
 	// *** Realm Roles ***
@@ -182,21 +178,62 @@ type GoCloak interface {
 	DeleteRealmRole(token string, realm string, roleName string) error
 	AddRealmRoleToUser(token string, realm string, userID string, roles []Role) error
 	DeleteRealmRoleFromUser(token string, realm string, userID string, roles []Role) error
+	AddRealmRoleToGroup(token string, realm string, groupID string, roles []Role) error
+	DeleteRealmRoleFromGroup(token string, realm string, groupID string, roles []Role) error
 	AddRealmRoleComposite(token string, realm string, roleName string, roles []Role) error
 	DeleteRealmRoleComposite(token string, realm string, roleName string, roles []Role) error
+
+
+	// *** Client Roles ***
+
+	AddClientRoleToGroup(token string, realm string, clientID string, groupID string, roles []Role) error
+	DeleteClientRoleFromGroup(token string, realm string, clientID string, groupID string, roles []Role) error
+	GetCompositeClientRolesByRoleID(token string, realm string, clientID string, roleID string) ([]*Role, error)
+	GetClientRolesByUserID(token string, realm string, clientID string, userID string) ([]*Role, error)
+	GetClientRolesByGroupID(token string, realm string, clientID string, groupID string) ([]*Role, error)
+	GetCompositeClientRolesByUserID(token string, realm string, clientID string, userID string) ([]*Role, error)
+	GetCompositeClientRolesByGroupID(token string, realm string, clientID string, groupID string) ([]*Role, error)
 
 	// *** Realm ***
 
 	GetRealm(token string, realm string) (*RealmRepresentation, error)
 	GetRealms(token string) ([]*RealmRepresentation, error)
-	CreateRealm(token string, realm RealmRepresentation) error
+	CreateRealm(token string, realm RealmRepresentation) (string, error)
+	UpdateRealm(token string, realm RealmRepresentation) error
 	DeleteRealm(token string, realm string) error
 	ClearRealmCache(token string, realm string) error
+	ClearUserCache(token string, realm string) error
+	ClearKeysCache(token string, realm string) error
 
 	GetClientUserSessions(token, realm, clientID string) ([]*UserSessionRepresentation, error)
 	GetClientOfflineSessions(token, realm, clientID string) ([]*UserSessionRepresentation, error)
 	GetUserSessions(token, realm, userID string) ([]*UserSessionRepresentation, error)
 	GetUserOfflineSessionsForClient(token, realm, userID, clientID string) ([]*UserSessionRepresentation, error)
+
+	// *** Protection API ***
+	GetResource(token string, realm string, clientID string, resourceID string) (*Resource, error)
+	GetResources(token string, realm string, clientID string) ([]*Resource, error)
+	CreateResource(token string, realm string, clientID string, resource Resource) (*Resource, error)
+	UpdateResource(token string, realm string, clientID string, resource Resource) error
+	DeleteResource(token string, realm string, clientID string, resourceID string) error
+
+	GetScope(token string, realm string, clientID string, scopeID string) (*ScopeRepresentation, error)
+	GetScopes(token string, realm string, clientID string, params GetScopeParams) ([]*ScopeRepresentation, error)
+	CreateScope(token string, realm string, clientID string, scope ScopeRepresentation) (*ScopeRepresentation, error)
+	UpdateScope(token string, realm string, clientID string, resource ScopeRepresentation) error
+	DeleteScope(token string, realm string, clientID string, scopeID string) error
+
+	GetPolicy(token string, realm string, clientID string, policyID string) (*PolicyRepresentation, error)
+	GetPolicies(token string, realm string, clientID string, params GetPolicyParams) ([]*PolicyRepresentation, error)
+	CreatePolicy(token string, realm string, clientID string, policy PolicyRepresentation) (*PolicyRepresentation, error)
+	UpdatePolicy(token string, realm string, clientID string, policy PolicyRepresentation) error
+	DeletePolicy(token string, realm string, clientID string, policyID string) error
+
+	GetPermission(token string, realm string, clientID string, permissionID string) (*PermissionRepresentation, error)
+	GetPermissions(token string, realm string, clientID string, params GetPermissionParams) ([]*PermissionRepresentation, error)
+	CreatePermission(token string, realm string, clientID string, permission PermissionRepresentation) (*PermissionRepresentation, error)
+	UpdatePermission(token string, realm string, clientID string, permission PermissionRepresentation) error
+	DeletePermission(token string, realm string, clientID string, permissionID string) error
 }
 ```
 

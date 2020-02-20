@@ -14,6 +14,8 @@ type GoCloak interface {
 
 	// GetToken returns a token
 	GetToken(realm string, options TokenOptions) (*JWT, error)
+	// GetRequestingPartyToken returns a requesting party token with permissions granted by the server
+	GetRequestingPartyToken(token, realm string, options RequestingPartyTokenOptions) (*JWT, error)
 	// Login sends a request to the token endpoint using user and client credentials
 	Login(clientID, clientSecret, realm, username, password string) (*JWT, error)
 	// Logout sends a request to the logout endpoint using refresh token
@@ -24,8 +26,6 @@ type GoCloak interface {
 	LoginClient(clientID, clientSecret, realm string) (*JWT, error)
 	// LoginAdmin login as admin
 	LoginAdmin(username, password, realm string) (*JWT, error)
-	// RequestPermission sends a request to the token endpoint with permission parameter
-	RequestPermission(clientID, clientSecret, realm, username, password, permission string) (*JWT, error)
 	// RefreshToken used to refresh the token
 	RefreshToken(refreshToken string, clientID, clientSecret, realm string) (*JWT, error)
 	// DecodeAccessToken decodes the accessToken
@@ -107,6 +107,12 @@ type GoCloak interface {
 	GetKeyStoreConfig(accessToken string, realm string) (*KeyStoreConfig, error)
 	// GetComponents gets components of the given realm
 	GetComponents(accessToken string, realm string) ([]*Component, error)
+	// GetDefaultGroups returns a list of default groups
+	GetDefaultGroups(accessToken string, realm string) ([]*Group, error)
+	// AddDefaultGroup adds group to the list of default groups
+	AddDefaultGroup(accessToken string, realm string, groupID string) error
+	// RemoveDefaultGroup removes group from the list of default groups
+	RemoveDefaultGroup(accessToken string, realm string, groupID string) error
 	// GetGroups gets all groups of the given realm
 	GetGroups(accessToken string, realm string, params GetGroupsParams) ([]*Group, error)
 	// GetGroup gets the given group
@@ -125,6 +131,8 @@ type GoCloak interface {
 	GetClientUserSessions(token, realm, clientID string) ([]*UserSessionRepresentation, error)
 	// CreateClientProtocolMapper creates a protocol mapper in client scope
 	CreateClientProtocolMapper(token, realm, clientID string, mapper ProtocolMapperRepresentation) (string, error)
+	// CreateClientProtocolMapper updates a protocol mapper in client scope
+	UpdateClientProtocolMapper(token, realm, clientID string, mapperID string, mapper ProtocolMapperRepresentation) error
 	// DeleteClientProtocolMapper deletes a protocol mapper in client scope
 	DeleteClientProtocolMapper(token, realm, clientID, mapperID string) error
 
@@ -151,6 +159,10 @@ type GoCloak interface {
 	AddRealmRoleToUser(token string, realm string, userID string, roles []Role) error
 	// DeleteRealmRoleFromUser deletes realm-level role mappings
 	DeleteRealmRoleFromUser(token string, realm string, userID string, roles []Role) error
+	// AddRealmRoleToGroup adds realm-level role mappings
+	AddRealmRoleToGroup(token string, realm string, groupID string, roles []Role) error
+	// DeleteRealmRoleFromGroup deletes realm-level role mappings
+	DeleteRealmRoleFromGroup(token string, realm string, groupID string, roles []Role) error
 	// AddRealmRoleComposite adds roles as composite
 	AddRealmRoleComposite(token string, realm string, roleName string, roles []Role) error
 	// AddRealmRoleComposite adds roles as composite
@@ -160,16 +172,34 @@ type GoCloak interface {
 
 	// AddClientRoleToUser adds a client role to the user
 	AddClientRoleToUser(token string, realm string, clientID string, userID string, roles []Role) error
+	// AddClientRoleToGroup adds a client role to the group
+	AddClientRoleToGroup(token string, realm string, clientID string, groupID string, roles []Role) error
 	// CreateClientRole creates a new role for a client
 	CreateClientRole(accessToken, realm, clientID string, role Role) (string, error)
 	// DeleteClientRole deletes the given role
 	DeleteClientRole(accessToken, realm, clientID, roleName string) error
 	// DeleteClientRoleFromUser removes a client role from from the user
 	DeleteClientRoleFromUser(token string, realm string, clientID string, userID string, roles []Role) error
+	// DeleteClientRoleFromGroup removes a client role from from the group
+	DeleteClientRoleFromGroup(token string, realm string, clientID string, groupID string, roles []Role) error
 	// GetClientRoles gets roles for the given client
 	GetClientRoles(accessToken string, realm string, clientID string) ([]*Role, error)
+	// GetRealmRolesByUserID returns all client roles assigned to the given user
+	GetClientRolesByUserID(token string, realm string, clientID string, userID string) ([]*Role, error)
+	// GetClientRolesByGroupID returns all client roles assigned to the given group
+	GetClientRolesByGroupID(token string, realm string, clientID string, groupID string) ([]*Role, error)
+	// GetCompositeClientRolesByRoleID returns all client composite roles associated with the given client role
+	GetCompositeClientRolesByRoleID(token string, realm string, clientID string, roleID string) ([]*Role, error)
+	// GetCompositeClientRolesByUserID returns all client roles and composite roles assigned to the given user
+	GetCompositeClientRolesByUserID(token string, realm string, clientID string, userID string) ([]*Role, error)
+	// GetCompositeClientRolesByGroupID returns all client roles and composite roles assigned to the given group
+	GetCompositeClientRolesByGroupID(token string, realm string, clientID string, groupID string) ([]*Role, error)
 	// GetClientRole get a role for the given client in a realm by role name
 	GetClientRole(token string, realm string, clientID string, roleName string) (*Role, error)
+	// AddClientRoleComposite adds roles as composite
+	AddClientRoleComposite(token string, realm string, roleID string, roles []Role) error
+	// DeleteClientRoleComposite deletes composites from a role
+	DeleteClientRoleComposite(token string, realm string, roleID string, roles []Role) error
 
 	// *** Realm ***
 
@@ -179,10 +209,16 @@ type GoCloak interface {
 	GetRealms(token string) ([]*RealmRepresentation, error)
 	// CreateRealm creates a realm
 	CreateRealm(token string, realm RealmRepresentation) (string, error)
+	// UpdateRealm updates a given realm
+	UpdateRealm(token string, realm RealmRepresentation) error
 	// DeleteRealm removes a realm
 	DeleteRealm(token string, realm string) error
 	// ClearRealmCache clears realm cache
 	ClearRealmCache(token string, realm string) error
+	// ClearUserCache clears realm cache
+	ClearUserCache(token string, realm string) error
+	// ClearKeysCache clears realm cache
+	ClearKeysCache(token string, realm string) error
 
 	// *** Users ***
 	// CreateUser creates a new user
@@ -199,6 +235,8 @@ type GoCloak interface {
 	GetUserGroups(accessToken string, realm string, userID string) ([]*UserGroup, error)
 	// GetUsersByRoleName returns all users have a given role
 	GetUsersByRoleName(token string, realm string, roleName string) ([]*User, error)
+	// GetUsersByClientRoleName returns all users have a given client role
+	GetUsersByClientRoleName(token string, realm string, clientID string, roleName string, params GetUsersByRoleParams) ([]*User, error)
 	// SetPassword sets a new password for the user with the given id. Needs elevated privileges
 	SetPassword(token string, userID string, realm string, password string, temporary bool) error
 	// UpdateUser updates the given user
@@ -211,4 +249,61 @@ type GoCloak interface {
 	GetUserSessions(token, realm, userID string) ([]*UserSessionRepresentation, error)
 	// GetUserOfflineSessionsForClient returns offline sessions associated with the user and client
 	GetUserOfflineSessionsForClient(token, realm, userID, clientID string) ([]*UserSessionRepresentation, error)
+
+	// *** Identity Provider **
+	// CreateIdentityProvider creates an identity provider in a realm
+	CreateIdentityProvider(token string, realm string, providerRep IdentityProviderRepresentation) (string, error)
+	// GetIdentityProviders gets identity providers in a realm
+	GetIdentityProviders(token string, realm string) ([]*IdentityProviderRepresentation, error)
+	// GetIdentityProvider gets the identity provider in a realm
+	GetIdentityProvider(token string, realm string, alias string) (*IdentityProviderRepresentation, error)
+	// UpdateIdentityProvider updates the identity provider in a realm
+	UpdateIdentityProvider(token string, realm string, alias string, providerRep IdentityProviderRepresentation) error
+	// DeleteIdentityProvider deletes the identity provider in a realm
+	DeleteIdentityProvider(token string, realm string, alias string) error
+
+	// *** Protection API ***
+	// GetResource returns a client's resource with the given id
+	GetResource(token string, realm string, clientID string, resourceID string) (*ResourceRepresentation, error)
+	// GetResources a returns resources associated with the client
+	GetResources(token string, realm string, clientID string, params GetResourceParams) ([]*ResourceRepresentation, error)
+	// CreateResource creates a resource associated with the client
+	CreateResource(token string, realm string, clientID string, resource ResourceRepresentation) (*ResourceRepresentation, error)
+	// UpdateResource updates a resource associated with the client
+	UpdateResource(token string, realm string, clientID string, resource ResourceRepresentation) error
+	// DeleteResource deletes a resource associated with the client
+	DeleteResource(token string, realm string, clientID string, resourceID string) error
+
+	// GetScope returns a client's scope with the given id
+	GetScope(token string, realm string, clientID string, scopeID string) (*ScopeRepresentation, error)
+	// GetScopes returns scopes associated with the client
+	GetScopes(token string, realm string, clientID string, params GetScopeParams) ([]*ScopeRepresentation, error)
+	// CreateScope creates a scope associated with the client
+	CreateScope(token string, realm string, clientID string, scope ScopeRepresentation) (*ScopeRepresentation, error)
+	// UpdateScope updates a scope associated with the client
+	UpdateScope(token string, realm string, clientID string, resource ScopeRepresentation) error
+	// DeleteScope deletes a scope associated with the client
+	DeleteScope(token string, realm string, clientID string, scopeID string) error
+
+	// GetPolicy returns a client's policy with the given id
+	GetPolicy(token string, realm string, clientID string, policyID string) (*PolicyRepresentation, error)
+	// GetPolicies returns policies associated with the client
+	GetPolicies(token string, realm string, clientID string, params GetPolicyParams) ([]*PolicyRepresentation, error)
+	// CreatePolicy creates a policy associated with the client
+	CreatePolicy(token string, realm string, clientID string, policy PolicyRepresentation) (*PolicyRepresentation, error)
+	// UpdatePolicy updates a policy associated with the client
+	UpdatePolicy(token string, realm string, clientID string, policy PolicyRepresentation) error
+	// DeletePolicy deletes a policy associated with the client
+	DeletePolicy(token string, realm string, clientID string, policyID string) error
+
+	// GetPermission returns a client's permission with the given id
+	GetPermission(token string, realm string, clientID string, permissionID string) (*PermissionRepresentation, error)
+	// GetPermissions returns permissions associated with the client
+	GetPermissions(token string, realm string, clientID string, params GetPermissionParams) ([]*PermissionRepresentation, error)
+	// CreatePermission creates a permission associated with the client
+	CreatePermission(token string, realm string, clientID string, permission PermissionRepresentation) (*PermissionRepresentation, error)
+	// UpdatePermission updates a permission associated with the client
+	UpdatePermission(token string, realm string, clientID string, permission PermissionRepresentation) error
+	// DeletePermission deletes a permission associated with the client
+	DeletePermission(token string, realm string, clientID string, permissionID string) error
 }
