@@ -194,7 +194,7 @@ func (client *gocloak) GetCerts(realm string) (*CertResponse, error) {
 
 	client.certsLock.Lock()
 	defer client.certsLock.Unlock()
-	
+
 	if cert, ok := client.certsCache[realm]; ok {
 		return cert, nil
 	}
