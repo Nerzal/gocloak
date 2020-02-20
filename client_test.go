@@ -252,6 +252,7 @@ func CreatePolicy(t *testing.T, client GoCloak, clientID string, policy PolicyRe
 		clientID,
 		policy)
 	assert.NoError(t, err, "CreatePolicy failed")
+
 	t.Logf("Created Policy ID: %s ", *(createdPolicy.ID))
 
 	tearDown := func() {
