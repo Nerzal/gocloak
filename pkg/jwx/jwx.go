@@ -11,38 +11,44 @@ import (
 	"strings"
 
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/pkg/errors"
 )
 
 // DecodeAccessTokenHeader decodes the header of the accessToken
 func DecodeAccessTokenHeader(token string) (*DecodedAccessTokenHeader, error) {
+	const errMessage = "could not decode access token header"
 	token = strings.Replace(token, "Bearer ", "", 1)
 	headerString := strings.Split(token, ".")
 	decodedData, err := base64.RawStdEncoding.DecodeString(headerString[0])
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, errMessage)
 	}
 
 	result := &DecodedAccessTokenHeader{}
 	err = json.Unmarshal(decodedData, result)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, errMessage)
 	}
 
 	return result, nil
 }
 
 func decodePublicKey(e, n *string) (*rsa.PublicKey, error) {
+	const errMessage = "could not decode public key"
+
 	decN, err := base64.RawURLEncoding.DecodeString(*n)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, errMessage)
 	}
+
 	nInt := big.NewInt(0)
 	nInt.SetBytes(decN)
 
 	decE, err := base64.RawURLEncoding.DecodeString(*e)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, errMessage)
 	}
+
 	var eBytes []byte
 	if len(decE) < 8 {
 		eBytes = make([]byte, 8-len(decE), 8)
@@ -55,17 +61,20 @@ func decodePublicKey(e, n *string) (*rsa.PublicKey, error) {
 	var eInt uint64
 	err = binary.Read(eReader, binary.BigEndian, &eInt)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, errMessage)
 	}
+
 	pKey := rsa.PublicKey{N: nInt, E: int(eInt)}
 	return &pKey, nil
 }
 
 // DecodeAccessToken currently only supports RSA - sorry for that
 func DecodeAccessToken(accessToken string, e, n *string) (*jwt.Token, *jwt.MapClaims, error) {
+	const errMessage = "could not decode accessToken"
+
 	rsaPublicKey, err := decodePublicKey(e, n)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Wrap(err, errMessage)
 	}
 
 	claims := &jwt.MapClaims{}
@@ -77,14 +86,20 @@ func DecodeAccessToken(accessToken string, e, n *string) (*jwt.Token, *jwt.MapCl
 		return rsaPublicKey, nil
 	})
 
-	return token2, claims, err
+	if err != nil {
+		return nil, nil, errors.Wrap(err, errMessage)
+	}
+
+	return token2, claims, nil
 }
 
 // DecodeAccessTokenCustomClaims currently only supports RSA - sorry for that
 func DecodeAccessTokenCustomClaims(accessToken string, e, n *string, customClaims jwt.Claims) (*jwt.Token, error) {
+	const errMessage = "could not decode accessToken with custom claims"
+
 	rsaPublicKey, err := decodePublicKey(e, n)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, errMessage)
 	}
 
 	token2, err := jwt.ParseWithClaims(accessToken, customClaims, func(token *jwt.Token) (interface{}, error) {
@@ -95,5 +110,9 @@ func DecodeAccessTokenCustomClaims(accessToken string, e, n *string, customClaim
 		return rsaPublicKey, nil
 	})
 
-	return token2, err
+	if err != nil {
+		return nil, errors.Wrap(err, errMessage)
+	}
+
+	return token2, nil
 }
