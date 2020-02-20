@@ -305,7 +305,9 @@ func SetUpTestUser(t testing.TB, client GoCloak) {
 			cfg.GoCloak.Realm,
 			user,
 		)
-		if IsObjectAlreadyExists(err) {
+
+		apiError := err.(*APIError)
+		if apiError.Code == http.StatusConflict {
 			users, err := client.GetUsers(
 				token.AccessToken,
 				cfg.GoCloak.Realm,

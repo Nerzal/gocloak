@@ -82,10 +82,6 @@ func checkForError(resp *resty.Response, err error, errMessage string) error {
 			msg = resp.Status()
 		}
 
-		if resp.StatusCode() == 409 {
-			return &ObjectAlreadyExists{ErrorMessage: msg}
-		}
-
 		return &APIError{
 			Code:    resp.StatusCode(),
 			Message: msg,
