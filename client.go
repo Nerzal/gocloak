@@ -86,7 +86,10 @@ func checkForError(resp *resty.Response, err error, errMessage string) error {
 			return &ObjectAlreadyExists{ErrorMessage: msg}
 		}
 
-		return errors.New(msg)
+		return &APIError{
+			Code:    resp.StatusCode(),
+			Message: msg,
+		}
 	}
 
 	return nil
