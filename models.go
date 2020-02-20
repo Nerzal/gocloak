@@ -12,6 +12,10 @@ import (
 // "string" tag allows to convert the non-string fields of a structure to map[string]string.
 // "omitempty" allows to skip the fields with default values.
 func GetQueryParams(s interface{}) (map[string]string, error) {
+	// if obj, ok := s.(GetGroupsParams); ok {
+	// 	obj.OnMarshal()
+	// 	s = obj
+	// }
 	b, err := json.Marshal(s)
 	if err != nil {
 		return nil, err
@@ -239,10 +243,22 @@ type Group struct {
 
 // GetGroupsParams represents the optional parameters for getting groups
 type GetGroupsParams struct {
-	First  *int    `json:"first,string,omitempty"`
-	Max    *int    `json:"max,string,omitempty"`
-	Search *string `json:"search,omitempty"`
-	Full   *bool   `json:"full,string,omitempty"`
+	First               *int    `json:"first,string,omitempty"`
+	Max                 *int    `json:"max,string,omitempty"`
+	Search              *string `json:"search,omitempty"`
+	Full                *bool   `json:"full,string,omitempty"`
+	BriefRepresentation *bool   `json:"briefRepresentation,string,omitempty"`
+}
+
+func (obj GetGroupsParams) MarshalJSON() ([]byte, error) {
+	type Alias GetGroupsParams
+	a := (Alias)(obj)
+	if a.BriefRepresentation != nil {
+		a.Full = BoolP(!*a.BriefRepresentation)
+	} else if a.Full != nil {
+		a.BriefRepresentation = BoolP(!*a.Full)
+	}
+	return json.Marshal(a)
 }
 
 // Role is a role
