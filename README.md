@@ -237,7 +237,7 @@ type GoCloak interface {
 }
 ```
 
-## Configure skip TLS Insecure Verification
+## Configure gocloak to skip TLS Insecure Verification
 
 ```go
     client := gocloak.NewClient(serverURL)
