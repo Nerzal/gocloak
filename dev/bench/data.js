@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1582028929761,
+  "lastUpdate": 1582310199365,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -384,6 +384,54 @@ window.BENCHMARK_DATA = {
             "value": 59484164,
             "unit": "ns/op\t   52703 B/op\t     181 allocs/op",
             "extra": "20 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "theel.tobias@gmx.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "79707087a1359afe837c406057fcbdaec0e8c9b5",
+          "message": "Update README.md",
+          "timestamp": "2020-02-21T19:34:21+01:00",
+          "tree_id": "1ad2d31424f6a10fde28ccb3f27eea6198add6e8",
+          "url": "https://github.com/Nerzal/gocloak/commit/79707087a1359afe837c406057fcbdaec0e8c9b5"
+        },
+        "date": 1582310198804,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 92484789,
+            "unit": "ns/op\t   67597 B/op\t     183 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 89792129,
+            "unit": "ns/op\t   62064 B/op\t     184 allocs/op",
+            "extra": "13 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 92633694,
+            "unit": "ns/op\t   40870 B/op\t     181 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 53552388,
+            "unit": "ns/op\t   56674 B/op\t     185 allocs/op",
+            "extra": "19 times\n2 procs"
           }
         ]
       }
