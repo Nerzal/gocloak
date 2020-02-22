@@ -306,8 +306,8 @@ func SetUpTestUser(t testing.TB, client GoCloak) {
 			user,
 		)
 
-		apiError := err.(*APIError)
-		if apiError.Code == http.StatusConflict {
+		apiError, ok := err.(*APIError)
+		if ok && apiError.Code == http.StatusConflict {
 			users, err := client.GetUsers(
 				token.AccessToken,
 				cfg.GoCloak.Realm,
