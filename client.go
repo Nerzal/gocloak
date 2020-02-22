@@ -65,7 +65,7 @@ func (client *gocloak) getRequestWithBasicAuth(clientID string, clientSecret str
 func checkForError(resp *resty.Response, err error, errMessage string) error {
 	if err != nil {
 		return &APIError{
-			Code:    resp.StatusCode(),
+			Code:    0,
 			Message: errMessage,
 		}
 	}
