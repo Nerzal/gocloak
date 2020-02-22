@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1582311951484,
+  "lastUpdate": 1582409782747,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -480,6 +480,54 @@ window.BENCHMARK_DATA = {
             "value": 51417394,
             "unit": "ns/op\t   66676 B/op\t     204 allocs/op",
             "extra": "20 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.info",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "681aed0a300b73c261fc132437197679099fd1f7",
+          "message": "Merge pull request #146 from Nerzal/error_refactoring\n\nError refactoring",
+          "timestamp": "2020-02-22T16:14:11-06:00",
+          "tree_id": "b369b3ec38bc34b50674c1b18153cd99d88d95c4",
+          "url": "https://github.com/Nerzal/gocloak/commit/681aed0a300b73c261fc132437197679099fd1f7"
+        },
+        "date": 1582409782436,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 80197483,
+            "unit": "ns/op\t   68673 B/op\t     205 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 81307817,
+            "unit": "ns/op\t   65966 B/op\t     206 allocs/op",
+            "extra": "13 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 79944727,
+            "unit": "ns/op\t   57192 B/op\t     203 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 49473322,
+            "unit": "ns/op\t   64151 B/op\t     205 allocs/op",
+            "extra": "22 times\n2 procs"
           }
         ]
       }
