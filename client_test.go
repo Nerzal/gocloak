@@ -114,7 +114,7 @@ func GetAdminToken(t testing.TB, client GoCloak) *JWT {
 		cfg.Admin.UserName,
 		cfg.Admin.Password,
 		cfg.Admin.Realm)
-	assert.NoError(t, err, "Login failed")
+	assert.NoError(t, err, "Login Admin failed")
 	return token
 }
 
@@ -376,7 +376,7 @@ func NewClientWithDebug(t testing.TB) GoCloak {
 				} else if len(e.Error) > 0 {
 					msg = e.Error
 				}
-				return strings.HasPrefix(msg, "Cached clientScope not found")
+				return strings.HasPrefix(msg, "Cached clientScope not found") || strings.Contains(msg, "unknown_error")
 			}
 		}
 		return false
@@ -1257,6 +1257,37 @@ func TestGocloak_GetGroupsFull(t *testing.T) {
 	assert.Fail(t, "GetGroupsFull failed")
 }
 
+func TestGocloak_GetGroupsBriefRepresentation(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	tearDown, groupID := CreateGroup(t, client)
+	defer tearDown()
+
+	groups, err := client.GetGroups(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		GetGroupsParams{
+			BriefRepresentation: BoolP(false),
+		})
+	assert.NoError(t, err, "GetGroups failed")
+
+	for _, group := range groups {
+		if NilOrEmpty(group.ID) {
+			continue
+		}
+		if *(group.ID) == groupID {
+			ok := client.UserAttributeContains(group.Attributes, "foo", "alice")
+			assert.True(t, ok, "UserAttributeContains")
+			return
+		}
+	}
+
+	assert.Fail(t, "GetGroupsBriefRepresentation failed")
+}
+
 func TestGocloak_GetGroupFull(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
@@ -1486,6 +1517,7 @@ func CreateRealm(t *testing.T, client GoCloak) (func(), string) {
 	assert.NoError(t, err, "CreateRealm failed")
 	assert.Equal(t, realmID, realmName)
 	tearDown := func() {
+		token := GetAdminToken(t, client)
 		err := client.DeleteRealm(
 			token.AccessToken,
 			realmName)

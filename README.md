@@ -237,6 +237,15 @@ type GoCloak interface {
 }
 ```
 
+## Configure gocloak to skip TLS Insecure Verification
+
+```go
+    client := gocloak.NewClient(serverURL)
+    restyClient := client.RestyClient()
+    restyClient.SetDebug(true)
+    restyClient.SetTLSClientConfig(&tls.Config{ InsecureSkipVerify: true }
+```
+
 ## developing & testing
 For local testing you need to start a docker container. Simply run following commands prior to starting the tests:
 
