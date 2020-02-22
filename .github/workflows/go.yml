@@ -3,8 +3,8 @@ on:
   - push
   - pull_request
 env:
-  LINT_VERSION: "v1.22.2"
-  NANCY_VERSION: "v0.0.39"
+  LINT_VERSION: "v1.23.6"
+  NANCY_VERSION: "v0.0.41"
 jobs:
   tests:
     runs-on: ubuntu-latest

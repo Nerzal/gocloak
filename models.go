@@ -58,10 +58,10 @@ func (s *StringOrArray) MarshalJSON() ([]byte, error) {
 	return json.Marshal([]string(*s))
 }
 
-// APIError represents an api error
+// APIError holds message and statusCode for api errors
 type APIError struct {
-	Code    int
-	Message string
+	Code    int    `json:"code"`
+	Message string `json:"message"`
 }
 
 // Error stringifies the APIError
