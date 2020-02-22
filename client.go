@@ -231,7 +231,7 @@ func (client *gocloak) GetIssuer(realm string) (*IssuerResponse, error) {
 		SetResult(&result).
 		Get(client.getRealmURL(realm))
 
-	if err := checkForError(resp, err, err.Error()); err != nil {
+	if err := checkForError(resp, err, errMessage); err != nil {
 		return nil, err
 	}
 
