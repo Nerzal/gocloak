@@ -22,17 +22,25 @@ Benchmarks: https://nerzal.github.io/gocloak/dev/bench/
 ## Contribution
 (WIP) https://github.com/Nerzal/gocloak/wiki/Contribute
 
-## Usage
+## Changelog
 
-There are a lot of backward incompatible changes in v4:
+### v5:
+There is only one change, but it's backward incompatible:
+* Wrap Errors and use APIError struct to also provide the httpstatus code. ([#146](https://github.com/Nerzal/gocloak/pull/146))
+
+### v4:
+There are a lot of backward incompatible changes:
 * all functions what create an object now return an ID of the created object. The return statement of those functions has been changed from (error) to (string, error)
 * All structures now use pointers instead of general types (bool -> *bool, string -> *string). It has been done to properly use omitempty tag, otherwise it was impossible to set a false value for any of the bool propertires.
+
+## Usage
+
 
 
 ### Importing
 
 ```go
-	import "github.com/Nerzal/gocloak/v4"
+	import "github.com/Nerzal/gocloak/v5"
 ```
 
 or v3 (latest release is v3.10.0):
@@ -151,7 +159,7 @@ type GoCloak interface {
 	GetGroup(accessToken string, realm, groupID string) (*Group, error)
 	GetDefaultGroups(accessToken string, realm string) ([]*Group, error)
 	AddDefaultGroup(accessToken string, realm string, groupID string) error
-	RemoveDefaultGroup(accessToken string, realm string, groupID string) error	
+	RemoveDefaultGroup(accessToken string, realm string, groupID string) error
 	GetGroupMembers(accessToken string, realm, groupID string, params GetGroupsParams) ([]*User, error)
 	GetRoleMappingByGroupID(accessToken string, realm string, groupID string) (*MappingsRepresentation, error)
 	GetRoleMappingByUserID(accessToken string, realm string, userID string) (*MappingsRepresentation, error)

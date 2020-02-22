@@ -8,10 +8,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Nerzal/gocloak/v4/pkg/jwx"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-resty/resty/v2"
 	"github.com/pkg/errors"
+
+	"github.com/Nerzal/gocloak/v5/pkg/jwx"
 )
 
 type gocloak struct {
