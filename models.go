@@ -2,7 +2,6 @@ package gocloak
 
 import (
 	"encoding/json"
-	"strconv"
 	"strings"
 )
 
@@ -63,7 +62,7 @@ type APIError struct {
 
 // Error stringifies the APIError
 func (apiError APIError) Error() string {
-	return "Code: " + strconv.Itoa(apiError.Code) + " Message: " + apiError.Message
+	return apiError.Message
 }
 
 // CertResponseKey is returned by the certs endpoint

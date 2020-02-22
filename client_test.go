@@ -3308,3 +3308,23 @@ func TestGocloak_CreateListGetUpdateDeletePermission(t *testing.T) {
 	assert.NoError(t, err, "GetPermission failed")
 	assert.Equal(t, *(createdPermission.Name), *(updatedPermission.Name))
 }
+
+func TestGoCloak_CheckError(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	_, err := client.GetClient(token.AccessToken, cfg.Admin.Realm, "random_client")
+	assert.Error(t, err)
+
+	t.Log(err)
+
+	expectedError := &APIError{
+		Code:    http.StatusNotFound,
+		Message: "404 Not Found: Could not find client",
+	}
+
+	apiError := err.(*APIError)
+	assert.Equal(t, expectedError, apiError)
+}
