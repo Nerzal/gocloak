@@ -255,10 +255,10 @@ docker run -d \
 	-e KEYCLOAK_USER=admin \
 	-e KEYCLOAK_PASSWORD=secret \
 	-e KEYCLOAK_IMPORT=/tmp/gocloak-realm.json \
-	-v `pwd`/testdata/gocloak-realm.json:/tmp/gocloak-realm.json \
+	-v "`pwd`/testdata/gocloak-realm.json:/tmp/gocloak-realm.json" \
 	-p 8080:8080 \
 	--name gocloak-test \
-	quay.io/keycloak/keycloak
+	quay.io/keycloak/keycloak:latest -Dkeycloak.profile.feature.upload_scripts=enabled
 
 go test
 ```
