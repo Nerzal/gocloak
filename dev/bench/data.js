@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1582411081092,
+  "lastUpdate": 1584372462860,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -576,6 +576,54 @@ window.BENCHMARK_DATA = {
             "value": 54893892,
             "unit": "ns/op\t   53961 B/op\t     204 allocs/op",
             "extra": "21 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.info",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0f1d3fac7fae2f24665f649ed83c1883c0238c9b",
+          "message": "Merge pull request #157 from Nerzal/fix-get-policies\n\nFix GetPolicies function",
+          "timestamp": "2020-03-16T10:25:18-05:00",
+          "tree_id": "dfb2a8188686cffbd02711e4884ccf932a1fc378",
+          "url": "https://github.com/Nerzal/gocloak/commit/0f1d3fac7fae2f24665f649ed83c1883c0238c9b"
+        },
+        "date": 1584372462544,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 92022613,
+            "unit": "ns/op\t   60000 B/op\t     203 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 89719410,
+            "unit": "ns/op\t   54428 B/op\t     204 allocs/op",
+            "extra": "13 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 92259120,
+            "unit": "ns/op\t   57155 B/op\t     202 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 56946941,
+            "unit": "ns/op\t   58739 B/op\t     202 allocs/op",
+            "extra": "24 times\n2 procs"
           }
         ]
       }
