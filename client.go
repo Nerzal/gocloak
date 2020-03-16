@@ -1996,7 +1996,7 @@ func (client *gocloak) GetPolicies(token string, realm string, clientID string, 
 	if NilOrEmpty(params.Type) {
 		adminURL = client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "policy")
 	} else {
-		client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "policy", *(params.Type))
+		adminURL = client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "policy", *(params.Type))
 	}
 
 	var result []*PolicyRepresentation
