@@ -20,6 +20,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type configAdmin struct {
@@ -3037,7 +3038,22 @@ func TestGocloak_CreateListGetUpdateDeletePolicy(t *testing.T) {
 		},
 	)
 	assert.NoError(t, err, "GetPolicies failed")
-	assert.Len(t, policies, 1, "GetPolicies should return exact 1 policy")
+	require.Len(t, policies, 1, "GetPolicies should return exact 1 policy")
+	assert.Equal(t, *(createdPolicy.ID), *(policies[0].ID))
+	t.Logf("Policies: %+v", policies)
+
+	// Looking for a created policy using type
+	policies, err = client.GetPolicies(
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		GetPolicyParams{
+			Name: createdPolicy.Name,
+			Type: StringP("js"),
+		},
+	)
+	assert.NoError(t, err, "GetPolicies failed")
+	require.Len(t, policies, 1, "GetPolicies should return exact 1 policy")
 	assert.Equal(t, *(createdPolicy.ID), *(policies[0].ID))
 	t.Logf("Policies: %+v", policies)
 
