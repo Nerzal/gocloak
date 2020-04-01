@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1584372462860,
+  "lastUpdate": 1585750960549,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -624,6 +624,54 @@ window.BENCHMARK_DATA = {
             "value": 56946941,
             "unit": "ns/op\t   58739 B/op\t     202 allocs/op",
             "extra": "24 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.info",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "07381de0fa4fb1728a8b3cd87be4c4886192e253",
+          "message": "Merge pull request #162 from SVilgelm/error-description\n\nError description",
+          "timestamp": "2020-04-01T09:19:52-05:00",
+          "tree_id": "87bf864d48e13863e5e3545fd9b48d44a4c0b480",
+          "url": "https://github.com/Nerzal/gocloak/commit/07381de0fa4fb1728a8b3cd87be4c4886192e253"
+        },
+        "date": 1585750960135,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 94430550,
+            "unit": "ns/op\t   60008 B/op\t     203 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 92160402,
+            "unit": "ns/op\t   51062 B/op\t     205 allocs/op",
+            "extra": "12 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 92471493,
+            "unit": "ns/op\t   41734 B/op\t     203 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 60957962,
+            "unit": "ns/op\t   55280 B/op\t     204 allocs/op",
+            "extra": "19 times\n2 procs"
           }
         ]
       }
