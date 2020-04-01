@@ -2653,6 +2653,58 @@ func TestGocloak_AddDeleteClientRoleComposite(t *testing.T) {
 	assert.NoError(t, err, "DeleteClientRoleComposite failed")
 }
 
+func TestGocloak_CreateGetDeleteUserFederatedIdentity(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	tearDownUser, userID := CreateUser(t, client)
+	defer tearDownUser()
+
+	idp := "google"
+	idprep := IdentityProviderRepresentation{
+		ProviderID:                &idp,
+		Alias:                     StringP("google"),
+		DisplayName:               StringP("Google"),
+		Enabled:                   BoolP(true),
+		TrustEmail:                BoolP(true),
+		FirstBrokerLoginFlowAlias: StringP("first broker login"),
+		Config: map[string]string{
+			"clientId":     cfg.GoCloak.ClientID,
+			"clientSecret": cfg.GoCloak.ClientSecret,
+			"hostedDomain": "test.io",
+		},
+	}
+	res, err := client.CreateIdentityProvider(token.AccessToken, cfg.GoCloak.Realm, idprep)
+	assert.NoError(t, err)
+	assert.Equal(t, idp, res)
+
+	defer func() {
+		err = client.DeleteIdentityProvider(token.AccessToken, cfg.GoCloak.Realm, "google")
+		assert.NoError(t, err)
+	}()
+
+	firep := FederatedIdentityRepresentation{
+		IdentityProvider: &idp,
+		UserID:           StringP("my-external-userid"),
+		UserName:         StringP("my-external-username"),
+	}
+	err = client.CreateUserFederatedIdentity(token.AccessToken, cfg.GoCloak.Realm, userID, idp, firep)
+	assert.NoError(t, err)
+	assert.Equal(t, idp, res)
+
+	defer func() {
+		err = client.DeleteUserFederatedIdentity(token.AccessToken, cfg.GoCloak.Realm, userID, idp)
+		assert.NoError(t, err)
+	}()
+
+	arr, err := client.GetUserFederatedIdentities(token.AccessToken, cfg.GoCloak.Realm, userID)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(arr))
+	assert.Equal(t, "my-external-userid", *arr[0].UserID)
+}
+
 func TestGocloak_CreateDeleteClientScopeWithMappers(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
