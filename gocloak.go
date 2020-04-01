@@ -249,6 +249,12 @@ type GoCloak interface {
 	GetUserSessions(token, realm, userID string) ([]*UserSessionRepresentation, error)
 	// GetUserOfflineSessionsForClient returns offline sessions associated with the user and client
 	GetUserOfflineSessionsForClient(token, realm, userID, clientID string) ([]*UserSessionRepresentation, error)
+	// GetUserFederatedIdentities gets all user federated identities
+	GetUserFederatedIdentities(token, realm, userID string) ([]*FederatedIdentityRepresentation, error)
+	// CreateUserFederatedIdentity creates an user federated identity
+	CreateUserFederatedIdentity(token, realm, userID, providerID string, federatedIdentityRep FederatedIdentityRepresentation) error
+	// DeleteUserFederatedIdentity deletes an user federated identity
+	DeleteUserFederatedIdentity(token, realm, userID, providerID string) error
 
 	// *** Identity Provider **
 	// CreateIdentityProvider creates an identity provider in a realm

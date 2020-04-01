@@ -1733,6 +1733,43 @@ func (client *gocloak) DeleteClientRoleComposite(token string, realm string, rol
 	return checkForError(resp, err, errMessage)
 }
 
+// GetUserFederatedIdentities gets all user federated identities
+func (client *gocloak) GetUserFederatedIdentities(token, realm, userID string) ([]*FederatedIdentityRepresentation, error) {
+	const errMessage = "could not get user federeated identities"
+
+	var res []*FederatedIdentityRepresentation
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&res).
+		Get(client.getAdminRealmURL(realm, "users", userID, "federated-identity"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return res, err
+}
+
+// CreateUserFederatedIdentity creates an user federated identity
+func (client *gocloak) CreateUserFederatedIdentity(token, realm, userID, providerID string, federatedIdentityRep FederatedIdentityRepresentation) error {
+	const errMessage = "could not create user federeated identity"
+
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetBody(federatedIdentityRep).
+		Post(client.getAdminRealmURL(realm, "users", userID, "federated-identity", providerID))
+
+	return checkForError(resp, err, errMessage)
+}
+
+// DeleteUserFederatedIdentity deletes an user federated identity
+func (client *gocloak) DeleteUserFederatedIdentity(token, realm, userID, providerID string) error {
+	const errMessage = "could not delete user federeated identity"
+
+	resp, err := client.getRequestWithBearerAuth(token).
+		Delete(client.getAdminRealmURL(realm, "users", userID, "federated-identity", providerID))
+
+	return checkForError(resp, err, errMessage)
+}
+
 // ------------------
 // Identity Providers
 // ------------------

@@ -778,6 +778,13 @@ type ServerInfoRepesentation struct {
 	MemoryInfo *MemoryInfoRepresentation `json:"memoryInfo"`
 }
 
+// FederatedIdentityRepresentation represents an user federated identity
+type FederatedIdentityRepresentation struct {
+	IdentityProvider *string `json:"identityProvider,omitempty"`
+	UserID           *string `json:"userId,omitempty"`
+	UserName         *string `json:"userName,omitempty"`
+}
+
 // IdentityProviderRepresentation represents an identity provider
 type IdentityProviderRepresentation struct {
 	AddReadTokenRoleOnCreate  *bool             `json:"addReadTokenRoleOnCreate,omitempty"`
