@@ -361,29 +361,25 @@ func (w *RestyLogWriter) write(format string, v ...interface{}) {
 func NewClientWithDebug(t testing.TB) GoCloak {
 	cfg := GetConfig(t)
 	client := NewClient(cfg.HostName)
-	restyClient := client.RestyClient()
-	restyClient.SetDebug(true)
-	restyClient.SetLogger(&RestyLogWriter{
-		t: t,
-	})
-
 	cond := func(resp *resty.Response, err error) bool {
 		if resp != nil && resp.IsError() {
-			e := resp.Error().(*HTTPErrorResponse)
-			if e != nil {
-				var msg string
-				if len(e.ErrorMessage) > 0 {
-					msg = e.ErrorMessage
-				} else if len(e.Error) > 0 {
-					msg = e.Error
-				}
-				return strings.HasPrefix(msg, "Cached clientScope not found") || strings.Contains(msg, "unknown_error")
+			if e, ok := resp.Error().(*HTTPErrorResponse); ok {
+				msg := e.String()
+				return strings.Contains(msg, "Cached clientScope not found") || strings.Contains(msg, "unknown_error")
 			}
 		}
 		return false
 	}
-	restyClient.AddRetryCondition(cond)
-	restyClient.SetRetryCount(10)
+
+	restyClient := client.RestyClient()
+	restyClient.
+		SetDebug(true).
+		SetLogger(&RestyLogWriter{
+			t: t,
+		}).
+		SetRetryCount(10).
+		SetRetryWaitTime(time.Second).
+		AddRetryCondition(cond)
 
 	return client
 }
@@ -2759,61 +2755,40 @@ func TestGocloak_CreateProvider(t *testing.T) {
 		assert.Equal(t, "google", provider)
 	})
 
-	t.Run("create azure provider", func(t *testing.T) {
+	t.Run("create github provider", func(t *testing.T) {
 		repr := IdentityProviderRepresentation{
-			Alias:                     StringP("azure-oidc"),
-			DisplayName:               StringP("Azure"),
+			Alias:                     StringP("github"),
+			DisplayName:               StringP("GitHub"),
 			Enabled:                   BoolP(true),
-			ProviderID:                StringP("oidc"),
+			ProviderID:                StringP("github"),
 			TrustEmail:                BoolP(true),
 			FirstBrokerLoginFlowAlias: StringP("first broker login"),
 			Config: map[string]string{
-				"clientId":         cfg.GoCloak.ClientID,
-				"clientSecret":     cfg.GoCloak.ClientSecret,
-				"authorizationUrl": "authorization-url",
-				"tokenUrl":         "token-url",
-				"logoutUrl":        "logout-url",
-				"userInfoUrl":      "userinfo-url",
-				"issuer":           "test-issuer",
-				"jwksUrl":          "jwks-url",
+				"clientId":     cfg.GoCloak.ClientID,
+				"clientSecret": cfg.GoCloak.ClientSecret,
 			},
 		}
 		provider, err := client.CreateIdentityProvider(token.AccessToken, cfg.GoCloak.Realm, repr)
 		assert.NoError(t, err)
-		assert.Equal(t, "azure-oidc", provider)
+		assert.Equal(t, "github", provider)
 	})
 
-	t.Run("create OIDC V1.0 provider", func(t *testing.T) {
+	t.Run("create microsoft provider", func(t *testing.T) {
 		repr := IdentityProviderRepresentation{
-			Alias:                     StringP("oidc"),
-			DisplayName:               StringP("custom-oidc"),
+			Alias:                     StringP("microsoft"),
+			DisplayName:               StringP("Microsoft"),
 			Enabled:                   BoolP(true),
-			ProviderID:                StringP("oidc"),
+			ProviderID:                StringP("microsoft"),
 			TrustEmail:                BoolP(true),
 			FirstBrokerLoginFlowAlias: StringP("first broker login"),
 			Config: map[string]string{
-				"clientId":                 cfg.GoCloak.ClientID,
-				"clientSecret":             cfg.GoCloak.ClientSecret,
-				"authorizationUrl":         "authorization-url",
-				"tokenUrl":                 "token-url",
-				"logoutUrl":                "logout-url",
-				"userInfoUrl":              "userinfo-url",
-				"issuer":                   "test-issuer",
-				"loginHint":                "true",
-				"validateSignature":        "true",
-				"backchannelLogout":        "false",
-				"useJwksUrl":               "true",
-				"uiLocales":                "true",
-				"disableUserInfo":          "true",
-				"defaultScopes":            "default-scope",
-				"prompt":                   "false",
-				"allowedClockSkew":         "10",
-				"forwardedQueryParameters": "forwarded-query-parameters",
+				"clientId":     cfg.GoCloak.ClientID,
+				"clientSecret": cfg.GoCloak.ClientSecret,
 			},
 		}
 		provider, err := client.CreateIdentityProvider(token.AccessToken, cfg.GoCloak.Realm, repr)
 		assert.NoError(t, err)
-		assert.Equal(t, "oidc", provider)
+		assert.Equal(t, "microsoft", provider)
 	})
 
 	t.Run("Update google provider", func(t *testing.T) {
@@ -2850,19 +2825,19 @@ func TestGocloak_CreateProvider(t *testing.T) {
 		assert.Equal(t, 2, len(providers))
 	})
 
-	t.Run("Get Azure provider", func(t *testing.T) {
-		provider, err := client.GetIdentityProvider(token.AccessToken, cfg.GoCloak.Realm, "azure-oidc")
+	t.Run("Get microsoft provider", func(t *testing.T) {
+		provider, err := client.GetIdentityProvider(token.AccessToken, cfg.GoCloak.Realm, "microsoft")
 		assert.NoError(t, err)
-		assert.Equal(t, "azure-oidc", *(provider.Alias))
+		assert.Equal(t, "microsoft", *(provider.Alias))
 	})
 
-	t.Run("Delete Azure provider", func(t *testing.T) {
-		err := client.DeleteIdentityProvider(token.AccessToken, cfg.GoCloak.Realm, "azure-oidc")
+	t.Run("Delete microsoft provider", func(t *testing.T) {
+		err := client.DeleteIdentityProvider(token.AccessToken, cfg.GoCloak.Realm, "microsoft")
 		assert.NoError(t, err)
 	})
 
-	t.Run("Delete OIDC V1.0 provider", func(t *testing.T) {
-		err := client.DeleteIdentityProvider(token.AccessToken, cfg.GoCloak.Realm, "oidc")
+	t.Run("Delete github provider", func(t *testing.T) {
+		err := client.DeleteIdentityProvider(token.AccessToken, cfg.GoCloak.Realm, "github")
 		assert.NoError(t, err)
 	})
 }

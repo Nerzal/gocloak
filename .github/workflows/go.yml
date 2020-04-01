@@ -2,9 +2,6 @@ name: Tests
 on:
   - push
   - pull_request
-env:
-  LINT_VERSION: "v1.23.6"
-  NANCY_VERSION: "v0.0.41"
 jobs:
   tests:
     runs-on: ubuntu-latest
@@ -12,28 +9,19 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v1
         with:
-          go-version: 1.13.x
+          go-version: 1.14.x
       - name: Checkout code
-        uses: actions/checkout@v1
-      - name: Cache Tools
-        id: cache-tools
-        uses: actions/cache@v1
-        with:
-          path: ~/tools
-          key: ${{ runner.os }}-tools-${LINT_VERSION}-${NANCY_VERSION}
-      - name: Install Tools
-        if: steps.cache-tools.outputs.cache-hit != 'true'
+        uses: actions/checkout@v2
+      - name: golangci-lint
+        env:
+          GOROOT: /go
         run: |
-          mkdir -p ~/tools
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ~/tools ${LINT_VERSION}
-          curl -L https://github.com/sonatype-nexus-community/nancy/releases/download/${NANCY_VERSION}/nancy-linux.amd64-${NANCY_VERSION} -o ~/tools/nancy
-          chmod +x ~/tools/nancy
-      - name: Update PATH
-        run: echo "::add-path::~/tools"
-      - name: Lint
-        run: golangci-lint run ./...
-      - name: Nancy
-        run: nancy go.sum
+          docker pull golangci/golangci-lint:latest-alpine
+          docker run --rm -v ${PWD}:/app -w /app golangci/golangci-lint:latest-alpine golangci-lint run
+      - name: nancy
+        uses: sonatype-nexus-community/nancy-github-action@master
+        with:
+          target: go.sum
       - name: Run Keycloak
         run: |
           docker pull quay.io/keycloak/keycloak:latest
@@ -50,10 +38,9 @@ jobs:
           docker ps
           docker logs keycloak
       - name: CodeCov
-        if: github.repository == 'Nerzal/gocloak' && github.event == 'push'
-        run: bash <(curl -s https://codecov.io/bash)
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        uses: codecov/codecov-action@v1
+        with:
+          file: ./coverage.txt
 
       # Publish benchmarks for the master branch only
       - name: Store Benchmark Result

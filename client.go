@@ -80,11 +80,8 @@ func checkForError(resp *resty.Response, err error, errMessage string) error {
 	if resp.IsError() {
 		var msg string
 
-		e := resp.Error().(*HTTPErrorResponse)
-		if e != nil && len(e.ErrorMessage) > 0 {
-			msg = fmt.Sprintf("%s: %s", resp.Status(), e.ErrorMessage)
-		} else if e != nil && len(e.Error) > 0 {
-			msg = fmt.Sprintf("%s: %s", resp.Status(), e.Error)
+		if e, ok := resp.Error().(*HTTPErrorResponse); ok && e.NotEmpty() {
+			msg = fmt.Sprintf("%s: %s", resp.Status(), e)
 		} else {
 			msg = resp.Status()
 		}
