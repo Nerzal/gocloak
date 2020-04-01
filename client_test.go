@@ -369,14 +369,9 @@ func NewClientWithDebug(t testing.TB) GoCloak {
 
 	cond := func(resp *resty.Response, err error) bool {
 		if resp != nil && resp.IsError() {
-			e := resp.Error().(*HTTPErrorResponse)
-			if e != nil {
-				var msg string
-				if len(e.ErrorMessage) > 0 {
-					msg = e.ErrorMessage
-				} else if len(e.Error) > 0 {
-					msg = e.Error
-				}
+
+			if e, ok := resp.Error().(*HTTPErrorResponse); ok {
+				msg := e.String()
 				return strings.HasPrefix(msg, "Cached clientScope not found") || strings.Contains(msg, "unknown_error")
 			}
 		}
