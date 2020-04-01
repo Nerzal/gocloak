@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1585750960549,
+  "lastUpdate": 1585755871478,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -672,6 +672,53 @@ window.BENCHMARK_DATA = {
             "value": 60957962,
             "unit": "ns/op\t   55280 B/op\t     204 allocs/op",
             "extra": "19 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "andreas.walter@easy.de",
+            "name": "a.walter"
+          },
+          "committer": {
+            "email": "sergey@vilgelm.info",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "distinct": true,
+          "id": "ce76a8ca4d851b10c93eeb7567aada41f5bb4b8c",
+          "message": "#160 added support for user federated identities",
+          "timestamp": "2020-04-01T10:38:31-05:00",
+          "tree_id": "af2dd47a2d7ac1badb0e35c1d6b2928d19c3efda",
+          "url": "https://github.com/Nerzal/gocloak/commit/ce76a8ca4d851b10c93eeb7567aada41f5bb4b8c"
+        },
+        "date": 1585755871068,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 83219581,
+            "unit": "ns/op\t   57091 B/op\t     205 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 84734943,
+            "unit": "ns/op\t   65569 B/op\t     204 allocs/op",
+            "extra": "13 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 79864876,
+            "unit": "ns/op\t   70256 B/op\t     205 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 50101016,
+            "unit": "ns/op\t   55599 B/op\t     206 allocs/op",
+            "extra": "20 times\n2 procs"
           }
         ]
       }
