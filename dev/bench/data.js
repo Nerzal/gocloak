@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1585755871478,
+  "lastUpdate": 1588194158207,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -719,6 +719,54 @@ window.BENCHMARK_DATA = {
             "value": 50101016,
             "unit": "ns/op\t   55599 B/op\t     206 allocs/op",
             "extra": "20 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "theel.tobias@gmx.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2cf3e2a21d4c8925802bf36d92936917382fa58a",
+          "message": "Add files via upload",
+          "timestamp": "2020-04-18T11:27:39+02:00",
+          "tree_id": "68e9ef2ff9c27aaf4647e61f4ff9ace5776be0ef",
+          "url": "https://github.com/Nerzal/gocloak/commit/2cf3e2a21d4c8925802bf36d92936917382fa58a"
+        },
+        "date": 1588194157570,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 79818653,
+            "unit": "ns/op\t   54424 B/op\t     203 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 77921692,
+            "unit": "ns/op\t   66749 B/op\t     204 allocs/op",
+            "extra": "15 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 82656984,
+            "unit": "ns/op\t   54183 B/op\t     202 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 56324564,
+            "unit": "ns/op\t   58493 B/op\t     203 allocs/op",
+            "extra": "24 times\n2 procs"
           }
         ]
       }
