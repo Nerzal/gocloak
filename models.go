@@ -241,6 +241,11 @@ type Group struct {
 	RealmRoles  []string            `json:"realmRoles,omitempty"`
 }
 
+// GroupsCount represents the groups count response from keycloak
+type GroupsCount struct {
+	Count int `json:"count"`
+}
+
 // GetGroupsParams represents the optional parameters for getting groups
 type GetGroupsParams struct {
 	First               *int    `json:"first,string,omitempty"`
@@ -493,10 +498,10 @@ type GroupDefinition struct {
 
 // ResourceRepresentation is a representation of a Resource
 type ResourceRepresentation struct {
-	ID                 *string                      `json:"_id,omitempty"` //TODO: is marked "_optional" in template, input error or deliberate?
+	ID                 *string                      `json:"_id,omitempty"` // TODO: is marked "_optional" in template, input error or deliberate?
 	Attributes         map[string][]string          `json:"attributes,omitempty"`
 	DisplayName        *string                      `json:"displayName,omitempty"`
-	IconURI            *string                      `json:"icon_uri,omitempty"` //TODO: With "_" because that's how it's written down in the template
+	IconURI            *string                      `json:"icon_uri,omitempty"` // TODO: With "_" because that's how it's written down in the template
 	Name               *string                      `json:"name,omitempty"`
 	Owner              *ResourceOwnerRepresentation `json:"owner"`
 	OwnerManagedAccess *bool                        `json:"ownerManagedAccess"`

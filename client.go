@@ -30,11 +30,13 @@ const (
 	urlSeparator  string = "/"
 )
 
-var authAdminRealms = makeURL("auth", "admin", "realms")
-var authRealms = makeURL("auth", "realms")
-var tokenEndpoint = makeURL("protocol", "openid-connect", "token")
-var logoutEndpoint = makeURL("protocol", "openid-connect", "logout")
-var openIDConnect = makeURL("protocol", "openid-connect")
+var (
+	authAdminRealms = makeURL("auth", "admin", "realms")
+	authRealms      = makeURL("auth", "realms")
+	tokenEndpoint   = makeURL("protocol", "openid-connect", "token")
+	logoutEndpoint  = makeURL("protocol", "openid-connect", "logout")
+	openIDConnect   = makeURL("protocol", "openid-connect")
+)
 
 func makeURL(path ...string) string {
 	return strings.Join(path, urlSeparator)
@@ -146,7 +148,7 @@ func (client *gocloak) getAdminRealmURL(realm string, path ...string) string {
 }
 
 func (client *gocloak) GetServerInfo(accessToken string) (*ServerInfoRepesentation, error) {
-	var errMessage = "could not get server info"
+	errMessage := "could not get server info"
 	var result ServerInfoRepesentation
 
 	resp, err := client.getRequestWithBearerAuth(accessToken).
@@ -1013,6 +1015,22 @@ func (client *gocloak) GetGroups(token string, realm string, params GetGroupsPar
 	}
 
 	return result, nil
+}
+
+// GetGroupsCount gets the groups count in the realm
+func (client *gocloak) GetGroupsCount(token string, realm string) (int, error) {
+	const errMessage = "could not get groups count"
+
+	var result GroupsCount
+	resp, err := client.getRequestWithBearerAuth(token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "groups", "count"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return -1, errors.Wrap(err, errMessage)
+	}
+
+	return result.Count, nil
 }
 
 // GetGroupMembers get a list of users of group with id in realm

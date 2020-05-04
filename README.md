@@ -156,6 +156,7 @@ type GoCloak interface {
 	GetUserGroups(accessToken string, realm string, userID string) ([]*UserGroup, error)
 	GetComponents(accessToken string, realm string) ([]*Component, error)
 	GetGroups(accessToken string, realm string, params GetGroupsParams) ([]*Group, error)
+	GetGroupsCount(token string, realm string) (int, error)
 	GetGroup(accessToken string, realm, groupID string) (*Group, error)
 	GetDefaultGroups(accessToken string, realm string) ([]*Group, error)
 	AddDefaultGroup(accessToken string, realm string, groupID string) error
