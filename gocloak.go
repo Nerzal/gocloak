@@ -115,6 +115,8 @@ type GoCloak interface {
 	RemoveDefaultGroup(accessToken string, realm string, groupID string) error
 	// GetGroups gets all groups of the given realm
 	GetGroups(accessToken string, realm string, params GetGroupsParams) ([]*Group, error)
+	// GetGroupsCount gets groups count of the given realm
+	GetGroupsCount(token string, realm string) (int, error)
 	// GetGroup gets the given group
 	GetGroup(accessToken string, realm, groupID string) (*Group, error)
 	// GetGroupMembers get a list of users of group with id in realm
