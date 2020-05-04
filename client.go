@@ -1021,7 +1021,11 @@ func (client *gocloak) GetGroups(token string, realm string, params GetGroupsPar
 func (client *gocloak) GetGroupsCount(token string, realm string) (int, error) {
 	const errMessage = "could not get groups count"
 
-	var result int
+	type groupsCount struct {
+		Count int `json:"count"`
+	}
+
+	var result groupsCount
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetResult(&result).
 		Get(client.getAdminRealmURL(realm, "groups", "count"))
@@ -1030,7 +1034,7 @@ func (client *gocloak) GetGroupsCount(token string, realm string) (int, error) {
 		return -1, errors.Wrap(err, errMessage)
 	}
 
-	return result, nil
+	return result.Count, nil
 }
 
 // GetGroupMembers get a list of users of group with id in realm
