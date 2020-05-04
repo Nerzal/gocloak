@@ -241,6 +241,11 @@ type Group struct {
 	RealmRoles  []string            `json:"realmRoles,omitempty"`
 }
 
+// GroupsCount represents the groups count response from keycloak
+type GroupsCount struct {
+	Count int `json:"count"`
+}
+
 // GetGroupsParams represents the optional parameters for getting groups
 type GetGroupsParams struct {
 	First               *int    `json:"first,string,omitempty"`
