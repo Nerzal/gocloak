@@ -33,9 +33,12 @@ linters-settings:
     simplify: true
 
 issues:
+  exclude-use-default: false
   exclude-rules:
     - path: _test\.go
       linters:
         - gocyclo
         - dupl
         - gosec
+  exclude:
+    - should have a package comment

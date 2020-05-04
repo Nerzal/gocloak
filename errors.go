@@ -32,7 +32,7 @@ func (e HTTPErrorResponse) String() string {
 	return res.String()
 }
 
-// HasError validates that error is not emptyp
+// NotEmpty validates that error is not emptyp
 func (e HTTPErrorResponse) NotEmpty() bool {
 	return len(e.Error) > 0 || len(e.Message) > 0 || len(e.Description) > 0
 }

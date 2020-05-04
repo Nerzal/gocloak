@@ -255,6 +255,8 @@ type GetGroupsParams struct {
 	BriefRepresentation *bool   `json:"briefRepresentation,string,omitempty"`
 }
 
+// MarshalJSON is a custom json marshaling function to automatically set the Full and BriefRepresentation properties
+// for backward compatibility
 func (obj GetGroupsParams) MarshalJSON() ([]byte, error) {
 	type Alias GetGroupsParams
 	a := (Alias)(obj)
