@@ -1451,7 +1451,6 @@ func TestGocloak_ExecuteActionsEmail_UpdatePassword(t *testing.T) {
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		params)
-
 	if err != nil {
 		if err.Error() == "500 Internal Server Error: Failed to send execute actions email" {
 			return
@@ -1932,6 +1931,19 @@ func TestGocloak_GetUserCount(t *testing.T) {
 		cfg.GoCloak.Realm)
 	t.Logf("Users in Realm: %d", count)
 	assert.NoError(t, err, "GetUserCount failed")
+}
+
+func TestGocloak_GetGroupsCount(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	count, err := client.GetGroupsCount(
+		token.AccessToken,
+		cfg.GoCloak.Realm)
+	t.Logf("Groups in Realm: %d", count)
+	assert.NoError(t, err, "GetGroupsCount failed")
 }
 
 func TestGocloak_AddUserToGroup(t *testing.T) {
