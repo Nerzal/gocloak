@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1588194158207,
+  "lastUpdate": 1588606744315,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -767,6 +767,54 @@ window.BENCHMARK_DATA = {
             "value": 56324564,
             "unit": "ns/op\t   58493 B/op\t     203 allocs/op",
             "extra": "24 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.info",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "33311f5e5b1d62da4005dcc15026b17974ac7eef",
+          "message": "Merge pull request #164 from FridaFino/master\n\nadd groups count",
+          "timestamp": "2020-05-04T10:36:25-05:00",
+          "tree_id": "660f956fbf479f951c38ff8980277da4e1d157ad",
+          "url": "https://github.com/Nerzal/gocloak/commit/33311f5e5b1d62da4005dcc15026b17974ac7eef"
+        },
+        "date": 1588606743699,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 83575417,
+            "unit": "ns/op\t   60522 B/op\t     213 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 83239007,
+            "unit": "ns/op\t   47010 B/op\t     211 allocs/op",
+            "extra": "14 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 83699756,
+            "unit": "ns/op\t   47036 B/op\t     211 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 60295833,
+            "unit": "ns/op\t   54420 B/op\t     212 allocs/op",
+            "extra": "22 times\n2 procs"
           }
         ]
       }
