@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1588606744315,
+  "lastUpdate": 1588665152759,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -814,6 +814,54 @@ window.BENCHMARK_DATA = {
             "name": "BenchmarkLoginParallel",
             "value": 60295833,
             "unit": "ns/op\t   54420 B/op\t     212 allocs/op",
+            "extra": "22 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "theel.tobias@gmx.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ee24c8acd55a4f30f8e6c8b14a0594563c24a016",
+          "message": "Merge pull request #165 from SVilgelm/lint\n\nGolangCi enable comments validation",
+          "timestamp": "2020-05-05T09:49:55+02:00",
+          "tree_id": "d25200d8501441a7cd1fcbda1fa9bd3b361046ee",
+          "url": "https://github.com/Nerzal/gocloak/commit/ee24c8acd55a4f30f8e6c8b14a0594563c24a016"
+        },
+        "date": 1588665152191,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 77652436,
+            "unit": "ns/op\t   49740 B/op\t     212 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 78198613,
+            "unit": "ns/op\t   52622 B/op\t     211 allocs/op",
+            "extra": "15 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 79292694,
+            "unit": "ns/op\t   47509 B/op\t     209 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 46831683,
+            "unit": "ns/op\t   52561 B/op\t     210 allocs/op",
             "extra": "22 times\n2 procs"
           }
         ]
