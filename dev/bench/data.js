@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1588665152759,
+  "lastUpdate": 1589801366563,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -863,6 +863,54 @@ window.BENCHMARK_DATA = {
             "value": 46831683,
             "unit": "ns/op\t   52561 B/op\t     210 allocs/op",
             "extra": "22 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.info",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f451073fd2f5dc9504f8a68759b202866ec0e098",
+          "message": "Merge pull request #167 from KosToZyB/master\n\nadd json tag string for structs *Params",
+          "timestamp": "2020-05-18T06:26:12-05:00",
+          "tree_id": "7630a240f65a3801c6a0ab0c6a1ec3edee099ad9",
+          "url": "https://github.com/Nerzal/gocloak/commit/f451073fd2f5dc9504f8a68759b202866ec0e098"
+        },
+        "date": 1589801365963,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 85016839,
+            "unit": "ns/op\t   57550 B/op\t     211 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 86546937,
+            "unit": "ns/op\t   57701 B/op\t     213 allocs/op",
+            "extra": "13 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 84902390,
+            "unit": "ns/op\t   69155 B/op\t     213 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 48666484,
+            "unit": "ns/op\t   48902 B/op\t     211 allocs/op",
+            "extra": "21 times\n2 procs"
           }
         ]
       }
