@@ -810,9 +810,9 @@ type IdentityProviderRepresentation struct {
 
 // GetResourceParams represents the optional parameters for getting resources
 type GetResourceParams struct {
-	Deep  *bool   `json:"deep,omitempty"`
-	First *int    `json:"first,omitempty"`
-	Max   *int    `json:"max,omitempty"`
+	Deep  *bool   `json:"deep,string,omitempty"`
+	First *int    `json:"first,string,omitempty"`
+	Max   *int    `json:"max,string,omitempty"`
 	Name  *string `json:"name,omitempty"`
 	Owner *string `json:"owner,omitempty"`
 	Type  *string `json:"type,omitempty"`
@@ -822,26 +822,26 @@ type GetResourceParams struct {
 
 // GetScopeParams represents the optional parameters for getting scopes
 type GetScopeParams struct {
-	Deep  *bool   `json:"deep,omitempty"`
-	First *int    `json:"first,omitempty"`
-	Max   *int    `json:"max,omitempty"`
+	Deep  *bool   `json:"deep,string,omitempty"`
+	First *int    `json:"first,string,omitempty"`
+	Max   *int    `json:"max,string,omitempty"`
 	Name  *string `json:"name,omitempty"`
 }
 
 // GetPolicyParams represents the optional parameters for getting policies
 // TODO: more policy params?
 type GetPolicyParams struct {
-	First      *int    `json:"first,omitempty"`
-	Max        *int    `json:"max,omitempty"`
+	First      *int    `json:"first,string,omitempty"`
+	Max        *int    `json:"max,string,omitempty"`
 	Name       *string `json:"name,omitempty"`
-	Permission *bool   `json:"permission,omitempty"`
+	Permission *bool   `json:"permission,string,omitempty"`
 	Type       *string `json:"type,omitempty"`
 }
 
 // GetPermissionParams represents the optional parameters for getting permissions
 type GetPermissionParams struct {
-	First    *int    `json:"first,omitempty"`
-	Max      *int    `json:"max,omitempty"`
+	First    *int    `json:"first,string,omitempty"`
+	Max      *int    `json:"max,string,omitempty"`
 	Name     *string `json:"name,omitempty"`
 	Resource *string `json:"resource,omitempty"`
 	Scope    *string `json:"scope,omitempty"`
