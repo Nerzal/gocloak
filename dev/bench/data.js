@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1590072873240,
+  "lastUpdate": 1590081108235,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -959,6 +959,54 @@ window.BENCHMARK_DATA = {
             "value": 57404391,
             "unit": "ns/op\t   54117 B/op\t     210 allocs/op",
             "extra": "21 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.info",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e3515becd74f46d5340642ec91a994e4bc9743e3",
+          "message": "Merge pull request #171 from KosToZyB/GetAvailableClientRolesByUserID\n\nadd method GetAvailableClientRolesByUserID",
+          "timestamp": "2020-05-21T12:03:36-05:00",
+          "tree_id": "1aa195e19441fb3d73d2c15cc0776bd597128d78",
+          "url": "https://github.com/Nerzal/gocloak/commit/e3515becd74f46d5340642ec91a994e4bc9743e3"
+        },
+        "date": 1590081107669,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 85616337,
+            "unit": "ns/op\t   57574 B/op\t     211 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 90520445,
+            "unit": "ns/op\t   49241 B/op\t     212 allocs/op",
+            "extra": "13 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 86719058,
+            "unit": "ns/op\t   71917 B/op\t     212 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 51423309,
+            "unit": "ns/op\t   56040 B/op\t     210 allocs/op",
+            "extra": "24 times\n2 procs"
           }
         ]
       }
