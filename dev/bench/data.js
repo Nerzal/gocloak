@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1589801366563,
+  "lastUpdate": 1590072873240,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -910,6 +910,54 @@ window.BENCHMARK_DATA = {
             "name": "BenchmarkLoginParallel",
             "value": 48666484,
             "unit": "ns/op\t   48902 B/op\t     211 allocs/op",
+            "extra": "21 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.info",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f2a58619f46d037ec4ebe8f932ce2c68fa0744d1",
+          "message": "Merge pull request #169 from KosToZyB/master\n\nadd Required field to RoleDefinition",
+          "timestamp": "2020-05-21T09:48:06-05:00",
+          "tree_id": "9b7be083e7756d1dad9673079dfff26631253f8f",
+          "url": "https://github.com/Nerzal/gocloak/commit/f2a58619f46d037ec4ebe8f932ce2c68fa0744d1"
+        },
+        "date": 1590072872621,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 92235406,
+            "unit": "ns/op\t   48573 B/op\t     213 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 89967744,
+            "unit": "ns/op\t   60680 B/op\t     214 allocs/op",
+            "extra": "13 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 89044007,
+            "unit": "ns/op\t   68926 B/op\t     211 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 57404391,
+            "unit": "ns/op\t   54117 B/op\t     210 allocs/op",
             "extra": "21 times\n2 procs"
           }
         ]
