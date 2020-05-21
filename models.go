@@ -389,8 +389,9 @@ type ResourceServerRepresentation struct {
 
 // RoleDefinition represents a role in a RolePolicyRepresentation
 type RoleDefinition struct {
-	ID      *string `json:"id"`
-	Private *bool   `json:"private,omitempty"`
+	ID       *string `json:"id"`
+	Private  *bool   `json:"private,omitempty"`
+	Required *bool   `json:"required,omitempty"`
 }
 
 // PolicyEnforcementMode is an enum type for PolicyEnforcementMode of ResourceServerRepresentation
