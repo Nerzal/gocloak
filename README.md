@@ -202,6 +202,7 @@ type GoCloak interface {
 	GetClientRolesByGroupID(token string, realm string, clientID string, groupID string) ([]*Role, error)
 	GetCompositeClientRolesByUserID(token string, realm string, clientID string, userID string) ([]*Role, error)
 	GetCompositeClientRolesByGroupID(token string, realm string, clientID string, groupID string) ([]*Role, error)
+    GetAvailableClientRolesByUserID(token string, realm string, clientID string, userID string) ([]*Role, error)
 
 	// *** Realm ***
 
