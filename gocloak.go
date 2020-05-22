@@ -317,4 +317,26 @@ type GoCloak interface {
 	UpdatePermission(token string, realm string, clientID string, permission PermissionRepresentation) error
 	// DeletePermission deletes a permission associated with the client
 	DeletePermission(token string, realm string, clientID string, permissionID string) error
+
+	// ---------------
+	// Credentials API
+	// ---------------
+
+	// GetCredentialRegistrators returns credentials registrators
+	GetCredentialRegistrators(token, realm string) ([]string, error)
+	// GetConfiguredUserStorageCredentialTypes returns credential types, which are provided by the user storage where user is stored
+	GetConfiguredUserStorageCredentialTypes(token, realm, userID string) ([]string, error)
+
+	// GetCredentials returns credentials available for a given user
+	GetCredentials(token, realm, UserID string) ([]*CredentialRepresentation, error)
+	// DeleteCredentials deletes the given credential for a given user
+	DeleteCredentials(token, realm, UserID, CredentialID string) error
+	// UpdateCredentialUserLabel updates label for the given credential for the given user
+	UpdateCredentialUserLabel(token, realm, userID, credentialID, userLabel string) error
+	// DisableAllCredentialsByType disables all credentials for a user of a specific type
+	DisableAllCredentialsByType(token, realm, userID string, types []string) error
+	// MoveCredentialBehind move a credential to a position behind another credential
+	MoveCredentialBehind(token, realm, userID, credentialID, newPreviousCredentialID string) error
+	// MoveCredentialToFirst move a credential to a first position in the credentials list of the user
+	MoveCredentialToFirst(token, realm, userID, credentialID string) error
 }

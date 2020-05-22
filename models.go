@@ -657,23 +657,6 @@ type MultiValuedHashMap struct {
 	Threshold  *int32   `json:"threshold,omitempty"`
 }
 
-// CredentialRepresentation represents credentials
-type CredentialRepresentation struct {
-	Algorithm         *string             `json:"algorithm,omitempty"`
-	Config            *MultiValuedHashMap `json:"config,omitempty"`
-	Counter           *int32              `json:"counter,omitempty"`
-	CreatedDate       *int64              `json:"createdDate,omitempty"`
-	Device            *string             `json:"device,omitempty"`
-	Digits            *int32              `json:"digits,omitempty"`
-	HashIterations    *int32              `json:"hashIterations,omitempty"`
-	HashedSaltedValue *string             `json:"hashedSaltedValue,omitempty"`
-	Period            *int32              `json:"period,omitempty"`
-	Salt              *string             `json:"salt,omitempty"`
-	Temporary         *bool               `json:"temporary"`
-	Type              *string             `json:"type,omitempty"`
-	Value             *string             `json:"value,omitempty"`
-}
-
 // TokenOptions represents the options to obtain a token
 type TokenOptions struct {
 	ClientID      *string  `json:"client_id"`
@@ -867,4 +850,33 @@ type PermissionRepresentation struct {
 	ResourceType     *string           `json:"resource_type,omitempty"`
 	Scopes           []string          `json:"scopes,omitempty"`
 	Type             *string           `json:"type,omitempty"`
+}
+
+// CredentialRepresentation is a representations of the credentials
+// v7: https://www.keycloak.org/docs-api/7.0/rest-api/index.html#_credentialrepresentation
+// v8: https://www.keycloak.org/docs-api/8.0/rest-api/index.html#_credentialrepresentation
+type CredentialRepresentation struct {
+	// Common part
+	CreatedDate *int64  `json:"createdDate,omitempty"`
+	Temporary   *bool   `json:"temporary,omitempty"`
+	Type        *string `json:"type,omitempty"`
+	Value       *string `json:"value,omitempty"`
+
+	// <= v7
+	Algorithm         *string             `json:"algorithm,omitempty"`
+	Config            *MultiValuedHashMap `json:"config,omitempty"`
+	Counter           *int32              `json:"counter,omitempty"`
+	Device            *string             `json:"device,omitempty"`
+	Digits            *int32              `json:"digits,omitempty"`
+	HashIterations    *int32              `json:"hashIterations,omitempty"`
+	HashedSaltedValue *string             `json:"hashedSaltedValue,omitempty"`
+	Period            *int32              `json:"period,omitempty"`
+	Salt              *string             `json:"salt,omitempty"`
+
+	// >= v8
+	CredentialData *string `json:"credentialData,omitempty"`
+	ID             *string `json:"id,omitempty"`
+	Priority       *int32  `json:"priority,omitempty"`
+	SecretData     *string `json:"secretData,omitempty"`
+	UserLabel      *string `json:"userLabel,omitempty"`
 }

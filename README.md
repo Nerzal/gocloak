@@ -244,6 +244,17 @@ type GoCloak interface {
 	CreatePermission(token string, realm string, clientID string, permission PermissionRepresentation) (*PermissionRepresentation, error)
 	UpdatePermission(token string, realm string, clientID string, permission PermissionRepresentation) error
 	DeletePermission(token string, realm string, clientID string, permissionID string) error
+
+	// *** Credentials API ***
+
+	GetCredentialRegistrators(token, realm string) ([]string, error)
+	GetConfiguredUserStorageCredentialTypes(token, realm, userID string) ([]string, error)
+	GetCredentials(token, realm, UserID string) ([]*CredentialRepresentation, error)
+	DeleteCredentials(token, realm, UserID, CredentialID string) error
+	UpdateCredentialUserLabel(token, realm, userID, credentialID, userLabel string) error
+	DisableAllCredentialsByType(token, realm, userID string, types []string) error
+	MoveCredentialBehind(token, realm, userID, credentialID, newPreviousCredentialID string) error
+	MoveCredentialToFirst(token, realm, userID, credentialID string) error
 }
 ```
 
