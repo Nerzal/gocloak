@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1590081108235,
+  "lastUpdate": 1591077535217,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -1007,6 +1007,54 @@ window.BENCHMARK_DATA = {
             "value": 51423309,
             "unit": "ns/op\t   56040 B/op\t     210 allocs/op",
             "extra": "24 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "theel.tobias@gmx.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4dc0866dc8536dc9508afdb02d2d4c4d52740f74",
+          "message": "Merge pull request #172 from SVilgelm/user-credentials\n\nImplement Credential APIs",
+          "timestamp": "2020-06-02T07:55:35+02:00",
+          "tree_id": "d24b4bd4dd87cb3c02e0db6ac3565b5ff3010ae9",
+          "url": "https://github.com/Nerzal/gocloak/commit/4dc0866dc8536dc9508afdb02d2d4c4d52740f74"
+        },
+        "date": 1591077534252,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 90899638,
+            "unit": "ns/op\t   57668 B/op\t     212 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 91300726,
+            "unit": "ns/op\t   48497 B/op\t     211 allocs/op",
+            "extra": "12 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 89511283,
+            "unit": "ns/op\t   54612 B/op\t     211 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 50964992,
+            "unit": "ns/op\t   61012 B/op\t     211 allocs/op",
+            "extra": "22 times\n2 procs"
           }
         ]
       }
