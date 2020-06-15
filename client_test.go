@@ -1927,7 +1927,9 @@ func TestGocloak_GetUserCount(t *testing.T) {
 
 	count, err := client.GetUserCount(
 		token.AccessToken,
-		cfg.GoCloak.Realm)
+		cfg.GoCloak.Realm,
+		GetUsersParams{})
+
 	t.Logf("Users in Realm: %d", count)
 	require.NoError(t, err, "GetUserCount failed")
 }
@@ -1940,7 +1942,8 @@ func TestGocloak_GetGroupsCount(t *testing.T) {
 
 	count, err := client.GetGroupsCount(
 		token.AccessToken,
-		cfg.GoCloak.Realm)
+		cfg.GoCloak.Realm,
+		GetGroupsParams{})
 	t.Logf("Groups in Realm: %d", count)
 	require.NoError(t, err, "GetGroupsCount failed")
 }

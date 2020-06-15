@@ -1018,12 +1018,17 @@ func (client *gocloak) GetGroups(token string, realm string, params GetGroupsPar
 }
 
 // GetGroupsCount gets the groups count in the realm
-func (client *gocloak) GetGroupsCount(token string, realm string) (int, error) {
+func (client *gocloak) GetGroupsCount(token string, realm string, params GetGroupsParams) (int, error) {
 	const errMessage = "could not get groups count"
 
 	var result GroupsCount
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return 0, errors.Wrap(err, errMessage)
+	}
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetResult(&result).
+		SetQueryParams(queryParams).
 		Get(client.getAdminRealmURL(realm, "groups", "count"))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
@@ -1535,12 +1540,18 @@ func (client *gocloak) GetUserByID(accessToken string, realm string, userID stri
 }
 
 // GetUserCount gets the user count in the realm
-func (client *gocloak) GetUserCount(token string, realm string) (int, error) {
+func (client *gocloak) GetUserCount(token string, realm string, params GetUsersParams) (int, error) {
 	const errMessage = "could not get user count"
 
 	var result int
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return 0, errors.Wrap(err, errMessage)
+	}
+
 	resp, err := client.getRequestWithBearerAuth(token).
 		SetResult(&result).
+		SetQueryParams(queryParams).
 		Get(client.getAdminRealmURL(realm, "users", "count"))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
