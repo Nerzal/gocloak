@@ -670,6 +670,7 @@ type TokenOptions struct {
 	Permission    *string  `json:"permission,omitempty"`
 	Username      *string  `json:"username,omitempty"`
 	Password      *string  `json:"password,omitempty"`
+	Totp          *string  `json:"totp,omitempty"`
 }
 
 // FormData returns a map of options to be used in SetFormData function
