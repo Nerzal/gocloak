@@ -5,7 +5,6 @@ services:
     image: jboss/keycloak:latest
     command: -Dkeycloak.profile.feature.upload_scripts=enabled
     environment:
-      DB_VENDOR: H2
       KEYCLOAK_IMPORT: /tmp/gocloak-realm.json
       KEYCLOAK_USER: admin
       KEYCLOAK_PASSWORD: secret
