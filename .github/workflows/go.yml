@@ -26,7 +26,7 @@ jobs:
         run: |
           docker pull jboss/keycloak:latest
           docker run -d -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=secret -e KEYCLOAK_IMPORT=/tmp/gocloak-realm.json -v "`pwd`/testdata/gocloak-realm.json:/tmp/gocloak-realm.json" -p 8080:8080 --name keycloak jboss/keycloak:latest -Dkeycloak.profile.feature.upload_scripts=enabled
-          sleep 15
+          sleep 30
       - name: Unit Tests
         run: |
           go test -race -cover -coverprofile=coverage.txt -covermode=atomic -cpu 1,2 -bench . -benchmem > test.log
