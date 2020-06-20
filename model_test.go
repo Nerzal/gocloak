@@ -1,8 +1,10 @@
-package gocloak
+package gocloak_test
 
 import (
 	"encoding/json"
 	"testing"
+
+	"github.com/Nerzal/gocloak/v6"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -10,14 +12,14 @@ import (
 func TestStringOrArray_Unmarshal(t *testing.T) {
 	t.Parallel()
 	jsonString := []byte("\"123\"")
-	var dataString StringOrArray
+	var dataString gocloak.StringOrArray
 	err := json.Unmarshal(jsonString, &dataString)
 	assert.NoErrorf(t, err, "Unmarshalling failed for json string: %s", jsonString)
 	assert.Len(t, dataString, 1)
 	assert.Equal(t, "123", dataString[0])
 
 	jsonArray := []byte("[\"1\",\"2\",\"3\"]")
-	var dataArray StringOrArray
+	var dataArray gocloak.StringOrArray
 	err = json.Unmarshal(jsonArray, &dataArray)
 	assert.NoError(t, err, "Unmarshalling failed for json array of strings: %s", jsonArray)
 	assert.Len(t, dataArray, 3)
@@ -26,12 +28,12 @@ func TestStringOrArray_Unmarshal(t *testing.T) {
 
 func TestStringOrArray_Marshal(t *testing.T) {
 	t.Parallel()
-	dataString := StringOrArray{"123"}
+	dataString := gocloak.StringOrArray{"123"}
 	jsonString, err := json.Marshal(&dataString)
 	assert.NoErrorf(t, err, "Marshaling failed for one string: %s", dataString)
 	assert.Equal(t, "\"123\"", string(jsonString))
 
-	dataArray := StringOrArray{"1", "2", "3"}
+	dataArray := gocloak.StringOrArray{"1", "2", "3"}
 	jsonArray, err := json.Marshal(&dataArray)
 	assert.NoError(t, err, "Marshaling failed for array of strings: %s", dataString)
 	assert.Equal(t, "[\"1\",\"2\",\"3\"]", string(jsonArray))
@@ -46,7 +48,7 @@ func TestGetQueryParams(t *testing.T) {
 		BoolField   *bool   `json:"bool_field,string,omitempty"`
 	}
 
-	params, err := GetQueryParams(TestParams{})
+	params, err := gocloak.GetQueryParams(TestParams{})
 	assert.NoError(t, err)
 	assert.True(
 		t,
@@ -55,10 +57,10 @@ func TestGetQueryParams(t *testing.T) {
 		params,
 	)
 
-	params, err = GetQueryParams(TestParams{
-		IntField:    IntP(1),
-		StringField: StringP("fake"),
-		BoolField:   BoolP(true),
+	params, err = gocloak.GetQueryParams(TestParams{
+		IntField:    gocloak.IntP(1),
+		StringField: gocloak.StringP("fake"),
+		BoolField:   gocloak.BoolP(true),
 	})
 	assert.NoError(t, err)
 	assert.Equal(
@@ -71,9 +73,9 @@ func TestGetQueryParams(t *testing.T) {
 		params,
 	)
 
-	params, err = GetQueryParams(TestParams{
-		StringField: StringP("fake"),
-		BoolField:   BoolP(false),
+	params, err = gocloak.GetQueryParams(TestParams{
+		StringField: gocloak.StringP("fake"),
+		BoolField:   gocloak.BoolP(false),
 	})
 	assert.NoError(t, err)
 	assert.Equal(

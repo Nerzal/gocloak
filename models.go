@@ -409,8 +409,8 @@ type Logic string
 
 // Logic values
 var (
-	POSITIVE *Logic = LogicP("POSITIVE")
-	NEGATIVE *Logic = LogicP("NEGATIVE")
+	POSITIVE = LogicP("POSITIVE")
+	NEGATIVE = LogicP("NEGATIVE")
 )
 
 // DecisionStrategy is an enum type for DecisionStrategy of PolicyRepresentation
@@ -418,9 +418,9 @@ type DecisionStrategy string
 
 // DecisionStrategy values
 var (
-	AFFIRMATIVE *DecisionStrategy = DecisionStrategyP("AFFIRMATIVE")
-	UNANIMOUS   *DecisionStrategy = DecisionStrategyP("UNANIMOUS")
-	CONSENSUS   *DecisionStrategy = DecisionStrategyP("CONSENSUS")
+	AFFIRMATIVE = DecisionStrategyP("AFFIRMATIVE")
+	UNANIMOUS   = DecisionStrategyP("UNANIMOUS")
+	CONSENSUS   = DecisionStrategyP("CONSENSUS")
 )
 
 // PolicyRepresentation is a representation of a Policy
