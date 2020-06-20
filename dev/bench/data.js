@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1591077535217,
+  "lastUpdate": 1592677209882,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -1055,6 +1055,54 @@ window.BENCHMARK_DATA = {
             "value": 50964992,
             "unit": "ns/op\t   61012 B/op\t     211 allocs/op",
             "extra": "22 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.info",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ce6672c246759fd352631a5d43e6638c901e022d",
+          "message": "Merge pull request #176 from agorman/user-group-count-search\n\nAdding search parameters when counting users and groups",
+          "timestamp": "2020-06-20T12:42:07-05:00",
+          "tree_id": "ca39a03dea86dc49591bcc4a1a4ddfbefc9e651a",
+          "url": "https://github.com/Nerzal/gocloak/commit/ce6672c246759fd352631a5d43e6638c901e022d"
+        },
+        "date": 1592677209450,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 86985840,
+            "unit": "ns/op\t   51977 B/op\t     212 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 85099214,
+            "unit": "ns/op\t   54850 B/op\t     214 allocs/op",
+            "extra": "12 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 85235714,
+            "unit": "ns/op\t   64106 B/op\t     215 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 52724810,
+            "unit": "ns/op\t   52481 B/op\t     211 allocs/op",
+            "extra": "21 times\n2 procs"
           }
         ]
       }
