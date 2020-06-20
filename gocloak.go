@@ -116,7 +116,7 @@ type GoCloak interface {
 	// GetGroups gets all groups of the given realm
 	GetGroups(accessToken string, realm string, params GetGroupsParams) ([]*Group, error)
 	// GetGroupsCount gets groups count of the given realm
-	GetGroupsCount(token string, realm string) (int, error)
+	GetGroupsCount(token string, realm string, params GetGroupsParams) (int, error)
 	// GetGroup gets the given group
 	GetGroup(accessToken string, realm, groupID string) (*Group, error)
 	// GetGroupMembers get a list of users of group with id in realm
@@ -233,7 +233,7 @@ type GoCloak interface {
 	// GetUserByID gets the user with the given id
 	GetUserByID(accessToken string, realm string, userID string) (*User, error)
 	// GetUser count returns the userCount of the given realm
-	GetUserCount(accessToken string, realm string) (int, error)
+	GetUserCount(accessToken string, realm string, params GetUsersParams) (int, error)
 	// GetUsers gets all users of the given realm
 	GetUsers(accessToken string, realm string, params GetUsersParams) ([]*User, error)
 	// GetUserGroups gets the groups of the given user
