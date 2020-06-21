@@ -24,6 +24,11 @@ Benchmarks: https://nerzal.github.io/gocloak/dev/bench/
 
 ## Changelog
 
+### v6:
+There are several backward incompatible changes
+* all client functions now take `context.Context` as first argument.
+* `UserAttributeContains` was moved from client method to package function.
+
 ### v5:
 There is only one change, but it's backward incompatible:
 * Wrap Errors and use APIError struct to also provide the httpstatus code. ([#146](https://github.com/Nerzal/gocloak/pull/146))
@@ -40,7 +45,7 @@ There are a lot of backward incompatible changes:
 ### Importing
 
 ```go
-	import "github.com/Nerzal/gocloak/v5"
+	import "github.com/Nerzal/gocloak/v6"
 ```
 
 or v3 (latest release is v3.10.0):
@@ -52,7 +57,8 @@ or v3 (latest release is v3.10.0):
 ### Create New User
 ```go
 	client := gocloak.NewClient("https://mycool.keycloak.instance")
-	token, err := client.LoginAdmin("user", "password", "realmName")
+	ctx := context.Background()
+	token, err := client.LoginAdmin(ctx, "user", "password", "realmName")
 	if err != nil {
 		panic("Something wrong with the credentials or url")
 	}
@@ -63,7 +69,7 @@ or v3 (latest release is v3.10.0):
 		Enabled:   true,
 		Username:  "CoolGuy",
 	}
-	_, err = client.CreateUser(token.AccessToken, "realm", user)
+	_, err = client.CreateUser(ctx, token.AccessToken, "realm", user)
 	if err != nil {
 		panic("Oh no!, failed to create user :(")
 	}
@@ -72,12 +78,13 @@ or v3 (latest release is v3.10.0):
 ### Introspect Token
 ```go
 	client := gocloak.NewClient(hostname)
-	token, err := client.LoginClient(clientid, clientSecret, realm)
+	ctx := context.Background()
+	token, err := client.LoginClient(ctx, clientid, clientSecret, realm)
 	if err != nil {
 		panic("Login failed:"+ err.Error())
 	}
 
-	rptResult, err := client.RetrospectToken(token.AccessToken, clientid, clientSecret, realm)
+	rptResult, err := client.RetrospectToken(ctx, token.AccessToken, clientid, clientSecret, realm)
 	if err != nil {
 		panic("Inspection failed:"+ err.Error())
 	}
@@ -87,7 +94,7 @@ or v3 (latest release is v3.10.0):
 	}
 
 	permissions := rptResult.Permissions
-	//Do something with the permissions ;)
+	// Do something with the permissions ;)
 ```
 
 ## Features
@@ -95,167 +102,166 @@ or v3 (latest release is v3.10.0):
 ```go
 // GoCloak holds all methods a client should fullfill
 type GoCloak interface {
-	GetRequestingPartyToken(token, realm string, options RequestingPartyTokenOptions) (*JWT, error)
+	GetRequestingPartyToken(, ctx context.Contexttoken, realm string, options RequestingPartyTokenOptions) (*JWT, error)
 
-	Login(clientID string, clientSecret string, realm string, username string, password string) (*JWT, error)
-	LoginOtp(clientID string, clientSecret string, realm string, username string, password string, totp string) (*JWT, error) 
-	Logout(clientID, clientSecret, realm, refreshToken string) error
-	LogoutPublicClient(clientID, realm, accessToken, refreshToken string) error
-	LoginClient(clientID, clientSecret, realm string) (*JWT, error)
-	LoginAdmin(username, password, realm string) (*JWT, error)
-	RequestPermission(clientID string, clientSecret string, realm string, username string, password string, permission string) (*JWT, error)
-	RefreshToken(refreshToken string, clientID, clientSecret, realm string) (*JWT, error)
-	DecodeAccessToken(accessToken string, realm string) (*jwt.Token, *jwt.MapClaims, error)
-	DecodeAccessTokenCustomClaims(accessToken string, realm string, claims jwt.Claims) (*jwt.Token, error)
-	RetrospectToken(accessToken string, clientID, clientSecret string, realm string) (*RetrospecTokenResult, error)
-	GetIssuer(realm string) (*IssuerResponse, error)
-	GetCerts(realm string) (*CertResponse, error)
-	GetServerInfo(accessToken string) (*ServerInfoRepesentation, error)
-	GetUserInfo(accessToken string, realm string) (*UserInfo, error)
-	SetPassword(token string, userID string, realm string, password string, temporary bool) error
-	ExecuteActionsEmail(token string, realm string, params ExecuteActionsEmail) error
+	Login(ctx context.Context, clientID, clientSecret, realm, username, password string) (*JWT, error)
+	LoginOtp(ctx context.Context, clientID, clientSecret, realm, username, password, totp string) (*JWT, error)
+	Logout(ctx context.Context, clientID, clientSecret, realm, refreshToken string) error
+	LogoutPublicClient(ctx context.Context, clientID, realm, accessToken, refreshToken string) error
+	LoginClient(ctx context.Context, clientID, clientSecret, realm string) (*JWT, error)
+	LoginAdmin(ctx context.Context, username, password, realm string) (*JWT, error)
+	RequestPermission(ctx context.Context, clientID, clientSecret, realm, username, password, permission string) (*JWT, error)
+	RefreshToken(ctx context.Context, refreshToken, clientID, clientSecret, realm string) (*JWT, error)
+	DecodeAccessToken(ctx context.Context, accessToken, realm string) (*jwt.Token, *jwt.MapClaims, error)
+	DecodeAccessTokenCustomClaims(ctx context.Context, accessToken, realm string, claims jwt.Claims) (*jwt.Token, error)
+	RetrospectToken(ctx context.Context, accessToken, clientID, clientSecret, realm string) (*RetrospecTokenResult, error)
+	GetIssuer(ctx context.Context, realm string) (*IssuerResponse, error)
+	GetCerts(ctx context.Context, realm string) (*CertResponse, error)
+	GetServerInfo(ctx context.Context, accessToken string) (*ServerInfoRepesentation, error)
+	GetUserInfo(ctx context.Context, accessToken, realm string) (*UserInfo, error)
+	SetPassword(ctx context.Context, token, userID, realm, password string, temporary bool) error
+	ExecuteActionsEmail(ctx context.Context, token, realm string, params ExecuteActionsEmail) error
 
-	CreateUser(token string, realm string, user User) (string, error)
-	CreateGroup(accessToken string, realm string, group Group) error
-	CreateChildGroup(token string, realm string, groupID string, group Group) (string, error)
-	CreateClientRole(accessToken string, realm string, clientID string, role Role) error
-	CreateClient(accessToken string, realm string, clientID Client) error
-	CreateClientScope(accessToken string, realm string, scope ClientScope) error
-	CreateComponent(accessToken string, realm string, component Component) error
+	CreateUser(ctx context.Context, token, realm string, user User) (string, error)
+	CreateGroup(ctx context.Context, accessToken, realm string, group Group) error
+	CreateChildGroup(ctx context.Context, token, realm, groupID string, group Group) (string, error)
+	CreateClientRole(ctx context.Context, accessToken, realm, clientID string, role Role) error
+	CreateClient(ctx context.Context, accessToken, realm string, clientID Client) error
+	CreateClientScope(ctx context.Context, accessToken, realm string, scope ClientScope) error
+	CreateComponent(ctx context.Context, accessToken string, realm, component Component) error
 
-	UpdateUser(accessToken string, realm string, user User) error
-	UpdateGroup(accessToken string, realm string, updatedGroup Group) error
-	UpdateRole(accessToken string, realm string, clientID string, role Role) error
-	UpdateClient(accessToken string, realm string, updatedClient Client) error
-	UpdateClientScope(accessToken string, realm string, scope ClientScope) error
+	UpdateUser(ctx context.Context, accessToken, realm string, user User) error
+	UpdateGroup(ctx context.Context, accessToken, realm string, updatedGroup Group) error
+	UpdateRole(ctx context.Context, accessToken, realm, clientID string, role Role) error
+	UpdateClient(ctx context.Context, accessToken, realm string, updatedClient Client) error
+	UpdateClientScope(ctx context.Context, accessToken, realm string, scope ClientScope) error
 
-	DeleteUser(accessToken string, realm, userID string) error
-	DeleteComponent(accessToken string, realm, componentID string) error
-	DeleteGroup(accessToken string, realm, groupID string) error
-	DeleteClientRole(accessToken string, realm, clientID, roleName string) error
-	DeleteClient(accessToken string, realm, clientID string) error
-	DeleteClientScope(accessToken string, realm, scopeID string) error
+	DeleteUser(ctx context.Context, accessToken, realm, userID string) error
+	DeleteComponent(ctx context.Context, accessToken, realm, componentID string) error
+	DeleteGroup(ctx context.Context, accessToken, realm, groupID string) error
+	DeleteClientRole(ctx context.Context, accessToken, realm, clientID, roleName string) error
+	DeleteClient(ctx context.Context, accessToken, realm, clientID string) error
+	DeleteClientScope(ctx context.Context, accessToken, realm, scopeID string) error
 
-	GetClient(accessToken string, realm string, clientID string) (*Client, error)
-	GetClientsDefaultScopes(token string, realm string, clientID string) ([]*ClientScope, error)
-	AddDefaultScopeToClient(token string, realm string, clientID string, scopeID string) error
-	RemoveDefaultScopeFromClient(token string, realm string, clientID string, scopeID string) error
-	GetClientsOptionalScopes(token string, realm string, clientID string) ([]*ClientScope, error)
-	AddOptionalScopeToClient(token string, realm string, clientID string, scopeID string) error
-	RemoveOptionalScopeFromClient(token string, realm string, clientID string, scopeID string) error
-	GetDefaultOptionalClientScopes(token string, realm string) ([]*ClientScope, error)
-	GetDefaultDefaultClientScopes(token string, realm string) ([]*ClientScope, error)
-	GetClientScope(token string, realm string, scopeID string) (*ClientScope, error)
-	GetClientScopes(token string, realm string) ([]*ClientScope, error)
-	GetClientSecret(token string, realm string, clientID string) (*CredentialRepresentation, error)
-	GetClientServiceAccount(token string, realm string, clientID string) (*User, error)
-	RegenerateClientSecret(token string, realm string, clientID string) (*CredentialRepresentation, error)
-	GetKeyStoreConfig(accessToken string, realm string) (*KeyStoreConfig, error)
-	GetUserByID(accessToken string, realm string, userID string) (*User, error)
-	GetUserCount(accessToken string, realm string, params GetUsersParams) (int, error)
-	GetUsers(accessToken string, realm string, params GetUsersParams) ([]*User, error)
-	GetUserGroups(accessToken string, realm string, userID string) ([]*UserGroup, error)
-	GetComponents(accessToken string, realm string) ([]*Component, error)
-	GetGroups(accessToken string, realm string, params GetGroupsParams) ([]*Group, error)
-	GetGroupsCount(token string, realm string, params GetGroupsParams) (int, error)
-	GetGroup(accessToken string, realm, groupID string) (*Group, error)
-	GetDefaultGroups(accessToken string, realm string) ([]*Group, error)
-	AddDefaultGroup(accessToken string, realm string, groupID string) error
-	RemoveDefaultGroup(accessToken string, realm string, groupID string) error
-	GetGroupMembers(accessToken string, realm, groupID string, params GetGroupsParams) ([]*User, error)
-	GetRoleMappingByGroupID(accessToken string, realm string, groupID string) (*MappingsRepresentation, error)
-	GetRoleMappingByUserID(accessToken string, realm string, userID string) (*MappingsRepresentation, error)
-	GetClientRoles(accessToken string, realm string, clientID string) ([]*Role, error)
-	GetClientRole(token string, realm string, clientID string, roleName string) (*Role, error)
-	GetClients(accessToken string, realm string, params GetClientsParams) ([]*Client, error)
-	AddClientRoleComposite(token string, realm string, roleID string, roles []Role) error
-	DeleteClientRoleComposite(token string, realm string, roleID string, roles []Role) error
-	GetUsersByRoleName(token string, realm string, roleName string) ([]*User, error)
-	GetUsersByClientRoleName(token string, realm string, clientID string, roleName string, params GetUsersByRoleParams) ([]*User, error)
-	UserAttributeContains(attributes map[string][]string, attribute string, value string) bool
-	CreateClientProtocolMapper(token, realm, clientID string, mapper ProtocolMapperRepresentation) error
-	UpdateClientProtocolMapper(token, realm, clientID string, mapperID string, mapper ProtocolMapperRepresentation) error
-	DeleteClientProtocolMapper(token, realm, clientID, mapperID string) error
+	GetClient(ctx context.Context, accessToken, realm, clientID string) (*Client, error)
+	GetClientsDefaultScopes(ctx context.Context, token, realm, clientID string) ([]*ClientScope, error)
+	AddDefaultScopeToClient(ctx context.Context, token, realm, clientID, scopeID string) error
+	RemoveDefaultScopeFromClient(ctx context.Context, token, realm, clientID, scopeID string) error
+	GetClientsOptionalScopes(ctx context.Context, token, realm, clientID string) ([]*ClientScope, error)
+	AddOptionalScopeToClient(ctx context.Context, token, realm, clientID, scopeID string) error
+	RemoveOptionalScopeFromClient(ctx context.Context, token, realm, clientID, scopeID string) error
+	GetDefaultOptionalClientScopes(ctx context.Context, token, realm string) ([]*ClientScope, error)
+	GetDefaultDefaultClientScopes(ctx context.Context, token, realm string) ([]*ClientScope, error)
+	GetClientScope(ctx context.Context, token, realm, scopeID string) (*ClientScope, error)
+	GetClientScopes(ctx context.Context, token, realm string) ([]*ClientScope, error)
+	GetClientSecret(ctx context.Context, token, realm, clientID string) (*CredentialRepresentation, error)
+	GetClientServiceAccount(ctx context.Context, token, realm, clientID string) (*User, error)
+	RegenerateClientSecret(ctx context.Context, token, realm, clientID string) (*CredentialRepresentation, error)
+	GetKeyStoreConfig(ctx context.Context, accessToken, realm string) (*KeyStoreConfig, error)
+	GetUserByID(ctx context.Context, accessToken, realm, userID string) (*User, error)
+	GetUserCount(ctx context.Context, accessToken, realm string, params GetUsersParams) (int, error)
+	GetUsers(ctx context.Context, accessToken, realm string, params GetUsersParams) ([]*User, error)
+	GetUserGroups(ctx context.Context, accessToken, realm, userID string) ([]*UserGroup, error)
+	GetComponents(ctx context.Context, accessToken, realm string) ([]*Component, error)
+	GetGroups(ctx context.Context, accessToken, realm string, params GetGroupsParams) ([]*Group, error)
+	GetGroupsCount(ctx context.Context, token, realm string, params GetGroupsParams) (int, error)
+	GetGroup(ctx context.Context, accessToken, realm, groupID string) (*Group, error)
+	GetDefaultGroups(ctx context.Context, accessToken, realm string) ([]*Group, error)
+	AddDefaultGroup(ctx context.Context, accessToken, realm, groupID string) error
+	RemoveDefaultGroup(ctx context.Context, accessToken, realm, groupID string) error
+	GetGroupMembers(ctx context.Context, accessToken, realm, groupID string, params GetGroupsParams) ([]*User, error)
+	GetRoleMappingByGroupID(ctx context.Context, accessToken, realm, groupID string) (*MappingsRepresentation, error)
+	GetRoleMappingByUserID(ctx context.Context, accessToken, realm, userID string) (*MappingsRepresentation, error)
+	GetClientRoles(ctx context.Context, accessToken, realm, clientID string) ([]*Role, error)
+	GetClientRole(ctx context.Context, token, realm, clientID, roleName string) (*Role, error)
+	GetClients(ctx context.Context, accessToken, realm string, params GetClientsParams) ([]*Client, error)
+	AddClientRoleComposite(ctx context.Context, token, realm, roleID string, roles []Role) error
+	DeleteClientRoleComposite(ctx context.Context, token, realm, roleID string, roles []Role) error
+	GetUsersByRoleName(ctx context.Context, token, realm, roleName string) ([]*User, error)
+	GetUsersByClientRoleName(ctx context.Context, token, realm, clientID, roleName string, params GetUsersByRoleParams) ([]*User, error)
+	CreateClientProtocolMapper(ctx context.Context, token, realm, clientID string, mapper ProtocolMapperRepresentation) error
+	UpdateClientProtocolMapper(ctx context.Context, token, realm, clientID, mapperID string, mapper ProtocolMapperRepresentation) error
+	DeleteClientProtocolMapper(ctx context.Context, token, realm, clientID, mapperID string) error
 
 	// *** Realm Roles ***
 
-	CreateRealmRole(token string, realm string, role Role) error
-	GetRealmRole(token string, realm string, roleName string) (*Role, error)
-	GetRealmRoles(accessToken string, realm string) ([]*Role, error)
-	GetRealmRolesByUserID(accessToken string, realm string, userID string) ([]*Role, error)
-	GetRealmRolesByGroupID(accessToken string, realm string, groupID string) ([]*Role, error)
-	UpdateRealmRole(token string, realm string, roleName string, role Role) error
-	DeleteRealmRole(token string, realm string, roleName string) error
-	AddRealmRoleToUser(token string, realm string, userID string, roles []Role) error
-	DeleteRealmRoleFromUser(token string, realm string, userID string, roles []Role) error
-	AddRealmRoleToGroup(token string, realm string, groupID string, roles []Role) error
-	DeleteRealmRoleFromGroup(token string, realm string, groupID string, roles []Role) error
-	AddRealmRoleComposite(token string, realm string, roleName string, roles []Role) error
-	DeleteRealmRoleComposite(token string, realm string, roleName string, roles []Role) error
+	CreateRealmRole(ctx context.Context, token, realm string, role Role) error
+	GetRealmRole(ctx context.Context, token, realm, roleName string) (*Role, error)
+	GetRealmRoles(ctx context.Context, accessToken, realm string) ([]*Role, error)
+	GetRealmRolesByUserID(ctx context.Context, accessToken, realm, userID string) ([]*Role, error)
+	GetRealmRolesByGroupID(ctx context.Context, accessToken, realm, groupID string) ([]*Role, error)
+	UpdateRealmRole(ctx context.Context, token, realm, roleName string, role Role) error
+	DeleteRealmRole(ctx context.Context, token, realm, roleName string) error
+	AddRealmRoleToUser(ctx context.Context, token, realm, userID string, roles []Role) error
+	DeleteRealmRoleFromUser(ctx context.Context, token, realm, userID string, roles []Role) error
+	AddRealmRoleToGroup(ctx context.Context, token, realm, groupID string, roles []Role) error
+	DeleteRealmRoleFromGroup(ctx context.Context, token, realm, groupID string, roles []Role) error
+	AddRealmRoleComposite(ctx context.Context, token, realm, roleName string, roles []Role) error
+	DeleteRealmRoleComposite(ctx context.Context, token, realm, roleName string, roles []Role) error
 
 
 	// *** Client Roles ***
 
-	AddClientRoleToGroup(token string, realm string, clientID string, groupID string, roles []Role) error
-	DeleteClientRoleFromGroup(token string, realm string, clientID string, groupID string, roles []Role) error
-	GetCompositeClientRolesByRoleID(token string, realm string, clientID string, roleID string) ([]*Role, error)
-	GetClientRolesByUserID(token string, realm string, clientID string, userID string) ([]*Role, error)
-	GetClientRolesByGroupID(token string, realm string, clientID string, groupID string) ([]*Role, error)
-	GetCompositeClientRolesByUserID(token string, realm string, clientID string, userID string) ([]*Role, error)
-	GetCompositeClientRolesByGroupID(token string, realm string, clientID string, groupID string) ([]*Role, error)
-	GetAvailableClientRolesByUserID(token string, realm string, clientID string, userID string) ([]*Role, error)
+	AddClientRoleToGroup(ctx context.Context, token, realm, clientID, groupID string, roles []Role) error
+	DeleteClientRoleFromGroup(ctx context.Context, token, realm, clientID, groupID string, roles []Role) error
+	GetCompositeClientRolesByRoleID(ctx context.Context, token, realm, clientID, roleID string) ([]*Role, error)
+	GetClientRolesByUserID(ctx context.Context, token, realm, clientID, userID string) ([]*Role, error)
+	GetClientRolesByGroupID(ctx context.Context, token, realm, clientID, groupID string) ([]*Role, error)
+	GetCompositeClientRolesByUserID(ctx context.Context, token, realm, clientID, userID string) ([]*Role, error)
+	GetCompositeClientRolesByGroupID(ctx context.Context, token, realm, clientID, groupID string) ([]*Role, error)
+	GetAvailableClientRolesByUserID(ctx context.Context, token, realm, clientID, userID string) ([]*Role, error)
 
 	// *** Realm ***
 
-	GetRealm(token string, realm string) (*RealmRepresentation, error)
-	GetRealms(token string) ([]*RealmRepresentation, error)
-	CreateRealm(token string, realm RealmRepresentation) (string, error)
-	UpdateRealm(token string, realm RealmRepresentation) error
-	DeleteRealm(token string, realm string) error
-	ClearRealmCache(token string, realm string) error
-	ClearUserCache(token string, realm string) error
-	ClearKeysCache(token string, realm string) error
+	GetRealm(ctx context.Context, token, realm string) (*RealmRepresentation, error)
+	GetRealms(ctx context.Context, token string) ([]*RealmRepresentation, error)
+	CreateRealm(ctx context.Context, token string, realm RealmRepresentation) (string, error)
+	UpdateRealm(ctx context.Context, token string, realm RealmRepresentation) error
+	DeleteRealm(ctx context.Context, token, realm string) error
+	ClearRealmCache(ctx context.Context, token, realm string) error
+	ClearUserCache(ctx context.Context, token, realm string) error
+	ClearKeysCache(ctx context.Context, token, realm string) error
 
-	GetClientUserSessions(token, realm, clientID string) ([]*UserSessionRepresentation, error)
-	GetClientOfflineSessions(token, realm, clientID string) ([]*UserSessionRepresentation, error)
-	GetUserSessions(token, realm, userID string) ([]*UserSessionRepresentation, error)
-	GetUserOfflineSessionsForClient(token, realm, userID, clientID string) ([]*UserSessionRepresentation, error)
+	GetClientUserSessions(ctx context.Context, token, realm, clientID string) ([]*UserSessionRepresentation, error)
+	GetClientOfflineSessions(ctx context.Context, token, realm, clientID string) ([]*UserSessionRepresentation, error)
+	GetUserSessions(ctx context.Context, token, realm, userID string) ([]*UserSessionRepresentation, error)
+	GetUserOfflineSessionsForClient(ctx context.Context, token, realm, userID, clientID string) ([]*UserSessionRepresentation, error)
 
 	// *** Protection API ***
-	GetResource(token string, realm string, clientID string, resourceID string) (*Resource, error)
-	GetResources(token string, realm string, clientID string) ([]*Resource, error)
-	CreateResource(token string, realm string, clientID string, resource Resource) (*Resource, error)
-	UpdateResource(token string, realm string, clientID string, resource Resource) error
-	DeleteResource(token string, realm string, clientID string, resourceID string) error
+	GetResource(ctx context.Context, token, realm, clientID, resourceID string) (*Resource, error)
+	GetResources(ctx context.Context, token, realm, clientID string) ([]*Resource, error)
+	CreateResource(ctx context.Context, token, realm, clientID string, resource Resource) (*Resource, error)
+	UpdateResource(ctx context.Context, token, realm, clientID string, resource Resource) error
+	DeleteResource(ctx context.Context, token, realm, clientID, resourceID string) error
 
-	GetScope(token string, realm string, clientID string, scopeID string) (*ScopeRepresentation, error)
-	GetScopes(token string, realm string, clientID string, params GetScopeParams) ([]*ScopeRepresentation, error)
-	CreateScope(token string, realm string, clientID string, scope ScopeRepresentation) (*ScopeRepresentation, error)
-	UpdateScope(token string, realm string, clientID string, resource ScopeRepresentation) error
-	DeleteScope(token string, realm string, clientID string, scopeID string) error
+	GetScope(ctx context.Context, token, realm, clientID, scopeID string) (*ScopeRepresentation, error)
+	GetScopes(ctx context.Context, token, realm, clientID string, params GetScopeParams) ([]*ScopeRepresentation, error)
+	CreateScope(ctx context.Context, token, realm, clientID string, scope ScopeRepresentation) (*ScopeRepresentation, error)
+	UpdateScope(ctx context.Context, token, realm, clientID string, resource ScopeRepresentation) error
+	DeleteScope(ctx context.Context, token, realm, clientID, scopeID string) error
 
-	GetPolicy(token string, realm string, clientID string, policyID string) (*PolicyRepresentation, error)
-	GetPolicies(token string, realm string, clientID string, params GetPolicyParams) ([]*PolicyRepresentation, error)
-	CreatePolicy(token string, realm string, clientID string, policy PolicyRepresentation) (*PolicyRepresentation, error)
-	UpdatePolicy(token string, realm string, clientID string, policy PolicyRepresentation) error
-	DeletePolicy(token string, realm string, clientID string, policyID string) error
+	GetPolicy(ctx context.Context, token, realm, clientID, policyID string) (*PolicyRepresentation, error)
+	GetPolicies(ctx context.Context, token, realm, clientID string, params GetPolicyParams) ([]*PolicyRepresentation, error)
+	CreatePolicy(ctx context.Context, token, realm, clientID string, policy PolicyRepresentation) (*PolicyRepresentation, error)
+	UpdatePolicy(ctx context.Context, token, realm, clientID string, policy PolicyRepresentation) error
+	DeletePolicy(ctx context.Context, token, realm, clientID string, policyID string) error
 
-	GetPermission(token string, realm string, clientID string, permissionID string) (*PermissionRepresentation, error)
-	GetPermissions(token string, realm string, clientID string, params GetPermissionParams) ([]*PermissionRepresentation, error)
-	CreatePermission(token string, realm string, clientID string, permission PermissionRepresentation) (*PermissionRepresentation, error)
-	UpdatePermission(token string, realm string, clientID string, permission PermissionRepresentation) error
-	DeletePermission(token string, realm string, clientID string, permissionID string) error
+	GetPermission(ctx context.Context, token, realm, clientID, permissionID string) (*PermissionRepresentation, error)
+	GetPermissions(ctx context.Context, token, realm, clientID string, params GetPermissionParams) ([]*PermissionRepresentation, error)
+	CreatePermission(ctx context.Context, token, realm, clientID string, permission PermissionRepresentation) (*PermissionRepresentation, error)
+	UpdatePermission(ctx context.Context, token, realm, clientID string, permission PermissionRepresentation) error
+	DeletePermission(ctx context.Context, token, realm, clientID, permissionID string) error
 
 	// *** Credentials API ***
 
-	GetCredentialRegistrators(token, realm string) ([]string, error)
-	GetConfiguredUserStorageCredentialTypes(token, realm, userID string) ([]string, error)
-	GetCredentials(token, realm, UserID string) ([]*CredentialRepresentation, error)
-	DeleteCredentials(token, realm, UserID, CredentialID string) error
-	UpdateCredentialUserLabel(token, realm, userID, credentialID, userLabel string) error
-	DisableAllCredentialsByType(token, realm, userID string, types []string) error
-	MoveCredentialBehind(token, realm, userID, credentialID, newPreviousCredentialID string) error
-	MoveCredentialToFirst(token, realm, userID, credentialID string) error
+	GetCredentialRegistrators(ctx context.Context, token, realm string) ([]string, error)
+	GetConfiguredUserStorageCredentialTypes(ctx context.Context, token, realm, userID string) ([]string, error)
+	GetCredentials(ctx context.Context, token, realm, UserID string) ([]*CredentialRepresentation, error)
+	DeleteCredentials(ctx context.Context, token, realm, UserID, CredentialID string) error
+	UpdateCredentialUserLabel(ctx context.Context, token, realm, userID, credentialID, userLabel string) error
+	DisableAllCredentialsByType(ctx context.Context, token, realm, userID string, types []string) error
+	MoveCredentialBehind(ctx context.Context, token, realm, userID, credentialID, newPreviousCredentialID string) error
+	MoveCredentialToFirst(ctx context.Context, token, realm, userID, credentialID string) error
 }
 ```
 

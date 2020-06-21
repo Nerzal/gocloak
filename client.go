@@ -13,7 +13,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/pkg/errors"
 
-	"github.com/Nerzal/gocloak/v5/pkg/jwx"
+	"github.com/Nerzal/gocloak/v6/pkg/jwx"
 )
 
 type gocloak struct {
