@@ -680,6 +680,25 @@ func TestGocloak_Login(t *testing.T) {
 	require.NoError(t, err, "Login failed")
 }
 
+func TestGocloak_LoginOtp(t *testing.T) {
+
+	totp := "123456"
+
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	SetUpTestUser(t, client)
+	_, err := client.LoginOtp(
+		cfg.GoCloak.ClientID,
+		cfg.GoCloak.ClientSecret,
+		cfg.GoCloak.Realm,
+		cfg.GoCloak.UserName,
+		cfg.GoCloak.Password,
+		totp,
+	)
+	require.NoError(t, err, "Login failed")
+}
+
 func TestGocloak_GetToken(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)

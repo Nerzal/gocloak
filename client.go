@@ -384,6 +384,18 @@ func (client *gocloak) Login(clientID, clientSecret, realm, username, password s
 	})
 }
 
+// LoginOtp performs a login with user credentials and otp token
+func (client *gocloak) LoginOtp(clientID, clientSecret, realm, username, password, totp string) (*JWT, error) {
+	return client.GetToken(realm, TokenOptions{
+		ClientID:     &clientID,
+		ClientSecret: &clientSecret,
+		GrantType:    StringP("password"),
+		Username:     &username,
+		Password:     &password,
+		Totp:         &totp,
+	})
+}
+
 // Logout logs out users with refresh token
 func (client *gocloak) Logout(clientID, clientSecret, realm, refreshToken string) error {
 	const errMessage = "could not logout"

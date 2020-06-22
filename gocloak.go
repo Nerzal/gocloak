@@ -18,6 +18,8 @@ type GoCloak interface {
 	GetRequestingPartyToken(token, realm string, options RequestingPartyTokenOptions) (*JWT, error)
 	// Login sends a request to the token endpoint using user and client credentials
 	Login(clientID, clientSecret, realm, username, password string) (*JWT, error)
+	// LoginOtp performs a login with user credentials and otp token
+	LoginOtp(clientID, clientSecret, realm, username, password, totp string) (*JWT, error)
 	// Logout sends a request to the logout endpoint using refresh token
 	Logout(clientID, clientSecret, realm, refreshToken string) error
 	// LogoutPublicClient sends a request to the logout endpoint using refresh token
