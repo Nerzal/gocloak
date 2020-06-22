@@ -7,17 +7,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install Go
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@v2
         with:
-          go-version: 1.14.x
+          go-version: 1.14
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: golangci-lint
-        env:
-          GOROOT: /go
-        run: |
-          docker pull golangci/golangci-lint:latest-alpine
-          docker run --rm -v ${PWD}:/app -w /app golangci/golangci-lint:latest-alpine golangci-lint run
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v1
+        with:
+          version: v1.27
       - name: nancy
         uses: sonatype-nexus-community/nancy-github-action@master
         with:
@@ -55,7 +53,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: true
 
-      # Updating go repord card for master branch only
+      # Updating go report card for master branch only
       - name: GoReportCard
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: curl --fail --request POST "https://goreportcard.com/checks" --data "repo=github.com/Nerzal/gocloak"
