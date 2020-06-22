@@ -17,3 +17,6 @@
 *.out
 
 \.idea/
+
+# Compile objects
+/bin/

@@ -98,6 +98,7 @@ type GoCloak interface {
 	GetRequestingPartyToken(token, realm string, options RequestingPartyTokenOptions) (*JWT, error)
 
 	Login(clientID string, clientSecret string, realm string, username string, password string) (*JWT, error)
+	LoginOtp(clientID string, clientSecret string, realm string, username string, password string, totp string) (*JWT, error) 
 	Logout(clientID, clientSecret, realm, refreshToken string) error
 	LogoutPublicClient(clientID, realm, accessToken, refreshToken string) error
 	LoginClient(clientID, clientSecret, realm string) (*JWT, error)
@@ -202,7 +203,7 @@ type GoCloak interface {
 	GetClientRolesByGroupID(token string, realm string, clientID string, groupID string) ([]*Role, error)
 	GetCompositeClientRolesByUserID(token string, realm string, clientID string, userID string) ([]*Role, error)
 	GetCompositeClientRolesByGroupID(token string, realm string, clientID string, groupID string) ([]*Role, error)
-    GetAvailableClientRolesByUserID(token string, realm string, clientID string, userID string) ([]*Role, error)
+	GetAvailableClientRolesByUserID(token string, realm string, clientID string, userID string) ([]*Role, error)
 
 	// *** Realm ***
 
@@ -283,6 +284,12 @@ docker run -d \
 
 go test
 ```
+
+Or you can run with docker compose using the run-tests script
+```bash
+./run-tests.sh
+```
+
 
 Or you can run the tests on you own keycloak:
 ```bash
