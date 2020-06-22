@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1592677209882,
+  "lastUpdate": 1592829848884,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -1103,6 +1103,54 @@ window.BENCHMARK_DATA = {
             "value": 52724810,
             "unit": "ns/op\t   52481 B/op\t     211 allocs/op",
             "extra": "21 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.com",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9070cf0ccf654c0866d1d924fd4a94a88546a323",
+          "message": "Merge pull request #178 from viniciussousazup/feature/loginOtp\n\nFeature/login otp",
+          "timestamp": "2020-06-22T07:38:48-05:00",
+          "tree_id": "9363750fc76248f29a0602d402bc659c38bc375b",
+          "url": "https://github.com/Nerzal/gocloak/commit/9070cf0ccf654c0866d1d924fd4a94a88546a323"
+        },
+        "date": 1592829848351,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 70502725,
+            "unit": "ns/op\t   82782 B/op\t     211 allocs/op",
+            "extra": "16 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 71421572,
+            "unit": "ns/op\t   69904 B/op\t     213 allocs/op",
+            "extra": "15 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 70661424,
+            "unit": "ns/op\t   64838 B/op\t     211 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 45018322,
+            "unit": "ns/op\t   57500 B/op\t     210 allocs/op",
+            "extra": "28 times\n2 procs"
           }
         ]
       }
