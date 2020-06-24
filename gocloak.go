@@ -46,6 +46,8 @@ type GoCloak interface {
 	GetServerInfo(ctx context.Context, accessToken string) (*ServerInfoRepesentation, error)
 	// GetUserInfo gets the user info for the given realm
 	GetUserInfo(ctx context.Context, accessToken, realm string) (*UserInfo, error)
+	// GetRawUserInfo calls the UserInfo endpoint and returns a raw json object
+	GetRawUserInfo(ctx context.Context, accessToken, realm string) (map[string]interface{}, error)
 
 	// ExecuteActionsEmail executes an actions email
 	ExecuteActionsEmail(ctx context.Context, token, realm string, params ExecuteActionsEmail) error

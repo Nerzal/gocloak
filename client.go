@@ -181,6 +181,22 @@ func (client *gocloak) GetUserInfo(ctx context.Context, accessToken, realm strin
 	return &result, nil
 }
 
+// GetRawUserInfo calls the UserInfo endpoint and returns a raw json object
+func (client *gocloak) GetRawUserInfo(ctx context.Context, accessToken, realm string) (map[string]interface{}, error) {
+	const errMessage = "could not get user info"
+
+	var result map[string]interface{}
+	resp, err := client.getRequestWithBearerAuth(ctx, accessToken).
+		SetResult(&result).
+		Get(client.getRealmURL(realm, openIDConnect, "userinfo"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 func (client *gocloak) getNewCerts(ctx context.Context, realm string) (*CertResponse, error) {
 	const errMessage = "could not get newCerts"
 

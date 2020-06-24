@@ -120,6 +120,7 @@ type GoCloak interface {
 	GetCerts(ctx context.Context, realm string) (*CertResponse, error)
 	GetServerInfo(ctx context.Context, accessToken string) (*ServerInfoRepesentation, error)
 	GetUserInfo(ctx context.Context, accessToken, realm string) (*UserInfo, error)
+	GetRawUserInfo(ctx context.Context, accessToken, realm string) (map[string]interface{}, error)
 	SetPassword(ctx context.Context, token, userID, realm, password string, temporary bool) error
 	ExecuteActionsEmail(ctx context.Context, token, realm string, params ExecuteActionsEmail) error
 
