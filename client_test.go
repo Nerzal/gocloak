@@ -164,7 +164,7 @@ func CreateGroup(t *testing.T, client gocloak.GoCloak) (func(), string) {
 	token := GetAdminToken(t, client)
 	group := gocloak.Group{
 		Name: GetRandomNameP("GroupName"),
-		Attributes: map[string][]string{
+		Attributes: &map[string][]string{
 			"foo": {"bar", "alice", "bob", "roflcopter"},
 			"bar": {"baz"},
 		},
@@ -196,11 +196,11 @@ func CreateResource(t *testing.T, client gocloak.GoCloak, clientID string) (func
 		DisplayName: gocloak.StringP("Resource Display Name"),
 		Type:        gocloak.StringP("urn:gocloak:resources:test"),
 		IconURI:     gocloak.StringP("/resource/test/icon"),
-		Attributes: map[string][]string{
+		Attributes: &map[string][]string{
 			"foo": {"bar", "alice", "bob", "roflcopter"},
 			"bar": {"baz"},
 		},
-		URIs: []string{
+		URIs: &[]string{
 			"/resource/1",
 			"/resource/2",
 		},
@@ -536,7 +536,7 @@ func TestGocloak_RequestPermission(t *testing.T) {
 		cfg.GoCloak.Realm,
 		gocloak.RequestingPartyTokenOptions{
 			Audience: gocloak.StringP(cfg.GoCloak.ClientID),
-			Permissions: []string{
+			Permissions: &[]string{
 				"Fake Resource",
 			},
 		})
@@ -549,7 +549,7 @@ func TestGocloak_RequestPermission(t *testing.T) {
 		cfg.GoCloak.Realm,
 		gocloak.RequestingPartyTokenOptions{
 			Audience: gocloak.StringP(cfg.GoCloak.ClientID),
-			Permissions: []string{
+			Permissions: &[]string{
 				"Default Resource",
 			},
 		})
@@ -566,8 +566,10 @@ func TestGocloak_RequestPermission(t *testing.T) {
 	t.Log(rptResult)
 	require.NoError(t, err, "inspection failed")
 	require.True(t, gocloak.PBool(rptResult.Active), "Inactive Token oO")
-	require.Len(t, rptResult.Permissions, 1, "GetRequestingPartyToken failed")
-	require.Equal(t, "Default Resource", *rptResult.Permissions[0].RSName, "GetRequestingPartyToken failed")
+	require.NotNil(t, *rptResult.Permissions)
+	permissions := *rptResult.Permissions
+	require.Len(t, permissions, 1, "GetRequestingPartyToken failed")
+	require.Equal(t, "Default Resource", *permissions[0].RSName, "GetRequestingPartyToken failed")
 }
 
 func TestGocloak_GetCerts(t *testing.T) {
@@ -757,8 +759,8 @@ func TestGocloak_GetToken(t *testing.T) {
 			Username:      &cfg.GoCloak.UserName,
 			Password:      &cfg.GoCloak.Password,
 			GrantType:     gocloak.StringP("password"),
-			ResponseTypes: []string{"token", "id_token"},
-			Scopes:        []string{"openid", "offline_access"},
+			ResponseTypes: &[]string{"token", "id_token"},
+			Scopes:        &[]string{"openid", "offline_access"},
 		},
 	)
 	require.NoError(t, err, "Login failed")
@@ -780,8 +782,8 @@ func TestGocloak_GetRequestingPartyToken(t *testing.T) {
 			Username:      &cfg.GoCloak.UserName,
 			Password:      &cfg.GoCloak.Password,
 			GrantType:     gocloak.StringP("password"),
-			ResponseTypes: []string{"token", "id_token"},
-			Scopes:        []string{"openid"},
+			ResponseTypes: &[]string{"token", "id_token"},
+			Scopes:        &[]string{"openid"},
 		},
 	)
 	require.NoError(t, err, "Login failed")
@@ -1355,8 +1357,9 @@ func TestGocloak_GetGroupsFull(t *testing.T) {
 		if gocloak.NilOrEmpty(group.ID) {
 			continue
 		}
+		require.NotNil(t, group.Attributes)
 		if *group.ID == groupID {
-			ok := gocloak.UserAttributeContains(group.Attributes, "foo", "alice")
+			ok := gocloak.UserAttributeContains(*group.Attributes, "foo", "alice")
 			require.True(t, ok, "UserAttributeContains")
 			return
 		}
@@ -1388,7 +1391,8 @@ func TestGocloak_GetGroupsBriefRepresentation(t *testing.T) {
 			continue
 		}
 		if *group.ID == groupID {
-			ok := gocloak.UserAttributeContains(group.Attributes, "foo", "alice")
+			require.NotNil(t, group.Attributes)
+			ok := gocloak.UserAttributeContains(*group.Attributes, "foo", "alice")
 			require.True(t, ok, "UserAttributeContains")
 			return
 		}
@@ -1414,7 +1418,8 @@ func TestGocloak_GetGroupFull(t *testing.T) {
 	)
 	require.NoError(t, err, "GetGroup failed")
 
-	ok := gocloak.UserAttributeContains(createdGroup.Attributes, "foo", "alice")
+	require.NotNil(t, createdGroup.Attributes)
+	ok := gocloak.UserAttributeContains(*createdGroup.Attributes, "foo", "alice")
 	require.True(t, ok, "UserAttributeContains")
 }
 
@@ -1559,7 +1564,7 @@ func TestGocloak_ExecuteActionsEmail_UpdatePassword(t *testing.T) {
 	params := gocloak.ExecuteActionsEmail{
 		ClientID: &(cfg.GoCloak.ClientID),
 		UserID:   &userID,
-		Actions:  []string{"UPDATE_PASSWORD"},
+		Actions:  &[]string{"UPDATE_PASSWORD"},
 	}
 
 	err := client.ExecuteActionsEmail(
@@ -1996,7 +2001,7 @@ func CreateUser(t *testing.T, client gocloak.GoCloak) (func(), string) {
 		LastName:  GetRandomNameP("LastName"),
 		Email:     gocloak.StringP(GetRandomName("email") + "@localhost"),
 		Enabled:   gocloak.BoolP(true),
-		Attributes: map[string][]string{
+		Attributes: &map[string][]string{
 			"foo": {"bar", "alice", "bob", "roflcopter"},
 			"bar": {"baz"},
 		},
@@ -2016,11 +2021,11 @@ func CreateUser(t *testing.T, client gocloak.GoCloak) (func(), string) {
 			context.Background(),
 			token.AccessToken,
 			cfg.GoCloak.Realm,
-			*user.ID)
+			userID)
 		require.NoError(t, err, "DeleteUser")
 	}
 
-	return tearDown, *user.ID
+	return tearDown, userID
 }
 
 func TestGocloak_CreateUser(t *testing.T) {
@@ -2046,9 +2051,10 @@ func TestGocloak_CreateUserCustomAttributes(t *testing.T) {
 		cfg.GoCloak.Realm,
 		userID)
 	require.NoError(t, err, "GetUserByID failed")
-	ok := gocloak.UserAttributeContains(fetchedUser.Attributes, "foo", "alice")
+	require.NotNil(t, fetchedUser.Attributes)
+	ok := gocloak.UserAttributeContains(*fetchedUser.Attributes, "foo", "alice")
 	require.False(t, !ok, "User doesn't have custom attributes")
-	ok = gocloak.UserAttributeContains(fetchedUser.Attributes, "foo2", "alice")
+	ok = gocloak.UserAttributeContains(*fetchedUser.Attributes, "foo2", "alice")
 	require.False(t, ok, "User's custom attributes contains unexpected attribute")
 	t.Log(fetchedUser)
 }
@@ -2229,6 +2235,56 @@ func TestGocloak_UpdateUser(t *testing.T) {
 	require.NoError(t, err, "UpdateUser failed")
 }
 
+func TestGocloak_UpdateUserSetEmptyRequiredActions(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	_, userID := CreateUser(t, client)
+	// tearDown, userID := CreateUser(t, client)
+	// defer tearDown()
+
+	user, err := client.GetUserByID(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		userID)
+	require.NoError(t, err, "GetUserByID failed")
+	user.RequiredActions = &[]string{"VERIFY_EMAIL"}
+	err = client.UpdateUser(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		*user)
+	require.NoError(t, err, "UpdateUser failed")
+
+	user, err = client.GetUserByID(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		userID)
+	require.NoError(t, err, "GetUserByID failed")
+	require.False(t, gocloak.NilOrEmptySlice(user.RequiredActions))
+	require.Contains(t, *user.RequiredActions, "VERIFY_EMAIL")
+
+	user.RequiredActions = &[]string{""}
+	err = client.UpdateUser(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		*user)
+	require.NoError(t, err, "UpdateUser failed")
+
+	user, err = client.GetUserByID(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		userID)
+	require.NoError(t, err, "GetUserByID failed")
+	require.True(t, gocloak.NilOrEmptySlice(user.RequiredActions))
+}
+
 func TestGocloak_UpdateUserSetEmptyEmail(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
@@ -2382,8 +2438,8 @@ func TestGocloak_GetUserOfflineSessionsForClient(t *testing.T) {
 			Username:      &cfg.GoCloak.UserName,
 			Password:      &cfg.GoCloak.Password,
 			GrantType:     gocloak.StringP("password"),
-			ResponseTypes: []string{"token", "id_token"},
-			Scopes:        []string{"openid", "offline_access"},
+			ResponseTypes: &[]string{"token", "id_token"},
+			Scopes:        &[]string{"openid", "offline_access"},
 		},
 	)
 	require.NoError(t, err, "Login failed")
@@ -2427,13 +2483,14 @@ func TestGocloak_GetClientUserSessions(t *testing.T) {
 	require.NotEmpty(t, sessions, "GetClientUserSessions returned an empty list")
 }
 
-func findProtocolMapperByID(client *gocloak.Client, id string) *gocloak.ProtocolMapperRepresentation {
-	for _, protocolMapper := range client.ProtocolMappers {
-		if protocolMapper == nil || gocloak.NilOrEmpty(protocolMapper.ID) {
+func findProtocolMapperByID(t *testing.T, client *gocloak.Client, id string) *gocloak.ProtocolMapperRepresentation {
+	require.NotNil(t, client.ProtocolMappers)
+	for _, protocolMapper := range *client.ProtocolMappers {
+		if gocloak.NilOrEmpty(protocolMapper.ID) {
 			continue
 		}
 		if *protocolMapper.ID == id {
-			return protocolMapper
+			return &protocolMapper
 		}
 	}
 	return nil
@@ -2448,7 +2505,7 @@ func TestGocloak_CreateUpdateDeleteClientProtocolMapper(t *testing.T) {
 	testClient := GetClientByClientID(t, client, cfg.GoCloak.ClientID)
 	require.Nil(
 		t,
-		findProtocolMapperByID(testClient, id),
+		findProtocolMapperByID(t, testClient, id),
 		"default client should not have a protocol mapper with ID: %s", id,
 	)
 
@@ -2463,7 +2520,7 @@ func TestGocloak_CreateUpdateDeleteClientProtocolMapper(t *testing.T) {
 			Name:           gocloak.StringP("test"),
 			Protocol:       gocloak.StringP("openid-connect"),
 			ProtocolMapper: gocloak.StringP("oidc-usermodel-attribute-mapper"),
-			Config: map[string]string{
+			Config: &map[string]string{
 				"access.token.claim":   "true",
 				"aggregate.attrs":      "",
 				"claim.name":           "test",
@@ -2481,7 +2538,7 @@ func TestGocloak_CreateUpdateDeleteClientProtocolMapper(t *testing.T) {
 	testClientAfter := GetClientByClientID(t, client, cfg.GoCloak.ClientID)
 	require.NotNil(
 		t,
-		findProtocolMapperByID(testClientAfter, id),
+		findProtocolMapperByID(t, testClientAfter, id),
 		"protocol mapper has not been created",
 	)
 
@@ -2496,7 +2553,7 @@ func TestGocloak_CreateUpdateDeleteClientProtocolMapper(t *testing.T) {
 			Name:           gocloak.StringP("test"),
 			Protocol:       gocloak.StringP("openid-connect"),
 			ProtocolMapper: gocloak.StringP("oidc-usermodel-attribute-mapper"),
-			Config: map[string]string{
+			Config: &map[string]string{
 				"access.token.claim":   "true",
 				"aggregate.attrs":      "",
 				"claim.name":           "testUpdated",
@@ -2511,9 +2568,12 @@ func TestGocloak_CreateUpdateDeleteClientProtocolMapper(t *testing.T) {
 	require.NoError(t, err, "UpdateClientProtocolMapper failed")
 
 	testClientAfterUpdate := GetClientByClientID(t, client, cfg.GoCloak.ClientID)
+	mapper := findProtocolMapperByID(t, testClientAfterUpdate, id)
+	require.NotNil(t, mapper)
+	mapperConfig := *mapper.Config
 	require.Equal(
 		t,
-		findProtocolMapperByID(testClientAfterUpdate, id).Config["claim.name"],
+		mapperConfig["claim.name"],
 		"testUpdated",
 	)
 
@@ -2529,7 +2589,7 @@ func TestGocloak_CreateUpdateDeleteClientProtocolMapper(t *testing.T) {
 	testClientAgain := GetClientByClientID(t, client, cfg.GoCloak.ClientID)
 	require.Nil(
 		t,
-		findProtocolMapperByID(testClientAgain, id),
+		findProtocolMapperByID(t, testClientAgain, id),
 		"default client should not have a protocol mapper with ID: %s", id,
 	)
 }
@@ -2548,8 +2608,8 @@ func TestGocloak_GetClientOfflineSessions(t *testing.T) {
 			Username:      &cfg.GoCloak.UserName,
 			Password:      &cfg.GoCloak.Password,
 			GrantType:     gocloak.StringP("password"),
-			ResponseTypes: []string{"token", "id_token"},
-			Scopes:        []string{"openid", "offline_access"},
+			ResponseTypes: &[]string{"token", "id_token"},
+			Scopes:        &[]string{"openid", "offline_access"},
 		},
 	)
 	require.NoError(t, err, "Login failed")
@@ -2579,7 +2639,7 @@ func TestGoCloak_ClientSecret(t *testing.T) {
 		Enabled:                 gocloak.BoolP(true),
 		FullScopeAllowed:        gocloak.BoolP(true),
 		Protocol:                gocloak.StringP("openid-connect"),
-		RedirectURIs:            []string{"localhost"},
+		RedirectURIs:            &[]string{"localhost"},
 		ClientAuthenticatorType: gocloak.StringP("client-secret"),
 	}
 
@@ -2985,7 +3045,7 @@ func TestGocloak_CreateGetDeleteUserFederatedIdentity(t *testing.T) {
 		Enabled:                   gocloak.BoolP(true),
 		TrustEmail:                gocloak.BoolP(true),
 		FirstBrokerLoginFlowAlias: gocloak.StringP("first broker login"),
-		Config: map[string]string{
+		Config: &map[string]string{
 			"clientId":     cfg.GoCloak.ClientID,
 			"clientSecret": cfg.GoCloak.ClientSecret,
 			"hostedDomain": "test.io",
@@ -3072,7 +3132,7 @@ func TestGocloak_CreateDeleteClientScopeWithMappers(t *testing.T) {
 				DisplayOnConsentScreen: gocloak.StringP("true"),
 				IncludeInTokenScope:    gocloak.StringP("false"),
 			},
-			ProtocolMappers: []*gocloak.ProtocolMappers{
+			ProtocolMappers: &[]gocloak.ProtocolMappers{
 				{
 					ID:              &rolemapperID,
 					Name:            gocloak.StringP("roles"),
@@ -3115,7 +3175,7 @@ func TestGocloak_CreateDeleteClientScopeWithMappers(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NotNil(t, clientScopeActual, "client scope has not been created")
-	require.Len(t, clientScopeActual.ProtocolMappers, 2, "unexpected number of protocol mappers created")
+	require.Len(t, *clientScopeActual.ProtocolMappers, 2, "unexpected number of protocol mappers created")
 	err = client.DeleteClientScope(
 		context.Background(),
 		token.AccessToken,
@@ -3151,7 +3211,7 @@ func TestGocloak_CreateProvider(t *testing.T) {
 			ProviderID:                gocloak.StringP("google"),
 			TrustEmail:                gocloak.BoolP(true),
 			FirstBrokerLoginFlowAlias: gocloak.StringP("first broker login"),
-			Config: map[string]string{
+			Config: &map[string]string{
 				"clientId":     cfg.GoCloak.ClientID,
 				"clientSecret": cfg.GoCloak.ClientSecret,
 				"hostedDomain": "test.io",
@@ -3175,7 +3235,7 @@ func TestGocloak_CreateProvider(t *testing.T) {
 			ProviderID:                gocloak.StringP("github"),
 			TrustEmail:                gocloak.BoolP(true),
 			FirstBrokerLoginFlowAlias: gocloak.StringP("first broker login"),
-			Config: map[string]string{
+			Config: &map[string]string{
 				"clientId":     cfg.GoCloak.ClientID,
 				"clientSecret": cfg.GoCloak.ClientSecret,
 			},
@@ -3198,7 +3258,7 @@ func TestGocloak_CreateProvider(t *testing.T) {
 			ProviderID:                gocloak.StringP("microsoft"),
 			TrustEmail:                gocloak.BoolP(true),
 			FirstBrokerLoginFlowAlias: gocloak.StringP("first broker login"),
-			Config: map[string]string{
+			Config: &map[string]string{
 				"clientId":     cfg.GoCloak.ClientID,
 				"clientSecret": cfg.GoCloak.ClientSecret,
 			},
@@ -3221,7 +3281,7 @@ func TestGocloak_CreateProvider(t *testing.T) {
 			ProviderID:                gocloak.StringP("google"),
 			TrustEmail:                gocloak.BoolP(true),
 			FirstBrokerLoginFlowAlias: gocloak.StringP("first broker login"),
-			Config: map[string]string{
+			Config: &map[string]string{
 				"clientId":     cfg.GoCloak.ClientID,
 				"clientSecret": cfg.GoCloak.ClientSecret,
 				"hostedDomain": "updated-test.io",
@@ -3552,7 +3612,7 @@ func TestGocloak_RolePolicy(t *testing.T) {
 		Type:        gocloak.StringP("role"),
 		Logic:       gocloak.NEGATIVE,
 		RolePolicyRepresentation: gocloak.RolePolicyRepresentation{
-			Roles: []*gocloak.RoleDefinition{
+			Roles: &[]gocloak.RoleDefinition{
 				{
 					ID: roles[0].ID,
 				},
@@ -3591,7 +3651,7 @@ func TestGocloak_ClientPolicy(t *testing.T) {
 		Description: gocloak.StringP("Client Policy"),
 		Type:        gocloak.StringP("client"),
 		ClientPolicyRepresentation: gocloak.ClientPolicyRepresentation{
-			Clients: []string{
+			Clients: &[]string{
 				gocloakClientID,
 			},
 		},
@@ -3641,7 +3701,7 @@ func TestGocloak_UserPolicy(t *testing.T) {
 		Description: gocloak.StringP("User Policy"),
 		Type:        gocloak.StringP("user"),
 		UserPolicyRepresentation: gocloak.UserPolicyRepresentation{
-			Users: []string{
+			Users: &[]string{
 				userID,
 			},
 		},
@@ -3659,7 +3719,7 @@ func TestGocloak_AggregatedPolicy(t *testing.T) {
 		Description: gocloak.StringP("Client Policy"),
 		Type:        gocloak.StringP("client"),
 		ClientPolicyRepresentation: gocloak.ClientPolicyRepresentation{
-			Clients: []string{
+			Clients: &[]string{
 				gocloakClientID,
 			},
 		},
@@ -3684,7 +3744,7 @@ func TestGocloak_AggregatedPolicy(t *testing.T) {
 		Description: gocloak.StringP("Aggregated Policy"),
 		Type:        gocloak.StringP("aggregate"),
 		AggregatedPolicyRepresentation: gocloak.AggregatedPolicyRepresentation{
-			Policies: []string{
+			Policies: &[]string{
 				clientPolicyID,
 				jsPolicyID,
 			},
@@ -3707,7 +3767,7 @@ func TestGocloak_GroupPolicy(t *testing.T) {
 		Description: gocloak.StringP("Group Policy"),
 		Type:        gocloak.StringP("group"),
 		GroupPolicyRepresentation: gocloak.GroupPolicyRepresentation{
-			Groups: []*gocloak.GroupDefinition{
+			Groups: &[]gocloak.GroupDefinition{
 				{
 					ID: gocloak.StringP(groupID),
 				},
@@ -3746,10 +3806,10 @@ func TestGocloak_CreateListGetUpdateDeletePermission(t *testing.T) {
 		Name:        GetRandomNameP("PermissionName"),
 		Description: gocloak.StringP("Permission Description"),
 		Type:        gocloak.StringP("resource"),
-		Policies: []string{
+		Policies: &[]string{
 			policyID,
 		},
-		Resources: []string{
+		Resources: &[]string{
 			resourceID,
 		},
 	})

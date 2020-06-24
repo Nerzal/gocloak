@@ -87,3 +87,16 @@ func DecisionStrategyP(value DecisionStrategy) *DecisionStrategy {
 func LogicP(value Logic) *Logic {
 	return &value
 }
+
+// PStringSlice converts a pointer to []string or returns ampty slice if nill value
+func PStringSlice(value *[]string) []string {
+	if value == nil {
+		return []string{}
+	}
+	return *value
+}
+
+// NilOrEmptySlice returns true if list is empty or has a nil value
+func NilOrEmptySlice(value *[]string) bool {
+	return value == nil || len(*value) == 0
+}
