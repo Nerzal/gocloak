@@ -685,18 +685,21 @@ type MultiValuedHashMap struct {
 
 // TokenOptions represents the options to obtain a token
 type TokenOptions struct {
-	ClientID      *string   `json:"client_id"`
-	ClientSecret  *string   `json:"-"`
-	GrantType     *string   `json:"grant_type"`
-	RefreshToken  *string   `json:"refresh_token,omitempty"`
-	Scopes        *[]string `json:"-"`
-	Scope         *string   `json:"scope,omitempty"`
-	ResponseTypes *[]string `json:"-"`
-	ResponseType  *string   `json:"response_type,omitempty"`
-	Permission    *string   `json:"permission,omitempty"`
-	Username      *string   `json:"username,omitempty"`
-	Password      *string   `json:"password,omitempty"`
-	Totp          *string   `json:"totp,omitempty"`
+	ClientID            *string   `json:"client_id"`
+	ClientSecret        *string   `json:"-"`
+	GrantType           *string   `json:"grant_type"`
+	RefreshToken        *string   `json:"refresh_token,omitempty"`
+	Scopes              *[]string `json:"-"`
+	Scope               *string   `json:"scope,omitempty"`
+	ResponseTypes       *[]string `json:"-"`
+	ResponseType        *string   `json:"response_type,omitempty"`
+	Permission          *string   `json:"permission,omitempty"`
+	Username            *string   `json:"username,omitempty"`
+	Password            *string   `json:"password,omitempty"`
+	Totp                *string   `json:"totp,omitempty"`
+	Code                *string   `json:"code,omitempty"`
+	ClientAssertionType *string   `json:"client_assertion_type,omitempty"`
+	ClientAssertion     *string   `json:"client_assertion,omitempty"`
 }
 
 // FormData returns a map of options to be used in SetFormData function

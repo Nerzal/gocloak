@@ -12,6 +12,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-resty/resty/v2"
 	"github.com/pkg/errors"
+	"github.com/segmentio/ksuid"
 
 	"github.com/Nerzal/gocloak/v6/pkg/jwx"
 )
@@ -391,6 +392,35 @@ func (client *gocloak) LoginClient(ctx context.Context, clientID, clientSecret, 
 		ClientID:     &clientID,
 		ClientSecret: &clientSecret,
 		GrantType:    StringP("client_credentials"),
+	})
+}
+
+// LoginClientSignedJWT performs a login with client credentials and signed jwt claims
+func (client *gocloak) LoginClientSignedJWT(
+	ctx context.Context,
+	clientID,
+	realm string,
+	key interface{},
+	signedMethod jwt.SigningMethod,
+	expiresAt int64,
+) (*JWT, error) {
+	claims := jwt.StandardClaims{
+		ExpiresAt: expiresAt,
+		Issuer:    clientID,
+		Subject:   clientID,
+		Id:        ksuid.New().String(),
+		Audience:  client.getRealmURL(realm),
+	}
+	assertion, err := jwx.SignClaims(claims, key, signedMethod)
+	if err != nil {
+		return nil, err
+	}
+
+	return client.GetToken(ctx, realm, TokenOptions{
+		ClientID:            &clientID,
+		GrantType:           StringP("client_credentials"),
+		ClientAssertionType: StringP("urn:ietf:params:oauth:client-assertion-type:jwt-bearer"),
+		ClientAssertion:     &assertion,
 	})
 }
 
