@@ -106,10 +106,10 @@ func getID(resp *resty.Response) string {
 	return splittedPath[len(splittedPath)-1]
 }
 
-func findUsedKey(usedKeyID string, keys []*CertResponseKey) *CertResponseKey {
+func findUsedKey(usedKeyID string, keys []CertResponseKey) *CertResponseKey {
 	for _, key := range keys {
 		if *(key.Kid) == usedKeyID {
-			return key
+			return &key
 		}
 	}
 
@@ -272,8 +272,10 @@ func (client *gocloak) DecodeAccessToken(ctx context.Context, accessToken, realm
 	if err != nil {
 		return nil, nil, errors.Wrap(err, errMessage)
 	}
-
-	usedKey := findUsedKey(decodedHeader.Kid, certResult.Keys)
+	if certResult.Keys == nil {
+		return nil, nil, errors.Wrap(errors.New("there is no keys to decode the token"), errMessage)
+	}
+	usedKey := findUsedKey(decodedHeader.Kid, *certResult.Keys)
 	if usedKey == nil {
 		return nil, nil, errors.Wrap(errors.New("cannot find a key to decode the token"), errMessage)
 	}
@@ -294,8 +296,10 @@ func (client *gocloak) DecodeAccessTokenCustomClaims(ctx context.Context, access
 	if err != nil {
 		return nil, errors.Wrap(err, errMessage)
 	}
-
-	usedKey := findUsedKey(decodedHeader.Kid, certResult.Keys)
+	if certResult.Keys == nil {
+		return nil, errors.Wrap(errors.New("there is no keys to decode the token"), errMessage)
+	}
+	usedKey := findUsedKey(decodedHeader.Kid, *certResult.Keys)
 	if usedKey == nil {
 		return nil, errors.Wrap(errors.New("cannot find a key to decode the token"), errMessage)
 	}
@@ -334,7 +338,7 @@ func (client *gocloak) GetRequestingPartyToken(ctx context.Context, token, realm
 
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
 		SetFormData(options.FormData()).
-		SetFormDataFromValues(url.Values{"permission": options.Permissions}).
+		SetFormDataFromValues(url.Values{"permission": PStringSlice(options.Permissions)}).
 		SetResult(&res).
 		Post(client.getRealmURL(realm, tokenEndpoint))
 

@@ -28,6 +28,7 @@ Benchmarks: https://nerzal.github.io/gocloak/dev/bench/
 There are several backward incompatible changes
 * all client functions now take `context.Context` as first argument.
 * `UserAttributeContains` was moved from client method to package function.
+* all structures now use pointers for the array types ([]string -> *[]string)
 
 ### v5:
 There is only one change, but it's backward incompatible:
@@ -294,6 +295,10 @@ go test
 Or you can run with docker compose using the run-tests script
 ```bash
 ./run-tests.sh
+```
+or
+```bash
+./run-tests.sh <TestCase>
 ```
 
 
