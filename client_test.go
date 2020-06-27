@@ -516,6 +516,21 @@ func TestGocloak_GetUserInfo(t *testing.T) {
 	require.Error(t, err, "")
 }
 
+func TestGocloak_GetRawUserInfo(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetClientToken(t, client)
+	userInfo, err := client.GetUserInfo(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+	)
+	require.NoError(t, err, "Failed to fetch userinfo")
+	t.Log(userInfo)
+	require.NotEmpty(t, userInfo)
+}
+
 func TestGocloak_RequestPermission(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
