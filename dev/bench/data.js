@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1593089262151,
+  "lastUpdate": 1593285645491,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -1246,6 +1246,54 @@ window.BENCHMARK_DATA = {
             "name": "BenchmarkLoginParallel",
             "value": 59373849,
             "unit": "ns/op\t   56514 B/op\t     214 allocs/op",
+            "extra": "24 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.com",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f29422bed50c086f9a59baacb2cc6b1916fa9cc1",
+          "message": "Merge pull request #183 from Nerzal/fix-173\n\nExtend UserInfo according to the specification",
+          "timestamp": "2020-06-27T14:18:45-05:00",
+          "tree_id": "56998bc0f1a30044191e86102c9388aad0717fa9",
+          "url": "https://github.com/Nerzal/gocloak/commit/f29422bed50c086f9a59baacb2cc6b1916fa9cc1"
+        },
+        "date": 1593285645053,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 84744363,
+            "unit": "ns/op\t   57861 B/op\t     213 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 84482570,
+            "unit": "ns/op\t   49560 B/op\t     214 allocs/op",
+            "extra": "13 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 84285301,
+            "unit": "ns/op\t   52212 B/op\t     212 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 56216535,
+            "unit": "ns/op\t   64153 B/op\t     214 allocs/op",
             "extra": "24 times\n2 procs"
           }
         ]
