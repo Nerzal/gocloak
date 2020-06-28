@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1593285645491,
+  "lastUpdate": 1593362327023,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -1295,6 +1295,54 @@ window.BENCHMARK_DATA = {
             "value": 56216535,
             "unit": "ns/op\t   64153 B/op\t     214 allocs/op",
             "extra": "24 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.com",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "40a37bb5044ea7aea74a1c939e64abe5a1738b7a",
+          "message": "Merge pull request #184 from Nerzal/fix-163\n\nSignedJWT",
+          "timestamp": "2020-06-28T11:22:12-05:00",
+          "tree_id": "6a3f4c087dcd38d77a3fce66ab1af881185c4433",
+          "url": "https://github.com/Nerzal/gocloak/commit/40a37bb5044ea7aea74a1c939e64abe5a1738b7a"
+        },
+        "date": 1593362326569,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 70600260,
+            "unit": "ns/op\t   71521 B/op\t     212 allocs/op",
+            "extra": "16 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 72209856,
+            "unit": "ns/op\t   63353 B/op\t     215 allocs/op",
+            "extra": "14 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 72285470,
+            "unit": "ns/op\t   68566 B/op\t     215 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 47833318,
+            "unit": "ns/op\t   55196 B/op\t     213 allocs/op",
+            "extra": "27 times\n2 procs"
           }
         ]
       }
