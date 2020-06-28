@@ -2,7 +2,9 @@ package gocloak_test
 
 import (
 	"context"
+	"crypto/rsa"
 	"crypto/tls"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -18,11 +20,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Nerzal/gocloak/v6"
-
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/crypto/pkcs12"
+
+	"github.com/Nerzal/gocloak/v6"
 )
 
 type configAdmin struct {
@@ -303,6 +306,34 @@ func CreatePermission(t *testing.T, client gocloak.GoCloak, clientID string, per
 		require.NoError(t, err, "DeletePermission failed")
 	}
 	return tearDown, *createdPermission.ID
+}
+
+func CreateClient(t *testing.T, client gocloak.GoCloak, newClient *gocloak.Client) (func(), string) {
+	if newClient == nil {
+		newClient = &gocloak.Client{
+			ClientID: GetRandomNameP("CliendID"),
+			Name:     GetRandomNameP("Name"),
+			BaseURL:  gocloak.StringP("http://example.com"),
+		}
+	}
+	cfg := GetConfig(t)
+	token := GetAdminToken(t, client)
+	createdID, err := client.CreateClient(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		*newClient,
+	)
+	require.NoError(t, err, "CreateClient failed")
+	tearDown := func() {
+		_ = client.DeleteClient(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			createdID,
+		)
+	}
+	return tearDown, createdID
 }
 
 func SetUpTestUser(t testing.TB, client gocloak.GoCloak) {
@@ -737,6 +768,51 @@ func TestGocloak_Login(t *testing.T) {
 		cfg.GoCloak.Realm,
 		cfg.GoCloak.UserName,
 		cfg.GoCloak.Password)
+	require.NoError(t, err, "Login failed")
+}
+
+func TestGocloak_LoginSignedJWT(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	keystore := filepath.Join("testdata", "keystore.p12")
+	f, err := os.Open(keystore)
+	require.NoError(t, err)
+	defer func() {
+		require.NoError(t, f.Close())
+	}()
+	pfxData, err := ioutil.ReadAll(f)
+	require.NoError(t, err)
+	pKey, cert, err := pkcs12.Decode(pfxData, "secret")
+	require.NoError(t, err)
+	rsaKey, ok := pKey.(*rsa.PrivateKey)
+	require.True(t, ok)
+
+	client := NewClientWithDebug(t)
+	testClient := gocloak.Client{
+		ID:                      GetRandomNameP("client-id-"),
+		ClientID:                GetRandomNameP("client-signed-jwt-client-id-"),
+		ClientAuthenticatorType: gocloak.StringP("client-jwt"),
+		RedirectURIs:            &[]string{"localhost"},
+		StandardFlowEnabled:     gocloak.BoolP(true),
+		ServiceAccountsEnabled:  gocloak.BoolP(true),
+		Enabled:                 gocloak.BoolP(true),
+		FullScopeAllowed:        gocloak.BoolP(true),
+		Protocol:                gocloak.StringP("openid-connect"),
+		PublicClient:            gocloak.BoolP(false),
+		Attributes: &map[string]string{
+			"jwt.credential.certificate": base64.StdEncoding.EncodeToString(cert.Raw),
+		},
+	}
+	tearDown, _ := CreateClient(t, client, &testClient)
+	defer tearDown()
+	_, err = client.LoginClientSignedJWT(
+		context.Background(),
+		*testClient.ClientID,
+		cfg.GoCloak.Realm,
+		rsaKey,
+		jwt.SigningMethodRS256,
+		time.Now().Add(time.Hour).Unix(),
+	)
 	require.NoError(t, err, "Login failed")
 }
 
@@ -1241,20 +1317,15 @@ func TestGocloak_CreateListGetUpdateDeleteClient(t *testing.T) {
 	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 	clientID := GetRandomNameP("ClientID")
+	testClient := gocloak.Client{
+		ClientID: clientID,
+		BaseURL:  gocloak.StringP("http://example.com"),
+	}
 	t.Logf("Client ID: %s", *clientID)
 
 	// Creating a client
-	createdClientID, err := client.CreateClient(
-		context.Background(),
-		token.AccessToken,
-		cfg.GoCloak.Realm,
-		gocloak.Client{
-			ClientID: clientID,
-			Name:     GetRandomNameP("Name"),
-			BaseURL:  gocloak.StringP("http://example.com"),
-		},
-	)
-	require.NoError(t, err, "CreateClient failed")
+	tearDown, createdClientID := CreateClient(t, client, &testClient)
+	defer tearDown()
 
 	// Looking for a created client
 	clients, err := client.GetClients(
@@ -2658,14 +2729,9 @@ func TestGoCloak_ClientSecret(t *testing.T) {
 		ClientAuthenticatorType: gocloak.StringP("client-secret"),
 	}
 
-	clientID, err := client.CreateClient(
-		context.Background(),
-		token.AccessToken,
-		cfg.GoCloak.Realm,
-		testClient,
-	)
-	require.NoError(t, err, "CreateClient failed")
-	require.Equal(t, *(testClient.ID), clientID)
+	tearDown, clientID := CreateClient(t, client, &testClient)
+	defer tearDown()
+	require.Equal(t, *testClient.ID, clientID)
 
 	oldCreds, err := client.GetClientSecret(
 		context.Background(),

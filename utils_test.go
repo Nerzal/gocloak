@@ -3,9 +3,9 @@ package gocloak_test
 import (
 	"testing"
 
-	"github.com/Nerzal/gocloak/v6"
-
 	"github.com/stretchr/testify/assert"
+
+	"github.com/Nerzal/gocloak/v6"
 )
 
 func TestStringP(t *testing.T) {

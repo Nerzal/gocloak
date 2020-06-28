@@ -28,6 +28,8 @@ type GoCloak interface {
 	LogoutPublicClient(ctx context.Context, clientID, realm, accessToken, refreshToken string) error
 	// LoginClient sends a request to the token endpoint using client credentials
 	LoginClient(ctx context.Context, clientID, clientSecret, realm string) (*JWT, error)
+	// LoginClientSignedJWT performs a login with client credentials and signed jwt claims
+	LoginClientSignedJWT(ctx context.Context, clientID, realm string, key interface{}, signedMethod jwt.SigningMethod, expiresAt int64) (*JWT, error)
 	// LoginAdmin login as admin
 	LoginAdmin(ctx context.Context, username, password, realm string) (*JWT, error)
 	// RefreshToken used to refresh the token

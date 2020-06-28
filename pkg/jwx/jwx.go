@@ -14,6 +14,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+// SignClaims signs the given claims using a given key and a method
+func SignClaims(claims jwt.Claims, key interface{}, method jwt.SigningMethod) (string, error) {
+	token := jwt.NewWithClaims(method, claims)
+	return token.SignedString(key)
+}
+
 // DecodeAccessTokenHeader decodes the header of the accessToken
 func DecodeAccessTokenHeader(token string) (*DecodedAccessTokenHeader, error) {
 	const errMessage = "could not decode access token header"
