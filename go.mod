@@ -3,7 +3,6 @@ module github.com/Nerzal/gocloak/v6
 go 1.14
 
 require (
-	github.com/Nerzal/gocloak/v5 v5.5.0 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-resty/resty/v2 v2.3.0
 	github.com/pkg/errors v0.9.1
