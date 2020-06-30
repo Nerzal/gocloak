@@ -22,7 +22,6 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-resty/resty/v2"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/pkcs12"
 
@@ -1696,7 +1695,7 @@ func TestGocloak_LogoutAllSessions(t *testing.T) {
 		cfg.GoCloak.Realm,
 		userID,
 		token.AccessToken)
-	assert.NoError(t, err, "Logout failed")
+	require.NoError(t, err, "Logout failed")
 }
 
 func TestGocloak_GetRealm(t *testing.T) {
