@@ -474,6 +474,16 @@ func (client *gocloak) LogoutPublicClient(ctx context.Context, clientID, realm, 
 	return checkForError(resp, err, errMessage)
 }
 
+// LogoutAllSessions logs out all sessions of a user given an id
+func (client *gocloak) LogoutAllSessions(realm, userID, accessToken string) error {
+	const errMessage = "could not logout"
+
+	resp, err := client.getRequestWithBearerAuth(accessToken).
+		Post(client.getAdminRealmURL(realm, "users", userID, "logout"))
+
+	return checkForError(resp, err, errMessage)
+}
+
 // ExecuteActionsEmail executes an actions email
 func (client *gocloak) ExecuteActionsEmail(ctx context.Context, token, realm string, params ExecuteActionsEmail) error {
 	const errMessage = "could not execute actions email"

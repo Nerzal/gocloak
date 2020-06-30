@@ -1681,6 +1681,22 @@ func TestGocloak_Logout(t *testing.T) {
 	require.NoError(t, err, "Logout failed")
 }
 
+func TestGocloak_LogoutAllSessions(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	tearDown, userID := CreateUser(t, client)
+	defer tearDown()
+
+	err := client.LogoutAllSessions(
+		cfg.GoCloak.Realm,
+		userID,
+		token.AccessToken)
+	assert.NoError(t, err, "Logout failed")
+}
+
 func TestGocloak_GetRealm(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
