@@ -22,6 +22,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-resty/resty/v2"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/pkcs12"
 
@@ -1691,6 +1692,7 @@ func TestGocloak_LogoutAllSessions(t *testing.T) {
 	defer tearDown()
 
 	err := client.LogoutAllSessions(
+		context.Background(),
 		cfg.GoCloak.Realm,
 		userID,
 		token.AccessToken)

@@ -27,7 +27,7 @@ type GoCloak interface {
 	// LogoutPublicClient sends a request to the logout endpoint using refresh token
 	LogoutPublicClient(ctx context.Context, clientID, realm, accessToken, refreshToken string) error
 	// LogoutAllSessions logs out all sessions of a user given an id
-	LogoutAllSessions(realm, userID, accessToken string) error
+	LogoutAllSessions(ctx context.Context, realm, userID, accessToken string) error
 	// LoginClient sends a request to the token endpoint using client credentials
 	LoginClient(ctx context.Context, clientID, clientSecret, realm string) (*JWT, error)
 	// LoginClientSignedJWT performs a login with client credentials and signed jwt claims

@@ -475,10 +475,10 @@ func (client *gocloak) LogoutPublicClient(ctx context.Context, clientID, realm, 
 }
 
 // LogoutAllSessions logs out all sessions of a user given an id
-func (client *gocloak) LogoutAllSessions(realm, userID, accessToken string) error {
+func (client *gocloak) LogoutAllSessions(ctx context.Context, realm, userID, accessToken string) error {
 	const errMessage = "could not logout"
 
-	resp, err := client.getRequestWithBearerAuth(accessToken).
+	resp, err := client.getRequestWithBearerAuth(ctx, accessToken).
 		Post(client.getAdminRealmURL(realm, "users", userID, "logout"))
 
 	return checkForError(resp, err, errMessage)
