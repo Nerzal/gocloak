@@ -1692,9 +1692,10 @@ func TestGocloak_LogoutAllSessions(t *testing.T) {
 
 	err := client.LogoutAllSessions(
 		context.Background(),
+		token.AccessToken,
 		cfg.GoCloak.Realm,
 		userID,
-		token.AccessToken)
+	)
 	require.NoError(t, err, "Logout failed")
 }
 
