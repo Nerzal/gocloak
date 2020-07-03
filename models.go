@@ -602,7 +602,7 @@ type RealmRepresentation struct {
 	ClientScopeMappings                 *map[string]string `json:"clientScopeMappings,omitempty"`
 	ClientScopes                        *[]ClientScope     `json:"clientScopes,omitempty"`
 	Clients                             *[]Client          `json:"clients,omitempty"`
-	Components                          *interface{}       `json:"components,omitempty"`
+	Components                          interface{}        `json:"components,omitempty"`
 	DefaultDefaultClientScopes          *[]string          `json:"defaultDefaultClientScopes,omitempty"`
 	DefaultGroups                       *[]string          `json:"defaultGroups,omitempty"`
 	DefaultLocale                       *string            `json:"defaultLocale,omitempty"`
@@ -659,7 +659,7 @@ type RealmRepresentation struct {
 	ResetCredentialsFlow                *string            `json:"resetCredentialsFlow,omitempty"`
 	ResetPasswordAllowed                *bool              `json:"resetPasswordAllowed"`
 	RevokeRefreshToken                  *bool              `json:"revokeRefreshToken"`
-	Roles                               *interface{}       `json:"roles,omitempty"`
+	Roles                               interface{}        `json:"roles,omitempty"`
 	ScopeMappings                       *[]interface{}     `json:"scopeMappings,omitempty"`
 	SMTPServer                          *map[string]string `json:"smtpServer,omitempty"`
 	SslRequired                         *string            `json:"sslRequired,omitempty"`
