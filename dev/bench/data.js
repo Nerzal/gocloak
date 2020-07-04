@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1593524786514,
+  "lastUpdate": 1593879089212,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -1391,6 +1391,54 @@ window.BENCHMARK_DATA = {
             "value": 52674999,
             "unit": "ns/op\t   56364 B/op\t     214 allocs/op",
             "extra": "21 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.com",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "735c1c5be863c89dc416debc6e09377c88c2dd04",
+          "message": "Merge pull request #188 from Nerzal/fix-187\n\nReplace *interface{} to interface{} in models",
+          "timestamp": "2020-07-04T11:09:06-05:00",
+          "tree_id": "98b28b4c0eb6361828e6a871b9741af95a3b1978",
+          "url": "https://github.com/Nerzal/gocloak/commit/735c1c5be863c89dc416debc6e09377c88c2dd04"
+        },
+        "date": 1593879088728,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 100325339,
+            "unit": "ns/op\t   64520 B/op\t     217 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 99477637,
+            "unit": "ns/op\t   54976 B/op\t     214 allocs/op",
+            "extra": "12 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 101969968,
+            "unit": "ns/op\t   47135 B/op\t     214 allocs/op",
+            "extra": "10 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 67621549,
+            "unit": "ns/op\t   66289 B/op\t     220 allocs/op",
+            "extra": "15 times\n2 procs"
           }
         ]
       }
