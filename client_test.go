@@ -1740,6 +1740,20 @@ func CreateRealm(t *testing.T, client gocloak.GoCloak) (func(), string) {
 		token.AccessToken,
 		gocloak.RealmRepresentation{
 			Realm: &realmName,
+			Roles: &gocloak.RolesRepresentation{
+				Realm: &[]gocloak.Role{
+					{
+						Name: GetRandomNameP("Role"),
+					},
+				},
+				Client: &map[string][]gocloak.Role{
+					"account": {
+						{
+							Name: GetRandomNameP("Role"),
+						},
+					},
+				},
+			},
 		})
 	require.NoError(t, err, "CreateRealm failed")
 	require.Equal(t, realmID, realmName)
