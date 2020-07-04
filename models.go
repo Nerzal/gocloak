@@ -280,7 +280,7 @@ type Role struct {
 	Name               *string                   `json:"name,omitempty"`
 	ScopeParamRequired *bool                     `json:"scopeParamRequired"`
 	Composite          *bool                     `json:"composite"`
-	Composites         *CompositesRepresentation `json:"composites"`
+	Composites         *CompositesRepresentation `json:"composites,omitempty"`
 	ClientRole         *bool                     `json:"clientRole"`
 	ContainerID        *string                   `json:"containerId,omitempty"`
 	Description        *string                   `json:"description,omitempty"`
