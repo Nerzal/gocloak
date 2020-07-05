@@ -268,16 +268,23 @@ func (obj GetGroupsParams) MarshalJSON() ([]byte, error) {
 	return json.Marshal(a)
 }
 
+// CompositesRepresentation represents the composite roles of a role
+type CompositesRepresentation struct {
+	Client *map[string][]string `json:"client,omitempty"`
+	Realm  *[]string            `json:"realm,omitempty"`
+}
+
 // Role is a role
 type Role struct {
-	ID                 *string              `json:"id,omitempty"`
-	Name               *string              `json:"name,omitempty"`
-	ScopeParamRequired *bool                `json:"scopeParamRequired"`
-	Composite          *bool                `json:"composite"`
-	ClientRole         *bool                `json:"clientRole"`
-	ContainerID        *string              `json:"containerId,omitempty"`
-	Description        *string              `json:"description,omitempty"`
-	Attributes         *map[string][]string `json:"attributes,omitempty"`
+	ID                 *string                   `json:"id,omitempty"`
+	Name               *string                   `json:"name,omitempty"`
+	ScopeParamRequired *bool                     `json:"scopeParamRequired"`
+	Composite          *bool                     `json:"composite"`
+	Composites         *CompositesRepresentation `json:"composites,omitempty"`
+	ClientRole         *bool                     `json:"clientRole"`
+	ContainerID        *string                   `json:"containerId,omitempty"`
+	Description        *string                   `json:"description,omitempty"`
+	Attributes         *map[string][]string      `json:"attributes,omitempty"`
 }
 
 // ClientMappingsRepresentation is a client role mappings
