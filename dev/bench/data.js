@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1593946169927,
+  "lastUpdate": 1594053566699,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -1487,6 +1487,54 @@ window.BENCHMARK_DATA = {
             "value": 38590462,
             "unit": "ns/op\t   56707 B/op\t     214 allocs/op",
             "extra": "28 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.com",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c0de0212f8f48f8e1f08fa047d876ee2760100b2",
+          "message": "Merge pull request #190 from Nerzal/omitempty\n\nAdd omitempty flag to all fields",
+          "timestamp": "2020-07-06T11:37:04-05:00",
+          "tree_id": "468f0aba6476d8dbef0c433801fec1f3460502ee",
+          "url": "https://github.com/Nerzal/gocloak/commit/c0de0212f8f48f8e1f08fa047d876ee2760100b2"
+        },
+        "date": 1594053566185,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 72690532,
+            "unit": "ns/op\t   80074 B/op\t     215 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 72921485,
+            "unit": "ns/op\t   57978 B/op\t     214 allocs/op",
+            "extra": "15 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 69963790,
+            "unit": "ns/op\t   55565 B/op\t     215 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 47641510,
+            "unit": "ns/op\t   66402 B/op\t     213 allocs/op",
+            "extra": "30 times\n2 procs"
           }
         ]
       }
