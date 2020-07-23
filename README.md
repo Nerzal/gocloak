@@ -110,6 +110,7 @@ type GoCloak interface {
 	Logout(ctx context.Context, clientID, clientSecret, realm, refreshToken string) error
 	LogoutPublicClient(ctx context.Context, clientID, realm, accessToken, refreshToken string) error
 	LogoutAllSessions(ctx context.Context, accessToken, realm, userID string) error
+	LogoutUserSession(ctx context.Context, accessToken, realm, session string) error
 	LoginClient(ctx context.Context, clientID, clientSecret, realm string) (*JWT, error)
 	LoginClientSignedJWT(ctx context.Context, clientID, realm string, key interface{}, signedMethod jwt.SigningMethod, expiresAt int64) (*JWT, error)
 	LoginAdmin(ctx context.Context, username, password, realm string) (*JWT, error)

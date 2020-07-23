@@ -1699,6 +1699,22 @@ func TestGocloak_LogoutAllSessions(t *testing.T) {
 	require.NoError(t, err, "Logout failed")
 }
 
+func TestGocloak_LogoutUserSession(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	uToken := GetUserToken(t, client)
+	aToken := GetAdminToken(t, client)
+
+	err := client.LogoutUserSession(
+		context.Background(),
+		aToken.AccessToken,
+		cfg.GoCloak.Realm,
+		uToken.SessionState,
+	)
+	require.NoError(t, err, "Logout failed")
+}
+
 func TestGocloak_GetRealm(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
