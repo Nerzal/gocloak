@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1594053566699,
+  "lastUpdate": 1595469810100,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -1535,6 +1535,54 @@ window.BENCHMARK_DATA = {
             "value": 47641510,
             "unit": "ns/op\t   66402 B/op\t     213 allocs/op",
             "extra": "30 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.com",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1896b075de784346ffa6d7b56d737d489ba72efe",
+          "message": "Merge pull request #194 from eduardev/feature/logout-single-session\n\nimplement DELETE /{realm}/sessions/{session}",
+          "timestamp": "2020-07-22T21:00:24-05:00",
+          "tree_id": "245b038d0099e175a5b980a8ef22ea0d774e51d1",
+          "url": "https://github.com/Nerzal/gocloak/commit/1896b075de784346ffa6d7b56d737d489ba72efe"
+        },
+        "date": 1595469809593,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 99162464,
+            "unit": "ns/op\t   58191 B/op\t     216 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 92804483,
+            "unit": "ns/op\t   52508 B/op\t     215 allocs/op",
+            "extra": "13 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 98346210,
+            "unit": "ns/op\t   73558 B/op\t     216 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 54681238,
+            "unit": "ns/op\t   61620 B/op\t     216 allocs/op",
+            "extra": "22 times\n2 procs"
           }
         ]
       }
