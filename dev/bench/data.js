@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1595469810100,
+  "lastUpdate": 1595612254382,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -1583,6 +1583,54 @@ window.BENCHMARK_DATA = {
             "value": 54681238,
             "unit": "ns/op\t   61620 B/op\t     216 allocs/op",
             "extra": "22 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.com",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1561f183aae1210975ba917e4f6afd1f698d8edb",
+          "message": "Merge pull request #195 from VoIdemar/feature/fields-for-x509-certs\n\nAdd fields for X5C/X509 public key certificates",
+          "timestamp": "2020-07-24T12:35:04-05:00",
+          "tree_id": "08509173a3dcb8cac6b6034d8311c41d64e4d397",
+          "url": "https://github.com/Nerzal/gocloak/commit/1561f183aae1210975ba917e4f6afd1f698d8edb"
+        },
+        "date": 1595612253842,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 85192774,
+            "unit": "ns/op\t   64422 B/op\t     217 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 83116112,
+            "unit": "ns/op\t   63920 B/op\t     217 allocs/op",
+            "extra": "13 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 80676597,
+            "unit": "ns/op\t   58066 B/op\t     215 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 51441863,
+            "unit": "ns/op\t   46463 B/op\t     211 allocs/op",
+            "extra": "26 times\n2 procs"
           }
         ]
       }
