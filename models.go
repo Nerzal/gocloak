@@ -69,14 +69,21 @@ func (apiError APIError) Error() string {
 	return apiError.Message
 }
 
-// CertResponseKey is returned by the certs endpoint
+// CertResponseKey is returned by the certs endpoint.
+// JSON Web Key structure is described here:
+// https://self-issued.info/docs/draft-ietf-jose-json-web-key.html#JWKContents
 type CertResponseKey struct {
-	Kid *string `json:"kid,omitempty"`
-	Kty *string `json:"kty,omitempty"`
-	Alg *string `json:"alg,omitempty"`
-	Use *string `json:"use,omitempty"`
-	N   *string `json:"n,omitempty"`
-	E   *string `json:"e,omitempty"`
+	Kid     *string   `json:"kid,omitempty"`
+	Kty     *string   `json:"kty,omitempty"`
+	Alg     *string   `json:"alg,omitempty"`
+	Use     *string   `json:"use,omitempty"`
+	N       *string   `json:"n,omitempty"`
+	E       *string   `json:"e,omitempty"`
+	KeyOps  *[]string `json:"key_ops,omitempty"`
+	X5u     *string   `json:"x5u,omitempty"`
+	X5c     *[]string `json:"x5c,omitempty"`
+	X5t     *string   `json:"x5t,omitempty"`
+	X5tS256 *string   `json:"x5t#S256,omitempty"`
 }
 
 // CertResponse is returned by the certs endpoint
