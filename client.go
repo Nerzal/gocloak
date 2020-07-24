@@ -175,6 +175,27 @@ func SetAuthAdminRealms(url string) func(client *gocloak) {
 	}
 }
 
+// SetTokenEndpoint sets the token endpoint
+func SetTokenEndpoint(url string) func(client *gocloak) {
+	return func(client *gocloak) {
+		client.Config.tokenEndpoint = url
+	}
+}
+
+// SetLogoutEndpoint sets the logout
+func SetLogoutEndpoint(url string) func(client *gocloak) {
+	return func(client *gocloak) {
+		client.Config.logoutEndpoint = url
+	}
+}
+
+// SetOpenIDConnectEndpoint sets the logout
+func SetOpenIDConnectEndpoint(url string) func(client *gocloak) {
+	return func(client *gocloak) {
+		client.Config.openIDConnect = url
+	}
+}
+
 func (client *gocloak) GetServerInfo(ctx context.Context, accessToken string) (*ServerInfoRepesentation, error) {
 	errMessage := "could not get server info"
 	var result ServerInfoRepesentation
