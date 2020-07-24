@@ -196,6 +196,13 @@ func SetOpenIDConnectEndpoint(url string) func(client *gocloak) {
 	}
 }
 
+// SetCertCacheInvalidationTime sets the logout
+func SetCertCacheInvalidationTime(duration time.Duration) func(client *gocloak) {
+	return func(client *gocloak) {
+		client.Config.CertsInvalidateTime = duration
+	}
+}
+
 func (client *gocloak) GetServerInfo(ctx context.Context, accessToken string) (*ServerInfoRepesentation, error) {
 	errMessage := "could not get server info"
 	var result ServerInfoRepesentation
