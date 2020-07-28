@@ -1,6 +1,6 @@
 package jwx
 
-import jwt "github.com/dgrijalva/jwt-go"
+import jwt "github.com/dgrijalva/jwt-go/v4"
 
 // DecodedAccessTokenHeader is the decoded header from the access token
 type DecodedAccessTokenHeader struct {

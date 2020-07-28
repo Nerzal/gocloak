@@ -20,7 +20,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go/v4"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/pkcs12"
@@ -692,6 +692,7 @@ func TestGocloak_DecodeAccessToken(t *testing.T) {
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
+		"",
 	)
 	require.NoError(t, err)
 	t.Log(resultToken)
@@ -708,6 +709,7 @@ func TestGocloak_DecodeAccessTokenCustomClaims(t *testing.T) {
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
+		"",
 		claims,
 	)
 	require.NoError(t, err)
@@ -811,7 +813,9 @@ func TestGocloak_LoginSignedJWT(t *testing.T) {
 		cfg.GoCloak.Realm,
 		rsaKey,
 		jwt.SigningMethodRS256,
-		time.Now().Add(time.Hour).Unix(),
+		&jwt.Time{
+			Time: time.Now().Add(time.Hour),
+		},
 	)
 	require.NoError(t, err, "Login failed")
 }
