@@ -3,7 +3,7 @@ package gocloak
 import (
 	"context"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go/v4"
 	"github.com/go-resty/resty/v2"
 )
 
@@ -34,7 +34,7 @@ type GoCloak interface {
 	// LoginClient sends a request to the token endpoint using client credentials
 	LoginClient(ctx context.Context, clientID, clientSecret, realm string) (*JWT, error)
 	// LoginClientSignedJWT performs a login with client credentials and signed jwt claims
-	LoginClientSignedJWT(ctx context.Context, clientID, realm string, key interface{}, signedMethod jwt.SigningMethod, expiresAt int64) (*JWT, error)
+	LoginClientSignedJWT(ctx context.Context, clientID, realm string, key interface{}, signedMethod jwt.SigningMethod, expiresAt *jwt.Time) (*JWT, error)
 	// LoginAdmin login as admin
 	LoginAdmin(ctx context.Context, username, password, realm string) (*JWT, error)
 	// RefreshToken used to refresh the token

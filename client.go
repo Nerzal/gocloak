@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go/v4"
 	"github.com/go-resty/resty/v2"
 	"github.com/pkg/errors"
 	"github.com/segmentio/ksuid"
@@ -402,14 +402,16 @@ func (client *gocloak) LoginClientSignedJWT(
 	realm string,
 	key interface{},
 	signedMethod jwt.SigningMethod,
-	expiresAt int64,
+	expiresAt *jwt.Time,
 ) (*JWT, error) {
 	claims := jwt.StandardClaims{
 		ExpiresAt: expiresAt,
 		Issuer:    clientID,
 		Subject:   clientID,
-		Id:        ksuid.New().String(),
-		Audience:  client.getRealmURL(realm),
+		ID:        ksuid.New().String(),
+		Audience: jwt.ClaimStrings{
+			client.getRealmURL(realm),
+		},
 	}
 	assertion, err := jwx.SignClaims(claims, key, signedMethod)
 	if err != nil {

@@ -20,7 +20,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go/v4"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/pkcs12"
@@ -811,7 +811,9 @@ func TestGocloak_LoginSignedJWT(t *testing.T) {
 		cfg.GoCloak.Realm,
 		rsaKey,
 		jwt.SigningMethodRS256,
-		time.Now().Add(time.Hour).Unix(),
+		&jwt.Time{
+			Time: time.Now().Add(time.Hour),
+		},
 	)
 	require.NoError(t, err, "Login failed")
 }
