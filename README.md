@@ -27,6 +27,7 @@ Benchmarks: https://nerzal.github.io/gocloak/dev/bench/
 ### v7:
 Breaking Change
  * Added support for array values in aud claim
+ * When decoding an access Token, it is now needed to provide the audience to check
 
 ### v6:
 There are several backward incompatible changes
