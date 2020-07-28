@@ -277,7 +277,7 @@ func (client *gocloak) RetrospectToken(ctx context.Context, accessToken, clientI
 }
 
 // DecodeAccessToken decodes the accessToken
-func (client *gocloak) DecodeAccessToken(ctx context.Context, accessToken, realm string) (*jwt.Token, *jwt.MapClaims, error) {
+func (client *gocloak) DecodeAccessToken(ctx context.Context, accessToken, realm, expectedAudience string) (*jwt.Token, *jwt.MapClaims, error) {
 	const errMessage = "could not decode access token"
 
 	decodedHeader, err := jwx.DecodeAccessTokenHeader(accessToken)
@@ -297,11 +297,11 @@ func (client *gocloak) DecodeAccessToken(ctx context.Context, accessToken, realm
 		return nil, nil, errors.Wrap(errors.New("cannot find a key to decode the token"), errMessage)
 	}
 
-	return jwx.DecodeAccessToken(accessToken, usedKey.E, usedKey.N)
+	return jwx.DecodeAccessToken(accessToken, usedKey.E, usedKey.N, expectedAudience)
 }
 
 // DecodeAccessTokenCustomClaims decodes the accessToken and writes claims into the given claims
-func (client *gocloak) DecodeAccessTokenCustomClaims(ctx context.Context, accessToken, realm string, claims jwt.Claims) (*jwt.Token, error) {
+func (client *gocloak) DecodeAccessTokenCustomClaims(ctx context.Context, accessToken, realm, expectedAudience string, claims jwt.Claims) (*jwt.Token, error) {
 	const errMessage = "could not decode access token with custom claims"
 
 	decodedHeader, err := jwx.DecodeAccessTokenHeader(accessToken)
@@ -321,7 +321,7 @@ func (client *gocloak) DecodeAccessTokenCustomClaims(ctx context.Context, access
 		return nil, errors.Wrap(errors.New("cannot find a key to decode the token"), errMessage)
 	}
 
-	return jwx.DecodeAccessTokenCustomClaims(accessToken, usedKey.E, usedKey.N, claims)
+	return jwx.DecodeAccessTokenCustomClaims(accessToken, usedKey.E, usedKey.N, claims, expectedAudience)
 }
 
 func (client *gocloak) GetToken(ctx context.Context, realm string, options TokenOptions) (*JWT, error) {

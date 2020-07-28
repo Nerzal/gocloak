@@ -75,7 +75,7 @@ func decodePublicKey(e, n *string) (*rsa.PublicKey, error) {
 }
 
 // DecodeAccessToken currently only supports RSA - sorry for that
-func DecodeAccessToken(accessToken string, e, n *string, expectedAudience ...string) (*jwt.Token, *jwt.MapClaims, error) {
+func DecodeAccessToken(accessToken string, e, n *string, expectedAudience string) (*jwt.Token, *jwt.MapClaims, error) {
 	const errMessage = "could not decode accessToken"
 
 	rsaPublicKey, err := decodePublicKey(e, n)
@@ -85,16 +85,14 @@ func DecodeAccessToken(accessToken string, e, n *string, expectedAudience ...str
 
 	claims := &jwt.MapClaims{}
 
-	audienceToCheck := ""
-	if len(expectedAudience) != 0 {
-		audienceToCheck = expectedAudience[0]
+	if expectedAudience != "" {
 		token2, err := jwt.ParseWithClaims(accessToken, claims, func(token *jwt.Token) (interface{}, error) {
 			// Don't forget to validate the alg is what you expect:
 			if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 			}
 			return rsaPublicKey, nil
-		}, jwt.WithAudience(audienceToCheck))
+		}, jwt.WithAudience(expectedAudience))
 
 		if err != nil {
 			return nil, nil, errors.Wrap(err, errMessage)
@@ -119,7 +117,7 @@ func DecodeAccessToken(accessToken string, e, n *string, expectedAudience ...str
 }
 
 // DecodeAccessTokenCustomClaims currently only supports RSA - sorry for that
-func DecodeAccessTokenCustomClaims(accessToken string, e, n *string, customClaims jwt.Claims, expectedAudience ...string) (*jwt.Token, error) {
+func DecodeAccessTokenCustomClaims(accessToken string, e, n *string, customClaims jwt.Claims, expectedAudience string) (*jwt.Token, error) {
 	const errMessage = "could not decode accessToken with custom claims"
 
 	rsaPublicKey, err := decodePublicKey(e, n)
@@ -127,16 +125,14 @@ func DecodeAccessTokenCustomClaims(accessToken string, e, n *string, customClaim
 		return nil, errors.Wrap(err, errMessage)
 	}
 
-	audienceToCheck := ""
-	if len(expectedAudience) != 0 {
-		audienceToCheck = expectedAudience[0]
+	if expectedAudience != "" {
 		token2, err := jwt.ParseWithClaims(accessToken, customClaims, func(token *jwt.Token) (interface{}, error) {
 			// Don't forget to validate the alg is what you expect:
 			if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 			}
 			return rsaPublicKey, nil
-		}, jwt.WithAudience(audienceToCheck))
+		}, jwt.WithAudience(expectedAudience))
 
 		if err != nil {
 			return nil, errors.Wrap(err, errMessage)

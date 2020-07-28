@@ -692,6 +692,7 @@ func TestGocloak_DecodeAccessToken(t *testing.T) {
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
+		"",
 	)
 	require.NoError(t, err)
 	t.Log(resultToken)
@@ -708,6 +709,7 @@ func TestGocloak_DecodeAccessTokenCustomClaims(t *testing.T) {
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
+		"",
 		claims,
 	)
 	require.NoError(t, err)
