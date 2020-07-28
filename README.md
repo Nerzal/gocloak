@@ -24,6 +24,10 @@ Benchmarks: https://nerzal.github.io/gocloak/dev/bench/
 
 ## Changelog
 
+### v7:
+Breaking Change
+ * Added support for array values in aud claim
+
 ### v6:
 There are several backward incompatible changes
 * all client functions now take `context.Context` as first argument.
