@@ -85,20 +85,9 @@ func DecodeAccessToken(accessToken string, e, n *string, expectedAudience string
 
 	claims := &jwt.MapClaims{}
 
+	audValidation := jwt.WithoutAudienceValidation()
 	if expectedAudience != "" {
-		token2, err := jwt.ParseWithClaims(accessToken, claims, func(token *jwt.Token) (interface{}, error) {
-			// Don't forget to validate the alg is what you expect:
-			if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-			}
-			return rsaPublicKey, nil
-		}, jwt.WithAudience(expectedAudience))
-
-		if err != nil {
-			return nil, nil, errors.Wrap(err, errMessage)
-		}
-
-		return token2, claims, nil
+		audValidation = jwt.WithAudience(expectedAudience)
 	}
 
 	token2, err := jwt.ParseWithClaims(accessToken, claims, func(token *jwt.Token) (interface{}, error) {
@@ -107,7 +96,7 @@ func DecodeAccessToken(accessToken string, e, n *string, expectedAudience string
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return rsaPublicKey, nil
-	}, jwt.WithoutAudienceValidation())
+	}, audValidation)
 
 	if err != nil {
 		return nil, nil, errors.Wrap(err, errMessage)
@@ -125,20 +114,9 @@ func DecodeAccessTokenCustomClaims(accessToken string, e, n *string, customClaim
 		return nil, errors.Wrap(err, errMessage)
 	}
 
+	audValidation := jwt.WithoutAudienceValidation()
 	if expectedAudience != "" {
-		token2, err := jwt.ParseWithClaims(accessToken, customClaims, func(token *jwt.Token) (interface{}, error) {
-			// Don't forget to validate the alg is what you expect:
-			if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-			}
-			return rsaPublicKey, nil
-		}, jwt.WithAudience(expectedAudience))
-
-		if err != nil {
-			return nil, errors.Wrap(err, errMessage)
-		}
-
-		return token2, nil
+		audValidation = jwt.WithAudience(expectedAudience)
 	}
 
 	token2, err := jwt.ParseWithClaims(accessToken, customClaims, func(token *jwt.Token) (interface{}, error) {
@@ -147,7 +125,7 @@ func DecodeAccessTokenCustomClaims(accessToken string, e, n *string, customClaim
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return rsaPublicKey, nil
-	}, jwt.WithoutAudienceValidation())
+	}, audValidation)
 
 	if err != nil {
 		return nil, errors.Wrap(err, errMessage)
