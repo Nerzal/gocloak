@@ -3024,6 +3024,84 @@ func TestGoCloak_GetAvailableClientRolesByUserID(t *testing.T) {
 	require.Fail(t, "The role2 has not been found in the assigned composite roles. Role: %+v", *role2)
 }
 
+func TestGoCloak_GetAvailableClientRolesByGroupID(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	tearDownGroup, groupID := CreateGroup(t, client)
+	defer tearDownGroup()
+	tearDownRole, roleName1 := CreateClientRole(t, client)
+	defer tearDownRole()
+	tearDownRole2, roleName2 := CreateClientRole(t, client)
+	defer tearDownRole2()
+
+	role1, err := client.GetClientRole(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		roleName1)
+	require.NoError(t, err)
+
+	role2, err := client.GetClientRole(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		roleName2)
+	require.NoError(t, err)
+
+	err = client.AddClientRoleToGroup(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		groupID,
+		[]gocloak.Role{*role1},
+	)
+	require.NoError(t, err)
+
+	roles, err := client.GetClientRolesByGroupID(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		groupID)
+	require.NoError(t, err)
+	t.Logf("Group roles: %+v", roles)
+	var found bool
+	for _, r := range roles {
+		if r.Name == nil {
+			continue
+		}
+		if *r.Name == *role1.Name {
+			found = true
+			break
+		}
+	}
+	require.True(t, found, "The role1 has not been found in the assigned roles. Role: %+v", *role1)
+
+	roles, err = client.GetAvailableClientRolesByGroupID(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		groupID)
+	require.NoError(t, err)
+	t.Logf("Group roles: %+v", roles)
+	for _, r := range roles {
+		if r.Name == nil {
+			continue
+		}
+		if *r.Name == *role2.Name {
+			return
+		}
+	}
+	require.Fail(t, "The role2 has not been found in the assigned composite roles. Role: %+v", *role2)
+}
+
 func TestGocloak_GetClientRolesByGroupID(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)

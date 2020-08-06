@@ -1241,6 +1241,22 @@ func (client *gocloak) GetAvailableClientRolesByUserID(ctx context.Context, toke
 	return result, nil
 }
 
+// GetAvailableClientRolesByGroupID returns all available roles to the given group
+func (client *gocloak) GetAvailableClientRolesByGroupID(ctx context.Context, token, realm, clientID, groupID string) ([]*Role, error) {
+	const errMessage = "could not get available client roles by user id"
+
+	var result []*Role
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "groups", groupID, "role-mappings", "clients", clientID, "available"))
+
+	if err = checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // GetCompositeClientRolesByGroupID returns all client roles and composite roles assigned to the given group
 func (client *gocloak) GetCompositeClientRolesByGroupID(ctx context.Context, token, realm, clientID, groupID string) ([]*Role, error) {
 	const errMessage = "could not get composite client roles by group id"

@@ -208,6 +208,8 @@ type GoCloak interface {
 	GetCompositeClientRolesByGroupID(ctx context.Context, token, realm, clientID, groupID string) ([]*Role, error)
 	// GetAvailableClientRolesByUserID returns all available roles to the given user
 	GetAvailableClientRolesByUserID(ctx context.Context, token, realm, clientID, userID string) ([]*Role, error)
+	// GetAvailableClientRolesByGroupID returns all available roles to the given group
+	GetAvailableClientRolesByGroupID(ctx context.Context, token, realm, clientID, groupID string) ([]*Role, error)
 
 	// GetClientRole get a role for the given client in a realm by role name
 	GetClientRole(ctx context.Context, token, realm, clientID, roleName string) (*Role, error)
