@@ -1645,12 +1645,18 @@ func (client *gocloak) GetUserCount(ctx context.Context, token string, realm str
 }
 
 // GetUserGroups get all groups for user
-func (client *gocloak) GetUserGroups(ctx context.Context, token, realm, userID string) ([]*UserGroup, error) {
+func (client *gocloak) GetUserGroups(ctx context.Context, token, realm, userID string, params GetGroupsParams) ([]*UserGroup, error) {
 	const errMessage = "could not get user groups"
 
 	var result []*UserGroup
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, errors.Wrap(err, errMessage)
+	}
+
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
 		SetResult(&result).
+		SetQueryParams(queryParams).
 		Get(client.getAdminRealmURL(realm, "users", userID, "groups"))
 
 	if err := checkForError(resp, err, errMessage); err != nil {

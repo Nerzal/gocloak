@@ -2336,7 +2336,8 @@ func TestGocloak_GetUserGroups(t *testing.T) {
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		userID)
+		userID,
+		gocloak.GetGroupsParams{})
 	require.NoError(t, err)
 	require.NotEmpty(t, groups)
 	require.Equal(t, groupID, *groups[0].ID)

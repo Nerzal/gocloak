@@ -247,7 +247,7 @@ type GoCloak interface {
 	// GetUsers gets all users of the given realm
 	GetUsers(ctx context.Context, accessToken, realm string, params GetUsersParams) ([]*User, error)
 	// GetUserGroups gets the groups of the given user
-	GetUserGroups(ctx context.Context, accessToken, realm, userID string) ([]*UserGroup, error)
+	GetUserGroups(ctx context.Context, accessToken, realm, userID string, params GetGroupsParams) ([]*UserGroup, error)
 	// GetUsersByRoleName returns all users have a given role
 	GetUsersByRoleName(ctx context.Context, token, realm, roleName string) ([]*User, error)
 	// GetUsersByClientRoleName returns all users have a given client role
