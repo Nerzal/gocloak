@@ -73,7 +73,7 @@ func checkForError(resp *resty.Response, err error, errMessage string) error {
 	if err != nil {
 		return &APIError{
 			Code:    0,
-			Message: errMessage,
+			Message: errors.Wrap(err, errMessage).Error(),
 		}
 	}
 
