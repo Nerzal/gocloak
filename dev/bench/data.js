@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1596995293809,
+  "lastUpdate": 1596995321664,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -1869,6 +1869,54 @@ window.BENCHMARK_DATA = {
             "value": 50567425,
             "unit": "ns/op\t   56317 B/op\t     213 allocs/op",
             "extra": "21 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.com",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a0d0d0692d339e2128cd6ad4decda698987a24b1",
+          "message": "Merge pull request #199 from agorman/add-group-params-get-user-groups\n\nAdding GetGroupParams to GetUserGroups method",
+          "timestamp": "2020-08-09T12:46:20-05:00",
+          "tree_id": "3819abfcca029a830bbb501eb376a0d4db6447d7",
+          "url": "https://github.com/Nerzal/gocloak/commit/a0d0d0692d339e2128cd6ad4decda698987a24b1"
+        },
+        "date": 1596995321224,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 81113124,
+            "unit": "ns/op\t   55182 B/op\t     215 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 81198570,
+            "unit": "ns/op\t   72879 B/op\t     217 allocs/op",
+            "extra": "15 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 80454970,
+            "unit": "ns/op\t   65848 B/op\t     214 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 52830801,
+            "unit": "ns/op\t   48787 B/op\t     213 allocs/op",
+            "extra": "24 times\n2 procs"
           }
         ]
       }
