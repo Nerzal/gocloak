@@ -4231,3 +4231,10 @@ func TestGoCloak_DisableAllCredentialsByType(t *testing.T) {
 	)
 	require.NoError(t, err)
 }
+
+func TestGocloak_TestSetFunctionalOptions(t *testing.T) {
+	t.Parallel()
+
+	cfg := GetConfig(t)
+	gocloak.NewClient(cfg.HostName, gocloak.SetAuthRealms("foo"), gocloak.SetAuthAdminRealms("bar"))
+}

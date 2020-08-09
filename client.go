@@ -23,6 +23,11 @@ type gocloak struct {
 	restyClient *resty.Client
 	Config      struct {
 		CertsInvalidateTime time.Duration
+		authAdminRealms     string
+		authRealms          string
+		tokenEndpoint       string
+		logoutEndpoint      string
+		openIDConnect       string
 	}
 	certsLock sync.Mutex
 }
@@ -30,14 +35,6 @@ type gocloak struct {
 const (
 	adminClientID string = "admin-cli"
 	urlSeparator  string = "/"
-)
-
-var (
-	authAdminRealms = makeURL("auth", "admin", "realms")
-	authRealms      = makeURL("auth", "realms")
-	tokenEndpoint   = makeURL("protocol", "openid-connect", "token")
-	logoutEndpoint  = makeURL("protocol", "openid-connect", "logout")
-	openIDConnect   = makeURL("protocol", "openid-connect")
 )
 
 func makeURL(path ...string) string {
@@ -122,13 +119,24 @@ func findUsedKey(usedKeyID string, keys []CertResponseKey) *CertResponseKey {
 // ===============
 
 // NewClient creates a new Client
-func NewClient(basePath string) GoCloak {
+func NewClient(basePath string, options ...func(*gocloak)) GoCloak {
+
 	c := gocloak{
 		basePath:    strings.TrimRight(basePath, urlSeparator),
 		certsCache:  make(map[string]*CertResponse),
 		restyClient: resty.New(),
 	}
+
 	c.Config.CertsInvalidateTime = 10 * time.Minute
+	c.Config.authAdminRealms = makeURL("auth", "admin", "realms")
+	c.Config.authRealms = makeURL("auth", "realms")
+	c.Config.tokenEndpoint = makeURL("protocol", "openid-connect", "token")
+	c.Config.logoutEndpoint = makeURL("protocol", "openid-connect", "logout")
+	c.Config.openIDConnect = makeURL("protocol", "openid-connect")
+
+	for _, option := range options {
+		option(&c)
+	}
 
 	return &c
 }
@@ -142,13 +150,57 @@ func (client *gocloak) SetRestyClient(restyClient *resty.Client) {
 }
 
 func (client *gocloak) getRealmURL(realm string, path ...string) string {
-	path = append([]string{client.basePath, authRealms, realm}, path...)
+	path = append([]string{client.basePath, client.Config.authRealms, realm}, path...)
 	return makeURL(path...)
 }
 
 func (client *gocloak) getAdminRealmURL(realm string, path ...string) string {
-	path = append([]string{client.basePath, authAdminRealms, realm}, path...)
+	path = append([]string{client.basePath, client.Config.authAdminRealms, realm}, path...)
 	return makeURL(path...)
+}
+
+// ==== Functional Options ===
+
+// SetAuthRealms sets the auth realm
+func SetAuthRealms(url string) func(client *gocloak) {
+	return func(client *gocloak) {
+		client.Config.authRealms = url
+	}
+}
+
+// SetAuthAdminRealms sets the auth admin realm
+func SetAuthAdminRealms(url string) func(client *gocloak) {
+	return func(client *gocloak) {
+		client.Config.authAdminRealms = url
+	}
+}
+
+// SetTokenEndpoint sets the token endpoint
+func SetTokenEndpoint(url string) func(client *gocloak) {
+	return func(client *gocloak) {
+		client.Config.tokenEndpoint = url
+	}
+}
+
+// SetLogoutEndpoint sets the logout
+func SetLogoutEndpoint(url string) func(client *gocloak) {
+	return func(client *gocloak) {
+		client.Config.logoutEndpoint = url
+	}
+}
+
+// SetOpenIDConnectEndpoint sets the logout
+func SetOpenIDConnectEndpoint(url string) func(client *gocloak) {
+	return func(client *gocloak) {
+		client.Config.openIDConnect = url
+	}
+}
+
+// SetCertCacheInvalidationTime sets the logout
+func SetCertCacheInvalidationTime(duration time.Duration) func(client *gocloak) {
+	return func(client *gocloak) {
+		client.Config.CertsInvalidateTime = duration
+	}
 }
 
 func (client *gocloak) GetServerInfo(ctx context.Context, accessToken string) (*ServerInfoRepesentation, error) {
@@ -173,7 +225,7 @@ func (client *gocloak) GetUserInfo(ctx context.Context, accessToken, realm strin
 	var result UserInfo
 	resp, err := client.getRequestWithBearerAuth(ctx, accessToken).
 		SetResult(&result).
-		Get(client.getRealmURL(realm, openIDConnect, "userinfo"))
+		Get(client.getRealmURL(realm, client.Config.openIDConnect, "userinfo"))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
 		return nil, err
@@ -189,7 +241,7 @@ func (client *gocloak) GetRawUserInfo(ctx context.Context, accessToken, realm st
 	var result map[string]interface{}
 	resp, err := client.getRequestWithBearerAuth(ctx, accessToken).
 		SetResult(&result).
-		Get(client.getRealmURL(realm, openIDConnect, "userinfo"))
+		Get(client.getRealmURL(realm, client.Config.openIDConnect, "userinfo"))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
 		return nil, err
@@ -204,7 +256,7 @@ func (client *gocloak) getNewCerts(ctx context.Context, realm string) (*CertResp
 	var result CertResponse
 	resp, err := client.getRequest(ctx).
 		SetResult(&result).
-		Get(client.getRealmURL(realm, openIDConnect, "certs"))
+		Get(client.getRealmURL(realm, client.Config.openIDConnect, "certs"))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
 		return nil, err
@@ -267,7 +319,7 @@ func (client *gocloak) RetrospectToken(ctx context.Context, accessToken, clientI
 			"token":           accessToken,
 		}).
 		SetResult(&result).
-		Post(client.getRealmURL(realm, tokenEndpoint, "introspect"))
+		Post(client.getRealmURL(realm, client.Config.tokenEndpoint, "introspect"))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
 		return nil, err
@@ -338,7 +390,7 @@ func (client *gocloak) GetToken(ctx context.Context, realm string, options Token
 
 	resp, err := req.SetFormData(options.FormData()).
 		SetResult(&token).
-		Post(client.getRealmURL(realm, tokenEndpoint))
+		Post(client.getRealmURL(realm, client.Config.tokenEndpoint))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
 		return nil, err
@@ -357,7 +409,7 @@ func (client *gocloak) GetRequestingPartyToken(ctx context.Context, token, realm
 		SetFormData(options.FormData()).
 		SetFormDataFromValues(url.Values{"permission": PStringSlice(options.Permissions)}).
 		SetResult(&res).
-		Post(client.getRealmURL(realm, tokenEndpoint))
+		Post(client.getRealmURL(realm, client.Config.tokenEndpoint))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
 		return nil, err
@@ -458,7 +510,7 @@ func (client *gocloak) Logout(ctx context.Context, clientID, clientSecret, realm
 			"client_id":     clientID,
 			"refresh_token": refreshToken,
 		}).
-		Post(client.getRealmURL(realm, logoutEndpoint))
+		Post(client.getRealmURL(realm, client.Config.logoutEndpoint))
 
 	return checkForError(resp, err, errMessage)
 }
@@ -471,7 +523,7 @@ func (client *gocloak) LogoutPublicClient(ctx context.Context, clientID, realm, 
 			"client_id":     clientID,
 			"refresh_token": refreshToken,
 		}).
-		Post(client.getRealmURL(realm, logoutEndpoint))
+		Post(client.getRealmURL(realm, client.Config.logoutEndpoint))
 
 	return checkForError(resp, err, errMessage)
 }
