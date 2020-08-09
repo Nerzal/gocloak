@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1595996582245,
+  "lastUpdate": 1596995293809,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -1821,6 +1821,54 @@ window.BENCHMARK_DATA = {
             "value": 52728481,
             "unit": "ns/op\t   56456 B/op\t     213 allocs/op",
             "extra": "24 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.com",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "70f32cc8289581a8157d6c6d0e4c7ba81b453eef",
+          "message": "Merge pull request #197 from agorman/available-client-roles-by-group\n\nAdding GetAvailableClientRolesByGroupID method",
+          "timestamp": "2020-08-09T12:45:49-05:00",
+          "tree_id": "e1139f1c3120f9f57727cefe09e531f77965d6e9",
+          "url": "https://github.com/Nerzal/gocloak/commit/70f32cc8289581a8157d6c6d0e4c7ba81b453eef"
+        },
+        "date": 1596995293368,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 87265736,
+            "unit": "ns/op\t   58255 B/op\t     217 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 86276760,
+            "unit": "ns/op\t   64532 B/op\t     218 allocs/op",
+            "extra": "12 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 84804949,
+            "unit": "ns/op\t   66753 B/op\t     217 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 50567425,
+            "unit": "ns/op\t   56317 B/op\t     213 allocs/op",
+            "extra": "21 times\n2 procs"
           }
         ]
       }
