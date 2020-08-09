@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1596995321664,
+  "lastUpdate": 1596995363097,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -1917,6 +1917,54 @@ window.BENCHMARK_DATA = {
             "value": 52830801,
             "unit": "ns/op\t   48787 B/op\t     213 allocs/op",
             "extra": "24 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.com",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "34d9e0244f6bcd14cc3b4d26b684ac44342f2d8e",
+          "message": "Merge pull request #198 from life1347/return-original-error-message\n\nLet checkForError return original error message",
+          "timestamp": "2020-08-09T12:47:04-05:00",
+          "tree_id": "3d1c1384e7cb0df11d2193a09746c90a894a3510",
+          "url": "https://github.com/Nerzal/gocloak/commit/34d9e0244f6bcd14cc3b4d26b684ac44342f2d8e"
+        },
+        "date": 1596995362668,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 73564681,
+            "unit": "ns/op\t   62878 B/op\t     215 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 72445126,
+            "unit": "ns/op\t   55541 B/op\t     214 allocs/op",
+            "extra": "15 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 72669394,
+            "unit": "ns/op\t   50442 B/op\t     212 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 45430297,
+            "unit": "ns/op\t   64437 B/op\t     213 allocs/op",
+            "extra": "28 times\n2 procs"
           }
         ]
       }
