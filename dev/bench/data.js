@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1596995363097,
+  "lastUpdate": 1596995406086,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -1965,6 +1965,54 @@ window.BENCHMARK_DATA = {
             "value": 45430297,
             "unit": "ns/op\t   64437 B/op\t     213 allocs/op",
             "extra": "28 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.com",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "136f02c1ede1caa8e69d2772bd2ac220b5a0e2a7",
+          "message": "Merge pull request #192 from Nerzal/alternative_urls\n\nAdd functional options",
+          "timestamp": "2020-08-09T12:48:19-05:00",
+          "tree_id": "2c8841013e2b0bbdc7e3903caa351ff10a42a25d",
+          "url": "https://github.com/Nerzal/gocloak/commit/136f02c1ede1caa8e69d2772bd2ac220b5a0e2a7"
+        },
+        "date": 1596995405709,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 62481675,
+            "unit": "ns/op\t   53745 B/op\t     214 allocs/op",
+            "extra": "18 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 62151241,
+            "unit": "ns/op\t   59666 B/op\t     213 allocs/op",
+            "extra": "19 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 61843728,
+            "unit": "ns/op\t   59551 B/op\t     210 allocs/op",
+            "extra": "18 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 35627065,
+            "unit": "ns/op\t   50967 B/op\t     211 allocs/op",
+            "extra": "33 times\n2 procs"
           }
         ]
       }
