@@ -46,18 +46,16 @@ There are a lot of backward incompatible changes:
 
 ## Usage
 
+### Installation
 
+```shell
+go get github.com/Nerzal/gocloak/v7
+```
 
 ### Importing
 
 ```go
-	import "github.com/Nerzal/gocloak/v6"
-```
-
-or v3 (latest release is v3.10.0):
-
-```go
-	import "github.com/Nerzal/gocloak/v3"
+	import "github.com/Nerzal/gocloak/v7"
 ```
 
 ### Create New User
@@ -288,7 +286,7 @@ type GoCloak interface {
 ## developing & testing
 For local testing you need to start a docker container. Simply run following commands prior to starting the tests:
 
-```bash
+```shell
 docker pull quay.io/keycloak/keycloak
 docker run -d \
 	-e KEYCLOAK_USER=admin \
@@ -303,17 +301,17 @@ go test
 ```
 
 Or you can run with docker compose using the run-tests script
-```bash
+```shell
 ./run-tests.sh
 ```
 or
-```bash
+```shell
 ./run-tests.sh <TestCase>
 ```
 
 
 Or you can run the tests on you own keycloak:
-```bash
+```shell
 export GOCLOAK_TEST_CONFIG=/path/to/gocloak/config.json
 ```
 
@@ -321,7 +319,7 @@ All resources created as a result of unit tests will be deleted, except for the 
 
 To remove running docker container after completion of tests:
 
-```bash
+```shell
 docker stop gocloak-test
 docker rm gocloak-test
 ```
