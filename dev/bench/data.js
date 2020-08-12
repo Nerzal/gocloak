@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1596995406086,
+  "lastUpdate": 1597249829101,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -2013,6 +2013,54 @@ window.BENCHMARK_DATA = {
             "value": 35627065,
             "unit": "ns/op\t   50967 B/op\t     211 allocs/op",
             "extra": "33 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.com",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7c13d06c0f3acd8b99b817ca8cc06dc5568bcd90",
+          "message": "Merge pull request #202 from Nerzal/update-readme\n\nAdd installation section",
+          "timestamp": "2020-08-12T09:46:05-05:00",
+          "tree_id": "f2f4b7a80c16dbc8dd2e32e944d296002e3f543c",
+          "url": "https://github.com/Nerzal/gocloak/commit/7c13d06c0f3acd8b99b817ca8cc06dc5568bcd90"
+        },
+        "date": 1597249828677,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 85675803,
+            "unit": "ns/op\t   67510 B/op\t     217 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 81555593,
+            "unit": "ns/op\t   50226 B/op\t     215 allocs/op",
+            "extra": "14 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 81110882,
+            "unit": "ns/op\t   63258 B/op\t     215 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 50449638,
+            "unit": "ns/op\t   62501 B/op\t     214 allocs/op",
+            "extra": "25 times\n2 procs"
           }
         ]
       }
