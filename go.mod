@@ -1,4 +1,4 @@
-module github.com/goolanger/gocloak/v7
+module github.com/goolanger/gocloak/v7.1
 
 go 1.14
 
