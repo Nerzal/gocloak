@@ -179,6 +179,16 @@ type GoCloak interface {
 	AddRealmRoleComposite(ctx context.Context, token, realm, roleName string, roles []Role) error
 	// AddRealmRoleComposite adds roles as composite
 	DeleteRealmRoleComposite(ctx context.Context, token, realm, roleName string, roles []Role) error
+	// GetCompositeRealmRolesByRoleID returns all realm composite roles associated with the given client role
+	GetCompositeRealmRolesByRoleID(ctx context.Context, token, realm, roleID string) ([]*Role, error)
+	// GetCompositeRealmRolesByUserID returns all realm roles and composite roles assigned to the given user
+	GetCompositeRealmRolesByUserID(ctx context.Context, token, realm, userID string) ([]*Role, error)
+	// GetCompositeRealmRolesByGroupID returns all realm roles and composite roles assigned to the given group
+	GetCompositeRealmRolesByGroupID(ctx context.Context, token, realm, groupID string) ([]*Role, error)
+	// GetAvailableRealmRolesByUserID returns all available realm roles to the given user
+	GetAvailableRealmRolesByUserID(ctx context.Context, token, realm, userID string) ([]*Role, error)
+	// GetAvailableRealmRolesByGroupID returns all available realm roles to the given group
+	GetAvailableRealmRolesByGroupID(ctx context.Context, token, realm, groupID string) ([]*Role, error)
 
 	// *** Client Roles ***
 
@@ -206,9 +216,9 @@ type GoCloak interface {
 	GetCompositeClientRolesByUserID(ctx context.Context, token, realm, clientID, userID string) ([]*Role, error)
 	// GetCompositeClientRolesByGroupID returns all client roles and composite roles assigned to the given group
 	GetCompositeClientRolesByGroupID(ctx context.Context, token, realm, clientID, groupID string) ([]*Role, error)
-	// GetAvailableClientRolesByUserID returns all available roles to the given user
+	// GetAvailableClientRolesByUserID returns all available client roles to the given user
 	GetAvailableClientRolesByUserID(ctx context.Context, token, realm, clientID, userID string) ([]*Role, error)
-	// GetAvailableClientRolesByGroupID returns all available roles to the given group
+	// GetAvailableClientRolesByGroupID returns all available client roles to the given group
 	GetAvailableClientRolesByGroupID(ctx context.Context, token, realm, clientID, groupID string) ([]*Role, error)
 
 	// GetClientRole get a role for the given client in a realm by role name

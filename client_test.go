@@ -2059,6 +2059,25 @@ func TestGocloak_GetRealmRolesByUserID(t *testing.T) {
 		userID)
 	require.NoError(t, err)
 	t.Logf("User roles: %+v", roles)
+	var found bool
+	for _, r := range roles {
+		if r.Name == nil {
+			continue
+		}
+		if *r.Name == *role.Name {
+			found = true
+			break
+		}
+	}
+	require.True(t, found, "The role has not been found in the assigned roles. Role: %+v", *role)
+
+	roles, err = client.GetCompositeRealmRolesByUserID(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		userID)
+	require.NoError(t, err)
+	t.Logf("User roles: %+v", roles)
 	for _, r := range roles {
 		if r.Name == nil {
 			continue
@@ -2067,7 +2086,7 @@ func TestGocloak_GetRealmRolesByUserID(t *testing.T) {
 			return
 		}
 	}
-	require.Fail(t, "The role has not been found in the assigned roles. Role: %+v", *role)
+	require.Fail(t, "The role has not been found in the assigned composite roles. Role: %+v", *role)
 }
 
 func TestGocloak_GetRealmRolesByGroupID(t *testing.T) {
@@ -2085,6 +2104,13 @@ func TestGocloak_GetRealmRolesByGroupID(t *testing.T) {
 		cfg.GoCloak.Realm,
 		groupID)
 	require.NoError(t, err, "GetRealmRolesByGroupID failed")
+
+	_, err = client.GetCompositeRealmRolesByGroupID(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		groupID)
+	require.NoError(t, err, "GetCompositeRealmRolesByGroupID failed")
 }
 
 func TestGocloak_AddRealmRoleComposite_DeleteRealmRoleComposite(t *testing.T) {
@@ -3025,6 +3051,79 @@ func TestGoCloak_GetAvailableClientRolesByUserID(t *testing.T) {
 	require.Fail(t, "The role2 has not been found in the assigned composite roles. Role: %+v", *role2)
 }
 
+func TestGoCloak_GetAvailableRealmRolesByUserID(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	tearDownUser, userID := CreateUser(t, client)
+	defer tearDownUser()
+	tearDownRole, roleName1 := CreateRealmRole(t, client)
+	defer tearDownRole()
+	tearDownRole2, roleName2 := CreateRealmRole(t, client)
+	defer tearDownRole2()
+
+	role1, err := client.GetRealmRole(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		roleName1)
+	require.NoError(t, err)
+
+	role2, err := client.GetRealmRole(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		roleName2)
+	require.NoError(t, err)
+
+	err = client.AddRealmRoleToUser(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		userID,
+		[]gocloak.Role{*role1},
+	)
+	require.NoError(t, err)
+
+	roles, err := client.GetRealmRolesByUserID(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		userID)
+	require.NoError(t, err)
+	t.Logf("User roles: %+v", roles)
+	var found bool
+	for _, r := range roles {
+		if r.Name == nil {
+			continue
+		}
+		if *r.Name == *role1.Name {
+			found = true
+			break
+		}
+	}
+	require.True(t, found, "The role1 has not been found in the assigned roles. Role: %+v", *role1)
+
+	roles, err = client.GetAvailableRealmRolesByUserID(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		userID)
+	require.NoError(t, err)
+	t.Logf("User roles: %+v", roles)
+	for _, r := range roles {
+		if r.Name == nil {
+			continue
+		}
+		if *r.Name == *role2.Name {
+			return
+		}
+	}
+	require.Fail(t, "The role2 has not been found in the assigned composite roles. Role: %+v", *role2)
+}
+
 func TestGoCloak_GetAvailableClientRolesByGroupID(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
@@ -3089,6 +3188,80 @@ func TestGoCloak_GetAvailableClientRolesByGroupID(t *testing.T) {
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		gocloakClientID,
+		groupID)
+	require.NoError(t, err)
+	t.Logf("Group roles: %+v", roles)
+	for _, r := range roles {
+		if r.Name == nil {
+			continue
+		}
+		if *r.Name == *role2.Name {
+			return
+		}
+	}
+	require.Fail(t, "The role2 has not been found in the assigned composite roles. Role: %+v", *role2)
+}
+
+func TestGoCloak_GetAvailableRealmRolesByGroupID(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	tearDownGroup, groupID := CreateGroup(t, client)
+	defer tearDownGroup()
+	tearDownRole, roleName1 := CreateRealmRole(t, client)
+	defer tearDownRole()
+	tearDownRole2, roleName2 := CreateRealmRole(t, client)
+	defer tearDownRole2()
+
+	role1, err := client.GetRealmRole(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		roleName1)
+	require.NoError(t, err)
+
+	role2, err := client.GetRealmRole(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		roleName2)
+	require.NoError(t, err)
+
+	err = client.AddRealmRoleToGroup(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		groupID,
+		[]gocloak.Role{*role1},
+	)
+	require.NoError(t, err)
+
+	roles, err := client.GetRealmRolesByGroupID(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		groupID)
+	require.NoError(t, err)
+
+	t.Logf("Group roles: %+v", roles)
+	var found bool
+	for _, r := range roles {
+		if r.Name == nil {
+			continue
+		}
+		if *r.Name == *role1.Name {
+			found = true
+			break
+		}
+	}
+	require.True(t, found, "The role1 has not been found in the assigned roles. Role: %+v", *role1)
+
+	roles, err = client.GetAvailableRealmRolesByGroupID(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
 		groupID)
 	require.NoError(t, err)
 	t.Logf("Group roles: %+v", roles)
@@ -3239,6 +3412,63 @@ func TestGocloak_AddDeleteClientRoleComposite(t *testing.T) {
 		[]gocloak.Role{*roleModel},
 	)
 	require.NoError(t, err, "DeleteClientRoleComposite failed")
+}
+
+func TestGocloak_AddDeleteRealmRoleComposite(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	tearDown, compositeRole := CreateRealmRole(t, client)
+	defer tearDown()
+
+	tearDown, role := CreateRealmRole(t, client)
+	defer tearDown()
+
+	compositeRoleModel, err := client.GetRealmRole(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		compositeRole,
+	)
+	require.NoError(t, err, "Can't get just created role with GetRealmRole")
+
+	roleModel, err := client.GetRealmRole(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		role,
+	)
+	require.NoError(t, err, "Can't get just created role with GetRealmRole")
+
+	err = client.AddRealmRoleComposite(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		*compositeRoleModel.Name,
+		[]gocloak.Role{*roleModel},
+	)
+	require.NoError(t, err, "AddRealmRoleComposite failed")
+
+	compositeRoles, err := client.GetCompositeRealmRolesByRoleID(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		*compositeRoleModel.ID,
+	)
+	require.NoError(t, err, "GetCompositeRealmRolesByRoleID failed")
+	require.GreaterOrEqual(t, len(compositeRoles), 1, "GetCompositeRealmRolesByRoleID didn't return any composite roles")
+	require.Equal(t, *(roleModel.ID), *(compositeRoles[0].ID), "GetCompositeRealmRolesByRoleID returned wrong composite role")
+
+	err = client.DeleteRealmRoleComposite(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		*compositeRoleModel.Name,
+		[]gocloak.Role{*roleModel},
+	)
+	require.NoError(t, err, "DeleteRealmRoleComposite failed")
 }
 
 func TestGocloak_CreateGetDeleteUserFederatedIdentity(t *testing.T) {

@@ -206,7 +206,11 @@ type GoCloak interface {
 	DeleteRealmRoleFromGroup(ctx context.Context, token, realm, groupID string, roles []Role) error
 	AddRealmRoleComposite(ctx context.Context, token, realm, roleName string, roles []Role) error
 	DeleteRealmRoleComposite(ctx context.Context, token, realm, roleName string, roles []Role) error
-
+	GetCompositeRealmRolesByRoleID(ctx context.Context, token, realm, roleID string) ([]*Role, error)
+	GetCompositeRealmRolesByUserID(ctx context.Context, token, realm, userID string) ([]*Role, error)
+	GetCompositeRealmRolesByGroupID(ctx context.Context, token, realm, groupID string) ([]*Role, error)
+	GetAvailableRealmRolesByUserID(ctx context.Context, token, realm, userID string) ([]*Role, error)
+	GetAvailableRealmRolesByGroupID(ctx context.Context, token, realm, groupID string) ([]*Role, error)
 
 	// *** Client Roles ***
 
