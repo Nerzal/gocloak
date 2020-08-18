@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1597785342507,
+  "lastUpdate": 1597786304402,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -2109,6 +2109,54 @@ window.BENCHMARK_DATA = {
             "value": 52148684,
             "unit": "ns/op\t   57887 B/op\t     212 allocs/op",
             "extra": "24 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.com",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "844a1d56d64fd05782b1d1fc6cdc35e071b33541",
+          "message": "Merge pull request #207 from agorman/realm-role-methods\n\nAdding multiple methods for dealing with realm roles",
+          "timestamp": "2020-08-18T16:29:31-05:00",
+          "tree_id": "1104b95c26ff27ca2d2df5fff418f645d6937cb8",
+          "url": "https://github.com/Nerzal/gocloak/commit/844a1d56d64fd05782b1d1fc6cdc35e071b33541"
+        },
+        "date": 1597786303887,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 91327226,
+            "unit": "ns/op\t   58234 B/op\t     216 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 91630311,
+            "unit": "ns/op\t   58375 B/op\t     217 allocs/op",
+            "extra": "12 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 97236915,
+            "unit": "ns/op\t   70515 B/op\t     216 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 56620881,
+            "unit": "ns/op\t   58155 B/op\t     214 allocs/op",
+            "extra": "21 times\n2 procs"
           }
         ]
       }
