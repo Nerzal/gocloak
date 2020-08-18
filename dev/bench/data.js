@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1597249829101,
+  "lastUpdate": 1597785342507,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -2061,6 +2061,54 @@ window.BENCHMARK_DATA = {
             "value": 50449638,
             "unit": "ns/op\t   62501 B/op\t     214 allocs/op",
             "extra": "25 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.com",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e78566240578d8ed250f90c96a6ee45dd6d3211a",
+          "message": "Merge pull request #206 from agorman/fix-get-gealm-roles-by-group-id\n\nAdding missing SetResult to GetRealmRolesByGroupID method",
+          "timestamp": "2020-08-18T16:13:18-05:00",
+          "tree_id": "0b74421e60f78227609bd6b999ca2dac05a3f53d",
+          "url": "https://github.com/Nerzal/gocloak/commit/e78566240578d8ed250f90c96a6ee45dd6d3211a"
+        },
+        "date": 1597785342054,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 84729397,
+            "unit": "ns/op\t   44597 B/op\t     211 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 90752195,
+            "unit": "ns/op\t   76672 B/op\t     217 allocs/op",
+            "extra": "12 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 91440588,
+            "unit": "ns/op\t   60686 B/op\t     215 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 52148684,
+            "unit": "ns/op\t   57887 B/op\t     212 allocs/op",
+            "extra": "24 times\n2 procs"
           }
         ]
       }
