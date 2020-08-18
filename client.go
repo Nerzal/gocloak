@@ -1446,6 +1446,7 @@ func (client *gocloak) GetRealmRolesByGroupID(ctx context.Context, token, realm,
 
 	var result []*Role
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
 		Get(client.getAdminRealmURL(realm, "groups", groupID, "role-mappings", "realm"))
 
 	if err = checkForError(resp, err, errMessage); err != nil {

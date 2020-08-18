@@ -2079,12 +2079,35 @@ func TestGocloak_GetRealmRolesByGroupID(t *testing.T) {
 	tearDown, groupID := CreateGroup(t, client)
 	defer tearDown()
 
-	_, err := client.GetRealmRolesByGroupID(
+	tearDown, roleName := CreateRealmRole(t, client)
+	defer tearDown()
+
+	role, err := client.GetRealmRole(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		roleName,
+	)
+	require.NoError(t, err, "Can't get just created role with GetRealmRole")
+
+	err = client.AddRealmRoleToGroup(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		groupID,
+		[]gocloak.Role{
+			*role,
+		})
+	require.NoError(t, err)
+
+	roles, err := client.GetRealmRolesByGroupID(
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		groupID)
 	require.NoError(t, err, "GetRealmRolesByGroupID failed")
+
+	require.Len(t, roles, 1, "GetRealmRolesByGroupID failed")
 }
 
 func TestGocloak_AddRealmRoleComposite_DeleteRealmRoleComposite(t *testing.T) {
