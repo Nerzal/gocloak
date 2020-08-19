@@ -19,7 +19,8 @@ import (
 
 type gocloak struct {
 	basePath    string
-	certsCache  map[string]*CertResponse
+	certsCache  sync.Map
+	certsLock   sync.Mutex
 	restyClient *resty.Client
 	Config      struct {
 		CertsInvalidateTime time.Duration
@@ -29,7 +30,6 @@ type gocloak struct {
 		logoutEndpoint      string
 		openIDConnect       string
 	}
-	certsLock sync.Mutex
 }
 
 const (
@@ -123,7 +123,6 @@ func NewClient(basePath string, options ...func(*gocloak)) GoCloak {
 
 	c := gocloak{
 		basePath:    strings.TrimRight(basePath, urlSeparator),
-		certsCache:  make(map[string]*CertResponse),
 		restyClient: resty.New(),
 	}
 
@@ -269,11 +268,15 @@ func (client *gocloak) getNewCerts(ctx context.Context, realm string) (*CertResp
 func (client *gocloak) GetCerts(ctx context.Context, realm string) (*CertResponse, error) {
 	const errMessage = "could not get certs"
 
+	if cert, ok := client.certsCache.Load(realm); ok {
+		return cert.(*CertResponse), nil
+	}
+
 	client.certsLock.Lock()
 	defer client.certsLock.Unlock()
 
-	if cert, ok := client.certsCache[realm]; ok {
-		return cert, nil
+	if cert, ok := client.certsCache.Load(realm); ok {
+		return cert.(*CertResponse), nil
 	}
 
 	cert, err := client.getNewCerts(ctx, realm)
@@ -281,12 +284,9 @@ func (client *gocloak) GetCerts(ctx context.Context, realm string) (*CertRespons
 		return nil, errors.Wrap(err, errMessage)
 	}
 
-	client.certsCache[realm] = cert
-
+	client.certsCache.Store(realm, cert)
 	time.AfterFunc(client.Config.CertsInvalidateTime, func() {
-		client.certsLock.Lock()
-		delete(client.certsCache, realm)
-		client.certsLock.Unlock()
+		client.certsCache.Delete(realm)
 	})
 
 	return cert, nil
