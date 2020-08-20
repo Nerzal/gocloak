@@ -110,6 +110,24 @@ type GoCloak interface {
 	GetClientScope(ctx context.Context, token, realm, scopeID string) (*ClientScope, error)
 	// GetClientScopes returns all client scopes
 	GetClientScopes(ctx context.Context, token, realm string) ([]*ClientScope, error)
+	// GetClientScopeMappings returns all scope mappings for the client
+	GetClientScopeMappings(ctx context.Context, token, realm, clientID string) (*MappingsRepresentation, error)
+	// GetClientScopeMappingsRealmRoles returns realm-level roles associated with the client’s scope
+	GetClientScopeMappingsRealmRoles(ctx context.Context, token, realm, clientID string) ([]*Role, error)
+	// GetClientScopeMappingsRealmRolesAvailable returns realm-level roles that are available to attach to this client’s scope
+	GetClientScopeMappingsRealmRolesAvailable(ctx context.Context, token, realm, clientID string) ([]*Role, error)
+	// CreateClientScopeMappingsRealmRoles create realm-level roles to the client’s scope
+	CreateClientScopeMappingsRealmRoles(ctx context.Context, token, realm, clientID string, roles []Role) error
+	// DeleteClientScopeMappingsRealmRoles deletes realm-level roles from the client’s scope
+	DeleteClientScopeMappingsRealmRoles(ctx context.Context, token, realm, clientID string, roles []Role) error
+	// GetClientScopeMappingsClientRoles returns roles associated with a client’s scope
+	GetClientScopeMappingsClientRoles(ctx context.Context, token, realm, clientID, clientsID string) ([]*Role, error)
+	// GetClientScopeMappingsClientRolesAvailable returns available roles associated with a client’s scope
+	GetClientScopeMappingsClientRolesAvailable(ctx context.Context, token, realm, clientID, clientsID string) ([]*Role, error)
+	// CreateClientScopeMappingsClientRoles deletes client-level roles from the client’s scope
+	CreateClientScopeMappingsClientRoles(ctx context.Context, token, realm, clientID, clientsID string, roles []Role) error
+	// DeleteClientScopeMappingsClientRoles deletes client-level roles from the client’s scope
+	DeleteClientScopeMappingsClientRoles(ctx context.Context, token, realm, clientID, clientsID string, roles []Role) error
 	// GetClientSecret returns a client's secret
 	GetClientSecret(ctx context.Context, token, realm, clientID string) (*CredentialRepresentation, error)
 	// GetClientServiceAccount retrieves the service account "user" for a client if enabled
