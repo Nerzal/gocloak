@@ -140,7 +140,7 @@ type User struct {
 	Access                     *map[string]bool            `json:"access,omitempty"`
 	ClientRoles                *map[string][]string        `json:"clientRoles,omitempty"`
 	RealmRoles                 *[]string                   `json:"realmRoles,omitempty"`
-        Groups                     *[]string                   `json:"groups,omitempty"`
+	Groups                     *[]string                   `json:"groups,omitempty"`
 	ServiceAccountClientID     *string                     `json:"serviceAccountClientId,omitempty"`
 	Credentials                *[]CredentialRepresentation `json:"credentials,omitempty"`
 }
