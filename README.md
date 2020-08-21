@@ -139,6 +139,8 @@ type GoCloak interface {
 	CreateClient(ctx context.Context, accessToken, realm string, clientID Client) error
 	CreateClientScope(ctx context.Context, accessToken, realm string, scope ClientScope) error
 	CreateComponent(ctx context.Context, accessToken string, realm, component Component) error
+	CreateClientScopeMappingsRealmRoles(ctx context.Context, token, realm, clientID string, roles []Role) error
+	CreateClientScopeMappingsClientRoles(ctx context.Context, token, realm, clientID, clientsID string, roles []Role) error
 
 	UpdateUser(ctx context.Context, accessToken, realm string, user User) error
 	UpdateGroup(ctx context.Context, accessToken, realm string, updatedGroup Group) error
@@ -152,6 +154,8 @@ type GoCloak interface {
 	DeleteClientRole(ctx context.Context, accessToken, realm, clientID, roleName string) error
 	DeleteClient(ctx context.Context, accessToken, realm, clientID string) error
 	DeleteClientScope(ctx context.Context, accessToken, realm, scopeID string) error
+	DeleteClientScopeMappingsRealmRoles(ctx context.Context, token, realm, clientID string, roles []Role) error
+	DeleteClientScopeMappingsClientRoles(ctx context.Context, token, realm, clientID, clientsID string, roles []Role) error
 
 	GetClient(ctx context.Context, accessToken, realm, clientID string) (*Client, error)
 	GetClientsDefaultScopes(ctx context.Context, token, realm, clientID string) ([]*ClientScope, error)
@@ -164,6 +168,11 @@ type GoCloak interface {
 	GetDefaultDefaultClientScopes(ctx context.Context, token, realm string) ([]*ClientScope, error)
 	GetClientScope(ctx context.Context, token, realm, scopeID string) (*ClientScope, error)
 	GetClientScopes(ctx context.Context, token, realm string) ([]*ClientScope, error)
+	GetClientScopeMappings(ctx context.Context, token, realm, clientID string) (*MappingsRepresentation, error)
+	GetClientScopeMappingsRealmRoles(ctx context.Context, token, realm, clientID string) ([]*Role, error)
+	GetClientScopeMappingsRealmRolesAvailable(ctx context.Context, token, realm, clientID string) ([]*Role, error)
+	GetClientScopeMappingsClientRoles(ctx context.Context, token, realm, clientID, clientsID string) ([]*Role, error)
+	GetClientScopeMappingsClientRolesAvailable(ctx context.Context, token, realm, clientID, clientsID string) ([]*Role, error)
 	GetClientSecret(ctx context.Context, token, realm, clientID string) (*CredentialRepresentation, error)
 	GetClientServiceAccount(ctx context.Context, token, realm, clientID string) (*User, error)
 	RegenerateClientSecret(ctx context.Context, token, realm, clientID string) (*CredentialRepresentation, error)
