@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1598029039921,
+  "lastUpdate": 1598035353528,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -2205,6 +2205,54 @@ window.BENCHMARK_DATA = {
             "value": 58747091,
             "unit": "ns/op\t   66763 B/op\t     218 allocs/op",
             "extra": "25 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.com",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "862bcfb7e12940b1db32707658d5d58c6e34d757",
+          "message": "Merge pull request #205 from goolanger/master\n\nAdd groups to user model",
+          "timestamp": "2020-08-21T12:04:41-05:00",
+          "tree_id": "b4e8a0ddb4538ff20192d3d03245a0599eca6093",
+          "url": "https://github.com/Nerzal/gocloak/commit/862bcfb7e12940b1db32707658d5d58c6e34d757"
+        },
+        "date": 1598035353123,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 67528573,
+            "unit": "ns/op\t   54873 B/op\t     218 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 70919855,
+            "unit": "ns/op\t   64406 B/op\t     220 allocs/op",
+            "extra": "16 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 68157927,
+            "unit": "ns/op\t   54523 B/op\t     218 allocs/op",
+            "extra": "16 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 41785676,
+            "unit": "ns/op\t   58546 B/op\t     218 allocs/op",
+            "extra": "31 times\n2 procs"
           }
         ]
       }
