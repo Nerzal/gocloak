@@ -1315,6 +1315,213 @@ func TestGocloak_GetClientScopes(t *testing.T) {
 	require.NotZero(t, len(scopes), "there should be client scopes")
 }
 
+func CreateClientScopeMappingsRealmRoles(t *testing.T, client gocloak.GoCloak, clientID string, roles []gocloak.Role) func() {
+	token := GetAdminToken(t, client)
+	cfg := GetConfig(t)
+
+	// Creating client scope mappings
+	err := client.CreateClientScopeMappingsRealmRoles(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		clientID,
+		roles,
+	)
+	require.NoError(t, err, "CreateClientScopeMappingsRealmRoles failed")
+
+	tearDown := func() {
+		err = client.DeleteClientScopeMappingsRealmRoles(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			clientID,
+			roles,
+		)
+		require.NoError(t, err, "DeleteClientScopeMappingsRealmRoles failed")
+	}
+	return tearDown
+}
+
+func CreateClientScopeMappingsClientRoles(t *testing.T, client gocloak.GoCloak, clientID, clients string, roles []gocloak.Role) func() {
+	token := GetAdminToken(t, client)
+	cfg := GetConfig(t)
+
+	// Creating client scope mappings
+	err := client.CreateClientScopeMappingsClientRoles(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		clientID,
+		clients,
+		roles,
+	)
+	require.NoError(t, err, "CreateClientScopeMappingsClientRoles failed")
+
+	tearDown := func() {
+		err = client.DeleteClientScopeMappingsClientRoles(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			clientID,
+			clients,
+			roles,
+		)
+		require.NoError(t, err, "DeleteClientScopeMappingsClientRoles failed")
+	}
+	return tearDown
+}
+
+func TestGocloak_ClientScopeMappingsClientRoles(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	testClient := gocloak.Client{
+		ClientID:         GetRandomNameP("ClientID"),
+		BaseURL:          gocloak.StringP("http://example.com"),
+		FullScopeAllowed: gocloak.BoolP(false),
+	}
+	// Creating client
+	tearDownClient, clientID := CreateClient(t, client, &testClient)
+	defer tearDownClient()
+
+	// Creating client roles
+	var roles []gocloak.Role
+	tearDownRole1, roleName := CreateClientRole(t, client)
+	defer tearDownRole1()
+	role, err := client.GetClientRole(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		roleName)
+	require.NoError(t, err, "CreateClientRole failed")
+	roles = append(roles, *role)
+	tearDownRole2, roleName := CreateClientRole(t, client)
+	defer tearDownRole2()
+	role, err = client.GetClientRole(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		roleName)
+	require.NoError(t, err, "CreateClientRole failed")
+	roles = append(roles, *role)
+
+	// Creating client client roles for client scope mappings
+	tearDownScopeMappingsClientRoles := CreateClientScopeMappingsClientRoles(t, client, clientID, gocloakClientID, roles)
+	defer tearDownScopeMappingsClientRoles()
+
+	// Check client roles
+	clientRoles, err := client.GetClientScopeMappingsClientRoles(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		clientID,
+		gocloakClientID,
+	)
+	require.NoError(t, err, "GetClientScopeMappingsClientRoles failed")
+	require.Len(
+		t, clientRoles, len(roles),
+		"GetClientScopeMappingsClientRoles should return exact %s roles", len(roles),
+	)
+
+	clientRoles, err = client.GetClientRoles(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+	)
+	require.NoError(t, err, "GetClientRoles failed")
+
+	clientRolesAvailable, err := client.GetClientScopeMappingsClientRolesAvailable(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		clientID,
+		gocloakClientID,
+	)
+	require.NoError(t, err, "GetClientScopeMappingsClientRolesAvailable failed")
+	require.Len(
+		t, clientRolesAvailable, len(clientRoles)-len(roles),
+		"GetClientScopeMappingsClientRolesAvailable should return exact %s roles", len(clientRoles)-len(roles),
+	)
+}
+
+func TestGocloak_ClientScopeMappingsRealmRoles(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	testClient := gocloak.Client{
+		ClientID:         GetRandomNameP("ClientID"),
+		BaseURL:          gocloak.StringP("http://example.com"),
+		FullScopeAllowed: gocloak.BoolP(false),
+	}
+	// Creating client
+	tearDownClient, clientID := CreateClient(t, client, &testClient)
+	defer tearDownClient()
+
+	// Creating realm role
+	var roles []gocloak.Role
+	tearDownRealmRole1, roleName := CreateRealmRole(t, client)
+	defer tearDownRealmRole1()
+	role, err := client.GetRealmRole(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		roleName,
+	)
+	require.NoError(t, err, "CreateRealmRole failed")
+	roles = append(roles, *role)
+	tearDownRealmRole2, roleName := CreateRealmRole(t, client)
+	defer tearDownRealmRole2()
+	role, err = client.GetRealmRole(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		roleName,
+	)
+	require.NoError(t, err, "CreateRealmRole failed")
+	roles = append(roles, *role)
+
+	// Creating client realm roles for client scope mappings
+	tearDownScopeMappingsRealmRoles := CreateClientScopeMappingsRealmRoles(t, client, clientID, roles)
+	defer tearDownScopeMappingsRealmRoles()
+
+	// Check realm roles
+	realmRoles, err := client.GetClientScopeMappingsRealmRoles(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		clientID,
+	)
+	require.NoError(t, err, "GetClientScopeMappingsRealmRoles failed")
+	require.Len(
+		t, realmRoles, len(roles),
+		"GetClientScopeMappingsRealmRoles should return exact %s realm", len(roles),
+	)
+
+	realmRoles, err = client.GetRealmRoles(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+	)
+	require.NoError(t, err, "GetRealmRoles failed")
+
+	realmRolesAvailable, err := client.GetClientScopeMappingsRealmRolesAvailable(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		clientID,
+	)
+	require.NoError(t, err, "GetClientScopeMappingsRealmRolesAvailable failed")
+	require.Len(
+		t, realmRolesAvailable, len(realmRoles)-len(roles),
+		"GetClientScopeMappingsRealmRolesAvailable should return exact %s realm", len(realmRoles)-len(roles),
+	)
+}
+
 func TestGocloak_CreateListGetUpdateDeleteClient(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
