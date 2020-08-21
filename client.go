@@ -864,7 +864,7 @@ func (client *gocloak) GetClientScopeMappings(ctx context.Context, token, realm,
 		Get(client.getAdminRealmURL(realm, "clients", clientID, "scope-mappings"))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
-		return nil, fmt.Errorf(client.getAdminRealmURL(realm, "clients", clientID, "scope-mappings"))
+		return nil, err
 	}
 
 	return result, nil
@@ -881,7 +881,7 @@ func (client *gocloak) GetClientScopeMappingsRealmRoles(ctx context.Context, tok
 		Get(client.getAdminRealmURL(realm, "clients", clientID, "scope-mappings", "realm"))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
-		return nil, fmt.Errorf(client.getAdminRealmURL(realm, "clients", clientID, "scope-mappings", "realm"))
+		return nil, err
 	}
 
 	return result, nil
@@ -898,7 +898,7 @@ func (client *gocloak) GetClientScopeMappingsRealmRolesAvailable(ctx context.Con
 		Get(client.getAdminRealmURL(realm, "clients", clientID, "scope-mappings", "realm", "available"))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
-		return nil, fmt.Errorf(client.getAdminRealmURL(realm, "clients", clientID, "scope-mappings", "realm", "available"))
+		return nil, err
 	}
 
 	return result, nil
@@ -937,7 +937,7 @@ func (client *gocloak) GetClientScopeMappingsClientRoles(ctx context.Context, to
 		Get(client.getAdminRealmURL(realm, "clients", clientID, "scope-mappings", "clients", clientsID))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
-		return nil, fmt.Errorf(client.getAdminRealmURL(realm, "clients", clientID, "scope-mappings", "clients", clientsID))
+		return nil, err
 	}
 
 	return result, nil
@@ -954,7 +954,7 @@ func (client *gocloak) GetClientScopeMappingsClientRolesAvailable(ctx context.Co
 		Get(client.getAdminRealmURL(realm, "clients", clientID, "scope-mappings", "clients", clientsID, "available"))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
-		return nil, fmt.Errorf(client.getAdminRealmURL(realm, "clients", clientID, "scope-mappings", "clients", clientsID, "available"))
+		return nil, err
 	}
 
 	return result, nil
