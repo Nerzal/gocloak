@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1597786304402,
+  "lastUpdate": 1598029039921,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -2157,6 +2157,54 @@ window.BENCHMARK_DATA = {
             "value": 56620881,
             "unit": "ns/op\t   58155 B/op\t     214 allocs/op",
             "extra": "21 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.com",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1a6fb6749cc6a6d2d52ffb8780c955d0689896b4",
+          "message": "Merge pull request #209 from madest92/scope-mappings\n\nScope mappings",
+          "timestamp": "2020-08-21T11:55:02-05:00",
+          "tree_id": "61331aafc74862058e2e0e711555d7a10f16f6c6",
+          "url": "https://github.com/Nerzal/gocloak/commit/1a6fb6749cc6a6d2d52ffb8780c955d0689896b4"
+        },
+        "date": 1598029039481,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 92883134,
+            "unit": "ns/op\t   63830 B/op\t     218 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 85513650,
+            "unit": "ns/op\t   79083 B/op\t     223 allocs/op",
+            "extra": "13 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 83223051,
+            "unit": "ns/op\t   63856 B/op\t     219 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 58747091,
+            "unit": "ns/op\t   66763 B/op\t     218 allocs/op",
+            "extra": "25 times\n2 procs"
           }
         ]
       }
