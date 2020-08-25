@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1598035353528,
+  "lastUpdate": 1598376219914,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -2253,6 +2253,54 @@ window.BENCHMARK_DATA = {
             "value": 41785676,
             "unit": "ns/op\t   58546 B/op\t     218 allocs/op",
             "extra": "31 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.com",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4cbc389eb3c8037c7a7b993a0fbaea8eebb6bf6d",
+          "message": "Merge pull request #211 from toddkazakov/master\n\nAdd support for enabled and exact query params in list users query",
+          "timestamp": "2020-08-25T12:21:17-05:00",
+          "tree_id": "6608ee07af7c6a99a70f07bcacd6b1d3caad3099",
+          "url": "https://github.com/Nerzal/gocloak/commit/4cbc389eb3c8037c7a7b993a0fbaea8eebb6bf6d"
+        },
+        "date": 1598376219471,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 88774686,
+            "unit": "ns/op\t   68991 B/op\t     220 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 87413523,
+            "unit": "ns/op\t   84793 B/op\t     224 allocs/op",
+            "extra": "13 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 87811764,
+            "unit": "ns/op\t   48139 B/op\t     219 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 60874134,
+            "unit": "ns/op\t   64386 B/op\t     219 allocs/op",
+            "extra": "24 times\n2 procs"
           }
         ]
       }
