@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1598376219914,
+  "lastUpdate": 1598376239542,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -2301,6 +2301,54 @@ window.BENCHMARK_DATA = {
             "value": 60874134,
             "unit": "ns/op\t   64386 B/op\t     219 allocs/op",
             "extra": "24 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.com",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1f024b90dfeb18b1a22d2cbb3a48106c343cd2a5",
+          "message": "Merge pull request #210 from Nerzal/update/modules\n\nupgrade to go 1.15 and update some dependencies",
+          "timestamp": "2020-08-25T12:21:53-05:00",
+          "tree_id": "3fb0b4557e5de09ccafea0b6f50704025e0170a7",
+          "url": "https://github.com/Nerzal/gocloak/commit/1f024b90dfeb18b1a22d2cbb3a48106c343cd2a5"
+        },
+        "date": 1598376239155,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 64279526,
+            "unit": "ns/op\t   63390 B/op\t     217 allocs/op",
+            "extra": "18 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 63109872,
+            "unit": "ns/op\t   65477 B/op\t     217 allocs/op",
+            "extra": "16 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 63863832,
+            "unit": "ns/op\t   57286 B/op\t     217 allocs/op",
+            "extra": "18 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 44424948,
+            "unit": "ns/op\t   47670 B/op\t     217 allocs/op",
+            "extra": "32 times\n2 procs"
           }
         ]
       }
