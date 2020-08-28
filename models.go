@@ -772,6 +772,14 @@ func (t *RequestingPartyTokenOptions) FormData() map[string]string {
 	return res
 }
 
+// Permission is returned by request party token with response type set to "permissions"
+type Permission struct {
+	Claims       *map[string]string `json:"claims,omitempty"`
+	ResourceID   *string            `json:"rsid,omitempty"`
+	ResourceName *string            `json:"rsname,omitempty"`
+	Scopes       *[]string          `json:"scopes"`
+}
+
 // UserSessionRepresentation represents a list of user's sessions
 type UserSessionRepresentation struct {
 	Clients    *map[string]string `json:"clients,omitempty"`
