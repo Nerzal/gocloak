@@ -294,7 +294,7 @@ func CreatePermission(t *testing.T, client gocloak.GoCloak, clientID string, per
 		clientID,
 		permission)
 	require.NoError(t, err, "CreatePermission failed")
-	t.Logf("Created Permission ID: %s ", *(createdPermission.ID))
+	t.Logf("Created RequestingPartyPermission ID: %s ", *(createdPermission.ID))
 
 	tearDown := func() {
 		err := client.DeletePermission(
@@ -4469,7 +4469,7 @@ func TestGocloak_CreateListGetUpdateDeletePermission(t *testing.T) {
 	// Create
 	tearDown, permissionID := CreatePermission(t, client, gocloakClientID, gocloak.PermissionRepresentation{
 		Name:        GetRandomNameP("PermissionName"),
-		Description: gocloak.StringP("Permission Description"),
+		Description: gocloak.StringP("RequestingPartyPermission Description"),
 		Type:        gocloak.StringP("resource"),
 		Policies: &[]string{
 			policyID,
@@ -4490,7 +4490,7 @@ func TestGocloak_CreateListGetUpdateDeletePermission(t *testing.T) {
 		permissionID,
 	)
 	require.NoError(t, err, "GetPermission failed")
-	t.Logf("Created Permission: %+v", *(createdPermission.ID))
+	t.Logf("Created RequestingPartyPermission: %+v", *(createdPermission.ID))
 	require.Equal(t, permissionID, *(createdPermission.ID))
 
 	// Looking for a created permission

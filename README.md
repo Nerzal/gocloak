@@ -107,6 +107,7 @@ go get github.com/Nerzal/gocloak/v7
 // GoCloak holds all methods a client should fullfill
 type GoCloak interface {
 	GetRequestingPartyToken(ctx context.Contexttoken, realm string, options RequestingPartyTokenOptions) (*JWT, error)
+	GetRequestingPartyPermissions(ctx context.Context, token, realm string, options RequestingPartyTokenOptions) (*[]RequestingPartyPermission, error)
 
 	Login(ctx context.Context, clientID, clientSecret, realm, username, password string) (*JWT, error)
 	LoginOtp(ctx context.Context, clientID, clientSecret, realm, username, password, totp string) (*JWT, error)

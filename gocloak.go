@@ -19,7 +19,7 @@ type GoCloak interface {
 	// GetRequestingPartyToken returns a requesting party token with permissions granted by the server
 	GetRequestingPartyToken(ctx context.Context, token, realm string, options RequestingPartyTokenOptions) (*JWT, error)
 	// GetRequestingPartyPermissions returns a permissions granted by the server to requesting party
-	GetRequestingPartyPermissions(ctx context.Context, token, realm string, options RequestingPartyTokenOptions) (*[]Permission, error)
+	GetRequestingPartyPermissions(ctx context.Context, token, realm string, options RequestingPartyTokenOptions) (*[]RequestingPartyPermission, error)
 	// Login sends a request to the token endpoint using user and client credentials
 	Login(ctx context.Context, clientID, clientSecret, realm, username, password string) (*JWT, error)
 	// LoginOtp performs a login with user credentials and otp token

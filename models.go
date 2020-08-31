@@ -772,8 +772,8 @@ func (t *RequestingPartyTokenOptions) FormData() map[string]string {
 	return res
 }
 
-// Permission is returned by request party token with response type set to "permissions"
-type Permission struct {
+// RequestingPartyPermission is returned by request party token with response type set to "permissions"
+type RequestingPartyPermission struct {
 	Claims       *map[string]string `json:"claims,omitempty"`
 	ResourceID   *string            `json:"rsid,omitempty"`
 	ResourceName *string            `json:"rsname,omitempty"`
@@ -899,7 +899,7 @@ type GetUsersByRoleParams struct {
 	Max   *int `json:"max,string,omitempty"`
 }
 
-// PermissionRepresentation is a representation of a Permission
+// PermissionRepresentation is a representation of a RequestingPartyPermission
 type PermissionRepresentation struct {
 	DecisionStrategy *DecisionStrategy `json:"decisionStrategy,omitempty"`
 	Description      *string           `json:"description,omitempty"`
