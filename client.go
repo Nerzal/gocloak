@@ -66,6 +66,14 @@ func (client *gocloak) getRequestWithBasicAuth(ctx context.Context, clientID, cl
 	return req
 }
 
+func (client *gocloak) getRequestingParty(ctx context.Context, token string, realm string, options RequestingPartyTokenOptions, res interface{}) (*resty.Response, error) {
+	return client.getRequestWithBearerAuth(ctx, token).
+		SetFormData(options.FormData()).
+		SetFormDataFromValues(url.Values{"permission": PStringSlice(options.Permissions)}).
+		SetResult(&res).
+		Post(client.getRealmURL(realm, client.Config.tokenEndpoint))
+}
+
 func checkForError(resp *resty.Response, err error, errMessage string) error {
 	if err != nil {
 		return &APIError{
@@ -405,11 +413,24 @@ func (client *gocloak) GetRequestingPartyToken(ctx context.Context, token, realm
 
 	var res JWT
 
-	resp, err := client.getRequestWithBearerAuth(ctx, token).
-		SetFormData(options.FormData()).
-		SetFormDataFromValues(url.Values{"permission": PStringSlice(options.Permissions)}).
-		SetResult(&res).
-		Post(client.getRealmURL(realm, client.Config.tokenEndpoint))
+	resp, err := client.getRequestingParty(ctx, token, realm, options, &res)
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+// GetRequestingPartyPermissions returns a requesting party permissions granted by the server
+func (client *gocloak) GetRequestingPartyPermissions(ctx context.Context, token, realm string, options RequestingPartyTokenOptions) (*[]RequestingPartyPermission, error) {
+	const errMessage = "could not get requesting party token"
+
+	var res []RequestingPartyPermission
+
+	options.ResponseMode = StringP("permissions")
+
+	resp, err := client.getRequestingParty(ctx, token, realm, options, &res)
 
 	if err := checkForError(resp, err, errMessage); err != nil {
 		return nil, err
