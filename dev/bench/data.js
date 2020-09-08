@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1598376239542,
+  "lastUpdate": 1599570437037,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -2349,6 +2349,54 @@ window.BENCHMARK_DATA = {
             "value": 44424948,
             "unit": "ns/op\t   47670 B/op\t     217 allocs/op",
             "extra": "32 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sergey@vilgelm.com",
+            "name": "Sergey Vilgelm",
+            "username": "SVilgelm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ccaf08026370c16a107e01df201486534c4c5720",
+          "message": "Write go.list file for nancy (#218)",
+          "timestamp": "2020-09-08T08:05:06-05:00",
+          "tree_id": "2f940b7f3bc127aec367383d1671f62e50636972",
+          "url": "https://github.com/Nerzal/gocloak/commit/ccaf08026370c16a107e01df201486534c4c5720"
+        },
+        "date": 1599570436618,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 80078527,
+            "unit": "ns/op\t   63195 B/op\t     218 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 78423425,
+            "unit": "ns/op\t   68610 B/op\t     217 allocs/op",
+            "extra": "14 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 80162711,
+            "unit": "ns/op\t   83449 B/op\t     220 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 46477398,
+            "unit": "ns/op\t   64129 B/op\t     220 allocs/op",
+            "extra": "24 times\n2 procs"
           }
         ]
       }
