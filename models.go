@@ -220,8 +220,8 @@ type UserGroup struct {
 type GetUsersParams struct {
 	BriefRepresentation *bool   `json:"briefRepresentation,string"`
 	Email               *string `json:"email,omitempty"`
-	Enabled             *bool   `json:"enabled,omitempty"`
-	Exact               *bool   `json:"exact,omitempty"`
+	Enabled             *bool   `json:"enabled,string,omitempty"`
+	Exact               *bool   `json:"exact,string,omitempty"`
 	First               *int    `json:"first,string,omitempty"`
 	FirstName           *string `json:"firstName,omitempty"`
 	LastName            *string `json:"lastName,omitempty"`
