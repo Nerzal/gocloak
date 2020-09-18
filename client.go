@@ -94,7 +94,7 @@ func checkForError(resp *resty.Response, err error, errMessage string) error {
 		if e, ok := resp.Error().(*HTTPErrorResponse); ok && e.NotEmpty() {
 			msg = fmt.Sprintf("%s: %s", resp.Status(), e)
 		} else {
-			msg = resp.Status()
+			msg = fmt.Sprintf("status: %s body: %s", resp.Status(), string(resp.Body()))
 		}
 
 		return &APIError{
