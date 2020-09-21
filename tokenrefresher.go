@@ -86,7 +86,9 @@ func (t *TokenRefresher) startBackgroundRefresh() {
 }
 
 func (t *TokenRefresher) newToken() error {
+	t.mu.RLock()
 	jwt, err := t.keycloak.LoginClient(t.ctx, t.config.ClientId, t.config.ClientSecret, t.config.Realm)
+	t.mu.RUnlock()
 	if err != nil {
 		return err
 	}
