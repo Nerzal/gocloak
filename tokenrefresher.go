@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// RefreshConfig is the configuration for the token refresher.
 type RefreshConfig struct {
 	Domain, ClientId, ClientSecret, Realm string
 
@@ -13,7 +14,7 @@ type RefreshConfig struct {
 	EarlyRefreshSecs int
 }
 
-// newTokenRefresher starts a background service that refreshes our jwt for us
+// NewTokenRefresher starts a background service that refreshes our jwt for us
 // whenever it's going to expire. It's thread-safe.
 func NewTokenRefresher(ctx context.Context, config *RefreshConfig) (*TokenRefresher, error) {
 	keycloakClient := NewClient(config.Domain)
@@ -31,6 +32,9 @@ func NewTokenRefresher(ctx context.Context, config *RefreshConfig) (*TokenRefres
 	return t, nil
 }
 
+// TokenRefresher is an object that refreshes tokens in the background.
+// To use it, please use NewTokenRefresher because it begins the
+// background refresh process.
 type TokenRefresher struct {
 	ctx      context.Context
 	config   *RefreshConfig
@@ -42,6 +46,7 @@ type TokenRefresher struct {
 	jwt *JWT
 }
 
+// AccessToken returns a jwt access token for use in client calls.
 func (t *TokenRefresher) AccessToken() string {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
