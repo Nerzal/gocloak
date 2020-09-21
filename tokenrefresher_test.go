@@ -11,7 +11,7 @@ func TestTokenRefresher(t *testing.T) {
 	cfg := GetConfig(t)
 	refresher, err := gocloak.NewTokenRefresher(context.Background(), &gocloak.RefreshConfig{
 		Domain:           "test.io",
-		ClientId:         cfg.GoCloak.ClientID,
+		ClientID:         cfg.GoCloak.ClientID,
 		ClientSecret:     cfg.GoCloak.ClientSecret,
 		Realm:            cfg.GoCloak.Realm,
 		EarlyRefreshSecs: 5,
