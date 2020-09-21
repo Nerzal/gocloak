@@ -8,7 +8,7 @@ import (
 
 // RefreshConfig is the configuration for the token refresher.
 type RefreshConfig struct {
-	Domain, ClientId, ClientSecret, Realm string
+	Domain, ClientID, ClientSecret, Realm string
 
 	// The number of seconds early to refresh a token.
 	EarlyRefreshSecs int
@@ -18,7 +18,7 @@ type RefreshConfig struct {
 // whenever it's going to expire. It's thread-safe.
 func NewTokenRefresher(ctx context.Context, config *RefreshConfig) (*TokenRefresher, error) {
 	keycloakClient := NewClient(config.Domain)
-	jwt, err := keycloakClient.LoginClient(ctx, config.ClientId, config.ClientSecret, config.Realm)
+	jwt, err := keycloakClient.LoginClient(ctx, config.ClientID, config.ClientSecret, config.Realm)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func (t *TokenRefresher) startBackgroundRefresh() {
 
 func (t *TokenRefresher) newToken() error {
 	t.mu.RLock()
-	jwt, err := t.keycloak.LoginClient(t.ctx, t.config.ClientId, t.config.ClientSecret, t.config.Realm)
+	jwt, err := t.keycloak.LoginClient(t.ctx, t.config.ClientID, t.config.ClientSecret, t.config.Realm)
 	t.mu.RUnlock()
 	if err != nil {
 		return err
@@ -107,7 +107,7 @@ func (t *TokenRefresher) newToken() error {
 
 func (t *TokenRefresher) refreshToken() error {
 	t.mu.RLock()
-	jwt, err := t.keycloak.RefreshToken(t.ctx, t.jwt.RefreshToken, t.config.ClientId, t.config.ClientSecret, t.config.Realm)
+	jwt, err := t.keycloak.RefreshToken(t.ctx, t.jwt.RefreshToken, t.config.ClientID, t.config.ClientSecret, t.config.Realm)
 	t.mu.RUnlock()
 	if err != nil {
 		return err
