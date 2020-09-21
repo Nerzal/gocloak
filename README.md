@@ -101,6 +101,25 @@ go get github.com/Nerzal/gocloak/v7
 	// Do something with the permissions ;)
 ```
 
+### Refresh Tokens
+
+Using the `TokenRefresher`, tokens will be refreshed in the background rather
+than needing additional work from you.
+
+```go
+    refresher := NewTokenRefresher(context.Background(), &RefreshConfig{
+        Domain:             domain,
+        ClientId:           clientId, 
+        ClientSecret:       clientSecret, 
+        Realm:              realm,
+        EarlyRefreshSecs:   5,
+    })
+    groups, err := GetGroups(ctx, refresher.AccessToken(), realm, params)
+    if err != nil {
+        panic("Getting groups failed:"+ err.Error())
+    }
+```
+
 ## Features
 
 ```go
