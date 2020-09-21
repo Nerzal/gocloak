@@ -50,9 +50,6 @@ func (t *TokenRefresher) AccessToken() string {
 
 // startBackgroundRefresh begins a service that is responsible for always
 // keeping the access token up-to-date.
-// If it's unable to refresh or renew a token, it logs at error level and
-// tries again each second until it's either successful, or it's not and
-// the caller will begin to experience authorization errors.
 func (t *TokenRefresher) startBackgroundRefresh() {
 	// This goroutine is the only thread _writing_ the jwt, down inside
 	// its token refreshing methods.
