@@ -180,6 +180,7 @@ type GoCloak interface {
 	GetUserCount(ctx context.Context, accessToken, realm string, params GetUsersParams) (int, error)
 	GetUsers(ctx context.Context, accessToken, realm string, params GetUsersParams) ([]*User, error)
 	GetUserGroups(ctx context.Context, accessToken, realm, userID string, params GetGroupsParams) ([]*UserGroup, error)
+	AddUserToGroup(ctx context.Context, token, realm, userID, groupID string) error
 	GetComponents(ctx context.Context, accessToken, realm string) ([]*Component, error)
 	GetGroups(ctx context.Context, accessToken, realm string, params GetGroupsParams) ([]*Group, error)
 	GetGroupsCount(ctx context.Context, token, realm string, params GetGroupsParams) (int, error)
