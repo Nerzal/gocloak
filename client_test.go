@@ -4558,6 +4558,7 @@ func TestGocloak_CreateListGetUpdateDeletePermission(t *testing.T) {
 	)
 
 	require.NoError(t, err, "GetPermissionResource failed")
+	require.Len(t, permissionResources, 1, "GetPermissionResource should return exact 1 resource")
 	require.Equal(t, resourceID, *permissionResources[0].ResourceID)
 
 	permissionScopes, err := client.GetPermissionScopes(
@@ -4569,7 +4570,7 @@ func TestGocloak_CreateListGetUpdateDeletePermission(t *testing.T) {
 	)
 
 	require.NoError(t, err, "GetPermissionScopes failed")
-	require.Equal(t, resourceID, *(permissionScopes[0].ScopeID))
+	require.Len(t, permissionScopes, 0, "GetPermissionResource should return exact 0 scopes")
 
 }
 
