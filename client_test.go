@@ -4554,7 +4554,7 @@ func TestGocloak_CreateListGetUpdateDeletePermission(t *testing.T) {
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		gocloakClientID,
-		policyID,
+		permissionID,
 	)
 
 	require.NoError(t, err, "GetPermissionResource failed")
@@ -4566,7 +4566,7 @@ func TestGocloak_CreateListGetUpdateDeletePermission(t *testing.T) {
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		gocloakClientID,
-		policyID,
+		permissionID,
 	)
 
 	require.NoError(t, err, "GetPermissionScopes failed")

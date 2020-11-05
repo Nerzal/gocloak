@@ -2562,7 +2562,7 @@ func (client *gocloak) GetPermissionResources(ctx context.Context, token, realm,
 	var result []*PermissionResource
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
 		SetResult(&result).
-		Get(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "policy", permissionID, "resources"))
+		Get(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "permission", permissionID, "resources"))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
 		return nil, err
@@ -2578,7 +2578,7 @@ func (client *gocloak) GetPermissionScopes(ctx context.Context, token, realm, cl
 	var result []*PermissionScope
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
 		SetResult(&result).
-		Get(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "policy", permissionID, "scopes"))
+		Get(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "permission", permissionID, "scopes"))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
 		return nil, err
