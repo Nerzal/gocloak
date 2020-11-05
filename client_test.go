@@ -4536,6 +4536,41 @@ func TestGocloak_CreateListGetUpdateDeletePermission(t *testing.T) {
 	)
 	require.NoError(t, err, "GetPermission failed")
 	require.Equal(t, *(createdPermission.Name), *(updatedPermission.Name))
+
+	dependentPermissions, err := client.GetDependentPermissions(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		policyID,
+	)
+
+	require.NoError(t, err, "GetDependentPermissions failed")
+	require.Len(t, dependentPermissions, 1, "GetDependentPermissions should return exact 1 permission")
+	require.Equal(t, *(createdPermission.Name), *(dependentPermissions[0].Name))
+
+	permissionResources, err := client.GetPermissionResources(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		policyID,
+	)
+
+	require.NoError(t, err, "GetPermissionResource failed")
+	require.Equal(t, resourceID, *permissionResources[0].ResourceID)
+
+	permissionScopes, err := client.GetPermissionScopes(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		policyID,
+	)
+
+	require.NoError(t, err, "GetPermissionScopes failed")
+	require.Equal(t, resourceID, *(permissionScopes[0].ScopeID))
+
 }
 
 func TestGoCloak_CheckError(t *testing.T) {
