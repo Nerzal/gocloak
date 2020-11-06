@@ -109,13 +109,13 @@ type ResourcePermission struct {
 	ResourceScopes *[]string `json:"resource_scopes,omitempty"`
 }
 
-// PermissionResource represents a resource belongs to permission
+// PermissionResource represents a resources asscoiated with a permission
 type PermissionResource struct {
 	ResourceID   *string `json:"_id,omitempty"`
 	ResourceName *string `json:"name,omitempty"`
 }
 
-// ResourceScope represents scopes belongs to a permission
+// PermissionScope represents scopes associated with a permission
 type PermissionScope struct {
 	ScopeID   *string `json:"id,omitempty"`
 	ScopeName *string `json:"name,omitempty"`
