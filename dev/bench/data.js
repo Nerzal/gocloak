@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1599665556303,
+  "lastUpdate": 1604770319783,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -2445,6 +2445,54 @@ window.BENCHMARK_DATA = {
             "value": 55811400,
             "unit": "ns/op\t   56817 B/op\t     220 allocs/op",
             "extra": "21 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "theel.tobias@gmx.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "38400d49944a23a7a4dc11e42266fc52096f76fa",
+          "message": "Merge pull request #225 from sachinjohar2/sachin/PermissionEntities\n\nAPIs to fetch resource and scopes associated with permission",
+          "timestamp": "2020-11-07T18:29:43+01:00",
+          "tree_id": "100ec4ac9acb77ff55b5b8932f5d2cf5f782bcb3",
+          "url": "https://github.com/Nerzal/gocloak/commit/38400d49944a23a7a4dc11e42266fc52096f76fa"
+        },
+        "date": 1604770319140,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 85754626,
+            "unit": "ns/op\t   47404 B/op\t     217 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 95508583,
+            "unit": "ns/op\t   59157 B/op\t     218 allocs/op",
+            "extra": "13 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 83871794,
+            "unit": "ns/op\t   63267 B/op\t     219 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 60539164,
+            "unit": "ns/op\t   53983 B/op\t     217 allocs/op",
+            "extra": "22 times\n2 procs"
           }
         ]
       }
