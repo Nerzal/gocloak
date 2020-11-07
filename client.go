@@ -2539,6 +2539,54 @@ func (client *gocloak) GetPermission(ctx context.Context, token, realm, clientID
 	return &result, nil
 }
 
+// GetDependentPermissions returns a client's permission with the given policy id
+func (client *gocloak) GetDependentPermissions(ctx context.Context, token, realm, clientID, policyID string) ([]*PermissionRepresentation, error) {
+	const errMessage = "could not get permission"
+
+	var result []*PermissionRepresentation
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "policy", policyID, "dependentPolicies"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// GetPermissionResource returns a client's resource attached for the given permission id
+func (client *gocloak) GetPermissionResources(ctx context.Context, token, realm, clientID, permissionID string) ([]*PermissionResource, error) {
+	const errMessage = "could not get permission resource"
+
+	var result []*PermissionResource
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "permission", permissionID, "resources"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// GetPermissionScopes returns a client's scopes configured for the given permission id
+func (client *gocloak) GetPermissionScopes(ctx context.Context, token, realm, clientID, permissionID string) ([]*PermissionScope, error) {
+	const errMessage = "could not get permission scopes"
+
+	var result []*PermissionScope
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "permission", permissionID, "scopes"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // GetPermissions returns permissions associated with the client
 func (client *gocloak) GetPermissions(ctx context.Context, token, realm, clientID string, params GetPermissionParams) ([]*PermissionRepresentation, error) {
 	const errMessage = "could not get permissions"

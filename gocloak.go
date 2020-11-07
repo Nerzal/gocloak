@@ -359,7 +359,10 @@ type GoCloak interface {
 	UpdatePermission(ctx context.Context, token, realm, clientID string, permission PermissionRepresentation) error
 	// DeletePermission deletes a permission associated with the client
 	DeletePermission(ctx context.Context, token, realm, clientID, permissionID string) error
-
+	// GetDependentPermissions returns client's permissions dependent on the policy with given ID
+	GetDependentPermissions(ctx context.Context, token, realm, clientID, policyID string) ([]*PermissionRepresentation, error)
+	GetPermissionResources(ctx context.Context, token, realm, clientID, permissionID string) ([]*PermissionResource, error)
+	GetPermissionScopes(ctx context.Context, token, realm, clientID, permissionID string) ([]*PermissionScope, error)
 	// ---------------
 	// Credentials API
 	// ---------------

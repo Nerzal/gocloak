@@ -19,7 +19,7 @@ jobs:
       - name: WriteGoList
         run: go list -json -m all > go.list
       - name: nancy
-        uses: sonatype-nexus-community/nancy-github-action@master
+        uses: sonatype-nexus-community/nancy-github-action@main
       - name: Run Keycloak
         run: |
           docker pull jboss/keycloak:latest

@@ -109,6 +109,18 @@ type ResourcePermission struct {
 	ResourceScopes *[]string `json:"resource_scopes,omitempty"`
 }
 
+// PermissionResource represents a resources asscoiated with a permission
+type PermissionResource struct {
+	ResourceID   *string `json:"_id,omitempty"`
+	ResourceName *string `json:"name,omitempty"`
+}
+
+// PermissionScope represents scopes associated with a permission
+type PermissionScope struct {
+	ScopeID   *string `json:"id,omitempty"`
+	ScopeName *string `json:"name,omitempty"`
+}
+
 // RetrospecTokenResult is returned when a token was checked
 type RetrospecTokenResult struct {
 	Permissions *[]ResourcePermission `json:"permissions,omitempty"`
