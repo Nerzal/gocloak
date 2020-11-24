@@ -316,9 +316,16 @@ type GoCloak interface {
 	DeleteIdentityProvider(ctx context.Context, token, realm, alias string) error
 
 	// *** Protection API ***
-	// GetResource returns a client's resource with the given id
+	// GetResource returns a client's resource with the given id, using access token from Client
+	GetResourceClient(ctx context.Context, token, realm, clientID, resourceID string) (*ResourceRepresentation, error)
+	// GetResources a returns resources associated with the client, using access token from Client
+	GetResourcesClient(ctx context.Context, token, realm, clientID string, params GetResourceParams) ([]*ResourceRepresentation, error)
+	// CreateResource creates a resource associated with the client
+	UpdateResourceClient(ctx context.Context, token, realm, clientID string, resource ResourceRepresentation) error
+
+	// GetResource returns a client's resource with the given id, using access token from Admin
 	GetResource(ctx context.Context, token, realm, clientID, resourceID string) (*ResourceRepresentation, error)
-	// GetResources a returns resources associated with the client
+	// GetResources a returns resources associated with the client, using access token from Admin
 	GetResources(ctx context.Context, token, realm, clientID string, params GetResourceParams) ([]*ResourceRepresentation, error)
 	// CreateResource creates a resource associated with the client
 	CreateResource(ctx context.Context, token, realm, clientID string, resource ResourceRepresentation) (*ResourceRepresentation, error)

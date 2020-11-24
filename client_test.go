@@ -4027,6 +4027,78 @@ func TestGocloak_CreateProvider(t *testing.T) {
 // Protection API
 // -----------------
 
+func TestGocloak_CreateListGetUpdateDeleteResourceClient(t *testing.T) {
+
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetClientToken(t, client)
+
+	// Create
+	tearDown, resourceID := CreateResource(t, client, gocloakClientID)
+	// Delete
+	defer tearDown()
+
+	// List
+	createdResource, err := client.GetResourceClient(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		resourceID,
+	)
+
+	require.NoError(t, err, "GetResource failed")
+	t.Logf("Created Resource: %+v", *(createdResource.ID))
+	require.Equal(t, resourceID, *(createdResource.ID))
+
+	// Looking for a created resource
+	resources, err := client.GetResourcesClient(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		gocloak.GetResourceParams{
+			Name: createdResource.Name,
+		},
+	)
+	require.NoError(t, err, "GetResources failed")
+	require.Len(t, resources, 1, "GetResources should return exact 1 resource")
+	require.Equal(t, *(createdResource.ID), *(resources[0].ID))
+	t.Logf("Resources: %+v", resources)
+
+	err = client.UpdateResourceClient(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		gocloak.ResourceRepresentation{},
+	)
+	require.Error(t, err, "Should fail because of missing ID of the resource")
+
+	createdResource.Name = GetRandomNameP("ResourceName")
+
+	err = client.UpdateResourceClient(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		*createdResource,
+	)
+	require.NoError(t, err, "UpdateResource failed")
+
+	updatedResource, err := client.GetResourceClient(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		resourceID,
+	)
+	require.NoError(t, err, "GetResource failed")
+	require.Equal(t, *(createdResource.Name), *(updatedResource.Name))
+
+}
+
 func TestGocloak_CreateListGetUpdateDeleteResource(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
