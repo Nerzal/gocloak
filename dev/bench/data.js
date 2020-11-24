@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1604770319783,
+  "lastUpdate": 1606225259366,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -2493,6 +2493,54 @@ window.BENCHMARK_DATA = {
             "value": 60539164,
             "unit": "ns/op\t   53983 B/op\t     217 allocs/op",
             "extra": "22 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "theel.tobias@gmx.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "eb2ff7d1627794b3860d2f01944ee3a7b649042d",
+          "message": "Merge pull request #231 from sachinjohar2/sachin/RoleById\n\nAdded api to fetch role using role ID",
+          "timestamp": "2020-11-24T14:38:35+01:00",
+          "tree_id": "6a76c024239633a6b67c1b6cb2f81f8adcf0b353",
+          "url": "https://github.com/Nerzal/gocloak/commit/eb2ff7d1627794b3860d2f01944ee3a7b649042d"
+        },
+        "date": 1606225258747,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 78726327,
+            "unit": "ns/op\t   51653 B/op\t     217 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 79803296,
+            "unit": "ns/op\t   57257 B/op\t     218 allocs/op",
+            "extra": "14 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 77741298,
+            "unit": "ns/op\t   57685 B/op\t     220 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 47150547,
+            "unit": "ns/op\t   48924 B/op\t     216 allocs/op",
+            "extra": "24 times\n2 procs"
           }
         ]
       }
