@@ -1363,6 +1363,22 @@ func (client *gocloak) GetClientRoles(ctx context.Context, token, realm, clientI
 	return result, nil
 }
 
+// GetClientRoleById gets role for the given client in realm using role ID
+func (client *gocloak) GetClientRoleByID(ctx context.Context, token, realm, roleID string) (*Role, error) {
+	const errMessage = "could not get client role"
+
+	var result Role
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "roles-by-id", roleID))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
 // GetRealmRolesByUserID returns all client roles assigned to the given user
 func (client *gocloak) GetClientRolesByUserID(ctx context.Context, token, realm, clientID, userID string) ([]*Role, error) {
 	const errMessage = "could not client roles by user id"

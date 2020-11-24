@@ -7,15 +7,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v2.1.3
         with:
           go-version: 1.15
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v1
+        uses: golangci/golangci-lint-action@v2.3.0
         with:
-          version: v1.27
+          version: v1.28.3
       - name: WriteGoList
         run: go list -json -m all > go.list
       - name: nancy
