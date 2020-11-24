@@ -1370,7 +1370,7 @@ func (client *gocloak) GetClientRoleByID(ctx context.Context, token, realm, role
 	var result Role
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
 		SetResult(&result).
-		Get(client.getAdminRealmURL(realm, "role-by-id", roleID))
+		Get(client.getAdminRealmURL(realm, "roles-by-id", roleID))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
 		return nil, err
