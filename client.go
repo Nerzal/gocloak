@@ -1364,7 +1364,7 @@ func (client *gocloak) GetClientRoles(ctx context.Context, token, realm, clientI
 }
 
 // GetClientRoleById gets role for the given client in realm using role ID
-func (client *gocloak) GetClientRoleById(ctx context.Context, token, realm, roleID string) (*Role, error) {
+func (client *gocloak) GetClientRoleByID(ctx context.Context, token, realm, roleID string) (*Role, error) {
 	const errMessage = "could not get client role"
 
 	var result Role
