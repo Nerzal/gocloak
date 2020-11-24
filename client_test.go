@@ -1070,6 +1070,16 @@ func TestGocloak_GetClientRole(t *testing.T) {
 	)
 	require.NoError(t, err, "GetClientRoleI failed")
 	require.NotNil(t, role)
+
+	role, err = client.GetClientRoleById(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		role.ID
+	)
+	require.NoError(t, err, "GetClientRoleI failed")
+	require.NotNil(t, role)
+	
 	token = GetAdminToken(t, client)
 	role, err = client.GetClientRole(
 		context.Background(),

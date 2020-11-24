@@ -226,6 +226,8 @@ type GoCloak interface {
 	DeleteClientRoleFromGroup(ctx context.Context, token, realm, clientID, groupID string, roles []Role) error
 	// GetClientRoles gets roles for the given client
 	GetClientRoles(ctx context.Context, accessToken, realm, clientID string) ([]*Role, error)
+	// GetClientRoleById gets role for the given client using role id
+	GetClientRoleById(ctx context.Context, accessToken, realm, roleID string) (*Role, error)
 	// GetRealmRolesByUserID returns all client roles assigned to the given user
 	GetClientRolesByUserID(ctx context.Context, token, realm, clientID, userID string) ([]*Role, error)
 	// GetClientRolesByGroupID returns all client roles assigned to the given group
