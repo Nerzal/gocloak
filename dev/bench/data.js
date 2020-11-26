@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1606225259366,
+  "lastUpdate": 1606387423923,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -2541,6 +2541,54 @@ window.BENCHMARK_DATA = {
             "value": 47150547,
             "unit": "ns/op\t   48924 B/op\t     216 allocs/op",
             "extra": "24 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "theel.tobias@gmx.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ce3567f439e6eb128ad61693b92f998b02ab0633",
+          "message": "Merge pull request #230 from timdrysdale/clientpat\n\nAdd client methods for Get, Update resource",
+          "timestamp": "2020-11-26T11:41:34+01:00",
+          "tree_id": "ac0edfc0ab367054ffc3aa0bfb6fbbc2306cd609",
+          "url": "https://github.com/Nerzal/gocloak/commit/ce3567f439e6eb128ad61693b92f998b02ab0633"
+        },
+        "date": 1606387423323,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 84753534,
+            "unit": "ns/op\t   61406 B/op\t     219 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 84499617,
+            "unit": "ns/op\t   55154 B/op\t     220 allocs/op",
+            "extra": "14 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 82312248,
+            "unit": "ns/op\t   65954 B/op\t     217 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 51249074,
+            "unit": "ns/op\t   51157 B/op\t     218 allocs/op",
+            "extra": "21 times\n2 procs"
           }
         ]
       }
