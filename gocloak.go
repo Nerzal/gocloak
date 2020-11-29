@@ -318,22 +318,26 @@ type GoCloak interface {
 	DeleteIdentityProvider(ctx context.Context, token, realm, alias string) error
 
 	// *** Protection API ***
-	// GetResource returns a client's resource with the given id, using access token from Client
-	GetResourceClient(ctx context.Context, token, realm, clientID, resourceID string) (*ResourceRepresentation, error)
-	// GetResources a returns resources associated with the client, using access token from Client
-	GetResourcesClient(ctx context.Context, token, realm, clientID string, params GetResourceParams) ([]*ResourceRepresentation, error)
-	// CreateResource creates a resource associated with the client
-	UpdateResourceClient(ctx context.Context, token, realm, clientID string, resource ResourceRepresentation) error
+	// GetResource returns a client's resource with the given id, using access token from client
+	GetResourceClient(ctx context.Context, token, realm, resourceID string) (*ResourceRepresentation, error)
+	// GetResources a returns resources associated with the client, using access token from client
+	GetResourcesClient(ctx context.Context, token, realm string, params GetResourceParams) ([]*ResourceRepresentation, error)
+	// CreateResource creates a resource associated with the client, using access token from client
+	CreateResourceClient(ctx context.Context, token, realm string, resource ResourceRepresentation) (*ResourceRepresentation, error)
+	// UpdateResource updates a resource associated with the client, using access token from client
+	UpdateResourceClient(ctx context.Context, token, realm string, resource ResourceRepresentation) error
+	// DeleteResource deletes a resource associated with the client, using access token from client
+	DeleteResourceClient(ctx context.Context, token, realm, resourceID string) error
 
-	// GetResource returns a client's resource with the given id, using access token from Admin
+	// GetResource returns a client's resource with the given id, using access token from admin
 	GetResource(ctx context.Context, token, realm, clientID, resourceID string) (*ResourceRepresentation, error)
-	// GetResources a returns resources associated with the client, using access token from Admin
+	// GetResources a returns resources associated with the client, using access token from admin
 	GetResources(ctx context.Context, token, realm, clientID string, params GetResourceParams) ([]*ResourceRepresentation, error)
-	// CreateResource creates a resource associated with the client
+	// CreateResource creates a resource associated with the client, using access token from admin
 	CreateResource(ctx context.Context, token, realm, clientID string, resource ResourceRepresentation) (*ResourceRepresentation, error)
-	// UpdateResource updates a resource associated with the client
+	// UpdateResource updates a resource associated with the client, using access token from admin
 	UpdateResource(ctx context.Context, token, realm, clientID string, resource ResourceRepresentation) error
-	// DeleteResource deletes a resource associated with the client
+	// DeleteResource deletes a resource associated with the client, using access token from admin
 	DeleteResource(ctx context.Context, token, realm, clientID, resourceID string) error
 
 	// GetScope returns a client's scope with the given id

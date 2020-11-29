@@ -230,6 +230,43 @@ func CreateResource(t *testing.T, client gocloak.GoCloak, clientID string) (func
 	return tearDown, *createdResource.ID
 }
 
+func CreateResourceClient(t *testing.T, client gocloak.GoCloak) (func(), string) {
+	cfg := GetConfig(t)
+	token := GetClientToken(t, client)
+	resource := gocloak.ResourceRepresentation{
+		Name:        GetRandomNameP("ResourceName"),
+		DisplayName: gocloak.StringP("Resource Display Name"),
+		Type:        gocloak.StringP("urn:gocloak:resources:test"),
+		IconURI:     gocloak.StringP("/resource/test/icon"),
+		Attributes: &map[string][]string{
+			"foo": {"bar", "alice", "bob", "roflcopter"},
+			"bar": {"baz"},
+		},
+		URIs: &[]string{
+			"/resource/1",
+			"/resource/2",
+		},
+		OwnerManagedAccess: gocloak.BoolP(true),
+	}
+	createdResource, err := client.CreateResourceClient(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		resource)
+	require.NoError(t, err, "CreateResource failed")
+	t.Logf("Created Resource ID: %s ", *(createdResource.ID))
+
+	tearDown := func() {
+		err := client.DeleteResourceClient(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			*createdResource.ID)
+		require.NoError(t, err, "DeleteResource failed")
+	}
+	return tearDown, *createdResource.ID
+}
+
 func CreateScope(t *testing.T, client gocloak.GoCloak, clientID string) (func(), string) {
 	cfg := GetConfig(t)
 	token := GetAdminToken(t, client)
@@ -4045,7 +4082,7 @@ func TestGocloak_CreateListGetUpdateDeleteResourceClient(t *testing.T) {
 	token := GetClientToken(t, client)
 
 	// Create
-	tearDown, resourceID := CreateResource(t, client, gocloakClientID)
+	tearDown, resourceID := CreateResourceClient(t, client)
 	// Delete
 	defer tearDown()
 
@@ -4054,7 +4091,6 @@ func TestGocloak_CreateListGetUpdateDeleteResourceClient(t *testing.T) {
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		gocloakClientID,
 		resourceID,
 	)
 
@@ -4067,7 +4103,6 @@ func TestGocloak_CreateListGetUpdateDeleteResourceClient(t *testing.T) {
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		gocloakClientID,
 		gocloak.GetResourceParams{
 			Name: createdResource.Name,
 		},
@@ -4081,7 +4116,6 @@ func TestGocloak_CreateListGetUpdateDeleteResourceClient(t *testing.T) {
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		gocloakClientID,
 		gocloak.ResourceRepresentation{},
 	)
 	require.Error(t, err, "Should fail because of missing ID of the resource")
@@ -4092,7 +4126,6 @@ func TestGocloak_CreateListGetUpdateDeleteResourceClient(t *testing.T) {
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		gocloakClientID,
 		*createdResource,
 	)
 	require.NoError(t, err, "UpdateResource failed")
@@ -4101,7 +4134,6 @@ func TestGocloak_CreateListGetUpdateDeleteResourceClient(t *testing.T) {
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		gocloakClientID,
 		resourceID,
 	)
 	require.NoError(t, err, "GetResource failed")
