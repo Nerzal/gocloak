@@ -2544,6 +2544,101 @@ func (client *gocloak) DeleteScope(ctx context.Context, token, realm, clientID, 
 	return checkForError(resp, err, errMessage)
 }
 
+/*
+// START CLIENT POLICY CODE - DELETE THIS LINE ########################################
+
+// GetPolicy returns a client's policy with the given id, using access token from client
+func (client *gocloak) GetPolicyClient(ctx context.Context, token, realm, policyID string) (*PolicyRepresentation, error) {
+	const errMessage = "could not get policy"
+
+	var result PolicyRepresentation
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(client.getRealmURL(realm, "authz", "protection", "uma-policy", policyID))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// GetPolicies returns policies associated with the client, using access token from client
+func (client *gocloak) GetPoliciesClient(ctx context.Context, token, realm string, params GetPolicyParams) ([]*PolicyRepresentation, error) {
+	const errMessage = "could not get policies"
+
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, errors.Wrap(err, errMessage)
+	}
+
+	path := []string{"clients", clientID, "authz", "protection", "uma-policy"}
+	if !NilOrEmpty(params.Type) {
+		path = append(path, *params.Type) //TODO check that type has ? prepended....
+	}
+
+	var result []*PolicyRepresentation
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		SetQueryParams(queryParams).
+		Get(client.getAdminRealmURL(realm, path...))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// CreatePolicy creates a policy associated with the client, using access token from client
+func (client *gocloak) CreatePolicyClient(ctx context.Context, token, realm string, policy PolicyRepresentation) (*PolicyRepresentation, error) {
+	const errMessage = "could not create policy"
+
+	if NilOrEmpty(policy.Type) {
+		return nil, errors.New("type of a policy required")
+	}
+
+	var result PolicyRepresentation
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		SetBody(policy).
+		Post(client.getRealmURL(realm, "clients", clientID, "authz", "resource-server", "policy", *(policy.Type)))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// UpdatePolicy updates a policy associated with the client, using access token from client
+func (client *gocloak) UpdatePolicyClient(ctx context.Context, token, realm string, policy PolicyRepresentation) error {
+	const errMessage = "could not update policy"
+
+	if NilOrEmpty(policy.ID) {
+		return errors.New("ID of a policy required")
+	}
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetBody(policy).
+		Put(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "policy", *(policy.ID)))
+
+	return checkForError(resp, err, errMessage)
+}
+
+// DeletePolicy deletes a policy associated with the client, using access token from client
+func (client *gocloak) DeletePolicyClient(ctx context.Context, token, realm, policyID string) error {
+	const errMessage = "could not delete policy"
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		Delete(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "policy", policyID))
+
+	return checkForError(resp, err, errMessage)
+}
+
+// END CLIENT POLICY _ DELETE THIS LINE ########################
+*/
+
 // GetPolicy returns a client's policy with the given id
 func (client *gocloak) GetPolicy(ctx context.Context, token, realm, clientID, policyID string) (*PolicyRepresentation, error) {
 	const errMessage = "could not get policy"
@@ -2722,6 +2817,37 @@ func (client *gocloak) GetPermissions(ctx context.Context, token, realm, clientI
 	}
 
 	return result, nil
+}
+
+// CreatePermissionTicket creates a permission ticket, using access token from client
+func (client *gocloak) CreatePermissionTicket(ctx context.Context, token, realm string, permissionTickets []GetPermissionTicketParams) (*PermissionTicketRepresentation, error) {
+	const errMessage = "could not create permission ticket"
+
+	if len(permissionTickets) == 0 {
+		return nil, errors.New("at least one permission ticket must be requested")
+	}
+
+	for _, pt := range permissionTickets {
+
+		if NilOrEmpty(pt.ResourceID) {
+			return nil, errors.New("resourceID required for permission ticket")
+		}
+		if NilOrEmptyArray(pt.ResourceScopes) {
+			return nil, errors.New("at least one resourceScope required for permission ticket")
+		}
+	}
+
+	var result PermissionTicketRepresentation //TODO handle multiple json objects in the response, as this call seems to obtain...?
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		SetBody(permissionTickets).
+		Post(client.getRealmURL(realm, "authz", "protection", "permission"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }
 
 // CreatePermission creates a permission associated with the client

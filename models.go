@@ -537,6 +537,7 @@ type ResourceRepresentation struct {
 	Name               *string                      `json:"name,omitempty"`
 	Owner              *ResourceOwnerRepresentation `json:"owner,omitempty"`
 	OwnerManagedAccess *bool                        `json:"ownerManagedAccess,omitempty"`
+	ResourceScopes     *[]ScopeRepresentation       `json:"resource_scopes,omitempty"`
 	Scopes             *[]ScopeRepresentation       `json:"scopes,omitempty"`
 	Type               *string                      `json:"type,omitempty"`
 	URIs               *[]string                    `json:"uris,omitempty"`
@@ -923,6 +924,44 @@ type PermissionRepresentation struct {
 	ResourceType     *string           `json:"resource_type,omitempty"`
 	Scopes           *[]string         `json:"scopes,omitempty"`
 	Type             *string           `json:"type,omitempty"`
+}
+
+// GetPermissionTicketParams represents the optional parameters for getting a permission ticket
+type GetPermissionTicketParams struct {
+	ResourceID     *string              `json:"resource_id,omitempty"`
+	ResourceScopes *[]string            `json:"resource_scopes,omitempty"`
+	Claims         *map[string][]string `json:"claims,omitempty"`
+}
+
+// PermissionTicketDescriptionRepresentation represents the parameters returned along with a permission ticket
+type PermissionTicketDescriptionRepresentation struct {
+	ID                     *string               `json:"id,omitempty"`
+	CreatedTimeStamp       *int64                `json:"createdTimestamp,omitempty"`
+	UserName               *string               `json:"username,omitempty"`
+	Enabled                *bool                 `json:"enabled,omitempty"`
+	TOTP                   *bool                 `json:"totp,omitempty"`
+	EmailVerified          *bool                 `json:"emailVerified,omitempty"`
+	FirstName              *string               `json:"firstName,omitempty"`
+	LastName               *string               `json:"lastName,omitempty"`
+	Email                  *string               `json:"email,omitempty"`
+	DisableCredentialTypes *[]string             `json:"disableCredentialTypes,omitempty"`
+	RequiredActions        *[]string             `json:"requiredActions,omitempty"`
+	NotBefore              *int64                `json:"notBefore,omitempty"`
+	Access                 *AccessRepresentation `json:"access,omitempty"`
+}
+
+// AccessRepresentation represents the access parameters returned in the permission ticket description
+type AccessRepresentation struct {
+	ManageGroupMembership *bool `json:"manageGroupMembership,omitEmpty"`
+	View                  *bool `json:"view,omitempty"`
+	MapRoles              *bool `json:"mapRoles,omitempty"`
+	Impersonate           *bool `json:"impersonate,omitempty"`
+	Manage                *bool `json:"manage,omitempty"`
+}
+
+// PermissionTicketRepresentation represents the permission ticket returned
+type PermissionTicketRepresentation struct {
+	Ticket *string `json:"ticket,omitempty"`
 }
 
 // CredentialRepresentation is a representations of the credentials

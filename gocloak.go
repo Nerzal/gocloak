@@ -340,27 +340,45 @@ type GoCloak interface {
 	// DeleteResource deletes a resource associated with the client, using access token from admin
 	DeleteResource(ctx context.Context, token, realm, clientID, resourceID string) error
 
-	// GetScope returns a client's scope with the given id
+	// GetScope returns a client's scope with the given id, using access token from admin
 	GetScope(ctx context.Context, token, realm, clientID, scopeID string) (*ScopeRepresentation, error)
-	// GetScopes returns scopes associated with the client
+	// GetScopes returns scopes associated with the client, using access token from admin
 	GetScopes(ctx context.Context, token, realm, clientID string, params GetScopeParams) ([]*ScopeRepresentation, error)
-	// CreateScope creates a scope associated with the client
+	// CreateScope creates a scope associated with the client, using access token from admin
 	CreateScope(ctx context.Context, token, realm, clientID string, scope ScopeRepresentation) (*ScopeRepresentation, error)
-	// UpdateScope updates a scope associated with the client
+	// UpdateScope updates a scope associated with the client, using access token from admin
 	UpdateScope(ctx context.Context, token, realm, clientID string, resource ScopeRepresentation) error
-	// DeleteScope deletes a scope associated with the client
+	// DeleteScope deletes a scope associated with the client, using access token from admin
 	DeleteScope(ctx context.Context, token, realm, clientID, scopeID string) error
 
-	// GetPolicy returns a client's policy with the given id
-	GetPolicy(ctx context.Context, token, realm, clientID, policyID string) (*PolicyRepresentation, error)
-	// GetPolicies returns policies associated with the client
-	GetPolicies(ctx context.Context, token, realm, clientID string, params GetPolicyParams) ([]*PolicyRepresentation, error)
-	// CreatePolicy creates a policy associated with the client
-	CreatePolicy(ctx context.Context, token, realm, clientID string, policy PolicyRepresentation) (*PolicyRepresentation, error)
-	// UpdatePolicy updates a policy associated with the client
-	UpdatePolicy(ctx context.Context, token, realm, clientID string, policy PolicyRepresentation) error
-	// DeletePolicy deletes a policy associated with the client
-	DeletePolicy(ctx context.Context, token, realm, clientID, policyID string) error
+	// GetPolicy returns a client's policy with the given id, using access token from client
+	//GetPolicyClient(ctx context.Context, token, realm, policyID string) (*PolicyRepresentation, error)
+	// GetPolicies returns policies associated with the client, using access token from client
+	//GetPoliciesClient(ctx context.Context, token, realm string, params GetPolicyParams) ([]*PolicyRepresentation, error)
+	// CreatePolicy creates a policy associated with the client, using access token from client
+	//CreatePolicyClient(ctx context.Context, token, realm string, policy PolicyRepresentation) (*PolicyRepresentation, error)
+	// UpdatePolicy updates a policy associated with the client, using access token from client
+	//UpdatePolicyClient(ctx context.Context, token, realm string, policy PolicyRepresentation) error
+	// DeletePolicy deletes a policy associated with the client, using access token from client
+	//DeletePolicyClient(ctx context.Context, token, realm, policyID string) error
+
+	// GetPermission returns a client's permission with the given id, using access token from client
+	//GetPermissionClient(ctx context.Context, token, realm, permissionID string) (*PermissionRepresentation, error)
+	// GetPermissions returns permissions associated with the client, using access token from client
+	//GetPermissionsClient(ctx context.Context, token, realm string, params GetPermissionParams) ([]*PermissionRepresentation, error)
+
+	// CreatePermissionTicket creates a permission ticket for a resource, using access token from client
+	CreatePermissionTicket(ctx context.Context, token, realm string, permissionTickets []GetPermissionTicketParams) (*PermissionTicketRepresentation, error)
+	// UpdatePermission updates a permission associated with the client, using access token from client
+	//UpdatePermissionClient(ctx context.Context, token, realm string, permission PermissionRepresentation) error
+	// DeletePermission deletes a permission associated with the client, using access token from client
+	//DeletePermissionClient(ctx context.Context, token, realm, permissionID string) error
+	// GetDependentPermissions returns client's permissions dependent on the policy with given ID
+	//GetDependentPermissionsClient(ctx context.Context, token, realm, policyID string) ([]*PermissionRepresentation, error)
+	// TODO description
+	//GetPermissionResourcesClient(ctx context.Context, token, realm, permissionID string) ([]*PermissionResource, error)
+	// TODO description
+	//GetPermissionScopesClient(ctx context.Context, token, realm, permissionID string) ([]*PermissionScope, error)
 
 	// GetPermission returns a client's permission with the given id
 	GetPermission(ctx context.Context, token, realm, clientID, permissionID string) (*PermissionRepresentation, error)
@@ -376,6 +394,18 @@ type GoCloak interface {
 	GetDependentPermissions(ctx context.Context, token, realm, clientID, policyID string) ([]*PermissionRepresentation, error)
 	GetPermissionResources(ctx context.Context, token, realm, clientID, permissionID string) ([]*PermissionResource, error)
 	GetPermissionScopes(ctx context.Context, token, realm, clientID, permissionID string) ([]*PermissionScope, error)
+
+	// GetPolicy returns a client's policy with the given id, using access token from admin
+	GetPolicy(ctx context.Context, token, realm, clientID, policyID string) (*PolicyRepresentation, error)
+	// GetPolicies returns policies associated with the client, using access token from admin
+	GetPolicies(ctx context.Context, token, realm, clientID string, params GetPolicyParams) ([]*PolicyRepresentation, error)
+	// CreatePolicy creates a policy associated with the client, using access token from admin
+	CreatePolicy(ctx context.Context, token, realm, clientID string, policy PolicyRepresentation) (*PolicyRepresentation, error)
+	// UpdatePolicy updates a policy associated with the client, using access token from admin
+	UpdatePolicy(ctx context.Context, token, realm, clientID string, policy PolicyRepresentation) error
+	// DeletePolicy deletes a policy associated with the client, using access token from admin
+	DeletePolicy(ctx context.Context, token, realm, clientID, policyID string) error
+
 	// ---------------
 	// Credentials API
 	// ---------------
