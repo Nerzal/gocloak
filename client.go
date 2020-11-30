@@ -2820,14 +2820,14 @@ func (client *gocloak) GetPermissions(ctx context.Context, token, realm, clientI
 }
 
 // CreatePermissionTicket creates a permission ticket, using access token from client
-func (client *gocloak) CreatePermissionTicket(ctx context.Context, token, realm string, permissionTicketParams []GetPermissionTicketParams) (*PermissionTicketResponseRepresentation, error) {
+func (client *gocloak) CreatePermissionTicket(ctx context.Context, token, realm string, permissions []CreatePermissionTicketParams) (*PermissionTicketResponseRepresentation, error) {
 	const errMessage = "could not create permission ticket"
 
-	if len(permissionTicketParams) == 0 {
+	if len(permissions) == 0 {
 		return nil, errors.New("at least one permission ticket must be requested")
 	}
 
-	for _, pt := range permissionTicketParams {
+	for _, pt := range permissions {
 
 		if NilOrEmpty(pt.ResourceID) {
 			return nil, errors.New("resourceID required for permission ticket")
@@ -2840,7 +2840,7 @@ func (client *gocloak) CreatePermissionTicket(ctx context.Context, token, realm 
 	var result PermissionTicketResponseRepresentation
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
 		SetResult(&result).
-		SetBody(permissionTicketParams).
+		SetBody(permissions).
 		Post(client.getRealmURL(realm, "authz", "protection", "permission"))
 
 	if err := checkForError(resp, err, errMessage); err != nil {

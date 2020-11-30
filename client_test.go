@@ -4615,13 +4615,13 @@ func TestGocloak_CreateGetUpdateDeletePermissionTicket(t *testing.T) {
 
 	pushClaims["organisation"] = []string{"acme", "somecorp"}
 
-	permissions := gocloak.GetPermissionTicketParams{
+	permissions := gocloak.CreatePermissionTicketParams{
 		ResourceID:     &resourceID,
 		ResourceScopes: &[]string{"read-private"},
 		Claims:         &pushClaims,
 	}
 
-	ticket, err := client.CreatePermissionTicket(context.Background(), token.AccessToken, cfg.GoCloak.Realm, []gocloak.GetPermissionTicketParams{permissions})
+	ticket, err := client.CreatePermissionTicket(context.Background(), token.AccessToken, cfg.GoCloak.Realm, []gocloak.CreatePermissionTicketParams{permissions})
 
 	require.NoError(t, err, "CreatePermissionTicket failed")
 	t.Logf("Created PermissionTicket: %+v", *(ticket.Ticket))

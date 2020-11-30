@@ -929,7 +929,7 @@ type PermissionRepresentation struct {
 }
 
 // GetPermissionTicketParams represents the optional parameters for getting a permission ticket
-type GetPermissionTicketParams struct {
+type CreatePermissionTicketParams struct {
 	ResourceID     *string              `json:"resource_id,omitempty"`
 	ResourceScopes *[]string            `json:"resource_scopes,omitempty"`
 	Claims         *map[string][]string `json:"claims,omitempty"`
