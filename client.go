@@ -2837,7 +2837,7 @@ func (client *gocloak) CreatePermissionTicket(ctx context.Context, token, realm 
 		}
 	}
 
-	var result PermissionTicketRepresentation //TODO handle multiple json objects in the response, as this call seems to obtain...?
+	var result PermissionTicketRepresentation
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
 		SetResult(&result).
 		SetBody(permissionTickets).

@@ -252,7 +252,6 @@ func CreateResourceClientWithScopes(t *testing.T, client gocloak.GoCloak, client
 			gocloak.ScopeRepresentation{Name: gocloak.StringP("read-private")},
 			gocloak.ScopeRepresentation{Name: gocloak.StringP("post-update")},
 		},
-		//&[]string{"read-public", "read-private", "post-update"},
 	}
 	createdResource, err := client.CreateResourceClient(
 		context.Background(),
@@ -4615,13 +4614,27 @@ func TestGocloak_CreateGetUpdateDeletePermissionTicket(t *testing.T) {
 		ResourceID:     &resourceID,
 		ResourceScopes: &[]string{"read-private"},
 	}
-	//TODO repeat test with claims
 
 	ticket, err := client.CreatePermissionTicket(context.Background(), token.AccessToken, cfg.GoCloak.Realm, []gocloak.GetPermissionTicketParams{permissions})
 
 	require.NoError(t, err, "CreatePermissionTicket failed")
 	t.Logf("Created PermissionTicket: %+v", *(ticket.Ticket))
-	//TODO check permission ticket description against requested resourceID (needs change to ClientPermissionTicket)
+
+	type ticketClaims struct {
+		AZP string `json:"azp,omitempty"`
+		jwt.StandardClaims
+	}
+
+	pt, err := jwt.ParseWithClaims(*(ticket.Ticket), &ticketClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(""), nil
+	})
+
+	//we're expecting validity error because we didn't supply secret
+	require.Equal(t, "token signature is invalid", err.Error())
+
+	claims, ok := pt.Claims.(*ticketClaims)
+	require.Equal(t, true, ok)
+	require.Equal(t, cfg.GoCloak.Realm, claims.AZP)
 
 }
 
