@@ -3,6 +3,8 @@ package gocloak
 import (
 	"encoding/json"
 	"strings"
+
+	"github.com/dgrijalva/jwt-go/v4"
 )
 
 // GetQueryParams converts the struct to map[string]string
@@ -959,9 +961,21 @@ type AccessRepresentation struct {
 	Manage                *bool `json:"manage,omitempty"`
 }
 
-// PermissionTicketRepresentation represents the permission ticket returned
-type PermissionTicketRepresentation struct {
+// PermissionTicketResponseRepresentation represents the keycloak response containing the permission ticket
+type PermissionTicketResponseRepresentation struct {
 	Ticket *string `json:"ticket,omitempty"`
+}
+
+type PermissionTicketRepresentation struct {
+	AZP         *string                                     `json:"azp,omitempty"`
+	Claims      *map[string][]string                        `json:"claims,omitempty"`
+	Permissions *[]PermissionTicketPermissionRepresentation `json:"permissions,omitempty"`
+	jwt.StandardClaims
+}
+
+type PermissionTicketPermissionRepresentation struct {
+	Scopes *[]string `json:"scopes,omitempty"`
+	RSID   *string   `json:"rsid,omitempty"`
 }
 
 // CredentialRepresentation is a representations of the credentials

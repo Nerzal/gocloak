@@ -4610,9 +4610,15 @@ func TestGocloak_CreateGetUpdateDeletePermissionTicket(t *testing.T) {
 	// Delete
 	defer tearDownResource()
 
+	// Add additional claims
+	pushClaims := make(map[string][]string)
+
+	pushClaims["organisation"] = []string{"acme", "somecorp"}
+
 	permissions := gocloak.GetPermissionTicketParams{
 		ResourceID:     &resourceID,
 		ResourceScopes: &[]string{"read-private"},
+		Claims:         &pushClaims,
 	}
 
 	ticket, err := client.CreatePermissionTicket(context.Background(), token.AccessToken, cfg.GoCloak.Realm, []gocloak.GetPermissionTicketParams{permissions})
@@ -4620,21 +4626,21 @@ func TestGocloak_CreateGetUpdateDeletePermissionTicket(t *testing.T) {
 	require.NoError(t, err, "CreatePermissionTicket failed")
 	t.Logf("Created PermissionTicket: %+v", *(ticket.Ticket))
 
-	type ticketClaims struct {
-		AZP string `json:"azp,omitempty"`
-		jwt.StandardClaims
-	}
-
-	pt, err := jwt.ParseWithClaims(*(ticket.Ticket), &ticketClaims{}, func(token *jwt.Token) (interface{}, error) {
+	pt, err := jwt.ParseWithClaims(*(ticket.Ticket), &gocloak.PermissionTicketRepresentation{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(""), nil
 	})
 
 	//we're expecting validity error because we didn't supply secret
 	require.Equal(t, "token signature is invalid", err.Error())
 
-	claims, ok := pt.Claims.(*ticketClaims)
+	claims, ok := pt.Claims.(*gocloak.PermissionTicketRepresentation) //ticketClaims)
 	require.Equal(t, true, ok)
-	require.Equal(t, cfg.GoCloak.Realm, claims.AZP)
+	require.Equal(t, cfg.GoCloak.Realm, *(claims.AZP))
+	require.Equal(t, 1, len(*(claims.Permissions)))
+	require.Equal(t, 1, len(*(claims.Permissions)))
+	require.Equal(t, 1, len(*(claims.Claims)))
+	require.Equal(t, pushClaims["organisation"], (*(claims.Claims))["organisation"])
+	require.Equal(t, *permissions.ResourceID, *((*(claims.Permissions))[0].RSID))
 
 }
 
