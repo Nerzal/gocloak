@@ -4116,6 +4116,58 @@ func TestGocloak_CreateProvider(t *testing.T) {
 // Protection API
 // -----------------
 
+func TestGocloak_ErrorsCreateListGetUpdateDeleteResourceClient(t *testing.T) {
+
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetClientToken(t, client)
+	token.AccessToken = "" // force unauthorised access attempts
+
+	// Create
+	tearDown, resourceID := CreateResourceClient(t, client)
+	// Delete
+	defer tearDown()
+
+	// List
+	_, err := client.GetResourceClient(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		resourceID,
+	)
+
+	require.Error(t, err, "GetResource no error on unauthorised request")
+
+	// Looking for a created resource
+	_, err = client.GetResourcesClient(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloak.GetResourceParams{
+			Name: gocloak.StringP("nothing"),
+		},
+	)
+	require.Error(t, err, "GetResources no error on unauthorised request")
+
+	err = client.UpdateResourceClient(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloak.ResourceRepresentation{},
+	)
+	require.Error(t, err, "UpdateResourceClient no error on missing ID of the resource")
+	emptyResource := gocloak.ResourceRepresentation{}
+	err = client.UpdateResourceClient(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		emptyResource,
+	)
+	require.Error(t, err, "UpdateResourceClient no error on unauthorised request")
+
+}
+
 func TestGocloak_CreateListGetUpdateDeleteResourceClient(t *testing.T) {
 
 	t.Parallel()
