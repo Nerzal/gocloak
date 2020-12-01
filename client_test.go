@@ -4622,17 +4622,19 @@ func TestGocloak_GrantGetUpdateDeleteUserPermission(t *testing.T) {
 
 	require.NoError(t, err, "GrantUserPermission failed")
 	require.True(t, nil != result)
-	require.False(t, result.ResourceID == nil)
-	require.False(t, result.RequesterID == nil)
-	require.False(t, result.Granted == nil)
-	if result.ResourceID != nil {
-		require.Equal(t, resourceID, *(result.ResourceID))
-	}
-	if result.RequesterID != nil {
-		require.Equal(t, userID, *(result.RequesterID))
-	}
-	if result.Granted != nil {
-		require.Equal(t, true, *(result.Granted))
+	if result != nil {
+		require.False(t, result.ResourceID == nil)
+		require.False(t, result.RequesterID == nil)
+		require.False(t, result.Granted == nil)
+		if result.ResourceID != nil {
+			require.Equal(t, resourceID, *(result.ResourceID))
+		}
+		if result.RequesterID != nil {
+			require.Equal(t, userID, *(result.RequesterID))
+		}
+		if result.Granted != nil {
+			require.Equal(t, true, *(result.Granted))
+		}
 	}
 
 	// Get
