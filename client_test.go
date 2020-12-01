@@ -4644,6 +4644,44 @@ func TestGocloak_GrantGetUpdateDeleteUserPermission(t *testing.T) {
 	require.NoError(t, err, "UpdateUserPermission failed")
 	require.True(t, nil == result)
 
+	// Get (no permission expected to be returned)
+	params = gocloak.GetUserPermissionParams{
+		ResourceID: &resourceID,
+	}
+	queried, err = client.GetUserPermissions(context.Background(), token.AccessToken, cfg.GoCloak.Realm, params)
+	require.NoError(t, err, "GetUserPermissions failed")
+	require.Equal(t, 0, len(queried))
+
+	// Grant again
+	permission = gocloak.PermissionGrantParams{
+		ResourceID:  &resourceID,
+		RequesterID: &userID,
+		ScopeName:   &scope,
+	}
+	result, err = client.GrantUserPermission(context.Background(), token.AccessToken, cfg.GoCloak.Realm, permission)
+
+	// Get
+	params = gocloak.GetUserPermissionParams{
+		ResourceID: &resourceID,
+	}
+	queried, err = client.GetUserPermissions(context.Background(), token.AccessToken, cfg.GoCloak.Realm, params)
+	require.NoError(t, err, "GetUserPermissions failed")
+	require.Equal(t, 1, len(queried))
+	require.Equal(t, userID, *(queried[0].RequesterID))
+
+	// Delete
+	err = client.DeleteUserPermission(context.Background(), token.AccessToken, cfg.GoCloak.Realm, *(result.ID))
+	require.NoError(t, err, "DeleteUserPermissions failed")
+
+	// Get (no permission expected to be returned)
+
+	params = gocloak.GetUserPermissionParams{
+		ResourceID: &resourceID,
+	}
+	queried, err = client.GetUserPermissions(context.Background(), token.AccessToken, cfg.GoCloak.Realm, params)
+	require.NoError(t, err, "GetUserPermissions failed")
+	require.Equal(t, 0, len(queried))
+
 }
 
 func TestGocloak_CreatePermissionTicket(t *testing.T) {

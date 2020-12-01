@@ -362,11 +362,6 @@ type GoCloak interface {
 	// DeletePolicy deletes a policy associated with the client, using access token from client
 	//DeletePolicyClient(ctx context.Context, token, realm, policyID string) error
 
-	// GetPermission returns a client's permission with the given id, using access token from client
-	//GetPermissionClient(ctx context.Context, token, realm, permissionID string) (*PermissionRepresentation, error)
-	// GetPermissions returns permissions associated with the client, using access token from client
-	//GetPermissionsClient(ctx context.Context, token, realm string, params GetPermissionParams) ([]*PermissionRepresentation, error)
-
 	// CreatePermissionTicket creates a permission ticket for a resource, using access token from client (typically a resource server)
 	CreatePermissionTicket(ctx context.Context, token, realm string, permissions []CreatePermissionTicketParams) (*PermissionTicketResponseRepresentation, error)
 	// GrantUserPermission lets resource owner grant permission for specific resource ID to specific user ID
@@ -375,17 +370,8 @@ type GoCloak interface {
 	UpdateUserPermission(ctx context.Context, token, realm string, permission PermissionGrantParams) (*PermissionGrantResponseRepresentation, error)
 	// GetUserPermission gets granted permissions according query parameters
 	GetUserPermissions(ctx context.Context, token, realm string, params GetUserPermissionParams) ([]*PermissionGrantResponseRepresentation, error)
-
-	// UpdatePermission updates a permission associated with the client, using access token from client
-	//UpdatePermissionClient(ctx context.Context, token, realm string, permission PermissionRepresentation) error
-	// DeletePermission deletes a permission associated with the client, using access token from client
-	//DeletePermissionClient(ctx context.Context, token, realm, permissionID string) error
-	// GetDependentPermissions returns client's permissions dependent on the policy with given ID
-	//GetDependentPermissionsClient(ctx context.Context, token, realm, policyID string) ([]*PermissionRepresentation, error)
-	// TODO description
-	//GetPermissionResourcesClient(ctx context.Context, token, realm, permissionID string) ([]*PermissionResource, error)
-	// TODO description
-	//GetPermissionScopesClient(ctx context.Context, token, realm, permissionID string) ([]*PermissionScope, error)
+	// DeleteUserPermission lets resource owner delete permission for specific resource ID to specific user ID
+	DeleteUserPermission(ctx context.Context, token, realm, ticketID string) error
 
 	// GetPermission returns a client's permission with the given id
 	GetPermission(ctx context.Context, token, realm, clientID, permissionID string) (*PermissionRepresentation, error)

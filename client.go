@@ -2939,6 +2939,16 @@ func (client *gocloak) GetUserPermissions(ctx context.Context, token, realm stri
 
 }
 
+func (client *gocloak) DeleteUserPermission(ctx context.Context, token, realm, ticketID string) error {
+	const errMessage = "could not delete user permission"
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		Delete(client.getRealmURL(realm, "authz", "protection", "permission", "ticket", ticketID))
+
+	return checkForError(resp, err, errMessage)
+
+}
+
 // CreatePermission creates a permission associated with the client
 func (client *gocloak) CreatePermission(ctx context.Context, token, realm, clientID string, permission PermissionRepresentation) (*PermissionRepresentation, error) {
 	const errMessage = "could not create permission"
