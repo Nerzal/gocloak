@@ -248,9 +248,9 @@ func CreateResourceClientWithScopes(t *testing.T, client gocloak.GoCloak) (func(
 		},
 		OwnerManagedAccess: gocloak.BoolP(true),
 		ResourceScopes: &[]gocloak.ScopeRepresentation{
-			gocloak.ScopeRepresentation{Name: gocloak.StringP("read-public")},
-			gocloak.ScopeRepresentation{Name: gocloak.StringP("read-private")},
-			gocloak.ScopeRepresentation{Name: gocloak.StringP("post-update")},
+			{Name: gocloak.StringP("read-public")},
+			{Name: gocloak.StringP("read-private")},
+			{Name: gocloak.StringP("post-update")},
 		},
 	}
 	createdResource, err := client.CreateResourceClient(
@@ -4659,6 +4659,7 @@ func TestGocloak_GrantGetUpdateDeleteUserPermission(t *testing.T) {
 		ScopeName:   &scope,
 	}
 	result, err = client.GrantUserPermission(context.Background(), token.AccessToken, cfg.GoCloak.Realm, permission)
+	require.NoError(t, err, "GrantUserPermissions failed")
 
 	// Get
 	params = gocloak.GetUserPermissionParams{
@@ -4698,7 +4699,7 @@ func TestGocloak_CreatePermissionTicket(t *testing.T) {
 	// Add additional claims
 	pushClaims := make(map[string][]string)
 
-	pushClaims["organisation"] = []string{"acme", "somecorp"}
+	pushClaims["organization"] = []string{"acme", "somecorp"}
 
 	permissions := gocloak.CreatePermissionTicketParams{
 		ResourceID:     &resourceID,
@@ -4724,7 +4725,7 @@ func TestGocloak_CreatePermissionTicket(t *testing.T) {
 	require.Equal(t, 1, len(*(claims.Permissions)))
 	require.Equal(t, 1, len(*(claims.Permissions)))
 	require.Equal(t, 1, len(*(claims.Claims)))
-	require.Equal(t, pushClaims["organisation"], (*(claims.Claims))["organisation"])
+	require.Equal(t, pushClaims["organization"], (*(claims.Claims))["organization"])
 	require.Equal(t, *permissions.ResourceID, *((*(claims.Permissions))[0].RSID))
 
 }

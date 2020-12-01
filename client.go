@@ -2761,13 +2761,13 @@ func (client *gocloak) GrantUserPermission(ctx context.Context, token, realm str
 	const errMessage = "could not grant user permission"
 
 	if NilOrEmpty(permission.RequesterID) {
-		return nil, errors.New("RequesterID required to grant user permission")
+		return nil, errors.New("requesterID required to grant user permission")
 	}
 	if NilOrEmpty(permission.ResourceID) {
-		return nil, errors.New("ResourceID required to grant user permission")
+		return nil, errors.New("resourceID required to grant user permission")
 	}
 	if NilOrEmpty(permission.ScopeName) {
-		return nil, errors.New("ScopeName required to grant user permission")
+		return nil, errors.New("scopeName required to grant user permission")
 	}
 
 	permission.Granted = BoolP(true)
@@ -2816,9 +2816,9 @@ func (client *gocloak) UpdateUserPermission(ctx context.Context, token, realm st
 
 	if resp.StatusCode() == http.StatusNoContent { // permission updated to 'not granted' removes permission
 		return nil, nil
-	} else {
-		return &result, nil
 	}
+	return &result, nil
+
 }
 
 // GetUserPermission gets granted permissions according query parameters

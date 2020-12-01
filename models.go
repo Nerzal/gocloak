@@ -928,7 +928,7 @@ type PermissionRepresentation struct {
 	Type             *string           `json:"type,omitempty"`
 }
 
-// GetPermissionTicketParams represents the optional parameters for getting a permission ticket
+// CreatePermissionTicketParams represents the optional parameters for getting a permission ticket
 type CreatePermissionTicketParams struct {
 	ResourceID     *string              `json:"resource_id,omitempty"`
 	ResourceScopes *[]string            `json:"resource_scopes,omitempty"`
@@ -980,7 +980,7 @@ type PermissionTicketPermissionRepresentation struct {
 	RSID   *string   `json:"rsid,omitempty"`
 }
 
-// PermissionsGrantParams represents the permission which the resource owner is granting to a specific user
+// PermissionGrantParams represents the permission which the resource owner is granting to a specific user
 type PermissionGrantParams struct {
 	ResourceID  *string `json:"resource,omitempty"`
 	RequesterID *string `json:"requester,omitempty"`
