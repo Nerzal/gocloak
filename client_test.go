@@ -4692,28 +4692,28 @@ func TestGocloak_ErrorsGrantGetUpdateDeleteUserPermission(t *testing.T) {
 		ScopeName:   &scope,
 	}
 	_, err = client.GrantUserPermission(context.Background(), "", cfg.GoCloak.Realm, permission)
-	require.Error(t, err, "GrantUserPermission no error on unauthorised request")
+	require.Error(t, err, "GrantUserPermission no error on unauthorized request")
 
 	// Get
 	params := gocloak.GetUserPermissionParams{
 		ResourceID: &resourceID,
 	}
 	_, err = client.GetUserPermissions(context.Background(), "", cfg.GoCloak.Realm, params)
-	require.Error(t, err, "GetUserPermission no error on unauthorised request")
+	require.Error(t, err, "GetUserPermission no error on unauthorized request")
 
 	_, err = client.UpdateUserPermission(context.Background(), "", cfg.GoCloak.Realm, permission)
-	require.Error(t, err, "UpdateUserPermission no error on unauthorised request")
+	require.Error(t, err, "UpdateUserPermission no error on unauthorized request")
 
 	// Get (no permission expected to be returned)
 	params = gocloak.GetUserPermissionParams{
 		ResourceID: &resourceID,
 	}
 	_, err = client.GetUserPermissions(context.Background(), "", cfg.GoCloak.Realm, params)
-	require.Error(t, err, "UpdateUserPermission no error on unauthorised request")
+	require.Error(t, err, "UpdateUserPermission no error on unauthorized request")
 
 	// Delete
 	err = client.DeleteUserPermission(context.Background(), "", cfg.GoCloak.Realm, "someID")
-	require.Error(t, err, "DeleteUserPermission no error on unauthorised request")
+	require.Error(t, err, "DeleteUserPermission no error on unauthorized request")
 
 }
 
@@ -4848,7 +4848,7 @@ func TestGocloak_BadCreatePermissionTicket(t *testing.T) {
 	}
 
 	_, err = client.CreatePermissionTicket(context.Background(), "", cfg.GoCloak.Realm, []gocloak.CreatePermissionTicketParams{permissions})
-	require.Error(t, err, "CreatePermissionTicket no error on unauthorised access attempt")
+	require.Error(t, err, "CreatePermissionTicket no error on unauthorized access attempt")
 
 }
 
