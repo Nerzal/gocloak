@@ -2725,22 +2725,35 @@ func (client *gocloak) GetPermissions(ctx context.Context, token, realm, clientI
 	return result, nil
 }
 
-// CreatePermissionTicket creates a permission ticket, using access token from client
-func (client *gocloak) CreatePermissionTicket(ctx context.Context, token, realm string, permissions []CreatePermissionTicketParams) (*PermissionTicketResponseRepresentation, error) {
-	const errMessage = "could not create permission ticket"
+// checkPermissionTicketParams checks that mandatory fields are present
+func checkPermissionTicketParams(permissions []CreatePermissionTicketParams) error {
 
 	if len(permissions) == 0 {
-		return nil, errors.New("at least one permission ticket must be requested")
+		return errors.New("at least one permission ticket must be requested")
 	}
 
 	for _, pt := range permissions {
 
 		if NilOrEmpty(pt.ResourceID) {
-			return nil, errors.New("resourceID required for permission ticket")
+			return errors.New("resourceID required for permission ticket")
 		}
 		if NilOrEmptyArray(pt.ResourceScopes) {
-			return nil, errors.New("at least one resourceScope required for permission ticket")
+			return errors.New("at least one resourceScope required for permission ticket")
 		}
+	}
+
+	return nil
+
+}
+
+// CreatePermissionTicket creates a permission ticket, using access token from client
+func (client *gocloak) CreatePermissionTicket(ctx context.Context, token, realm string, permissions []CreatePermissionTicketParams) (*PermissionTicketResponseRepresentation, error) {
+	const errMessage = "could not create permission ticket"
+
+	err := checkPermissionTicketParams(permissions)
+
+	if err != nil {
+		return nil, err
 	}
 
 	var result PermissionTicketResponseRepresentation
@@ -2756,18 +2769,30 @@ func (client *gocloak) CreatePermissionTicket(ctx context.Context, token, realm 
 	return &result, nil
 }
 
+// checkPermissionGrantParams checks for mandatory fields
+func checkPermissionGrantParams(permission PermissionGrantParams) error {
+
+	if NilOrEmpty(permission.RequesterID) {
+		return errors.New("requesterID required to grant user permission")
+	}
+	if NilOrEmpty(permission.ResourceID) {
+		return errors.New("resourceID required to grant user permission")
+	}
+	if NilOrEmpty(permission.ScopeName) {
+		return errors.New("scopeName required to grant user permission")
+	}
+
+	return nil
+}
+
 // GrantPermission lets resource owner grant permission for specific resource ID to specific user ID
 func (client *gocloak) GrantUserPermission(ctx context.Context, token, realm string, permission PermissionGrantParams) (*PermissionGrantResponseRepresentation, error) {
 	const errMessage = "could not grant user permission"
 
-	if NilOrEmpty(permission.RequesterID) {
-		return nil, errors.New("requesterID required to grant user permission")
-	}
-	if NilOrEmpty(permission.ResourceID) {
-		return nil, errors.New("resourceID required to grant user permission")
-	}
-	if NilOrEmpty(permission.ScopeName) {
-		return nil, errors.New("scopeName required to grant user permission")
+	err := checkPermissionGrantParams(permission)
+
+	if err != nil {
+		return nil, err
 	}
 
 	permission.Granted = BoolP(true)
