@@ -954,7 +954,7 @@ type PermissionTicketDescriptionRepresentation struct {
 
 // AccessRepresentation represents the access parameters returned in the permission ticket description
 type AccessRepresentation struct {
-	ManageGroupMembership *bool `json:"manageGroupMembership,omitEmpty"`
+	ManageGroupMembership *bool `json:"manageGroupMembership,omitempty"`
 	View                  *bool `json:"view,omitempty"`
 	MapRoles              *bool `json:"mapRoles,omitempty"`
 	Impersonate           *bool `json:"impersonate,omitempty"`
@@ -985,7 +985,7 @@ type PermissionGrantParams struct {
 	ResourceID  *string `json:"resource,omitempty"`
 	RequesterID *string `json:"requester,omitempty"`
 	Granted     *bool   `json:"granted,omitempty"`
-	ScopeName   *string `json:"scopeName,omitEmpty"`
+	ScopeName   *string `json:"scopeName,omitempty"`
 	TicketID    *string `json:"id,omitempty"`
 }
 

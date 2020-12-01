@@ -2791,16 +2791,16 @@ func (client *gocloak) UpdateUserPermission(ctx context.Context, token, realm st
 	const errMessage = "could not update user permission"
 
 	if NilOrEmpty(permission.RequesterID) {
-		return nil, errors.New("RequesterID required to update user permission")
+		return nil, errors.New("requesterID required to update user permission")
 	}
 	if NilOrEmpty(permission.ResourceID) {
-		return nil, errors.New("ResourceID required to update user permission")
+		return nil, errors.New("resourceID required to update user permission")
 	}
 	if NilOrEmpty(permission.ScopeName) {
-		return nil, errors.New("ScopeName required to update user permission")
+		return nil, errors.New("scopeName required to update user permission")
 	}
 	if permission.Granted == nil {
-		return nil, errors.New("Granted required to update user permission")
+		return nil, errors.New("granted required to update user permission")
 	}
 
 	var result PermissionGrantResponseRepresentation
