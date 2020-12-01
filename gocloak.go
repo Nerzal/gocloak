@@ -351,17 +351,6 @@ type GoCloak interface {
 	// DeleteScope deletes a scope associated with the client, using access token from admin
 	DeleteScope(ctx context.Context, token, realm, clientID, scopeID string) error
 
-	// GetPolicy returns a client's policy with the given id, using access token from client
-	//GetPolicyClient(ctx context.Context, token, realm, policyID string) (*PolicyRepresentation, error)
-	// GetPolicies returns policies associated with the client, using access token from client
-	//GetPoliciesClient(ctx context.Context, token, realm string, params GetPolicyParams) ([]*PolicyRepresentation, error)
-	// CreatePolicy creates a policy associated with the client, using access token from client
-	//CreatePolicyClient(ctx context.Context, token, realm string, policy PolicyRepresentation) (*PolicyRepresentation, error)
-	// UpdatePolicy updates a policy associated with the client, using access token from client
-	//UpdatePolicyClient(ctx context.Context, token, realm string, policy PolicyRepresentation) error
-	// DeletePolicy deletes a policy associated with the client, using access token from client
-	//DeletePolicyClient(ctx context.Context, token, realm, policyID string) error
-
 	// CreatePermissionTicket creates a permission ticket for a resource, using access token from client (typically a resource server)
 	CreatePermissionTicket(ctx context.Context, token, realm string, permissions []CreatePermissionTicketParams) (*PermissionTicketResponseRepresentation, error)
 	// GrantUserPermission lets resource owner grant permission for specific resource ID to specific user ID
