@@ -4122,7 +4122,7 @@ func TestGocloak_ErrorsCreateListGetUpdateDeleteResourceClient(t *testing.T) {
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	token := GetClientToken(t, client)
-	token.AccessToken = "" // force unauthorised access attempts
+	token.AccessToken = "" // force unauthorized access attempts
 
 	// Create
 	tearDown, resourceID := CreateResourceClient(t, client)
@@ -4137,7 +4137,7 @@ func TestGocloak_ErrorsCreateListGetUpdateDeleteResourceClient(t *testing.T) {
 		resourceID,
 	)
 
-	require.Error(t, err, "GetResource no error on unauthorised request")
+	require.Error(t, err, "GetResource no error on unauthorized request")
 
 	// Looking for a created resource
 	_, err = client.GetResourcesClient(
@@ -4148,7 +4148,7 @@ func TestGocloak_ErrorsCreateListGetUpdateDeleteResourceClient(t *testing.T) {
 			Name: gocloak.StringP("nothing"),
 		},
 	)
-	require.Error(t, err, "GetResources no error on unauthorised request")
+	require.Error(t, err, "GetResources no error on unauthorized request")
 
 	err = client.UpdateResourceClient(
 		context.Background(),
@@ -4164,7 +4164,7 @@ func TestGocloak_ErrorsCreateListGetUpdateDeleteResourceClient(t *testing.T) {
 		cfg.GoCloak.Realm,
 		emptyResource,
 	)
-	require.Error(t, err, "UpdateResourceClient no error on unauthorised request")
+	require.Error(t, err, "UpdateResourceClient no error on unauthorized request")
 
 }
 
