@@ -2850,6 +2850,67 @@ func (client *gocloak) CreatePermissionTicket(ctx context.Context, token, realm 
 	return &result, nil
 }
 
+// GrantPermission lets resource owner grant permission for specific resource ID to specific user ID
+func (client *gocloak) GrantUserPermission(ctx context.Context, token, realm string, permission PermissionGrantParams) (*PermissionGrantResponseRepresentation, error) {
+	const errMessage = "could not grant user permission"
+
+	if NilOrEmpty(permission.RequesterID) {
+		return nil, errors.New("RequesterID required to grant user permission")
+	}
+	if NilOrEmpty(permission.ResourceID) {
+		return nil, errors.New("ResourceID required to grant user permission")
+	}
+	if NilOrEmpty(permission.ScopeName) {
+		return nil, errors.New("ScopeName required to grant user permission")
+	}
+
+	permission.Granted = BoolP(true)
+
+	var result PermissionGrantResponseRepresentation
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		SetBody(permission).
+		Post(client.getRealmURL(realm, "authz", "protection", "permission", "ticket"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+
+}
+
+func (client *gocloak) UpdateUserPermission(ctx context.Context, token, realm string, permission PermissionGrantParams) (*PermissionGrantResponseRepresentation, error) {
+	const errMessage = "could not update user permission"
+
+	if NilOrEmpty(permission.RequesterID) {
+		return nil, errors.New("RequesterID required to update user permission")
+	}
+	if NilOrEmpty(permission.ResourceID) {
+		return nil, errors.New("ResourceID required to update user permission")
+	}
+	if NilOrEmpty(permission.ScopeName) {
+		return nil, errors.New("ScopeName required to update user permission")
+	}
+	if permission.Granted == nil {
+		return nil, errors.New("Granted required to update user permission")
+	}
+
+	var result PermissionGrantResponseRepresentation
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		SetBody(permission).
+		Post(client.getRealmURL(realm, "authz", "protection", "permission", "ticket"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
 // CreatePermission creates a permission associated with the client
 func (client *gocloak) CreatePermission(ctx context.Context, token, realm, clientID string, permission PermissionRepresentation) (*PermissionRepresentation, error) {
 	const errMessage = "could not create permission"

@@ -230,7 +230,7 @@ func CreateResource(t *testing.T, client gocloak.GoCloak, clientID string) (func
 	return tearDown, *createdResource.ID
 }
 
-func CreateResourceClientWithScopes(t *testing.T, client gocloak.GoCloak, clientID string) (func(), string) {
+func CreateResourceClientWithScopes(t *testing.T, client gocloak.GoCloak) (func(), string) {
 	cfg := GetConfig(t)
 	token := GetClientToken(t, client)
 	resource := gocloak.ResourceRepresentation{
@@ -4598,15 +4598,42 @@ func TestGocloak_GroupPolicy(t *testing.T) {
 	// Delete
 	defer tearDown()
 }
+func TestGocloak_GrantGetUpdateDeleteUserPermission(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetClientToken(t, client)
 
-func TestGocloak_CreateGetUpdateDeletePermissionTicket(t *testing.T) {
+	tearDownResource, resourceID := CreateResourceClientWithScopes(t, client)
+	defer tearDownResource()
+
+	tearDownUser, userID := CreateUser(t, client)
+	defer tearDownUser()
+
+	scope := "read-private"
+
+	permission := gocloak.PermissionGrantParams{
+		ResourceID:  &resourceID,
+		RequesterID: &userID,
+		ScopeName:   &scope,
+	}
+	result, err := client.GrantUserPermission(context.Background(), token.AccessToken, cfg.GoCloak.Realm, permission)
+
+	require.NoError(t, err, "GrantUserPermission failed")
+	require.Equal(t, resourceID, *(result.ResourceID))
+	require.Equal(t, userID, *(result.RequesterID))
+	require.Equal(t, true, *(result.Granted))
+
+}
+
+func TestGocloak_CreatePermissionTicket(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	token := GetClientToken(t, client)
 
 	// Create
-	tearDownResource, resourceID := CreateResourceClientWithScopes(t, client, gocloakClientID)
+	tearDownResource, resourceID := CreateResourceClientWithScopes(t, client)
 	// Delete
 	defer tearDownResource()
 

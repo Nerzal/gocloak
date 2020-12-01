@@ -966,6 +966,7 @@ type PermissionTicketResponseRepresentation struct {
 	Ticket *string `json:"ticket,omitempty"`
 }
 
+// PermissionTicketRepresentation represents the permission ticket contents
 type PermissionTicketRepresentation struct {
 	AZP         *string                                     `json:"azp,omitempty"`
 	Claims      *map[string][]string                        `json:"claims,omitempty"`
@@ -973,9 +974,28 @@ type PermissionTicketRepresentation struct {
 	jwt.StandardClaims
 }
 
+// PermissionTicketPermissionRepresentation represents the individual permissions in a permission ticket
 type PermissionTicketPermissionRepresentation struct {
 	Scopes *[]string `json:"scopes,omitempty"`
 	RSID   *string   `json:"rsid,omitempty"`
+}
+
+// PermissionsGrantParams represents the permission which the resource owner is granting to a specific user
+type PermissionGrantParams struct {
+	ResourceID  *string `json:"resource,omitempty"`
+	RequesterID *string `json:"requester,omitempty"`
+	Granted     *bool   `json:"granted,omitempty"`
+	ScopeName   *string `json:"scopeName,omitEmpty"`
+}
+
+// PermissionGrantResponseRepresentation represents the reply from Keycloack after granting permission
+type PermissionGrantResponseRepresentation struct {
+	ID          *string `json:"id,omitempty"`
+	Owner       *string `json:"owner,omitempty"`
+	ResourceID  *string `json:"resource,omitempty"`
+	Scope       *string `json:"scope,omitempty"`
+	Granted     *bool   `json:"granted,omitempty"`
+	RequesterID *string `json:"requester,omitempty"`
 }
 
 // CredentialRepresentation is a representations of the credentials
