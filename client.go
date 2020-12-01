@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 	"sync"
@@ -2902,13 +2903,18 @@ func (client *gocloak) UpdateUserPermission(ctx context.Context, token, realm st
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
 		SetResult(&result).
 		SetBody(permission).
-		Post(client.getRealmURL(realm, "authz", "protection", "permission", "ticket"))
+		Put(client.getRealmURL(realm, "authz", "protection", "permission", "ticket"))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
 		return nil, err
 	}
 
-	return &result, nil
+	if resp.StatusCode() == http.StatusNoContent { // permission updated to 'not granted' removes permission
+		return nil, nil
+	} else {
+		return &result, nil
+	}
+
 }
 
 // CreatePermission creates a permission associated with the client

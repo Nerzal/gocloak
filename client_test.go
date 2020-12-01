@@ -4620,9 +4620,18 @@ func TestGocloak_GrantGetUpdateDeleteUserPermission(t *testing.T) {
 	result, err := client.GrantUserPermission(context.Background(), token.AccessToken, cfg.GoCloak.Realm, permission)
 
 	require.NoError(t, err, "GrantUserPermission failed")
+	require.True(t, nil != result)
 	require.Equal(t, resourceID, *(result.ResourceID))
 	require.Equal(t, userID, *(result.RequesterID))
 	require.Equal(t, true, *(result.Granted))
+
+	permission.TicketID = gocloak.StringP(*(result.ID))
+	permission.Granted = gocloak.BoolP(false)
+
+	result, err = client.UpdateUserPermission(context.Background(), token.AccessToken, cfg.GoCloak.Realm, permission)
+
+	require.NoError(t, err, "UpdateUserPermission failed")
+	require.True(t, nil == result)
 
 }
 

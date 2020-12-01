@@ -986,6 +986,7 @@ type PermissionGrantParams struct {
 	RequesterID *string `json:"requester,omitempty"`
 	Granted     *bool   `json:"granted,omitempty"`
 	ScopeName   *string `json:"scopeName,omitEmpty"`
+	TicketID    *string `json:"id,omitempty"`
 }
 
 // PermissionGrantResponseRepresentation represents the reply from Keycloack after granting permission
