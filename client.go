@@ -2914,6 +2914,28 @@ func (client *gocloak) UpdateUserPermission(ctx context.Context, token, realm st
 	} else {
 		return &result, nil
 	}
+}
+
+// GetUserPermission gets granted permissions according query parameters
+func (client *gocloak) GetUserPermissions(ctx context.Context, token, realm string, params GetUserPermissionParams) ([]*PermissionGrantResponseRepresentation, error) {
+	const errMessage = "could not get user permissions"
+
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []*PermissionGrantResponseRepresentation
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		SetQueryParams(queryParams).
+		Get(client.getRealmURL(realm, "authz", "protection", "permission", "ticket"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 
 }
 

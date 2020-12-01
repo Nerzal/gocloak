@@ -4610,6 +4610,7 @@ func TestGocloak_GrantGetUpdateDeleteUserPermission(t *testing.T) {
 	tearDownUser, userID := CreateUser(t, client)
 	defer tearDownUser()
 
+	// Grant
 	scope := "read-private"
 
 	permission := gocloak.PermissionGrantParams{
@@ -4625,6 +4626,16 @@ func TestGocloak_GrantGetUpdateDeleteUserPermission(t *testing.T) {
 	require.Equal(t, userID, *(result.RequesterID))
 	require.Equal(t, true, *(result.Granted))
 
+	// Get
+	params := gocloak.GetUserPermissionParams{
+		ResourceID: &resourceID,
+	}
+	queried, err := client.GetUserPermissions(context.Background(), token.AccessToken, cfg.GoCloak.Realm, params)
+	require.NoError(t, err, "GetUserPermissions failed")
+	require.Equal(t, 1, len(queried))
+	require.Equal(t, userID, *(queried[0].RequesterID))
+
+	// Update
 	permission.TicketID = gocloak.StringP(*(result.ID))
 	permission.Granted = gocloak.BoolP(false)
 

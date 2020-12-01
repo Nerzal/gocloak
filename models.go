@@ -999,6 +999,18 @@ type PermissionGrantResponseRepresentation struct {
 	RequesterID *string `json:"requester,omitempty"`
 }
 
+// GetUserPermissionParams represents the optional parameters for getting user permissions
+type GetUserPermissionParams struct {
+	ScopeID     *string `json:"scopeId,omitempty"`
+	ResourceID  *string `json:"resourceId,omitempty"`
+	Owner       *string `json:"owner,omitempty"`
+	Requester   *string `json:"requester,omitempty"`
+	Granted     *bool   `json:"granted,omitempty"`
+	ReturnNames *string `json:"returnNames,omitempty"`
+	First       *int    `json:"first,string,omitempty"`
+	Max         *int    `json:"max,string,omitempty"`
+}
+
 // CredentialRepresentation is a representations of the credentials
 // v7: https://www.keycloak.org/docs-api/7.0/rest-api/index.html#_credentialrepresentation
 // v8: https://www.keycloak.org/docs-api/8.0/rest-api/index.html#_credentialrepresentation
