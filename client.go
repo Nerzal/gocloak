@@ -2665,10 +2665,10 @@ func (client *gocloak) DeletePolicy(ctx context.Context, token, realm, clientID,
 }
 
 // GetResourcePolicy updates a permission for a specifc resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
-func (client *gocloak) GetResourcePolicy(ctx context.Context, token, realm, permissionID string) (*ResourcePolicyResponseRepresentation, error) {
+func (client *gocloak) GetResourcePolicy(ctx context.Context, token, realm, permissionID string) (*ResourcePolicyRepresentation, error) {
 	const errMessage = "could not get resource policy"
 
-	var result ResourcePolicyResponseRepresentation
+	var result ResourcePolicyRepresentation
 	resp, err := client.getRequestWithBearerAuthNoCache(ctx, token).
 		SetResult(&result).
 		Get(client.getRealmURL(realm, "authz", "protection", "uma-policy", permissionID))
@@ -2681,7 +2681,7 @@ func (client *gocloak) GetResourcePolicy(ctx context.Context, token, realm, perm
 }
 
 // GetResourcePolicies returns resources associated with the client, using token obtained by Resource Owner Password Credentials Grant or Token exchange
-func (client *gocloak) GetResourcePolicies(ctx context.Context, token, realm string, params GetResourcePoliciesParams) (*ResourcePolicyResponseRepresentation, error) {
+func (client *gocloak) GetResourcePolicies(ctx context.Context, token, realm string, params GetResourcePoliciesParams) ([]*ResourcePolicyRepresentation, error) {
 	const errMessage = "could not get resource policies"
 
 	queryParams, err := GetQueryParams(params)
@@ -2689,7 +2689,7 @@ func (client *gocloak) GetResourcePolicies(ctx context.Context, token, realm str
 		return nil, err
 	}
 
-	var result *ResourcePolicyResponseRepresentation
+	var result []*ResourcePolicyRepresentation
 
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
 		SetResult(&result).
@@ -2721,20 +2721,14 @@ func (client *gocloak) CreateResourcePolicy(ctx context.Context, token, realm, r
 }
 
 // UpdateResourcePolicy updates a permission for a specifc resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
-func (client *gocloak) UpdateResourcePolicy(ctx context.Context, token, realm, permissionID string, policy ResourcePolicyRepresentation) (*ResourcePolicyResponseRepresentation, error) {
+func (client *gocloak) UpdateResourcePolicy(ctx context.Context, token, realm, permissionID string, policy ResourcePolicyRepresentation) error {
 	const errMessage = "could not update resource policy"
 
-	var result ResourcePolicyResponseRepresentation
 	resp, err := client.getRequestWithBearerAuthNoCache(ctx, token).
-		SetResult(&result).
 		SetBody(policy).
 		Put(client.getRealmURL(realm, "authz", "protection", "uma-policy", permissionID))
 
-	if err := checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return &result, nil
+	return checkForError(resp, err, errMessage)
 }
 
 // DeleteResourcePolicy deletes a permission for a specifc resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
