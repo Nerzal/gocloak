@@ -108,7 +108,7 @@ func TestParseAPIErrType(t *testing.T) {
 		{
 			Name:     "other error",
 			Error:    errors.New("something something unsupported_grant_type something"),
-			Expected: gocloak.APIErrTypeInvalidGrant,
+			Expected: gocloak.APIErrTypeUnknown,
 		},
 	}
 	for _, testCase := range testCases {
