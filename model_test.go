@@ -2,6 +2,7 @@ package gocloak_test
 
 import (
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/Nerzal/gocloak/v7"
@@ -86,4 +87,36 @@ func TestGetQueryParams(t *testing.T) {
 		},
 		params,
 	)
+}
+
+func TestParseAPIErrType(t *testing.T) {
+	testCases := []struct {
+		Name     string
+		Error    error
+		Expected gocloak.APIErrType
+	}{
+		{
+			Name:     "nil error",
+			Error:    nil,
+			Expected: gocloak.APIErrTypeUnknown,
+		},
+		{
+			Name:     "invalid grant",
+			Error:    errors.New("something something invalid_grant something"),
+			Expected: gocloak.APIErrTypeInvalidGrant,
+		},
+		{
+			Name:     "other error",
+			Error:    errors.New("something something unsupported_grant_type something"),
+			Expected: gocloak.APIErrTypeInvalidGrant,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			result := gocloak.ParseAPIErrType(testCase.Error)
+			if result != testCase.Expected {
+				t.Fatalf("expected %s but received %s", testCase.Expected, result)
+			}
+		})
+	}
 }
