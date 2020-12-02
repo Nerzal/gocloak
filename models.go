@@ -914,6 +914,12 @@ type GetUsersByRoleParams struct {
 	Max   *int `json:"max,string,omitempty"`
 }
 
+type ChownResourceParams struct {
+	Name               *string `json:"name,omitempty"`
+	Owner              *string `json:"owner,omitempty"`
+	OwnerManagedAccess *bool   `json:"ownerManagedAccess,omitempty"`
+}
+
 // PermissionRepresentation is a representation of a RequestingPartyPermission
 type PermissionRepresentation struct {
 	DecisionStrategy *DecisionStrategy `json:"decisionStrategy,omitempty"`
@@ -1009,6 +1015,31 @@ type GetUserPermissionParams struct {
 	ReturnNames *string `json:"returnNames,omitempty"`
 	First       *int    `json:"first,string,omitempty"`
 	Max         *int    `json:"max,string,omitempty"`
+}
+
+// ResourcePolicyRepresentation is a representation of a Policy applied to a resource
+type ResourcePolicyRepresentation struct {
+	Name             *string           `json:"name,omitempty"`
+	Description      *string           `json:"description,omitempty"`
+	Scopes           *[]string         `json:"scopes,omitempty"`
+	Roles            *[]string         `json:"roles,omitempty"`
+	Groups           *[]string         `json:"groups,omitempty"`
+	Clients          *[]string         `json:"clients,omitempty"`
+	ID               *string           `json:"id,omitempty"`
+	Logic            *Logic            `json:"logic,omitempty"`
+	DecisionStrategy *DecisionStrategy `json:"decisionStrategy,omitempty"`
+	Owner            *string           `json:"owner,omitempty"`
+	Type             *string           `json:"type,omitempty"`
+}
+
+type ResourcePolicyResponseRepresentation *string //TODO turn into struct that matches returned fields
+
+type GetResourcePoliciesParams struct {
+	ResourceID *string `json:"resource_id,omitempty"`
+	Name       *string `json:"name,omitempty"`
+	Scope      *string `json:"scope,omitempty"`
+	First      *int    `json:"first,string,omitempty"`
+	Max        *int    `json:"max,string,omitempty"`
 }
 
 // CredentialRepresentation is a representations of the credentials

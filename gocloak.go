@@ -388,6 +388,17 @@ type GoCloak interface {
 	// DeletePolicy deletes a policy associated with the client, using access token from admin
 	DeletePolicy(ctx context.Context, token, realm, clientID, policyID string) error
 
+	// GetResourcePolicy updates a permission for a specifc resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+	GetResourcePolicy(ctx context.Context, token, realm, permissionID string) (*ResourcePolicyResponseRepresentation, error)
+	// GetResources returns resources associated with the client, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+	GetResourcePolicies(ctx context.Context, token, realm string, params GetResourcePoliciesParams) (*ResourcePolicyResponseRepresentation, error)
+	// GetResources returns all resources associated with the client, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+	CreateResourcePolicy(ctx context.Context, token, realm, resourceID string, policy ResourcePolicyRepresentation) (*ResourcePolicyRepresentation, error)
+	// UpdateResourcePolicy updates a permission for a specifc resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+	UpdateResourcePolicy(ctx context.Context, token, realm, permissionID string, policy ResourcePolicyRepresentation) (*ResourcePolicyResponseRepresentation, error)
+	// DeleteResourcePolicy deletes a permission for a specifc resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+	DeleteResourcePolicy(ctx context.Context, token, realm, permissionID string) error
+
 	// ---------------
 	// Credentials API
 	// ---------------

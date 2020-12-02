@@ -4168,6 +4168,10 @@ func TestGocloak_ErrorsCreateListGetUpdateDeleteResourceClient(t *testing.T) {
 
 }
 
+func TestGocloack_ChownResourceClient(t *testing.T) {
+	require.True(t, false, "Test not implemented yet")
+}
+
 func TestGocloak_CreateListGetUpdateDeleteResourceClient(t *testing.T) {
 
 	t.Parallel()
@@ -4462,6 +4466,57 @@ func TestGocloak_CreateListGetUpdateDeletePolicy(t *testing.T) {
 	)
 	require.NoError(t, err, "GetPolicy failed")
 	require.Equal(t, *(createdPolicy.Name), *(updatedPolicy.Name))
+}
+
+/*
+	// GetResourcePolicy updates a permission for a specifc resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+	GetResourcePolicy(ctx context.Context, token, realm, permissionID string) (*ResourcePolicyResponseRepresentation, error)
+	// GetResources returns resources associated with the client, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+	GetResourcePolicies(ctx context.Context, token, realm string, params GetResourcePoliciesParams) (*ResourcePolicyResponseRepresentation, error)
+	// GetResources returns all resources associated with the client, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+	CreateResourcePolicy(ctx context.Context, token, realm, resourceID string, policy ResourcePolicyRepresentation) (*ResourcePolicyResponseRepresentation, error)
+	// UpdateResourcePolicy updates a permission for a specifc resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+	UpdateResourcePolicy(ctx context.Context, token, realm, permissionID string, policy ResourcePolicyRepresentation) (*ResourcePolicyResponseRepresentation, error)
+	// DeleteResourcePolicy deletes a permission for a specifc resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+	DeleteResourcePolicy(ctx context.Context, token, realm, permissionID string) error
+*/
+
+func TestGocloak_CreateGetUpdateDeleteResourcePolicy(t *testing.T) {
+
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetClientToken(t, client)
+	adminToken := GetAdminToken(t, client)
+
+	tearDownResource, resourceID := CreateResourceClientWithScopes(t, client)
+	defer tearDownResource()
+
+	roleName := "post-writer"
+	role := gocloak.Role{
+		Name: &roleName,
+	}
+
+	roleID, err := client.CreateClientRole(context.Background(), adminToken.AccessToken, cfg.GoCloak.Realm, gocloakClientID, role)
+	defer client.DeleteClientRole(context.Background(), adminToken.AccessToken, cfg.GoCloak.Realm, gocloakClientID, roleName)
+
+	require.NoError(t, err, "could not create client role")
+	t.Logf("Created ClientRole: %+v", roleID)
+
+	scopes := []string{"post-update"}
+
+	policy := gocloak.ResourcePolicyRepresentation{
+		Name:        GetRandomNameP("PolicyName"),
+		Description: gocloak.StringP("Role Policy"),
+		Scopes:      &scopes,
+		Roles:       &[]string{roleName},
+	}
+
+	result, err := client.CreateResourcePolicy(context.Background(), token.AccessToken, cfg.GoCloak.Realm, resourceID, policy)
+
+	require.NoError(t, err, "could not create resource policy")
+	t.Logf("Created ResourcePolicy: %+v", result)
+
 }
 
 func TestGocloak_RolePolicy(t *testing.T) {
