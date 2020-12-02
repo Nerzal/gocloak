@@ -58,10 +58,27 @@ func (s *StringOrArray) MarshalJSON() ([]byte, error) {
 	return json.Marshal([]string(*s))
 }
 
+type APIErrType string
+
+const (
+	APIErrTypeUnknown      APIErrType = "unknown"
+	APIErrTypeInvalidGrant            = "oauth: invalid grant"
+)
+
+func ParseAPIErrType(err error) APIErrType {
+	switch {
+	case strings.Contains(err.Error(), "invalid_grant"):
+		return APIErrTypeInvalidGrant
+	default:
+		return APIErrTypeUnknown
+	}
+}
+
 // APIError holds message and statusCode for api errors
 type APIError struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
+	Code    int        `json:"code"`
+	Message string     `json:"message"`
+	Type    APIErrType `json:"type"`
 }
 
 // Error stringifies the APIError
