@@ -4492,7 +4492,7 @@ func TestGocloak_CreateGetUpdateDeleteResourcePolicy(t *testing.T) {
 	require.NoError(t, err, "could not create client role")
 	t.Logf("Created ClientRole: %+v", roleID)
 
-	scopes := []string{"post-update"}
+	scopes := []string{"message-post"}
 	policyNameP := GetRandomNameP("PolicyName")
 	policy := gocloak.ResourcePolicyRepresentation{
 		Name:        policyNameP,
