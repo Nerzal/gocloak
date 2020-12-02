@@ -4483,7 +4483,11 @@ func TestGocloak_CreateGetUpdateDeleteResourcePolicy(t *testing.T) {
 	}
 
 	roleID, err := client.CreateClientRole(context.Background(), adminToken.AccessToken, cfg.GoCloak.Realm, gocloakClientID, role)
-	defer client.DeleteClientRole(context.Background(), adminToken.AccessToken, cfg.GoCloak.Realm, gocloakClientID, roleName)
+
+	defer func() {
+		err := client.DeleteClientRole(context.Background(), adminToken.AccessToken, cfg.GoCloak.Realm, gocloakClientID, roleName)
+		require.NoError(t, err, "could not delete client role")
+	}()
 
 	require.NoError(t, err, "could not create client role")
 	t.Logf("Created ClientRole: %+v", roleID)
