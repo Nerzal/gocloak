@@ -75,6 +75,9 @@ const (
 // ParseAPIErrType is a convenience method for returning strongly
 // typed API errors.
 func ParseAPIErrType(err error) APIErrType {
+	if err == nil {
+		return APIErrTypeUnknown
+	}
 	switch {
 	case strings.Contains(err.Error(), "invalid_grant"):
 		return APIErrTypeInvalidGrant
