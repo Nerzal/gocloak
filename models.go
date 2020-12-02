@@ -914,12 +914,6 @@ type GetUsersByRoleParams struct {
 	Max   *int `json:"max,string,omitempty"`
 }
 
-type ChownResourceParams struct {
-	Name               *string `json:"name,omitempty"`
-	Owner              *string `json:"owner,omitempty"`
-	OwnerManagedAccess *bool   `json:"ownerManagedAccess,omitempty"`
-}
-
 // PermissionRepresentation is a representation of a RequestingPartyPermission
 type PermissionRepresentation struct {
 	DecisionStrategy *DecisionStrategy `json:"decisionStrategy,omitempty"`
@@ -1032,8 +1026,7 @@ type ResourcePolicyRepresentation struct {
 	Type             *string           `json:"type,omitempty"`
 }
 
-type ResourcePolicyResponseRepresentation *string //TODO turn into struct that matches returned fields
-
+// GetResourcePoliciesParams is a representation of the query params for getting policies
 type GetResourcePoliciesParams struct {
 	ResourceID *string `json:"resource_id,omitempty"`
 	Name       *string `json:"name,omitempty"`

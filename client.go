@@ -2436,29 +2436,6 @@ func (client *gocloak) CreateResource(ctx context.Context, token, realm string, 
 	return &result, nil
 }
 
-// ChownResource changes ownership of a resource associated with the client, using access token from client
-func (client *gocloak) ChownResourceClient(ctx context.Context, token, realm, name, owner string, ownerManagedAccess bool) (*ResourceRepresentation, error) {
-	const errMessage = "could not change owner of resource"
-
-	params := ChownResourceParams{
-		Name:               &name,
-		Owner:              &owner,
-		OwnerManagedAccess: &ownerManagedAccess,
-	}
-
-	var result ResourceRepresentation
-	resp, err := client.getRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
-		SetBody(params).
-		Post(client.getRealmURL(realm, "authz", "protection", "resource_set"))
-
-	if err := checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return &result, nil
-}
-
 // CreateResource creates a resource associated with the client, using access token from client
 func (client *gocloak) CreateResourceClient(ctx context.Context, token, realm string, resource ResourceRepresentation) (*ResourceRepresentation, error) {
 	const errMessage = "could not create resource"
@@ -2690,7 +2667,6 @@ func (client *gocloak) GetResourcePolicies(ctx context.Context, token, realm str
 	}
 
 	var result []*ResourcePolicyRepresentation
-
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
 		SetResult(&result).
 		SetQueryParams(queryParams).
