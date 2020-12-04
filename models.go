@@ -60,10 +60,39 @@ func (s *StringOrArray) MarshalJSON() ([]byte, error) {
 	return json.Marshal([]string(*s))
 }
 
+// APIErrType is a field containing more specific API error types
+// that may be checked by the receiver.
+type APIErrType string
+
+const (
+	// APIErrTypeUnknown is for API errors that are not strongly
+	// typed.
+	APIErrTypeUnknown APIErrType = "unknown"
+
+	// APIErrTypeInvalidGrant corresponds with Keycloak's
+	// OAuthErrorException due to "invalid_grant".
+	APIErrTypeInvalidGrant = "oauth: invalid grant"
+)
+
+// ParseAPIErrType is a convenience method for returning strongly
+// typed API errors.
+func ParseAPIErrType(err error) APIErrType {
+	if err == nil {
+		return APIErrTypeUnknown
+	}
+	switch {
+	case strings.Contains(err.Error(), "invalid_grant"):
+		return APIErrTypeInvalidGrant
+	default:
+		return APIErrTypeUnknown
+	}
+}
+
 // APIError holds message and statusCode for api errors
 type APIError struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
+	Code    int        `json:"code"`
+	Message string     `json:"message"`
+	Type    APIErrType `json:"type"`
 }
 
 // Error stringifies the APIError

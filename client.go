@@ -87,12 +87,14 @@ func checkForError(resp *resty.Response, err error, errMessage string) error {
 		return &APIError{
 			Code:    0,
 			Message: errors.Wrap(err, errMessage).Error(),
+			Type:    ParseAPIErrType(err),
 		}
 	}
 
 	if resp == nil {
 		return &APIError{
 			Message: "empty response",
+			Type:    ParseAPIErrType(err),
 		}
 	}
 
@@ -108,6 +110,7 @@ func checkForError(resp *resty.Response, err error, errMessage string) error {
 		return &APIError{
 			Code:    resp.StatusCode(),
 			Message: msg,
+			Type:    ParseAPIErrType(err),
 		}
 	}
 
@@ -447,7 +450,8 @@ func (client *gocloak) GetRequestingPartyPermissions(ctx context.Context, token,
 	return &res, nil
 }
 
-// RefreshToken refreshes the given token
+// RefreshToken refreshes the given token.
+// May return a *APIError with further details about the issue.
 func (client *gocloak) RefreshToken(ctx context.Context, refreshToken, clientID, clientSecret, realm string) (*JWT, error) {
 	return client.GetToken(ctx, realm, TokenOptions{
 		ClientID:     &clientID,

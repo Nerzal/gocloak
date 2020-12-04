@@ -5138,6 +5138,7 @@ func TestGoCloak_CheckError(t *testing.T) {
 	expectedError := &gocloak.APIError{
 		Code:    http.StatusNotFound,
 		Message: "404 Not Found: Could not find client",
+		Type:    gocloak.APIErrTypeUnknown,
 	}
 
 	apiError := err.(*gocloak.APIError)
