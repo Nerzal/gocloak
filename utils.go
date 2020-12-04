@@ -78,6 +78,17 @@ func NilOrEmpty(value *string) bool {
 	return value == nil || len(*value) == 0
 }
 
+// NilOrEmptyArray returns true if string is empty or has a nil value
+func NilOrEmptyArray(value *[]string) bool {
+
+	if value == nil || len(*value) == 0 {
+		return true
+	}
+
+	return (*value)[0] == ""
+
+}
+
 // DecisionStrategyP returns a pointer for a DecisionStrategy value
 func DecisionStrategyP(value DecisionStrategy) *DecisionStrategy {
 	return &value

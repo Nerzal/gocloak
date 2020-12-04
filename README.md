@@ -104,7 +104,7 @@ go get github.com/Nerzal/gocloak/v7
 ## Features
 
 ```go
-// GoCloak holds all methods a client should fullfill
+// GoCloak holds all methods a client should fulfill
 type GoCloak interface {
 	GetRequestingPartyToken(ctx context.Context, token, realm string, options RequestingPartyTokenOptions) (*JWT, error)
 	GetRequestingPartyPermissions(ctx context.Context, token, realm string, options RequestingPartyTokenOptions) (*[]RequestingPartyPermission, error)
@@ -257,6 +257,12 @@ type GoCloak interface {
 	CreateResource(ctx context.Context, token, realm, clientID string, resource Resource) (*Resource, error)
 	UpdateResource(ctx context.Context, token, realm, clientID string, resource Resource) error
 	DeleteResource(ctx context.Context, token, realm, clientID, resourceID string) error
+	
+	GetResourceClient(ctx context.Context, token, realm, resourceID string) (*ResourceRepresentation, error)
+	GetResourcesClient(ctx context.Context, token, realm string, params GetResourceParams) ([]*ResourceRepresentation, error)
+	CreateResourceClient(ctx context.Context, token, realm string, resource ResourceRepresentation) (*ResourceRepresentation, error)
+	UpdateResourceClient(ctx context.Context, token, realm string, resource ResourceRepresentation) error
+	DeleteResourceClient(ctx context.Context, token, realm, resourceID string) error
 
 	GetScope(ctx context.Context, token, realm, clientID, scopeID string) (*ScopeRepresentation, error)
 	GetScopes(ctx context.Context, token, realm, clientID string, params GetScopeParams) ([]*ScopeRepresentation, error)
@@ -275,7 +281,13 @@ type GoCloak interface {
 	CreatePermission(ctx context.Context, token, realm, clientID string, permission PermissionRepresentation) (*PermissionRepresentation, error)
 	UpdatePermission(ctx context.Context, token, realm, clientID string, permission PermissionRepresentation) error
 	DeletePermission(ctx context.Context, token, realm, clientID, permissionID string) error
-
+	
+	CreatePermissionTicket(ctx context.Context, token, realm string, permissions []CreatePermissionTicketParams) (*PermissionTicketResponseRepresentation, error)
+	GrantUserPermission(ctx context.Context, token, realm string, permission PermissionGrantParams) (*PermissionGrantResponseRepresentation, error)
+	UpdateUserPermission(ctx context.Context, token, realm string, permission PermissionGrantParams) (*PermissionGrantResponseRepresentation, error)
+	GetUserPermissions(ctx context.Context, token, realm string, params GetUserPermissionParams) ([]*PermissionGrantResponseRepresentation, error)
+	DeleteUserPermission(ctx context.Context, token, realm, ticketID string) error
+	
 	// *** Credentials API ***
 
 	GetCredentialRegistrators(ctx context.Context, token, realm string) ([]string, error)

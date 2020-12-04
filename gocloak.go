@@ -318,45 +318,49 @@ type GoCloak interface {
 	DeleteIdentityProvider(ctx context.Context, token, realm, alias string) error
 
 	// *** Protection API ***
-	// GetResource returns a client's resource with the given id, using access token from Client
-	GetResourceClient(ctx context.Context, token, realm, clientID, resourceID string) (*ResourceRepresentation, error)
-	// GetResources a returns resources associated with the client, using access token from Client
-	GetResourcesClient(ctx context.Context, token, realm, clientID string, params GetResourceParams) ([]*ResourceRepresentation, error)
-	// CreateResource creates a resource associated with the client
-	UpdateResourceClient(ctx context.Context, token, realm, clientID string, resource ResourceRepresentation) error
+	// GetResource returns a client's resource with the given id, using access token from client
+	GetResourceClient(ctx context.Context, token, realm, resourceID string) (*ResourceRepresentation, error)
+	// GetResources a returns resources associated with the client, using access token from client
+	GetResourcesClient(ctx context.Context, token, realm string, params GetResourceParams) ([]*ResourceRepresentation, error)
+	// CreateResource creates a resource associated with the client, using access token from client
+	CreateResourceClient(ctx context.Context, token, realm string, resource ResourceRepresentation) (*ResourceRepresentation, error)
+	// UpdateResource updates a resource associated with the client, using access token from client
+	UpdateResourceClient(ctx context.Context, token, realm string, resource ResourceRepresentation) error
+	// DeleteResource deletes a resource associated with the client, using access token from client
+	DeleteResourceClient(ctx context.Context, token, realm, resourceID string) error
 
-	// GetResource returns a client's resource with the given id, using access token from Admin
+	// GetResource returns a client's resource with the given id, using access token from admin
 	GetResource(ctx context.Context, token, realm, clientID, resourceID string) (*ResourceRepresentation, error)
-	// GetResources a returns resources associated with the client, using access token from Admin
+	// GetResources a returns resources associated with the client, using access token from admin
 	GetResources(ctx context.Context, token, realm, clientID string, params GetResourceParams) ([]*ResourceRepresentation, error)
-	// CreateResource creates a resource associated with the client
+	// CreateResource creates a resource associated with the client, using access token from admin
 	CreateResource(ctx context.Context, token, realm, clientID string, resource ResourceRepresentation) (*ResourceRepresentation, error)
-	// UpdateResource updates a resource associated with the client
+	// UpdateResource updates a resource associated with the client, using access token from admin
 	UpdateResource(ctx context.Context, token, realm, clientID string, resource ResourceRepresentation) error
-	// DeleteResource deletes a resource associated with the client
+	// DeleteResource deletes a resource associated with the client, using access token from admin
 	DeleteResource(ctx context.Context, token, realm, clientID, resourceID string) error
 
-	// GetScope returns a client's scope with the given id
+	// GetScope returns a client's scope with the given id, using access token from admin
 	GetScope(ctx context.Context, token, realm, clientID, scopeID string) (*ScopeRepresentation, error)
-	// GetScopes returns scopes associated with the client
+	// GetScopes returns scopes associated with the client, using access token from admin
 	GetScopes(ctx context.Context, token, realm, clientID string, params GetScopeParams) ([]*ScopeRepresentation, error)
-	// CreateScope creates a scope associated with the client
+	// CreateScope creates a scope associated with the client, using access token from admin
 	CreateScope(ctx context.Context, token, realm, clientID string, scope ScopeRepresentation) (*ScopeRepresentation, error)
-	// UpdateScope updates a scope associated with the client
+	// UpdateScope updates a scope associated with the client, using access token from admin
 	UpdateScope(ctx context.Context, token, realm, clientID string, resource ScopeRepresentation) error
-	// DeleteScope deletes a scope associated with the client
+	// DeleteScope deletes a scope associated with the client, using access token from admin
 	DeleteScope(ctx context.Context, token, realm, clientID, scopeID string) error
 
-	// GetPolicy returns a client's policy with the given id
-	GetPolicy(ctx context.Context, token, realm, clientID, policyID string) (*PolicyRepresentation, error)
-	// GetPolicies returns policies associated with the client
-	GetPolicies(ctx context.Context, token, realm, clientID string, params GetPolicyParams) ([]*PolicyRepresentation, error)
-	// CreatePolicy creates a policy associated with the client
-	CreatePolicy(ctx context.Context, token, realm, clientID string, policy PolicyRepresentation) (*PolicyRepresentation, error)
-	// UpdatePolicy updates a policy associated with the client
-	UpdatePolicy(ctx context.Context, token, realm, clientID string, policy PolicyRepresentation) error
-	// DeletePolicy deletes a policy associated with the client
-	DeletePolicy(ctx context.Context, token, realm, clientID, policyID string) error
+	// CreatePermissionTicket creates a permission ticket for a resource, using access token from client (typically a resource server)
+	CreatePermissionTicket(ctx context.Context, token, realm string, permissions []CreatePermissionTicketParams) (*PermissionTicketResponseRepresentation, error)
+	// GrantUserPermission lets resource owner grant permission for specific resource ID to specific user ID
+	GrantUserPermission(ctx context.Context, token, realm string, permission PermissionGrantParams) (*PermissionGrantResponseRepresentation, error)
+	// GrantPermission lets resource owner update permission for specific resource ID to specific user ID
+	UpdateUserPermission(ctx context.Context, token, realm string, permission PermissionGrantParams) (*PermissionGrantResponseRepresentation, error)
+	// GetUserPermission gets granted permissions according query parameters
+	GetUserPermissions(ctx context.Context, token, realm string, params GetUserPermissionParams) ([]*PermissionGrantResponseRepresentation, error)
+	// DeleteUserPermission lets resource owner delete permission for specific resource ID to specific user ID
+	DeleteUserPermission(ctx context.Context, token, realm, ticketID string) error
 
 	// GetPermission returns a client's permission with the given id
 	GetPermission(ctx context.Context, token, realm, clientID, permissionID string) (*PermissionRepresentation, error)
@@ -372,6 +376,29 @@ type GoCloak interface {
 	GetDependentPermissions(ctx context.Context, token, realm, clientID, policyID string) ([]*PermissionRepresentation, error)
 	GetPermissionResources(ctx context.Context, token, realm, clientID, permissionID string) ([]*PermissionResource, error)
 	GetPermissionScopes(ctx context.Context, token, realm, clientID, permissionID string) ([]*PermissionScope, error)
+
+	// GetPolicy returns a client's policy with the given id, using access token from admin
+	GetPolicy(ctx context.Context, token, realm, clientID, policyID string) (*PolicyRepresentation, error)
+	// GetPolicies returns policies associated with the client, using access token from admin
+	GetPolicies(ctx context.Context, token, realm, clientID string, params GetPolicyParams) ([]*PolicyRepresentation, error)
+	// CreatePolicy creates a policy associated with the client, using access token from admin
+	CreatePolicy(ctx context.Context, token, realm, clientID string, policy PolicyRepresentation) (*PolicyRepresentation, error)
+	// UpdatePolicy updates a policy associated with the client, using access token from admin
+	UpdatePolicy(ctx context.Context, token, realm, clientID string, policy PolicyRepresentation) error
+	// DeletePolicy deletes a policy associated with the client, using access token from admin
+	DeletePolicy(ctx context.Context, token, realm, clientID, policyID string) error
+
+	// GetResourcePolicy updates a permission for a specifc resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+	GetResourcePolicy(ctx context.Context, token, realm, permissionID string) (*ResourcePolicyRepresentation, error)
+	// GetResources returns resources associated with the client, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+	GetResourcePolicies(ctx context.Context, token, realm string, params GetResourcePoliciesParams) ([]*ResourcePolicyRepresentation, error)
+	// GetResources returns all resources associated with the client, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+	CreateResourcePolicy(ctx context.Context, token, realm, resourceID string, policy ResourcePolicyRepresentation) (*ResourcePolicyRepresentation, error)
+	// UpdateResourcePolicy updates a permission for a specifc resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+	UpdateResourcePolicy(ctx context.Context, token, realm, permissionID string, policy ResourcePolicyRepresentation) error
+	// DeleteResourcePolicy deletes a permission for a specifc resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+	DeleteResourcePolicy(ctx context.Context, token, realm, permissionID string) error
+
 	// ---------------
 	// Credentials API
 	// ---------------

@@ -230,6 +230,87 @@ func CreateResource(t *testing.T, client gocloak.GoCloak, clientID string) (func
 	return tearDown, *createdResource.ID
 }
 
+func CreateResourceClientWithScopes(t *testing.T, client gocloak.GoCloak) (func(), string) {
+	cfg := GetConfig(t)
+	token := GetClientToken(t, client)
+	resource := gocloak.ResourceRepresentation{
+		Name:        GetRandomNameP("ResourceName"),
+		DisplayName: gocloak.StringP("Resource Display Name"),
+		Type:        gocloak.StringP("urn:gocloak:resources:test"),
+		IconURI:     gocloak.StringP("/resource/test/icon"),
+		Attributes: &map[string][]string{
+			"foo": {"bar", "alice", "bob", "roflcopter"},
+			"bar": {"baz"},
+		},
+		URIs: &[]string{
+			"/resource/1",
+			"/resource/2",
+		},
+		OwnerManagedAccess: gocloak.BoolP(true),
+		ResourceScopes: &[]gocloak.ScopeRepresentation{
+			{Name: gocloak.StringP("read-public")},
+			{Name: gocloak.StringP("read-private")},
+			{Name: gocloak.StringP("post-update")},
+			{Name: gocloak.StringP("message-view")},
+			{Name: gocloak.StringP("message-post")},
+		},
+	}
+	createdResource, err := client.CreateResourceClient(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		resource)
+	require.NoError(t, err, "CreateResource failed")
+	t.Logf("Created Resource ID: %s ", *(createdResource.ID))
+
+	tearDown := func() {
+		err := client.DeleteResourceClient(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			*createdResource.ID)
+		require.NoError(t, err, "DeleteResource failed")
+	}
+	return tearDown, *createdResource.ID
+}
+
+func CreateResourceClient(t *testing.T, client gocloak.GoCloak) (func(), string) {
+	cfg := GetConfig(t)
+	token := GetClientToken(t, client)
+	resource := gocloak.ResourceRepresentation{
+		Name:        GetRandomNameP("ResourceName"),
+		DisplayName: gocloak.StringP("Resource Display Name"),
+		Type:        gocloak.StringP("urn:gocloak:resources:test"),
+		IconURI:     gocloak.StringP("/resource/test/icon"),
+		Attributes: &map[string][]string{
+			"foo": {"bar", "alice", "bob", "roflcopter"},
+			"bar": {"baz"},
+		},
+		URIs: &[]string{
+			"/resource/1",
+			"/resource/2",
+		},
+		OwnerManagedAccess: gocloak.BoolP(true),
+	}
+	createdResource, err := client.CreateResourceClient(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		resource)
+	require.NoError(t, err, "CreateResource failed")
+	t.Logf("Created Resource ID: %s ", *(createdResource.ID))
+
+	tearDown := func() {
+		err := client.DeleteResourceClient(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			*createdResource.ID)
+		require.NoError(t, err, "DeleteResource failed")
+	}
+	return tearDown, *createdResource.ID
+}
+
 func CreateScope(t *testing.T, client gocloak.GoCloak, clientID string) (func(), string) {
 	cfg := GetConfig(t)
 	token := GetAdminToken(t, client)
@@ -4037,6 +4118,58 @@ func TestGocloak_CreateProvider(t *testing.T) {
 // Protection API
 // -----------------
 
+func TestGocloak_ErrorsCreateListGetUpdateDeleteResourceClient(t *testing.T) {
+
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetClientToken(t, client)
+	token.AccessToken = "" // force unauthorized access attempts
+
+	// Create
+	tearDown, resourceID := CreateResourceClient(t, client)
+	// Delete
+	defer tearDown()
+
+	// List
+	_, err := client.GetResourceClient(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		resourceID,
+	)
+
+	require.Error(t, err, "GetResource no error on unauthorized request")
+
+	// Looking for a created resource
+	_, err = client.GetResourcesClient(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloak.GetResourceParams{
+			Name: gocloak.StringP("nothing"),
+		},
+	)
+	require.Error(t, err, "GetResources no error on unauthorized request")
+
+	err = client.UpdateResourceClient(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloak.ResourceRepresentation{},
+	)
+	require.Error(t, err, "UpdateResourceClient no error on missing ID of the resource")
+	emptyResource := gocloak.ResourceRepresentation{}
+	err = client.UpdateResourceClient(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		emptyResource,
+	)
+	require.Error(t, err, "UpdateResourceClient no error on unauthorized request")
+
+}
+
 func TestGocloak_CreateListGetUpdateDeleteResourceClient(t *testing.T) {
 
 	t.Parallel()
@@ -4045,7 +4178,7 @@ func TestGocloak_CreateListGetUpdateDeleteResourceClient(t *testing.T) {
 	token := GetClientToken(t, client)
 
 	// Create
-	tearDown, resourceID := CreateResource(t, client, gocloakClientID)
+	tearDown, resourceID := CreateResourceClient(t, client)
 	// Delete
 	defer tearDown()
 
@@ -4054,7 +4187,6 @@ func TestGocloak_CreateListGetUpdateDeleteResourceClient(t *testing.T) {
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		gocloakClientID,
 		resourceID,
 	)
 
@@ -4067,7 +4199,6 @@ func TestGocloak_CreateListGetUpdateDeleteResourceClient(t *testing.T) {
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		gocloakClientID,
 		gocloak.GetResourceParams{
 			Name: createdResource.Name,
 		},
@@ -4081,7 +4212,6 @@ func TestGocloak_CreateListGetUpdateDeleteResourceClient(t *testing.T) {
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		gocloakClientID,
 		gocloak.ResourceRepresentation{},
 	)
 	require.Error(t, err, "Should fail because of missing ID of the resource")
@@ -4092,7 +4222,6 @@ func TestGocloak_CreateListGetUpdateDeleteResourceClient(t *testing.T) {
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		gocloakClientID,
 		*createdResource,
 	)
 	require.NoError(t, err, "UpdateResource failed")
@@ -4101,7 +4230,6 @@ func TestGocloak_CreateListGetUpdateDeleteResourceClient(t *testing.T) {
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		gocloakClientID,
 		resourceID,
 	)
 	require.NoError(t, err, "GetResource failed")
@@ -4338,6 +4466,95 @@ func TestGocloak_CreateListGetUpdateDeletePolicy(t *testing.T) {
 	require.Equal(t, *(createdPolicy.Name), *(updatedPolicy.Name))
 }
 
+func TestGocloak_CreateGetUpdateDeleteResourcePolicy(t *testing.T) {
+
+	// parallel is causing intermittent conflict with role-based test GetClientScopeMappingsClientRolesAvailable
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetClientToken(t, client)
+	adminToken := GetAdminToken(t, client)
+
+	tearDownResource, resourceID := CreateResourceClientWithScopes(t, client)
+	defer tearDownResource()
+
+	roleName := GetRandomName("editor")
+	role := gocloak.Role{
+		Name: &roleName,
+	}
+
+	roleID, err := client.CreateClientRole(context.Background(), adminToken.AccessToken, cfg.GoCloak.Realm, gocloakClientID, role)
+
+	defer func() {
+		err := client.DeleteClientRole(context.Background(), adminToken.AccessToken, cfg.GoCloak.Realm, gocloakClientID, roleName)
+		require.NoError(t, err, "could not delete client role")
+	}()
+
+	require.NoError(t, err, "could not create client role")
+	t.Logf("Created ClientRole: %+v", roleID)
+
+	scopes := []string{"message-post"}
+	policyNameP := GetRandomNameP("PolicyName")
+	policy := gocloak.ResourcePolicyRepresentation{
+		Name:        policyNameP,
+		Description: gocloak.StringP("Role Policy"),
+		Scopes:      &scopes,
+		Roles:       &[]string{roleName},
+	}
+
+	result, err := client.CreateResourcePolicy(context.Background(), token.AccessToken, cfg.GoCloak.Realm, resourceID, policy)
+	require.NoError(t, err, "could not create resource policy")
+	require.Equal(t, "Role Policy", *(result.Description))
+
+	result, err = client.GetResourcePolicy(context.Background(), token.AccessToken, cfg.GoCloak.Realm, *(result.ID))
+	require.NoError(t, err, "could not get resource policy")
+	require.Equal(t, scopes, *(result.Scopes))
+
+	newScopes := []string{"message-view"}
+	result.Scopes = &newScopes
+
+	err = client.UpdateResourcePolicy(context.Background(), token.AccessToken, cfg.GoCloak.Realm, *(result.ID), *result)
+	require.NoError(t, err, "could not get resource policy")
+
+	result, err = client.GetResourcePolicy(context.Background(), token.AccessToken, cfg.GoCloak.Realm, *(result.ID))
+	require.NoError(t, err, "could not get resource policy")
+	require.Equal(t, newScopes, *(result.Scopes))
+
+	params := gocloak.GetResourcePoliciesParams{
+		Scope: gocloak.StringP("message-view"),
+	}
+	policies, err := client.GetResourcePolicies(context.Background(), token.AccessToken, cfg.GoCloak.Realm, params)
+	require.NoError(t, err, "could not get resource policies")
+	require.Equal(t, 1, len(policies))
+	require.False(t, policies[0] == nil)
+
+	if len(policies) == 1 && policies[0] != nil {
+		require.Equal(t, *policyNameP, *(policies[0].Name))
+	}
+	err = client.DeleteResourcePolicy(context.Background(), token.AccessToken, cfg.GoCloak.Realm, *(result.ID))
+	require.NoError(t, err, "could not delete resource policies")
+
+	policies, err = client.GetResourcePolicies(context.Background(), token.AccessToken, cfg.GoCloak.Realm, params)
+	require.NoError(t, err, "could not get resource policies")
+	require.Equal(t, 0, len(policies))
+
+	// Test error handling
+	_, err = client.CreateResourcePolicy(context.Background(), token.AccessToken, cfg.GoCloak.Realm, "", policy)
+	require.Error(t, err, "should not create resource policy without resourceID")
+
+	_, err = client.GetResourcePolicy(context.Background(), "", cfg.GoCloak.Realm, "asdfasdfasdfasdf")
+	require.Error(t, err, "should not get resource policy without token")
+
+	err = client.UpdateResourcePolicy(context.Background(), token.AccessToken, cfg.GoCloak.Realm, "", policy)
+	require.Error(t, err, "should not update resource policy without token")
+
+	_, err = client.GetResourcePolicies(context.Background(), "", cfg.GoCloak.Realm, params)
+	require.Error(t, err, "should not get resource policies without token")
+
+	err = client.DeleteResourcePolicy(context.Background(), token.AccessToken, cfg.GoCloak.Realm, "")
+	require.Error(t, err, "should not delete resource policy without permission ID")
+
+}
+
 func TestGocloak_RolePolicy(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
@@ -4523,6 +4740,252 @@ func TestGocloak_GroupPolicy(t *testing.T) {
 	})
 	// Delete
 	defer tearDown()
+}
+
+func TestGocloak_ErrorsGrantGetUpdateDeleteUserPermission(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetClientToken(t, client)
+
+	tearDownResource, resourceID := CreateResourceClientWithScopes(t, client)
+	defer tearDownResource()
+
+	tearDownUser, userID := CreateUser(t, client)
+	defer tearDownUser()
+
+	// Grant
+	scope := "read-private"
+
+	permission := gocloak.PermissionGrantParams{
+		RequesterID: &userID,
+		ScopeName:   &scope,
+	}
+	_, err := client.GrantUserPermission(context.Background(), token.AccessToken, cfg.GoCloak.Realm, permission)
+	require.Error(t, err, "GrantUserPermission no error on missing ResourceID")
+
+	permission = gocloak.PermissionGrantParams{
+		ResourceID: &resourceID,
+		ScopeName:  &scope,
+	}
+	_, err = client.GrantUserPermission(context.Background(), token.AccessToken, cfg.GoCloak.Realm, permission)
+	require.Error(t, err, "GrantUserPermission no error on missing RequesterID")
+
+	permission = gocloak.PermissionGrantParams{
+		ScopeName: &scope,
+	}
+	_, err = client.GrantUserPermission(context.Background(), token.AccessToken, cfg.GoCloak.Realm, permission)
+	require.Error(t, err, "GrantUserPermission no error on missing Scope")
+
+	permission = gocloak.PermissionGrantParams{
+		ResourceID:  &resourceID,
+		RequesterID: &userID,
+		ScopeName:   &scope,
+	}
+	_, err = client.GrantUserPermission(context.Background(), "", cfg.GoCloak.Realm, permission)
+	require.Error(t, err, "GrantUserPermission no error on unauthorized request")
+
+	// Get
+	params := gocloak.GetUserPermissionParams{
+		ResourceID: &resourceID,
+	}
+	_, err = client.GetUserPermissions(context.Background(), "", cfg.GoCloak.Realm, params)
+	require.Error(t, err, "GetUserPermission no error on unauthorized request")
+
+	_, err = client.UpdateUserPermission(context.Background(), "", cfg.GoCloak.Realm, permission)
+	require.Error(t, err, "UpdateUserPermission no error on unauthorized request")
+
+	// Get (no permission expected to be returned)
+	params = gocloak.GetUserPermissionParams{
+		ResourceID: &resourceID,
+	}
+	_, err = client.GetUserPermissions(context.Background(), "", cfg.GoCloak.Realm, params)
+	require.Error(t, err, "UpdateUserPermission no error on unauthorized request")
+
+	// Delete
+	err = client.DeleteUserPermission(context.Background(), "", cfg.GoCloak.Realm, "someID")
+	require.Error(t, err, "DeleteUserPermission no error on unauthorized request")
+
+}
+
+func TestGocloak_GrantGetUpdateDeleteUserPermission(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetClientToken(t, client)
+
+	tearDownResource, resourceID := CreateResourceClientWithScopes(t, client)
+	defer tearDownResource()
+
+	tearDownUser, userID := CreateUser(t, client)
+	defer tearDownUser()
+
+	// Grant
+	scope := "read-private"
+
+	permission := gocloak.PermissionGrantParams{
+		ResourceID:  &resourceID,
+		RequesterID: &userID,
+		ScopeName:   &scope,
+	}
+	result, err := client.GrantUserPermission(context.Background(), token.AccessToken, cfg.GoCloak.Realm, permission)
+
+	require.NoError(t, err, "GrantUserPermission failed")
+	require.True(t, nil != result)
+	if result != nil {
+		require.False(t, result.ResourceID == nil)
+		require.False(t, result.RequesterID == nil)
+		require.False(t, result.Granted == nil)
+		if result.ResourceID != nil {
+			require.Equal(t, resourceID, *(result.ResourceID))
+		}
+		if result.RequesterID != nil {
+			require.Equal(t, userID, *(result.RequesterID))
+		}
+		if result.Granted != nil {
+			require.Equal(t, true, *(result.Granted))
+		}
+	}
+
+	// Get
+	params := gocloak.GetUserPermissionParams{
+		ResourceID: &resourceID,
+	}
+	queried, err := client.GetUserPermissions(context.Background(), token.AccessToken, cfg.GoCloak.Realm, params)
+	require.NoError(t, err, "GetUserPermissions failed")
+	require.Equal(t, 1, len(queried))
+	require.Equal(t, userID, *(queried[0].RequesterID))
+
+	// Update
+	permission.TicketID = gocloak.StringP(*(result.ID))
+	permission.Granted = gocloak.BoolP(false)
+
+	result, err = client.UpdateUserPermission(context.Background(), token.AccessToken, cfg.GoCloak.Realm, permission)
+
+	require.NoError(t, err, "UpdateUserPermission failed")
+	require.True(t, nil == result)
+
+	// Get (no permission expected to be returned)
+	params = gocloak.GetUserPermissionParams{
+		ResourceID: &resourceID,
+	}
+	queried, err = client.GetUserPermissions(context.Background(), token.AccessToken, cfg.GoCloak.Realm, params)
+	require.NoError(t, err, "GetUserPermissions failed")
+	require.Equal(t, 0, len(queried))
+
+	// Grant again
+	permission = gocloak.PermissionGrantParams{
+		ResourceID:  &resourceID,
+		RequesterID: &userID,
+		ScopeName:   &scope,
+	}
+	result, err = client.GrantUserPermission(context.Background(), token.AccessToken, cfg.GoCloak.Realm, permission)
+	require.NoError(t, err, "GrantUserPermissions failed")
+
+	// Get
+	params = gocloak.GetUserPermissionParams{
+		ResourceID: &resourceID,
+	}
+	queried, err = client.GetUserPermissions(context.Background(), token.AccessToken, cfg.GoCloak.Realm, params)
+	require.NoError(t, err, "GetUserPermissions failed")
+	require.Equal(t, 1, len(queried))
+	require.Equal(t, userID, *(queried[0].RequesterID))
+
+	// Delete
+	err = client.DeleteUserPermission(context.Background(), token.AccessToken, cfg.GoCloak.Realm, *(result.ID))
+	require.NoError(t, err, "DeleteUserPermissions failed")
+
+	// Get (no permission expected to be returned)
+
+	params = gocloak.GetUserPermissionParams{
+		ResourceID: &resourceID,
+	}
+	queried, err = client.GetUserPermissions(context.Background(), token.AccessToken, cfg.GoCloak.Realm, params)
+	require.NoError(t, err, "GetUserPermissions failed")
+	require.Equal(t, 0, len(queried))
+
+}
+
+func TestGocloak_BadCreatePermissionTicket(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetClientToken(t, client)
+
+	// Create
+	tearDownResource, resourceID := CreateResourceClientWithScopes(t, client)
+	// Delete
+	defer tearDownResource()
+
+	_, err := client.CreatePermissionTicket(context.Background(), token.AccessToken, cfg.GoCloak.Realm, []gocloak.CreatePermissionTicketParams{})
+	require.Error(t, err, "CreatePermissionTicket no error on empty params")
+
+	permissions := gocloak.CreatePermissionTicketParams{
+		ResourceID: &resourceID,
+	}
+
+	_, err = client.CreatePermissionTicket(context.Background(), token.AccessToken, cfg.GoCloak.Realm, []gocloak.CreatePermissionTicketParams{permissions})
+	require.Error(t, err, "CreatePermissionTicket no error on missing ResourceScopes in permission")
+
+	permissions = gocloak.CreatePermissionTicketParams{
+		ResourceScopes: &[]string{"read-private"},
+	}
+	_, err = client.CreatePermissionTicket(context.Background(), token.AccessToken, cfg.GoCloak.Realm, []gocloak.CreatePermissionTicketParams{permissions})
+	require.Error(t, err, "CreatePermissionTicket no error on missing ResourceID in permission")
+
+	permissions = gocloak.CreatePermissionTicketParams{
+		ResourceID:     &resourceID,
+		ResourceScopes: &[]string{"read-private"},
+	}
+
+	_, err = client.CreatePermissionTicket(context.Background(), "", cfg.GoCloak.Realm, []gocloak.CreatePermissionTicketParams{permissions})
+	require.Error(t, err, "CreatePermissionTicket no error on unauthorized access attempt")
+
+}
+
+func TestGocloak_CreatePermissionTicket(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetClientToken(t, client)
+
+	// Create
+	tearDownResource, resourceID := CreateResourceClientWithScopes(t, client)
+	// Delete
+	defer tearDownResource()
+
+	// Add additional claims
+	pushClaims := make(map[string][]string)
+
+	pushClaims["organization"] = []string{"acme", "somecorp"}
+
+	permissions := gocloak.CreatePermissionTicketParams{
+		ResourceID:     &resourceID,
+		ResourceScopes: &[]string{"read-private"},
+		Claims:         &pushClaims,
+	}
+
+	ticket, err := client.CreatePermissionTicket(context.Background(), token.AccessToken, cfg.GoCloak.Realm, []gocloak.CreatePermissionTicketParams{permissions})
+
+	require.NoError(t, err, "CreatePermissionTicket failed")
+	t.Logf("Created PermissionTicket: %+v", *(ticket.Ticket))
+
+	pt, err := jwt.ParseWithClaims(*(ticket.Ticket), &gocloak.PermissionTicketRepresentation{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(""), nil
+	})
+
+	//we're expecting validity error because we didn't supply secret
+	require.Equal(t, "token signature is invalid", err.Error())
+
+	claims, ok := pt.Claims.(*gocloak.PermissionTicketRepresentation) //ticketClaims)
+	require.Equal(t, true, ok)
+	require.Equal(t, cfg.GoCloak.Realm, *(claims.AZP))
+	require.Equal(t, 1, len(*(claims.Permissions)))
+	require.Equal(t, 1, len(*(claims.Permissions)))
+	require.Equal(t, 1, len(*(claims.Claims)))
+	require.Equal(t, pushClaims["organization"], (*(claims.Claims))["organization"])
+	require.Equal(t, *permissions.ResourceID, *((*(claims.Permissions))[0].RSID))
+
 }
 
 func TestGocloak_CreateListGetUpdateDeletePermission(t *testing.T) {

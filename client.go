@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 	"sync"
@@ -46,6 +47,13 @@ func (client *gocloak) getRequest(ctx context.Context) *resty.Request {
 	return client.restyClient.R().
 		SetContext(ctx).
 		SetError(&err)
+}
+
+func (client *gocloak) getRequestWithBearerAuthNoCache(ctx context.Context, token string) *resty.Request {
+	return client.getRequest(ctx).
+		SetAuthToken(token).
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Cache-Control", "no-cache")
 }
 
 func (client *gocloak) getRequestWithBearerAuth(ctx context.Context, token string) *resty.Request {
@@ -2291,7 +2299,11 @@ func (client *gocloak) DeleteIdentityProvider(ctx context.Context, token, realm,
 	return checkForError(resp, err, errMessage)
 }
 
-// GetResource returns a client's resource with the given id
+// ------------------
+// Protection API
+// ------------------
+
+// GetResource returns a client's resource with the given id, using access token from admin
 func (client *gocloak) GetResource(ctx context.Context, token, realm, clientID, resourceID string) (*ResourceRepresentation, error) {
 	const errMessage = "could not get resource"
 
@@ -2307,8 +2319,8 @@ func (client *gocloak) GetResource(ctx context.Context, token, realm, clientID, 
 	return &result, nil
 }
 
-// GetResource returns a client's resource with the given id
-func (client *gocloak) GetResourceClient(ctx context.Context, token, realm, clientID, resourceID string) (*ResourceRepresentation, error) {
+// GetResource returns a client's resource with the given id, using access token from client
+func (client *gocloak) GetResourceClient(ctx context.Context, token, realm, resourceID string) (*ResourceRepresentation, error) {
 	const errMessage = "could not get resource"
 
 	var result ResourceRepresentation
@@ -2325,52 +2337,7 @@ func (client *gocloak) GetResourceClient(ctx context.Context, token, realm, clie
 	return &result, nil
 }
 
-// GetResources returns resources associated with the client
-func (client *gocloak) GetResourcesClient(ctx context.Context, token, realm, clientID string, params GetResourceParams) ([]*ResourceRepresentation, error) {
-	const errMessage = "could not get resources"
-
-	queryParams, err := GetQueryParams(params)
-	if err != nil {
-		return nil, err
-	}
-
-	var result []*ResourceRepresentation
-	var resourceIDs []string
-	resp, err := client.getRequestWithBearerAuth(ctx, token).
-		SetResult(&resourceIDs).
-		SetQueryParams(queryParams).
-		Get(client.getRealmURL(realm, "authz", "protection", "resource_set"))
-
-	if err := checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	for _, resourceID := range resourceIDs {
-		resource, err := client.GetResourceClient(ctx, token, realm, clientID, resourceID)
-		if err == nil {
-			result = append(result, resource)
-		}
-	}
-
-	return result, nil
-}
-
-// UpdateResource updates a resource associated with the client
-func (client *gocloak) UpdateResourceClient(ctx context.Context, token, realm, clientID string, resource ResourceRepresentation) error {
-	const errMessage = "could not update resource"
-
-	if NilOrEmpty(resource.ID) {
-		return errors.New("ID of a resource required")
-	}
-
-	resp, err := client.getRequestWithBearerAuth(ctx, token).
-		SetBody(resource).
-		Put(client.getRealmURL(realm, "authz", "protection", "resource_set", *(resource.ID)))
-
-	return checkForError(resp, err, errMessage)
-}
-
-// GetResources returns resources associated with the client
+// GetResources returns resources associated with the client, using access token from admin
 func (client *gocloak) GetResources(ctx context.Context, token, realm, clientID string, params GetResourceParams) ([]*ResourceRepresentation, error) {
 	const errMessage = "could not get resources"
 
@@ -2392,7 +2359,67 @@ func (client *gocloak) GetResources(ctx context.Context, token, realm, clientID 
 	return result, nil
 }
 
-// CreateResource creates a resource associated with the client
+// GetResources returns resources associated with the client, using access token from client
+func (client *gocloak) GetResourcesClient(ctx context.Context, token, realm string, params GetResourceParams) ([]*ResourceRepresentation, error) {
+	const errMessage = "could not get resources"
+
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []*ResourceRepresentation
+	var resourceIDs []string
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&resourceIDs).
+		SetQueryParams(queryParams).
+		Get(client.getRealmURL(realm, "authz", "protection", "resource_set"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	for _, resourceID := range resourceIDs {
+		resource, err := client.GetResourceClient(ctx, token, realm, resourceID)
+		if err == nil {
+			result = append(result, resource)
+		}
+	}
+
+	return result, nil
+}
+
+// UpdateResource updates a resource associated with the client, using access token from admin
+func (client *gocloak) UpdateResource(ctx context.Context, token, realm, clientID string, resource ResourceRepresentation) error {
+	const errMessage = "could not update resource"
+
+	if NilOrEmpty(resource.ID) {
+		return errors.New("ID of a resource required")
+	}
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetBody(resource).
+		Put(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "resource", *(resource.ID)))
+
+	return checkForError(resp, err, errMessage)
+}
+
+// UpdateResource updates a resource associated with the client, using access token from client
+func (client *gocloak) UpdateResourceClient(ctx context.Context, token, realm string, resource ResourceRepresentation) error {
+	const errMessage = "could not update resource"
+
+	if NilOrEmpty(resource.ID) {
+		return errors.New("ID of a resource required")
+	}
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetBody(resource).
+		Put(client.getRealmURL(realm, "authz", "protection", "resource_set", *(resource.ID)))
+
+	return checkForError(resp, err, errMessage)
+}
+
+// CreateResource creates a resource associated with the client, using access token from admin
 func (client *gocloak) CreateResource(ctx context.Context, token, realm string, clientID string, resource ResourceRepresentation) (*ResourceRepresentation, error) {
 	const errMessage = "could not create resource"
 
@@ -2409,27 +2436,39 @@ func (client *gocloak) CreateResource(ctx context.Context, token, realm string, 
 	return &result, nil
 }
 
-// UpdateResource updates a resource associated with the client
-func (client *gocloak) UpdateResource(ctx context.Context, token, realm, clientID string, resource ResourceRepresentation) error {
-	const errMessage = "could not update resource"
+// CreateResource creates a resource associated with the client, using access token from client
+func (client *gocloak) CreateResourceClient(ctx context.Context, token, realm string, resource ResourceRepresentation) (*ResourceRepresentation, error) {
+	const errMessage = "could not create resource"
 
-	if NilOrEmpty(resource.ID) {
-		return errors.New("ID of a resource required")
+	var result ResourceRepresentation
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		SetBody(resource).
+		Post(client.getRealmURL(realm, "authz", "protection", "resource_set"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
 	}
 
-	resp, err := client.getRequestWithBearerAuth(ctx, token).
-		SetBody(resource).
-		Put(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "resource", *(resource.ID)))
-
-	return checkForError(resp, err, errMessage)
+	return &result, nil
 }
 
-// DeleteResource deletes a resource associated with the client
+// DeleteResource deletes a resource associated with the client (using an admin token)
 func (client *gocloak) DeleteResource(ctx context.Context, token, realm, clientID, resourceID string) error {
 	const errMessage = "could not delete resource"
 
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
 		Delete(client.getAdminRealmURL(realm, "clients", clientID, "authz", "resource-server", "resource", resourceID))
+
+	return checkForError(resp, err, errMessage)
+}
+
+// DeleteResource deletes a resource associated with the client (using a client token)
+func (client *gocloak) DeleteResourceClient(ctx context.Context, token, realm, resourceID string) error {
+	const errMessage = "could not delete resource"
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		Delete(client.getRealmURL(realm, "authz", "protection", "resource_set", resourceID))
 
 	return checkForError(resp, err, errMessage)
 }
@@ -2602,6 +2641,82 @@ func (client *gocloak) DeletePolicy(ctx context.Context, token, realm, clientID,
 	return checkForError(resp, err, errMessage)
 }
 
+// GetResourcePolicy updates a permission for a specifc resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+func (client *gocloak) GetResourcePolicy(ctx context.Context, token, realm, permissionID string) (*ResourcePolicyRepresentation, error) {
+	const errMessage = "could not get resource policy"
+
+	var result ResourcePolicyRepresentation
+	resp, err := client.getRequestWithBearerAuthNoCache(ctx, token).
+		SetResult(&result).
+		Get(client.getRealmURL(realm, "authz", "protection", "uma-policy", permissionID))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// GetResourcePolicies returns resources associated with the client, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+func (client *gocloak) GetResourcePolicies(ctx context.Context, token, realm string, params GetResourcePoliciesParams) ([]*ResourcePolicyRepresentation, error) {
+	const errMessage = "could not get resource policies"
+
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []*ResourcePolicyRepresentation
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		SetQueryParams(queryParams).
+		Get(client.getRealmURL(realm, "authz", "protection", "uma-policy"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// CreateResourcePolicy associates a permission with a specifc resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+func (client *gocloak) CreateResourcePolicy(ctx context.Context, token, realm, resourceID string, policy ResourcePolicyRepresentation) (*ResourcePolicyRepresentation, error) {
+	const errMessage = "could not create resource policy"
+
+	var result ResourcePolicyRepresentation
+	resp, err := client.getRequestWithBearerAuthNoCache(ctx, token).
+		SetResult(&result).
+		SetBody(policy).
+		Post(client.getRealmURL(realm, "authz", "protection", "uma-policy", resourceID))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// UpdateResourcePolicy updates a permission for a specifc resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+func (client *gocloak) UpdateResourcePolicy(ctx context.Context, token, realm, permissionID string, policy ResourcePolicyRepresentation) error {
+	const errMessage = "could not update resource policy"
+
+	resp, err := client.getRequestWithBearerAuthNoCache(ctx, token).
+		SetBody(policy).
+		Put(client.getRealmURL(realm, "authz", "protection", "uma-policy", permissionID))
+
+	return checkForError(resp, err, errMessage)
+}
+
+// DeleteResourcePolicy deletes a permission for a specifc resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+func (client *gocloak) DeleteResourcePolicy(ctx context.Context, token, realm, permissionID string) error {
+	const errMessage = "could not  delete resource policy"
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		Delete(client.getRealmURL(realm, "authz", "protection", "uma-policy", permissionID))
+
+	return checkForError(resp, err, errMessage)
+}
+
 // GetPermission returns a client's permission with the given id
 func (client *gocloak) GetPermission(ctx context.Context, token, realm, clientID, permissionID string) (*PermissionRepresentation, error) {
 	const errMessage = "could not get permission"
@@ -2691,6 +2806,168 @@ func (client *gocloak) GetPermissions(ctx context.Context, token, realm, clientI
 	}
 
 	return result, nil
+}
+
+// checkPermissionTicketParams checks that mandatory fields are present
+func checkPermissionTicketParams(permissions []CreatePermissionTicketParams) error {
+
+	if len(permissions) == 0 {
+		return errors.New("at least one permission ticket must be requested")
+	}
+
+	for _, pt := range permissions {
+
+		if NilOrEmpty(pt.ResourceID) {
+			return errors.New("resourceID required for permission ticket")
+		}
+		if NilOrEmptyArray(pt.ResourceScopes) {
+			return errors.New("at least one resourceScope required for permission ticket")
+		}
+	}
+
+	return nil
+
+}
+
+// CreatePermissionTicket creates a permission ticket, using access token from client
+func (client *gocloak) CreatePermissionTicket(ctx context.Context, token, realm string, permissions []CreatePermissionTicketParams) (*PermissionTicketResponseRepresentation, error) {
+	const errMessage = "could not create permission ticket"
+
+	err := checkPermissionTicketParams(permissions)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var result PermissionTicketResponseRepresentation
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		SetBody(permissions).
+		Post(client.getRealmURL(realm, "authz", "protection", "permission"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// checkPermissionGrantParams checks for mandatory fields
+func checkPermissionGrantParams(permission PermissionGrantParams) error {
+
+	if NilOrEmpty(permission.RequesterID) {
+		return errors.New("requesterID required to grant user permission")
+	}
+	if NilOrEmpty(permission.ResourceID) {
+		return errors.New("resourceID required to grant user permission")
+	}
+	if NilOrEmpty(permission.ScopeName) {
+		return errors.New("scopeName required to grant user permission")
+	}
+
+	return nil
+}
+
+// GrantPermission lets resource owner grant permission for specific resource ID to specific user ID
+func (client *gocloak) GrantUserPermission(ctx context.Context, token, realm string, permission PermissionGrantParams) (*PermissionGrantResponseRepresentation, error) {
+	const errMessage = "could not grant user permission"
+
+	err := checkPermissionGrantParams(permission)
+
+	if err != nil {
+		return nil, err
+	}
+
+	permission.Granted = BoolP(true)
+
+	var result PermissionGrantResponseRepresentation
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		SetBody(permission).
+		Post(client.getRealmURL(realm, "authz", "protection", "permission", "ticket"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+
+}
+
+// checkPermissionUpdateParams
+func checkPermissionUpdateParams(permission PermissionGrantParams) error {
+
+	err := checkPermissionGrantParams(permission)
+
+	if err != nil {
+		return err
+	}
+
+	if permission.Granted == nil {
+		return errors.New("granted required to update user permission")
+	}
+	return nil
+}
+
+func (client *gocloak) UpdateUserPermission(ctx context.Context, token, realm string, permission PermissionGrantParams) (*PermissionGrantResponseRepresentation, error) {
+	const errMessage = "could not update user permission"
+
+	err := checkPermissionUpdateParams(permission)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var result PermissionGrantResponseRepresentation
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		SetBody(permission).
+		Put(client.getRealmURL(realm, "authz", "protection", "permission", "ticket"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode() == http.StatusNoContent { // permission updated to 'not granted' removes permission
+		return nil, nil
+	}
+	return &result, nil
+
+}
+
+// GetUserPermission gets granted permissions according query parameters
+func (client *gocloak) GetUserPermissions(ctx context.Context, token, realm string, params GetUserPermissionParams) ([]*PermissionGrantResponseRepresentation, error) {
+	const errMessage = "could not get user permissions"
+
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []*PermissionGrantResponseRepresentation
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		SetQueryParams(queryParams).
+		Get(client.getRealmURL(realm, "authz", "protection", "permission", "ticket"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+
+}
+
+func (client *gocloak) DeleteUserPermission(ctx context.Context, token, realm, ticketID string) error {
+	const errMessage = "could not delete user permission"
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		Delete(client.getRealmURL(realm, "authz", "protection", "permission", "ticket", ticketID))
+
+	return checkForError(resp, err, errMessage)
+
 }
 
 // CreatePermission creates a permission associated with the client

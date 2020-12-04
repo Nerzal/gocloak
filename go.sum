@@ -1,9 +1,13 @@
+dmitri.shuralyov.com/go/generated v0.0.0-20170818220700-b1254a446363 h1:o4lAkfETerCnr1kF9/qwkwjICnU+YLHNDCM8h2xj7as=
+dmitri.shuralyov.com/go/generated v0.0.0-20170818220700-b1254a446363/go.mod h1:WG7q7swWsS2f9PYpt5DoEP/EBYWx8We5UoRltn9vJl8=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1 h1:CaO/zOnF8VvUfEbhRatPcwKVWamvbYd8tQGRWacE9kU=
 github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1/go.mod h1:+hnT3ywWDTAFrW5aE+u2Sa/wT555ZqwoCS+pk3p6ry4=
 github.com/go-resty/resty/v2 v2.3.0 h1:JOOeAvjSlapTT92p8xiS19Zxev1neGikoHsXJeOq8So=
 github.com/go-resty/resty/v2 v2.3.0/go.mod h1:UpN9CgLZNsv4e9XG50UU8xdI0F43UQ4HmxLBDwaroHU=
+github.com/gordonklaus/ineffassign v0.0.0-20201107091007-3b93a8888063 h1:dKprcOvlsvqfWn/iGvz+oYuC2axESeSMuF8dDrWMNsE=
+github.com/gordonklaus/ineffassign v0.0.0-20201107091007-3b93a8888063/go.mod h1:cuNKsD1zp2v6XfE/orVX2QE1LC+i254ceGcVeDT3pTU=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

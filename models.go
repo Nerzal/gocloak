@@ -3,6 +3,8 @@ package gocloak
 import (
 	"encoding/json"
 	"strings"
+
+	"github.com/dgrijalva/jwt-go/v4"
 )
 
 // GetQueryParams converts the struct to map[string]string
@@ -537,6 +539,7 @@ type ResourceRepresentation struct {
 	Name               *string                      `json:"name,omitempty"`
 	Owner              *ResourceOwnerRepresentation `json:"owner,omitempty"`
 	OwnerManagedAccess *bool                        `json:"ownerManagedAccess,omitempty"`
+	ResourceScopes     *[]ScopeRepresentation       `json:"resource_scopes,omitempty"`
 	Scopes             *[]ScopeRepresentation       `json:"scopes,omitempty"`
 	Type               *string                      `json:"type,omitempty"`
 	URIs               *[]string                    `json:"uris,omitempty"`
@@ -923,6 +926,113 @@ type PermissionRepresentation struct {
 	ResourceType     *string           `json:"resource_type,omitempty"`
 	Scopes           *[]string         `json:"scopes,omitempty"`
 	Type             *string           `json:"type,omitempty"`
+}
+
+// CreatePermissionTicketParams represents the optional parameters for getting a permission ticket
+type CreatePermissionTicketParams struct {
+	ResourceID     *string              `json:"resource_id,omitempty"`
+	ResourceScopes *[]string            `json:"resource_scopes,omitempty"`
+	Claims         *map[string][]string `json:"claims,omitempty"`
+}
+
+// PermissionTicketDescriptionRepresentation represents the parameters returned along with a permission ticket
+type PermissionTicketDescriptionRepresentation struct {
+	ID                     *string               `json:"id,omitempty"`
+	CreatedTimeStamp       *int64                `json:"createdTimestamp,omitempty"`
+	UserName               *string               `json:"username,omitempty"`
+	Enabled                *bool                 `json:"enabled,omitempty"`
+	TOTP                   *bool                 `json:"totp,omitempty"`
+	EmailVerified          *bool                 `json:"emailVerified,omitempty"`
+	FirstName              *string               `json:"firstName,omitempty"`
+	LastName               *string               `json:"lastName,omitempty"`
+	Email                  *string               `json:"email,omitempty"`
+	DisableCredentialTypes *[]string             `json:"disableCredentialTypes,omitempty"`
+	RequiredActions        *[]string             `json:"requiredActions,omitempty"`
+	NotBefore              *int64                `json:"notBefore,omitempty"`
+	Access                 *AccessRepresentation `json:"access,omitempty"`
+}
+
+// AccessRepresentation represents the access parameters returned in the permission ticket description
+type AccessRepresentation struct {
+	ManageGroupMembership *bool `json:"manageGroupMembership,omitempty"`
+	View                  *bool `json:"view,omitempty"`
+	MapRoles              *bool `json:"mapRoles,omitempty"`
+	Impersonate           *bool `json:"impersonate,omitempty"`
+	Manage                *bool `json:"manage,omitempty"`
+}
+
+// PermissionTicketResponseRepresentation represents the keycloak response containing the permission ticket
+type PermissionTicketResponseRepresentation struct {
+	Ticket *string `json:"ticket,omitempty"`
+}
+
+// PermissionTicketRepresentation represents the permission ticket contents
+type PermissionTicketRepresentation struct {
+	AZP         *string                                     `json:"azp,omitempty"`
+	Claims      *map[string][]string                        `json:"claims,omitempty"`
+	Permissions *[]PermissionTicketPermissionRepresentation `json:"permissions,omitempty"`
+	jwt.StandardClaims
+}
+
+// PermissionTicketPermissionRepresentation represents the individual permissions in a permission ticket
+type PermissionTicketPermissionRepresentation struct {
+	Scopes *[]string `json:"scopes,omitempty"`
+	RSID   *string   `json:"rsid,omitempty"`
+}
+
+// PermissionGrantParams represents the permission which the resource owner is granting to a specific user
+type PermissionGrantParams struct {
+	ResourceID  *string `json:"resource,omitempty"`
+	RequesterID *string `json:"requester,omitempty"`
+	Granted     *bool   `json:"granted,omitempty"`
+	ScopeName   *string `json:"scopeName,omitempty"`
+	TicketID    *string `json:"id,omitempty"`
+}
+
+// PermissionGrantResponseRepresentation represents the reply from Keycloack after granting permission
+type PermissionGrantResponseRepresentation struct {
+	ID          *string `json:"id,omitempty"`
+	Owner       *string `json:"owner,omitempty"`
+	ResourceID  *string `json:"resource,omitempty"`
+	Scope       *string `json:"scope,omitempty"`
+	Granted     *bool   `json:"granted,omitempty"`
+	RequesterID *string `json:"requester,omitempty"`
+}
+
+// GetUserPermissionParams represents the optional parameters for getting user permissions
+type GetUserPermissionParams struct {
+	ScopeID     *string `json:"scopeId,omitempty"`
+	ResourceID  *string `json:"resourceId,omitempty"`
+	Owner       *string `json:"owner,omitempty"`
+	Requester   *string `json:"requester,omitempty"`
+	Granted     *bool   `json:"granted,omitempty"`
+	ReturnNames *string `json:"returnNames,omitempty"`
+	First       *int    `json:"first,string,omitempty"`
+	Max         *int    `json:"max,string,omitempty"`
+}
+
+// ResourcePolicyRepresentation is a representation of a Policy applied to a resource
+type ResourcePolicyRepresentation struct {
+	Name             *string           `json:"name,omitempty"`
+	Description      *string           `json:"description,omitempty"`
+	Scopes           *[]string         `json:"scopes,omitempty"`
+	Roles            *[]string         `json:"roles,omitempty"`
+	Groups           *[]string         `json:"groups,omitempty"`
+	Clients          *[]string         `json:"clients,omitempty"`
+	ID               *string           `json:"id,omitempty"`
+	Logic            *Logic            `json:"logic,omitempty"`
+	DecisionStrategy *DecisionStrategy `json:"decisionStrategy,omitempty"`
+	Owner            *string           `json:"owner,omitempty"`
+	Type             *string           `json:"type,omitempty"`
+}
+
+// GetResourcePoliciesParams is a representation of the query params for getting policies
+type GetResourcePoliciesParams struct {
+	ResourceID *string `json:"resource_id,omitempty"`
+	Name       *string `json:"name,omitempty"`
+	Scope      *string `json:"scope,omitempty"`
+	First      *int    `json:"first,string,omitempty"`
+	Max        *int    `json:"max,string,omitempty"`
 }
 
 // CredentialRepresentation is a representations of the credentials
