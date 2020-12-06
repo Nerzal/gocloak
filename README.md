@@ -276,6 +276,12 @@ type GoCloak interface {
 	UpdatePolicy(ctx context.Context, token, realm, clientID string, policy PolicyRepresentation) error
 	DeletePolicy(ctx context.Context, token, realm, clientID string, policyID string) error
 
+    GetResourcePolicy(ctx context.Context, token, realm, permissionID string) (*ResourcePolicyRepresentation, error) 
+    GetResourcePolicies(ctx context.Context, token, realm string, params GetResourcePoliciesParams) ([]*ResourcePolicyRepresentation, error) 
+    CreateResourcePolicy(ctx context.Context, token, realm, resourceID string, policy ResourcePolicyRepresentation) (*ResourcePolicyRepresentation, error) 
+    UpdateResourcePolicy(ctx context.Context, token, realm, permissionID string, policy ResourcePolicyRepresentation) error 
+    DeleteResourcePolicy(ctx context.Context, token, realm, permissionID string) error 
+
 	GetPermission(ctx context.Context, token, realm, clientID, permissionID string) (*PermissionRepresentation, error)
 	GetPermissions(ctx context.Context, token, realm, clientID string, params GetPermissionParams) ([]*PermissionRepresentation, error)
 	CreatePermission(ctx context.Context, token, realm, clientID string, permission PermissionRepresentation) (*PermissionRepresentation, error)
