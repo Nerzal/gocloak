@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1606387423923,
+  "lastUpdate": 1607514279403,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -2589,6 +2589,54 @@ window.BENCHMARK_DATA = {
             "value": 51249074,
             "unit": "ns/op\t   51157 B/op\t     218 allocs/op",
             "extra": "21 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "theel.tobias@gmx.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4ce82f58b38c36ca0f8704c8f6384a975b1fd6f6",
+          "message": "Merge pull request #240 from timdrysdale/master\n\nUpdate interface methods in README.md",
+          "timestamp": "2020-12-09T12:42:25+01:00",
+          "tree_id": "2abbc1b25e3199a511857a392a596ed43da5b23b",
+          "url": "https://github.com/Nerzal/gocloak/commit/4ce82f58b38c36ca0f8704c8f6384a975b1fd6f6"
+        },
+        "date": 1607514278758,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 85245864,
+            "unit": "ns/op\t   46860 B/op\t     217 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 85268903,
+            "unit": "ns/op\t   61333 B/op\t     221 allocs/op",
+            "extra": "13 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 80008234,
+            "unit": "ns/op\t   49861 B/op\t     217 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 55711014,
+            "unit": "ns/op\t   63735 B/op\t     216 allocs/op",
+            "extra": "24 times\n2 procs"
           }
         ]
       }
