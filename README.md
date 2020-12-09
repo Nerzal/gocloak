@@ -112,6 +112,11 @@ go get github.com/Nerzal/gocloak/v7
 ```go
 // GoCloak holds all methods a client should fulfill
 type GoCloak interface {
+
+	RestyClient() *resty.Client
+	SetRestyClient(restyClient *resty.Client)
+
+	GetToken(ctx context.Context, realm string, options TokenOptions) (*JWT, error)
 	GetRequestingPartyToken(ctx context.Context, token, realm string, options RequestingPartyTokenOptions) (*JWT, error)
 	GetRequestingPartyPermissions(ctx context.Context, token, realm string, options RequestingPartyTokenOptions) (*[]RequestingPartyPermission, error)
 
@@ -124,7 +129,6 @@ type GoCloak interface {
 	LoginClient(ctx context.Context, clientID, clientSecret, realm string) (*JWT, error)
 	LoginClientSignedJWT(ctx context.Context, clientID, realm string, key interface{}, signedMethod jwt.SigningMethod, expiresAt *jwt.Time) (*JWT, error)
 	LoginAdmin(ctx context.Context, username, password, realm string) (*JWT, error)
-	RequestPermission(ctx context.Context, clientID, clientSecret, realm, username, password, permission string) (*JWT, error)
 	RefreshToken(ctx context.Context, refreshToken, clientID, clientSecret, realm string) (*JWT, error)
 	DecodeAccessToken(ctx context.Context, accessToken, realm, expectedAudience string) (*jwt.Token, *jwt.MapClaims, error)
 	DecodeAccessTokenCustomClaims(ctx context.Context, accessToken, realm, expectedAudience string, claims jwt.Claims) (*jwt.Token, error)
@@ -157,6 +161,7 @@ type GoCloak interface {
 	DeleteComponent(ctx context.Context, accessToken, realm, componentID string) error
 	DeleteGroup(ctx context.Context, accessToken, realm, groupID string) error
 	DeleteClientRole(ctx context.Context, accessToken, realm, clientID, roleName string) error
+	DeleteClientRoleFromUser(ctx context.Context, token, realm, clientID, userID string, roles []Role) error
 	DeleteClient(ctx context.Context, accessToken, realm, clientID string) error
 	DeleteClientScope(ctx context.Context, accessToken, realm, scopeID string) error
 	DeleteClientScopeMappingsRealmRoles(ctx context.Context, token, realm, clientID string, roles []Role) error
@@ -187,6 +192,7 @@ type GoCloak interface {
 	GetUsers(ctx context.Context, accessToken, realm string, params GetUsersParams) ([]*User, error)
 	GetUserGroups(ctx context.Context, accessToken, realm, userID string, params GetGroupsParams) ([]*UserGroup, error)
 	AddUserToGroup(ctx context.Context, token, realm, userID, groupID string) error
+	DeleteUserFromGroup(ctx context.Context, token, realm, userID, groupID string) error
 	GetComponents(ctx context.Context, accessToken, realm string) ([]*Component, error)
 	GetGroups(ctx context.Context, accessToken, realm string, params GetGroupsParams) ([]*Group, error)
 	GetGroupsCount(ctx context.Context, token, realm string, params GetGroupsParams) (int, error)
@@ -199,6 +205,7 @@ type GoCloak interface {
 	GetRoleMappingByUserID(ctx context.Context, accessToken, realm, userID string) (*MappingsRepresentation, error)
 	GetClientRoles(ctx context.Context, accessToken, realm, clientID string) ([]*Role, error)
 	GetClientRole(ctx context.Context, token, realm, clientID, roleName string) (*Role, error)
+	GetClientRoleByID(ctx context.Context, accessToken, realm, roleID string) (*Role, error)
 	GetClients(ctx context.Context, accessToken, realm string, params GetClientsParams) ([]*Client, error)
 	AddClientRoleComposite(ctx context.Context, token, realm, roleID string, roles []Role) error
 	DeleteClientRoleComposite(ctx context.Context, token, realm, roleID string, roles []Role) error
@@ -231,6 +238,7 @@ type GoCloak interface {
 
 	// *** Client Roles ***
 
+	AddClientRoleToUser(ctx context.Context, token, realm, clientID, userID string, roles []Role) error
 	AddClientRoleToGroup(ctx context.Context, token, realm, clientID, groupID string, roles []Role) error
 	DeleteClientRoleFromGroup(ctx context.Context, token, realm, clientID, groupID string, roles []Role) error
 	GetCompositeClientRolesByRoleID(ctx context.Context, token, realm, clientID, roleID string) ([]*Role, error)
@@ -263,7 +271,7 @@ type GoCloak interface {
 	CreateResource(ctx context.Context, token, realm, clientID string, resource ResourceRepresentation) (*ResourceRepresentation, error)
 	UpdateResource(ctx context.Context, token, realm, clientID string, resource ResourceRepresentation) error
 	DeleteResource(ctx context.Context, token, realm, clientID, resourceID string) error
-	
+
 	GetResourceClient(ctx context.Context, token, realm, resourceID string) (*ResourceRepresentation, error)
 	GetResourcesClient(ctx context.Context, token, realm string, params GetResourceParams) ([]*ResourceRepresentation, error)
 	CreateResourceClient(ctx context.Context, token, realm string, resource ResourceRepresentation) (*ResourceRepresentation, error)
@@ -282,7 +290,6 @@ type GoCloak interface {
 	UpdatePolicy(ctx context.Context, token, realm, clientID string, policy PolicyRepresentation) error
 	DeletePolicy(ctx context.Context, token, realm, clientID, policyID string) error
 
-
 	GetResourcePolicy(ctx context.Context, token, realm, permissionID string) (*ResourcePolicyRepresentation, error) 
 	GetResourcePolicies(ctx context.Context, token, realm string, params GetResourcePoliciesParams) ([]*ResourcePolicyRepresentation, error) 
 	CreateResourcePolicy(ctx context.Context, token, realm, resourceID string, policy ResourcePolicyRepresentation) (*ResourcePolicyRepresentation, error) 
@@ -291,16 +298,19 @@ type GoCloak interface {
 
 	GetPermission(ctx context.Context, token, realm, clientID, permissionID string) (*PermissionRepresentation, error)
 	GetPermissions(ctx context.Context, token, realm, clientID string, params GetPermissionParams) ([]*PermissionRepresentation, error)
+	GetPermissionResources(ctx context.Context, token, realm, clientID, permissionID string) ([]*PermissionResource, error)
+	GetPermissionScopes(ctx context.Context, token, realm, clientID, permissionID string) ([]*PermissionScope, error)
+	GetDependentPermissions(ctx context.Context, token, realm, clientID, policyID string) ([]*PermissionRepresentation, error)
 	CreatePermission(ctx context.Context, token, realm, clientID string, permission PermissionRepresentation) (*PermissionRepresentation, error)
 	UpdatePermission(ctx context.Context, token, realm, clientID string, permission PermissionRepresentation) error
 	DeletePermission(ctx context.Context, token, realm, clientID, permissionID string) error
-	
+
 	CreatePermissionTicket(ctx context.Context, token, realm string, permissions []CreatePermissionTicketParams) (*PermissionTicketResponseRepresentation, error)
 	GrantUserPermission(ctx context.Context, token, realm string, permission PermissionGrantParams) (*PermissionGrantResponseRepresentation, error)
 	UpdateUserPermission(ctx context.Context, token, realm string, permission PermissionGrantParams) (*PermissionGrantResponseRepresentation, error)
 	GetUserPermissions(ctx context.Context, token, realm string, params GetUserPermissionParams) ([]*PermissionGrantResponseRepresentation, error)
 	DeleteUserPermission(ctx context.Context, token, realm, ticketID string) error
-	
+
 	// *** Credentials API ***
 
 	GetCredentialRegistrators(ctx context.Context, token, realm string) ([]string, error)
@@ -311,6 +321,19 @@ type GoCloak interface {
 	DisableAllCredentialsByType(ctx context.Context, token, realm, userID string, types []string) error
 	MoveCredentialBehind(ctx context.Context, token, realm, userID, credentialID, newPreviousCredentialID string) error
 	MoveCredentialToFirst(ctx context.Context, token, realm, userID, credentialID string) error
+
+	// *** Identity Providers ***
+
+	CreateIdentityProvider(ctx context.Context, token, realm string, providerRep IdentityProviderRepresentation) (string, error)
+	GetIdentityProvider(ctx context.Context, token, realm, alias string) (*IdentityProviderRepresentation, error)
+	GetIdentityProviders(ctx context.Context, token, realm string) ([]*IdentityProviderRepresentation, error)
+	UpdateIdentityProvider(ctx context.Context, token, realm, alias string, providerRep IdentityProviderRepresentation) error
+	DeleteIdentityProvider(ctx context.Context, token, realm, alias string) error
+
+	CreateUserFederatedIdentity(ctx context.Context, token, realm, userID, providerID string, federatedIdentityRep FederatedIdentityRepresentation) error
+	GetUserFederatedIdentities(ctx context.Context, token, realm, userID string) ([]*FederatedIdentityRepresentation, error)
+	DeleteUserFederatedIdentity(ctx context.Context, token, realm, userID, providerID string) error
+
 }
 ```
 
