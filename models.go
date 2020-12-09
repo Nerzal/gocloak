@@ -899,14 +899,15 @@ type IdentityProviderRepresentation struct {
 
 // GetResourceParams represents the optional parameters for getting resources
 type GetResourceParams struct {
-	Deep  *bool   `json:"deep,string,omitempty"`
-	First *int    `json:"first,string,omitempty"`
-	Max   *int    `json:"max,string,omitempty"`
-	Name  *string `json:"name,omitempty"`
-	Owner *string `json:"owner,omitempty"`
-	Type  *string `json:"type,omitempty"`
-	URI   *string `json:"uri,omitempty"`
-	Scope *string `json:"scope,omitempty"`
+	Deep        *bool   `json:"deep,string,omitempty"`
+	First       *int    `json:"first,string,omitempty"`
+	Max         *int    `json:"max,string,omitempty"`
+	Name        *string `json:"name,omitempty"`
+	Owner       *string `json:"owner,omitempty"`
+	Type        *string `json:"type,omitempty"`
+	URI         *string `json:"uri,omitempty"`
+	Scope       *string `json:"scope,omitempty"`
+	MatchingURI *bool   `json:"matchingUri,string,omitempty"`
 }
 
 // GetScopeParams represents the optional parameters for getting scopes
