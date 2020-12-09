@@ -66,13 +66,15 @@ go get github.com/Nerzal/gocloak/v7
 	if err != nil {
 		panic("Something wrong with the credentials or url")
 	}
+	
 	user := gocloak.User{
-		FirstName: "Bob",
-		LastName:  "Uncle",
-		Email:     "something@really.wrong",
-		Enabled:   true,
-		Username:  "CoolGuy",
+		FirstName: gocloak.StringP(""Bob"),
+		LastName:  gocloak.StringP(""Uncle"),
+		Email:     gocloak.StringP(""something@really.wrong"),
+		Enabled:   gocloak.BoolP(true),
+		Username:  gocloak.StringP("CoolGuy"),
 	}
+
 	_, err = client.CreateUser(ctx, token.AccessToken, "realm", user)
 	if err != nil {
 		panic("Oh no!, failed to create user :(")
