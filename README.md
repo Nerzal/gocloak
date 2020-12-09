@@ -28,6 +28,10 @@ Benchmarks: https://nerzal.github.io/gocloak/dev/bench/
 Breaking Change
  * Added support for array values in aud claim
  * When decoding an access Token, it is now needed to provide the audience to check
+ * Add member "MatchingURI" to GetResourceParams
+ * Add resource policy functions (thanks to timdrysdale)
+ * Add type field to APIError 
+ * Most of the protection API should now be implemented (thanks to timdrysdale)
 
 ### v6:
 There are several backward incompatible changes
