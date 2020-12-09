@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1607543498156,
+  "lastUpdate": 1607547916715,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -2685,6 +2685,54 @@ window.BENCHMARK_DATA = {
             "value": 38933662,
             "unit": "ns/op\t   71879 B/op\t     218 allocs/op",
             "extra": "28 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "timothy.d.drysdale@gmail.com",
+            "name": "Tim Drysdale",
+            "username": "timdrysdale"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6874eb3a7accf3bb8553ce32816fffbe2cb8f26f",
+          "message": "Add missing interface methods to README.md (#241)\n\nThis is a continuation of issue #223 to add missing methods to\r\ninterface in README.md and remove one stale method, now that\r\ngithub.com/timdrysdale/ifcmp updated to report these.\r\n\r\n[Issue: 223]",
+          "timestamp": "2020-12-09T15:03:07-06:00",
+          "tree_id": "b6d386e76b76668767bd3e58cdf0892bf5c1aacf",
+          "url": "https://github.com/Nerzal/gocloak/commit/6874eb3a7accf3bb8553ce32816fffbe2cb8f26f"
+        },
+        "date": 1607547916086,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 91530936,
+            "unit": "ns/op\t   72488 B/op\t     222 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 92491522,
+            "unit": "ns/op\t   59802 B/op\t     218 allocs/op",
+            "extra": "13 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 88291366,
+            "unit": "ns/op\t   55084 B/op\t     218 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 54861618,
+            "unit": "ns/op\t   59672 B/op\t     218 allocs/op",
+            "extra": "20 times\n2 procs"
           }
         ]
       }
