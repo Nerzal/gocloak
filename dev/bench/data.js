@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1607514279403,
+  "lastUpdate": 1607543498156,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -2637,6 +2637,54 @@ window.BENCHMARK_DATA = {
             "value": 55711014,
             "unit": "ns/op\t   63735 B/op\t     216 allocs/op",
             "extra": "24 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "theel.tobias@gmx.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c466757115d4eb939647e5259688074850f45f76",
+          "message": "Merge pull request #239 from jpughcs/master\n\nAdd MatchingURI to GetResourceParams model",
+          "timestamp": "2020-12-09T20:48:58+01:00",
+          "tree_id": "5647fc218136b8008badd62e070f11f8dc574db8",
+          "url": "https://github.com/Nerzal/gocloak/commit/c466757115d4eb939647e5259688074850f45f76"
+        },
+        "date": 1607543497561,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 73728175,
+            "unit": "ns/op\t   60340 B/op\t     217 allocs/op",
+            "extra": "16 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 70529372,
+            "unit": "ns/op\t   63980 B/op\t     217 allocs/op",
+            "extra": "16 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 69828839,
+            "unit": "ns/op\t   54392 B/op\t     217 allocs/op",
+            "extra": "16 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 38933662,
+            "unit": "ns/op\t   71879 B/op\t     218 allocs/op",
+            "extra": "28 times\n2 procs"
           }
         ]
       }
