@@ -77,6 +77,7 @@ func decodePublicKey(e, n *string) (*rsa.PublicKey, error) {
 // DecodeAccessToken currently only supports RSA - sorry for that
 func DecodeAccessToken(accessToken string, e, n *string, expectedAudience string) (*jwt.Token, *jwt.MapClaims, error) {
 	const errMessage = "could not decode accessToken"
+	accessToken = strings.Replace(accessToken, "Bearer ", "", 1)
 
 	rsaPublicKey, err := decodePublicKey(e, n)
 	if err != nil {
@@ -108,6 +109,7 @@ func DecodeAccessToken(accessToken string, e, n *string, expectedAudience string
 // DecodeAccessTokenCustomClaims currently only supports RSA - sorry for that
 func DecodeAccessTokenCustomClaims(accessToken string, e, n *string, customClaims jwt.Claims, expectedAudience string) (*jwt.Token, error) {
 	const errMessage = "could not decode accessToken with custom claims"
+	accessToken = strings.Replace(accessToken, "Bearer ", "", 1)
 
 	rsaPublicKey, err := decodePublicKey(e, n)
 	if err != nil {

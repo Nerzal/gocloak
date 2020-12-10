@@ -350,6 +350,7 @@ func (client *gocloak) RetrospectToken(ctx context.Context, accessToken, clientI
 // DecodeAccessToken decodes the accessToken
 func (client *gocloak) DecodeAccessToken(ctx context.Context, accessToken, realm, expectedAudience string) (*jwt.Token, *jwt.MapClaims, error) {
 	const errMessage = "could not decode access token"
+	accessToken = strings.Replace(accessToken, "Bearer ", "", 1)
 
 	decodedHeader, err := jwx.DecodeAccessTokenHeader(accessToken)
 	if err != nil {
@@ -374,6 +375,7 @@ func (client *gocloak) DecodeAccessToken(ctx context.Context, accessToken, realm
 // DecodeAccessTokenCustomClaims decodes the accessToken and writes claims into the given claims
 func (client *gocloak) DecodeAccessTokenCustomClaims(ctx context.Context, accessToken, realm, expectedAudience string, claims jwt.Claims) (*jwt.Token, error) {
 	const errMessage = "could not decode access token with custom claims"
+	accessToken = strings.Replace(accessToken, "Bearer ", "", 1)
 
 	decodedHeader, err := jwx.DecodeAccessTokenHeader(accessToken)
 	if err != nil {
