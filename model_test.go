@@ -204,3 +204,120 @@ func TestStringer(t *testing.T) {
 	assert.Equal(t, expectedStr, str)
 
 }
+
+type Stringable interface {
+	String() string
+}
+
+func TestStringerOmitEmpty(t *testing.T) {
+
+	customs := []Stringable{
+		&gocloak.CertResponseKey{},
+		&gocloak.CertResponse{},
+		&gocloak.IssuerResponse{},
+		&gocloak.ResourcePermission{},
+		&gocloak.PermissionResource{},
+		&gocloak.PermissionScope{},
+		&gocloak.RetrospecTokenResult{},
+		&gocloak.User{},
+		&gocloak.SetPasswordRequest{},
+		&gocloak.Component{},
+		&gocloak.ComponentConfig{},
+		&gocloak.KeyStoreConfig{},
+		&gocloak.ActiveKeys{},
+		&gocloak.Key{},
+		&gocloak.Attributes{},
+		&gocloak.Access{},
+		&gocloak.UserGroup{},
+		&gocloak.ExecuteActionsEmail{},
+		&gocloak.Group{},
+		&gocloak.GroupsCount{},
+		&gocloak.GetGroupsParams{},
+		&gocloak.CompositesRepresentation{},
+		&gocloak.Role{},
+		&gocloak.ClientMappingsRepresentation{},
+		&gocloak.MappingsRepresentation{},
+		&gocloak.ClientScope{},
+		&gocloak.ClientScopeAttributes{},
+		&gocloak.ProtocolMappers{},
+		&gocloak.ProtocolMappersConfig{},
+		&gocloak.Client{},
+		&gocloak.ResourceServerRepresentation{},
+		&gocloak.RoleDefinition{},
+		&gocloak.PolicyRepresentation{},
+		&gocloak.RolePolicyRepresentation{},
+		&gocloak.JSPolicyRepresentation{},
+		&gocloak.ClientPolicyRepresentation{},
+		&gocloak.TimePolicyRepresentation{},
+		&gocloak.UserPolicyRepresentation{},
+		&gocloak.AggregatedPolicyRepresentation{},
+		&gocloak.GroupPolicyRepresentation{},
+		&gocloak.GroupDefinition{},
+		&gocloak.ResourceRepresentation{},
+		&gocloak.ResourceOwnerRepresentation{},
+		&gocloak.ScopeRepresentation{},
+		&gocloak.ProtocolMapperRepresentation{},
+		&gocloak.UserInfoAddress{},
+		&gocloak.UserInfo{},
+		&gocloak.RolesRepresentation{},
+		&gocloak.RealmRepresentation{},
+		&gocloak.MultiValuedHashMap{},
+		&gocloak.TokenOptions{},
+		&gocloak.UserSessionRepresentation{},
+		&gocloak.SystemInfoRepresentation{},
+		&gocloak.MemoryInfoRepresentation{},
+		&gocloak.ServerInfoRepesentation{},
+		&gocloak.FederatedIdentityRepresentation{},
+		&gocloak.IdentityProviderRepresentation{},
+		&gocloak.GetResourceParams{},
+		&gocloak.GetScopeParams{},
+		&gocloak.GetPolicyParams{},
+		&gocloak.GetPermissionParams{},
+		&gocloak.GetUsersByRoleParams{},
+		&gocloak.PermissionRepresentation{},
+		&gocloak.CreatePermissionTicketParams{},
+		&gocloak.PermissionTicketDescriptionRepresentation{},
+		&gocloak.AccessRepresentation{},
+		&gocloak.PermissionTicketResponseRepresentation{},
+		&gocloak.PermissionTicketRepresentation{},
+		&gocloak.PermissionTicketPermissionRepresentation{},
+		&gocloak.PermissionGrantParams{},
+		&gocloak.PermissionGrantResponseRepresentation{},
+		&gocloak.GetUserPermissionParams{},
+		&gocloak.ResourcePolicyRepresentation{},
+		&gocloak.GetResourcePoliciesParams{},
+		&gocloak.CredentialRepresentation{},
+	}
+
+	for _, custom := range customs {
+
+		assert.Equal(t, "{}", custom.(Stringable).String())
+	}
+
+	extras := make(map[Stringable]string)
+
+	extras[&gocloak.GetUsersParams{}] = `{
+	"briefRepresentation": null
+}`
+
+	extras[&gocloak.GetUsersParams{}] = `{
+	"briefRepresentation": null
+}`
+
+	extras[&gocloak.GetClientsParams{}] = `{
+	"viewableOnly": null
+}`
+
+	extras[&gocloak.RequestingPartyTokenOptions{}] = `{
+	"response_include_resource_name": null
+}`
+	extras[&gocloak.RequestingPartyPermission{}] = `{
+	"scopes": null
+}`
+
+	for k, exp := range extras {
+
+		assert.Equal(t, exp, k.String())
+	}
+
+}
