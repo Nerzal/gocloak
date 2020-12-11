@@ -120,3 +120,87 @@ func TestParseAPIErrType(t *testing.T) {
 		})
 	}
 }
+
+func TestStringer(t *testing.T) {
+	//nested structs
+	actions := []string{"someAction", "anotherAction"}
+	access := gocloak.AccessRepresentation{
+		Manage:      gocloak.BoolP(true),
+		Impersonate: gocloak.BoolP(false),
+	}
+	v := gocloak.PermissionTicketDescriptionRepresentation{
+		ID:               gocloak.StringP("someID"),
+		CreatedTimeStamp: gocloak.Int64P(1607702613),
+		Enabled:          gocloak.BoolP(true),
+		RequiredActions:  &actions,
+		Access:           &access,
+	}
+
+	str := v.String()
+
+	expectedStr := `{
+	"id": "someID",
+	"createdTimestamp": 1607702613,
+	"enabled": true,
+	"requiredActions": [
+		"someAction",
+		"anotherAction"
+	],
+	"access": {
+		"impersonate": false,
+		"manage": true
+	}
+}`
+
+	assert.Equal(t, expectedStr, str)
+
+	// nested arrays
+	config := make(map[string]string)
+	config["bar"] = "foo"
+	config["ping"] = "pong"
+
+	pmappers := []gocloak.ProtocolMapperRepresentation{
+		{
+			Name:   gocloak.StringP("someMapper"),
+			Config: &config,
+		},
+	}
+	clients := []gocloak.Client{
+		{
+			Name:            gocloak.StringP("someClient"),
+			ProtocolMappers: &pmappers,
+		},
+		{
+			Name: gocloak.StringP("AnotherClient"),
+		},
+	}
+
+	realmRep := gocloak.RealmRepresentation{
+		DisplayName: gocloak.StringP("someRealm"),
+		Clients:     &clients,
+	}
+
+	str = realmRep.String()
+	expectedStr = `{
+	"clients": [
+		{
+			"name": "someClient",
+			"protocolMappers": [
+				{
+					"config": {
+						"bar": "foo",
+						"ping": "pong"
+					},
+					"name": "someMapper"
+				}
+			]
+		},
+		{
+			"name": "AnotherClient"
+		}
+	],
+	"displayName": "someRealm"
+}`
+	assert.Equal(t, expectedStr, str)
+
+}

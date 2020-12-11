@@ -1093,3 +1093,95 @@ type CredentialRepresentation struct {
 	SecretData     *string `json:"secretData,omitempty"`
 	UserLabel      *string `json:"userLabel,omitempty"`
 }
+
+// prettyStringStruct returns struct formatted into pretty string
+func prettyStringStruct(t interface{}) string {
+
+	json, err := json.MarshalIndent(t, "", "\t")
+	if err != nil {
+		return ""
+	}
+
+	return string(json)
+}
+
+// Stringer implementations for all struct types
+func (v *CertResponseKey) String() string                           { return prettyStringStruct(v) }
+func (v *CertResponse) String() string                              { return prettyStringStruct(v) }
+func (v *IssuerResponse) String() string                            { return prettyStringStruct(v) }
+func (v *ResourcePermission) String() string                        { return prettyStringStruct(v) }
+func (v *PermissionResource) String() string                        { return prettyStringStruct(v) }
+func (v *PermissionScope) String() string                           { return prettyStringStruct(v) }
+func (v *RetrospecTokenResult) String() string                      { return prettyStringStruct(v) }
+func (v *User) String() string                                      { return prettyStringStruct(v) }
+func (v *SetPasswordRequest) String() string                        { return prettyStringStruct(v) }
+func (v *Component) String() string                                 { return prettyStringStruct(v) }
+func (v *ComponentConfig) String() string                           { return prettyStringStruct(v) }
+func (v *KeyStoreConfig) String() string                            { return prettyStringStruct(v) }
+func (v *ActiveKeys) String() string                                { return prettyStringStruct(v) }
+func (v *Key) String() string                                       { return prettyStringStruct(v) }
+func (v *Attributes) String() string                                { return prettyStringStruct(v) }
+func (v *Access) String() string                                    { return prettyStringStruct(v) }
+func (v *UserGroup) String() string                                 { return prettyStringStruct(v) }
+func (v *GetUsersParams) String() string                            { return prettyStringStruct(v) }
+func (v *ExecuteActionsEmail) String() string                       { return prettyStringStruct(v) }
+func (v *Group) String() string                                     { return prettyStringStruct(v) }
+func (v *GroupsCount) String() string                               { return prettyStringStruct(v) }
+func (v *GetGroupsParams) String() string                           { return prettyStringStruct(v) }
+func (v *CompositesRepresentation) String() string                  { return prettyStringStruct(v) }
+func (v *Role) String() string                                      { return prettyStringStruct(v) }
+func (v *ClientMappingsRepresentation) String() string              { return prettyStringStruct(v) }
+func (v *MappingsRepresentation) String() string                    { return prettyStringStruct(v) }
+func (v *ClientScope) String() string                               { return prettyStringStruct(v) }
+func (v *ClientScopeAttributes) String() string                     { return prettyStringStruct(v) }
+func (v *ProtocolMappers) String() string                           { return prettyStringStruct(v) }
+func (v *ProtocolMappersConfig) String() string                     { return prettyStringStruct(v) }
+func (v *Client) String() string                                    { return prettyStringStruct(v) }
+func (v *ResourceServerRepresentation) String() string              { return prettyStringStruct(v) }
+func (v *RoleDefinition) String() string                            { return prettyStringStruct(v) }
+func (v *PolicyRepresentation) String() string                      { return prettyStringStruct(v) }
+func (v *RolePolicyRepresentation) String() string                  { return prettyStringStruct(v) }
+func (v *JSPolicyRepresentation) String() string                    { return prettyStringStruct(v) }
+func (v *ClientPolicyRepresentation) String() string                { return prettyStringStruct(v) }
+func (v *TimePolicyRepresentation) String() string                  { return prettyStringStruct(v) }
+func (v *UserPolicyRepresentation) String() string                  { return prettyStringStruct(v) }
+func (v *AggregatedPolicyRepresentation) String() string            { return prettyStringStruct(v) }
+func (v *GroupPolicyRepresentation) String() string                 { return prettyStringStruct(v) }
+func (v *GroupDefinition) String() string                           { return prettyStringStruct(v) }
+func (v *ResourceRepresentation) String() string                    { return prettyStringStruct(v) }
+func (v *ResourceOwnerRepresentation) String() string               { return prettyStringStruct(v) }
+func (v *ScopeRepresentation) String() string                       { return prettyStringStruct(v) }
+func (v *ProtocolMapperRepresentation) String() string              { return prettyStringStruct(v) }
+func (v *GetClientsParams) String() string                          { return prettyStringStruct(v) }
+func (v *UserInfoAddress) String() string                           { return prettyStringStruct(v) }
+func (v *UserInfo) String() string                                  { return prettyStringStruct(v) }
+func (v *RolesRepresentation) String() string                       { return prettyStringStruct(v) }
+func (v *RealmRepresentation) String() string                       { return prettyStringStruct(v) }
+func (v *MultiValuedHashMap) String() string                        { return prettyStringStruct(v) }
+func (v *TokenOptions) String() string                              { return prettyStringStruct(v) }
+func (v *RequestingPartyTokenOptions) String() string               { return prettyStringStruct(v) }
+func (v *RequestingPartyPermission) String() string                 { return prettyStringStruct(v) }
+func (v *UserSessionRepresentation) String() string                 { return prettyStringStruct(v) }
+func (v *SystemInfoRepresentation) String() string                  { return prettyStringStruct(v) }
+func (v *MemoryInfoRepresentation) String() string                  { return prettyStringStruct(v) }
+func (v *ServerInfoRepesentation) String() string                   { return prettyStringStruct(v) }
+func (v *FederatedIdentityRepresentation) String() string           { return prettyStringStruct(v) }
+func (v *IdentityProviderRepresentation) String() string            { return prettyStringStruct(v) }
+func (v *GetResourceParams) String() string                         { return prettyStringStruct(v) }
+func (v *GetScopeParams) String() string                            { return prettyStringStruct(v) }
+func (v *GetPolicyParams) String() string                           { return prettyStringStruct(v) }
+func (v *GetPermissionParams) String() string                       { return prettyStringStruct(v) }
+func (v *GetUsersByRoleParams) String() string                      { return prettyStringStruct(v) }
+func (v *PermissionRepresentation) String() string                  { return prettyStringStruct(v) }
+func (v *CreatePermissionTicketParams) String() string              { return prettyStringStruct(v) }
+func (v *PermissionTicketDescriptionRepresentation) String() string { return prettyStringStruct(v) }
+func (v *AccessRepresentation) String() string                      { return prettyStringStruct(v) }
+func (v *PermissionTicketResponseRepresentation) String() string    { return prettyStringStruct(v) }
+func (v *PermissionTicketRepresentation) String() string            { return prettyStringStruct(v) }
+func (v *PermissionTicketPermissionRepresentation) String() string  { return prettyStringStruct(v) }
+func (v *PermissionGrantParams) String() string                     { return prettyStringStruct(v) }
+func (v *PermissionGrantResponseRepresentation) String() string     { return prettyStringStruct(v) }
+func (v *GetUserPermissionParams) String() string                   { return prettyStringStruct(v) }
+func (v *ResourcePolicyRepresentation) String() string              { return prettyStringStruct(v) }
+func (v *GetResourcePoliciesParams) String() string                 { return prettyStringStruct(v) }
+func (v *CredentialRepresentation) String() string                  { return prettyStringStruct(v) }
