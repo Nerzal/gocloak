@@ -1127,7 +1127,7 @@ func (v *GetUsersParams) String() string                            { return pre
 func (v *ExecuteActionsEmail) String() string                       { return prettyStringStruct(v) }
 func (v *Group) String() string                                     { return prettyStringStruct(v) }
 func (v *GroupsCount) String() string                               { return prettyStringStruct(v) }
-func (v *GetGroupsParams) String() string                           { return prettyStringStruct(v) }
+func (obj *GetGroupsParams) String() string                         { return prettyStringStruct(obj) }
 func (v *CompositesRepresentation) String() string                  { return prettyStringStruct(v) }
 func (v *Role) String() string                                      { return prettyStringStruct(v) }
 func (v *ClientMappingsRepresentation) String() string              { return prettyStringStruct(v) }
@@ -1158,8 +1158,8 @@ func (v *UserInfo) String() string                                  { return pre
 func (v *RolesRepresentation) String() string                       { return prettyStringStruct(v) }
 func (v *RealmRepresentation) String() string                       { return prettyStringStruct(v) }
 func (v *MultiValuedHashMap) String() string                        { return prettyStringStruct(v) }
-func (v *TokenOptions) String() string                              { return prettyStringStruct(v) }
-func (v *RequestingPartyTokenOptions) String() string               { return prettyStringStruct(v) }
+func (t *TokenOptions) String() string                              { return prettyStringStruct(t) }
+func (t *RequestingPartyTokenOptions) String() string               { return prettyStringStruct(t) }
 func (v *RequestingPartyPermission) String() string                 { return prettyStringStruct(v) }
 func (v *UserSessionRepresentation) String() string                 { return prettyStringStruct(v) }
 func (v *SystemInfoRepresentation) String() string                  { return prettyStringStruct(v) }
