@@ -261,7 +261,7 @@ type UserGroup struct {
 
 // GetUsersParams represents the optional parameters for getting users
 type GetUsersParams struct {
-	BriefRepresentation *bool   `json:"briefRepresentation,string"`
+	BriefRepresentation *bool   `json:"briefRepresentation,string,omitempty"`
 	Email               *string `json:"email,omitempty"`
 	Enabled             *bool   `json:"enabled,string,omitempty"`
 	Exact               *bool   `json:"exact,string,omitempty"`
@@ -602,7 +602,7 @@ type ProtocolMapperRepresentation struct {
 // GetClientsParams represents the query parameters
 type GetClientsParams struct {
 	ClientID     *string `json:"clientId,omitempty"`
-	ViewableOnly *bool   `json:"viewableOnly,string"`
+	ViewableOnly *bool   `json:"viewableOnly,string,omitempty"`
 }
 
 // UserInfoAddress is representation of the address sub-filed of UserInfo
@@ -795,7 +795,7 @@ type RequestingPartyTokenOptions struct {
 	RPT                         *string   `json:"rpt,omitempty"`
 	Permissions                 *[]string `json:"-"`
 	Audience                    *string   `json:"audience,omitempty"`
-	ResponseIncludeResourceName *bool     `json:"response_include_resource_name,string"`
+	ResponseIncludeResourceName *bool     `json:"response_include_resource_name,string,omitempty"`
 	ResponsePermissionsLimit    *uint32   `json:"response_permissions_limit,omitempty"`
 	SubmitRequest               *bool     `json:"submit_request,string,omitempty"`
 	ResponseMode                *string   `json:"response_mode,omitempty"`
@@ -821,7 +821,7 @@ type RequestingPartyPermission struct {
 	Claims       *map[string]string `json:"claims,omitempty"`
 	ResourceID   *string            `json:"rsid,omitempty"`
 	ResourceName *string            `json:"rsname,omitempty"`
-	Scopes       *[]string          `json:"scopes"`
+	Scopes       *[]string          `json:"scopes,omitempty"`
 }
 
 // UserSessionRepresentation represents a list of user's sessions

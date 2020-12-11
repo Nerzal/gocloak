@@ -287,37 +287,15 @@ func TestStringerOmitEmpty(t *testing.T) {
 		&gocloak.ResourcePolicyRepresentation{},
 		&gocloak.GetResourcePoliciesParams{},
 		&gocloak.CredentialRepresentation{},
+		&gocloak.GetUsersParams{},
+		&gocloak.GetClientsParams{},
+		&gocloak.RequestingPartyTokenOptions{},
+		&gocloak.RequestingPartyPermission{},
 	}
 
 	for _, custom := range customs {
 
 		assert.Equal(t, "{}", custom.(Stringable).String())
-	}
-
-	extras := make(map[Stringable]string)
-
-	extras[&gocloak.GetUsersParams{}] = `{
-	"briefRepresentation": null
-}`
-
-	extras[&gocloak.GetUsersParams{}] = `{
-	"briefRepresentation": null
-}`
-
-	extras[&gocloak.GetClientsParams{}] = `{
-	"viewableOnly": null
-}`
-
-	extras[&gocloak.RequestingPartyTokenOptions{}] = `{
-	"response_include_resource_name": null
-}`
-	extras[&gocloak.RequestingPartyPermission{}] = `{
-	"scopes": null
-}`
-
-	for k, exp := range extras {
-
-		assert.Equal(t, exp, k.String())
 	}
 
 }
