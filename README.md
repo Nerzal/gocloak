@@ -387,5 +387,53 @@ docker stop gocloak-test
 docker rm gocloak-test
 ```
 
+### Inspecting custom types
+
+The custom types contain many pointers, so printing them yields mostly pointer values, which aren't much help when debugging your application. For example
+
+```
+someRealmRepresentation := gocloak.RealmRepresentation{
+   <snip>
+}
+
+fmt.Println(someRealmRepresentation)
+
+```
+yields a large set of pointer values
+```
+{<nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> 0xc00000e960 <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> 0xc000093cf0 <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> null <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil>}
+```
+For convenience, the ```String()``` interface has been added so you can easily see the contents, even for nested custom types. For example,
+
+```
+fmt.Println(someRealmRepresentation.String())
+```
+yields
+
+```
+{
+	"clients": [
+		{
+			"name": "someClient",
+			"protocolMappers": [
+				{
+					"config": {
+						"bar": "foo",
+						"ping": "pong"
+					},
+					"name": "someMapper"
+				}
+			]
+		},
+		{
+			"name": "AnotherClient"
+		}
+	],
+	"displayName": "someRealm"
+}
+```
+Note that empty parameters are not included, because of the use of ```omitempty``` in the type definitions.
+
+
 ## License
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FNerzal%2Fgocloak.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FNerzal%2Fgocloak?ref=badge_large)
