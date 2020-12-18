@@ -343,7 +343,7 @@ type GoCloak interface {
     client := gocloak.NewClient(serverURL)
     restyClient := client.RestyClient()
     restyClient.SetDebug(true)
-    restyClient.SetTLSClientConfig(&tls.Config{ InsecureSkipVerify: true }
+    restyClient.SetTLSClientConfig(&tls.Config{ InsecureSkipVerify: true })
 ```
 
 ## developing & testing
