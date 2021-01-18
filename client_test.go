@@ -5273,3 +5273,35 @@ func TestGocloak_TestSetFunctionalOptions(t *testing.T) {
 	cfg := GetConfig(t)
 	gocloak.NewClient(cfg.HostName, gocloak.SetAuthRealms("foo"), gocloak.SetAuthAdminRealms("bar"))
 }
+
+func TestGocloak_GetClientsWithPagination(t *testing.T) {
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	clientID := GetRandomNameP("ClientID")
+
+	testClient := gocloak.Client{
+		ClientID: clientID,
+		BaseURL:  gocloak.StringP("http://example.com"),
+	}
+	t.Logf("Client ID: %s", *clientID)
+
+	// Creating a client
+	tearDown, createdClientID := CreateClient(t, client, &testClient)
+	defer tearDown()
+	t.Log(createdClientID)
+	first := 0
+	max := 1
+	// Looking for a created client
+	clients, err := client.GetClients(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloak.GetClientsParams{
+			First: &first,
+			Max:   &max,
+		},
+	)
+	require.NoError(t, err)
+	require.Equal(t, max, len(clients))
+}
