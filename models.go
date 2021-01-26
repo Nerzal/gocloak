@@ -603,6 +603,8 @@ type ProtocolMapperRepresentation struct {
 type GetClientsParams struct {
 	ClientID     *string `json:"clientId,omitempty"`
 	ViewableOnly *bool   `json:"viewableOnly,string,omitempty"`
+	First        *int    `json:"first,string,omitempty"`
+	Max          *int    `json:"max,string,omitempty"`
 }
 
 // UserInfoAddress is representation of the address sub-filed of UserInfo
