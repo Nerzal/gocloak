@@ -437,3 +437,6 @@ Note that empty parameters are not included, because of the use of ```omitempty`
 
 ## License
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FNerzal%2Fgocloak.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FNerzal%2Fgocloak?ref=badge_large)
+
+## Related Projects
+[GocloakSession](https://github.com/Clarilab/gocloaksession)
