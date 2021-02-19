@@ -5305,3 +5305,97 @@ func TestGocloak_GetClientsWithPagination(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, max, len(clients))
 }
+
+func TestGocloak_GetAuthenticationFlows(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	authFlows, err := client.GetAuthenticationFlows(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+	)
+	require.NoError(t, err, "Failed to fetch authentication flows")
+	t.Logf("authentication flows: %+v", authFlows)
+
+	FailRequest(client, nil, 1, 0)
+	_, err = client.GetAuthenticationFlows(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+	)
+	require.Error(t, err)
+}
+
+func TestGocloak_CreateAuthenticationFlowsAndCreateAuthenticationExecution(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	authExec :=
+		gocloak.CreateAuthenticationExecutionRepresentation{
+			Provider: gocloak.StringP("idp-auto-link"),
+		}
+	authFlow := gocloak.AuthenticationFlowRepresentation{
+		Alias:       gocloak.StringP("testauthflow2"),
+		BuiltIn:     gocloak.BoolP(false),
+		Description: gocloak.StringP("my test description"),
+		TopLevel:    gocloak.BoolP(true),
+		ProviderID:  gocloak.StringP("basic-flow"),
+	}
+
+	err := client.CreateAuthenticationFlow(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		authFlow,
+	)
+	require.NoError(t, err, "Failed to create authentication flow")
+	t.Logf("authentication flows: %+v", authFlow)
+
+	err = client.CreateAuthenticationExecution(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		*authFlow.Alias,
+		authExec,
+	)
+	require.NoError(t, err, "Failed to create authentication execution")
+
+	authExecs, err := client.GetAuthenticationExecutions(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		*authFlow.Alias,
+	)
+
+	t.Logf("authentication executions: %+v", authExecs)
+	require.NoError(t, err, "Failed to get authentication executions")
+
+	authExecs[0].Requirement = gocloak.StringP("ALTERNATIVE")
+	err = client.UpdateAuthenticationExecution(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		*authFlow.Alias,
+		*authExecs[0],
+	)
+	require.NoError(t, err, "Failed to update authentication executions")
+	authExecs, err = client.GetAuthenticationExecutions(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		*authFlow.Alias,
+	)
+	require.NoError(t, err, "Failed to get authentication executions second time")
+	t.Logf("authentication executions after update: %+v", authExecs)
+
+	err = client.DeleteAuthenticationFlow(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		*authFlow.Alias,
+	)
+	require.NoError(t, err, "Failed to delete authentication flow")
+}

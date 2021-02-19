@@ -1902,6 +1902,81 @@ func (client *gocloak) ClearKeysCache(ctx context.Context, token, realm string) 
 	return checkForError(resp, err, errMessage)
 }
 
+//GetAuthenticationFlows get all authentication flows from a realm
+func (client *gocloak) GetAuthenticationFlows(ctx context.Context, token, realm string) ([]*AuthenticationFlowRepresentation, error) {
+	const errMessage = "could not retrieve authentication flows"
+	var result []*AuthenticationFlowRepresentation
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "authentication", "flows"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+//Create a new Authentication flow in a realm
+func (client *gocloak) CreateAuthenticationFlow(ctx context.Context, token, realm string, flow AuthenticationFlowRepresentation) error {
+	const errMessage = "could not create authentication flows"
+	var result []*AuthenticationFlowRepresentation
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).SetBody(flow).
+		Post(client.getAdminRealmURL(realm, "authentication", "flows"))
+
+	return checkForError(resp, err, errMessage)
+}
+
+//DeleteAuthenticationFlow deletes a flow in a realm with the given ID
+func (client *gocloak) DeleteAuthenticationFlow(ctx context.Context, token, realm, flowID string) error {
+	const errMessage = "could not delete authentication flows"
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		Delete(client.getAdminRealmURL(realm, "authentication", "flows", flowID))
+
+	return checkForError(resp, err, errMessage)
+}
+
+//GetAuthenticationExecutions retrieves all executions of a given flow
+func (client *gocloak) GetAuthenticationExecutions(ctx context.Context, token, realm, flow string) ([]*ModifyAuthenticationExecutionRepresentation, error) {
+	const errMessage = "could not retrieve authentication flows"
+	var result []*ModifyAuthenticationExecutionRepresentation
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "authentication", "flows", flow, "executions"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+//CreateAuthenticationExecution creates a new execution for the given flow name in the given realm
+func (client *gocloak) CreateAuthenticationExecution(ctx context.Context, token, realm, flow string, execution CreateAuthenticationExecutionRepresentation) error {
+	const errMessage = "could not create authentication execution"
+	resp, err := client.getRequestWithBearerAuth(ctx, token).SetBody(execution).
+		Post(client.getAdminRealmURL(realm, "authentication", "flows", flow, "executions", "execution"))
+
+	return checkForError(resp, err, errMessage)
+}
+
+//UpdateAuthenticationExecution updates an authentication execution for the given flow in the given realm
+func (client *gocloak) UpdateAuthenticationExecution(ctx context.Context, token, realm, flow string, execution ModifyAuthenticationExecutionRepresentation) error {
+	const errMessage = "could not update authentication execution"
+	resp, err := client.getRequestWithBearerAuth(ctx, token).SetBody(execution).
+		Put(client.getAdminRealmURL(realm, "authentication", "flows", flow, "executions"))
+
+	return checkForError(resp, err, errMessage)
+}
+
+// DeleteAuthenticationExecution delete a single execution with the given ID
+func (client *gocloak) DeleteAuthenticationExecution(ctx context.Context, token, realm, executionID string) error {
+	const errMessage = "could not delete authentication execution"
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		Delete(client.getAdminRealmURL(realm, "authentication", "executions", executionID))
+
+	return checkForError(resp, err, errMessage)
+}
+
 // -----
 // Users
 // -----
