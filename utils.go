@@ -1,5 +1,15 @@
 package gocloak
 
+import (
+	"context"
+
+	"github.com/opentracing/opentracing-go"
+)
+
+type contextKey string
+
+var tracerContextKey = contextKey("tracer")
+
 // StringP returns a pointer of a string variable
 func StringP(value string) *string {
 	return &value
@@ -110,4 +120,9 @@ func PStringSlice(value *[]string) []string {
 // NilOrEmptySlice returns true if list is empty or has a nil value
 func NilOrEmptySlice(value *[]string) bool {
 	return value == nil || len(*value) == 0
+}
+
+// WithTracer generates a context that has a tracer attached
+func WithTracer(ctx context.Context, tracer opentracing.Tracer) context.Context {
+	return context.WithValue(ctx, tracerContextKey, tracer)
 }

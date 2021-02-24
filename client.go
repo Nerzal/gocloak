@@ -12,6 +12,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go/v4"
 	"github.com/go-resty/resty/v2"
+	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/segmentio/ksuid"
 
@@ -44,9 +45,11 @@ func makeURL(path ...string) string {
 
 func (client *gocloak) getRequest(ctx context.Context) *resty.Request {
 	var err HTTPErrorResponse
-	return client.restyClient.R().
-		SetContext(ctx).
-		SetError(&err)
+	return injectTracingHeaders(
+		ctx, client.restyClient.R().
+			SetContext(ctx).
+			SetError(&err),
+	)
 }
 
 func (client *gocloak) getRequestWithBearerAuthNoCache(ctx context.Context, token string) *resty.Request {
@@ -137,6 +140,29 @@ func findUsedKey(usedKeyID string, keys []CertResponseKey) *CertResponseKey {
 	}
 
 	return nil
+}
+
+func injectTracingHeaders(ctx context.Context, req *resty.Request) *resty.Request {
+	// look for span in context, do nothing if span is not found
+	span := opentracing.SpanFromContext(ctx)
+	if span == nil {
+		return req
+	}
+
+	// look for tracer in context, use global tracer if not found
+	tracer, ok := ctx.Value(tracerContextKey).(opentracing.Tracer)
+	if !ok || tracer == nil {
+		tracer = opentracing.GlobalTracer()
+	}
+
+	// inject tracing header into request
+	err := tracer.Inject(span.Context(), opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
+
+	if err != nil {
+		return req
+	}
+
+	return req
 }
 
 // ===============
