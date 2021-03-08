@@ -89,12 +89,12 @@ go get github.com/Nerzal/gocloak/v8
 ```go
 	client := gocloak.NewClient(hostname)
 	ctx := context.Background()
-	token, err := client.LoginClient(ctx, clientid, clientSecret, realm)
+	token, err := client.LoginClient(ctx, clientID, clientSecret, realm)
 	if err != nil {
 		panic("Login failed:"+ err.Error())
 	}
 
-	rptResult, err := client.RetrospectToken(ctx, token.AccessToken, clientid, clientSecret, realm)
+	rptResult, err := client.RetrospectToken(ctx, token.AccessToken, clientID, clientSecret, realm)
 	if err != nil {
 		panic("Inspection failed:"+ err.Error())
 	}
@@ -108,6 +108,16 @@ go get github.com/Nerzal/gocloak/v8
 ```
 
 ## Features
+
+Client has 2 identity fields- `id` and `clientId` and both are unique in one realm.
+* `id` is generated automatically by Keycloak.
+* `clientId` is configured by users in `Add client` page.
+
+Param `clientID` in the following methods represents `clientId` of the client.
+
+Param `clientid` in the following methods represents `id` of the client.
+
+To get the `clientId` from `id`, use `GetClients` method with `GetClientsParams{ClientID: &clientName}`.
 
 ```go
 // GoCloak holds all methods a client should fulfill
@@ -144,7 +154,7 @@ type GoCloak interface {
 	CreateUser(ctx context.Context, token, realm string, user User) (string, error)
 	CreateGroup(ctx context.Context, accessToken, realm string, group Group) (string, error)
 	CreateChildGroup(ctx context.Context, token, realm, groupID string, group Group) (string, error)
-	CreateClientRole(ctx context.Context, accessToken, realm, clientID string, role Role) (string, error)
+	CreateClientRole(ctx context.Context, accessToken, realm, clientid string, role Role) (string, error)
 	CreateClient(ctx context.Context, accessToken, realm string, clientID Client) (string, error)
 	CreateClientScope(ctx context.Context, accessToken, realm string, scope ClientScope) (string, error)
 	CreateComponent(ctx context.Context, accessToken, realm string, component Component) (string, error)
@@ -160,14 +170,14 @@ type GoCloak interface {
 	DeleteUser(ctx context.Context, accessToken, realm, userID string) error
 	DeleteComponent(ctx context.Context, accessToken, realm, componentID string) error
 	DeleteGroup(ctx context.Context, accessToken, realm, groupID string) error
-	DeleteClientRole(ctx context.Context, accessToken, realm, clientID, roleName string) error
+	DeleteClientRole(ctx context.Context, accessToken, realm, clientid, roleName string) error
 	DeleteClientRoleFromUser(ctx context.Context, token, realm, clientID, userID string, roles []Role) error
 	DeleteClient(ctx context.Context, accessToken, realm, clientID string) error
 	DeleteClientScope(ctx context.Context, accessToken, realm, scopeID string) error
 	DeleteClientScopeMappingsRealmRoles(ctx context.Context, token, realm, clientID string, roles []Role) error
 	DeleteClientScopeMappingsClientRoles(ctx context.Context, token, realm, clientID, clientsID string, roles []Role) error
 
-	GetClient(ctx context.Context, accessToken, realm, clientID string) (*Client, error)
+	GetClient(ctx context.Context, accessToken, realm, clientid string) (*Client, error)
 	GetClientsDefaultScopes(ctx context.Context, token, realm, clientID string) ([]*ClientScope, error)
 	AddDefaultScopeToClient(ctx context.Context, token, realm, clientID, scopeID string) error
 	RemoveDefaultScopeFromClient(ctx context.Context, token, realm, clientID, scopeID string) error
@@ -238,7 +248,7 @@ type GoCloak interface {
 
 	// *** Client Roles ***
 
-	AddClientRoleToUser(ctx context.Context, token, realm, clientID, userID string, roles []Role) error
+	AddClientRoleToUser(ctx context.Context, token, realm, clientid, userID string, roles []Role) error
 	AddClientRoleToGroup(ctx context.Context, token, realm, clientID, groupID string, roles []Role) error
 	DeleteClientRoleFromGroup(ctx context.Context, token, realm, clientID, groupID string, roles []Role) error
 	GetCompositeClientRolesByRoleID(ctx context.Context, token, realm, clientID, roleID string) ([]*Role, error)
