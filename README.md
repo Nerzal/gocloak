@@ -107,6 +107,30 @@ go get github.com/Nerzal/gocloak/v8
 	// Do something with the permissions ;)
 ```
 
+### Get Client id
+
+Client has 2 identity fields- `id` and `clientId` and both are unique in one realm.
+* `id` is generated automatically by Keycloak.
+* `clientId` is configured by users in `Add client` page.
+
+To get the `clientId` from `id`, use `GetClients` method with `GetClientsParams{ClientID: &clientName}`.
+```go
+	clients, err := c.Client.GetClients(
+		c.Ctx,
+		c.JWT.AccessToken,
+		c.Realm,
+		gocloak.GetClientsParams{
+			ClientID: &clientName,
+		},
+	)
+	if err != nil {
+		panic("List clinets failed:"+ err.Error())
+	}
+	for _, client := range clients {
+		return *client.ID, nil
+	}
+```
+
 ## Features
 
 ```go
