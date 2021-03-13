@@ -633,7 +633,7 @@ func TestGocloak_GetRawUserInfo(t *testing.T) {
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	token := GetClientToken(t, client)
-	userInfo, err := client.GetUserInfo(
+	userInfo, err := client.GetRawUserInfo(
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
