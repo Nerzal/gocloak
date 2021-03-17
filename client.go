@@ -452,6 +452,23 @@ func (client *gocloak) GetRequestingPartyPermissions(ctx context.Context, token,
 	return &res, nil
 }
 
+// GetRequestingPartyPermissionDecision returns a requesting party permission decision granted by the server
+func (client *gocloak) GetRequestingPartyPermissionDecision(ctx context.Context, token, realm string, options RequestingPartyTokenOptions) (*RequestingPartyPermissionDecision, error) {
+	const errMessage = "could not get requesting party token"
+
+	var res RequestingPartyPermissionDecision
+
+	options.ResponseMode = StringP("decision")
+
+	resp, err := client.getRequestingParty(ctx, token, realm, options, &res)
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
 // RefreshToken refreshes the given token.
 // May return a *APIError with further details about the issue.
 func (client *gocloak) RefreshToken(ctx context.Context, refreshToken, clientID, clientSecret, realm string) (*JWT, error) {
