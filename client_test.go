@@ -3957,7 +3957,6 @@ func TestGocloak_CreateDeleteClientScopeWithMappers(t *testing.T) {
 // -----------------
 
 func TestGocloak_CreateProvider(t *testing.T) {
-	t.Parallel()
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
@@ -4112,6 +4111,59 @@ func TestGocloak_CreateProvider(t *testing.T) {
 			token.AccessToken,
 			cfg.GoCloak.Realm,
 			"github",
+		)
+		require.NoError(t, err)
+	})
+
+	t.Run("create SAML provider", func(t *testing.T) {
+		repr := gocloak.IdentityProviderRepresentation{
+			Alias:                     gocloak.StringP("saml"),
+			DisplayName:               gocloak.StringP("Generic SAML"),
+			Enabled:                   gocloak.BoolP(true),
+			ProviderID:                gocloak.StringP("saml"),
+			TrustEmail:                gocloak.BoolP(true),
+			FirstBrokerLoginFlowAlias: gocloak.StringP("first broker login"),
+			Config: &map[string]string{
+				"singleSignOnServiceUrl": "https://samlIDPexample.com",
+			},
+		}
+		provider, err := client.CreateIdentityProvider(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			repr,
+		)
+		require.NoError(t, err)
+		require.Equal(t, "saml", provider)
+	})
+
+	t.Run("Get saml provider", func(t *testing.T) {
+		provider, err := client.GetIdentityProvider(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			"saml",
+		)
+		require.NoError(t, err)
+		require.Equal(t, "saml", *(provider.Alias))
+	})
+
+	t.Run("Get saml provider public broker config", func(t *testing.T) {
+		config, err := client.ExportIDPPublicBrokerConfig(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			"saml",
+		)
+		require.NoError(t, err)
+		require.NotEmpty(t, *(config))
+	})
+	t.Run("Delete saml provider", func(t *testing.T) {
+		err := client.DeleteIdentityProvider(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			"saml",
 		)
 		require.NoError(t, err)
 	})
