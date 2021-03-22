@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1607547916715,
+  "lastUpdate": 1616415682718,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -2733,6 +2733,54 @@ window.BENCHMARK_DATA = {
             "value": 54861618,
             "unit": "ns/op\t   59672 B/op\t     218 allocs/op",
             "extra": "20 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "theel.tobias@gmx.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0bd22a70abd689ac2c36e3815dca45c880fc9ec9",
+          "message": "Merge pull request #259 from 2785/fix-tests\n\nWIP: Fix client token related test failure",
+          "timestamp": "2021-03-22T13:18:51+01:00",
+          "tree_id": "084e02d4718c4ba90506b4ec0998e06014a6e46d",
+          "url": "https://github.com/Nerzal/gocloak/commit/0bd22a70abd689ac2c36e3815dca45c880fc9ec9"
+        },
+        "date": 1616415682191,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 87510306,
+            "unit": "ns/op\t   74230 B/op\t     218 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 88642658,
+            "unit": "ns/op\t   75974 B/op\t     219 allocs/op",
+            "extra": "13 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 87175221,
+            "unit": "ns/op\t   60174 B/op\t     217 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 58754202,
+            "unit": "ns/op\t   51932 B/op\t     218 allocs/op",
+            "extra": "19 times\n2 procs"
           }
         ]
       }
