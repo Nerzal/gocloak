@@ -612,7 +612,8 @@ func TestGocloak_GetUserInfo(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
-	token := GetClientToken(t, client)
+	SetUpTestUser(t, client)
+	token := GetUserToken(t, client)
 	userInfo, err := client.GetUserInfo(
 		context.Background(),
 		token.AccessToken,
@@ -632,7 +633,8 @@ func TestGocloak_GetRawUserInfo(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
-	token := GetClientToken(t, client)
+	SetUpTestUser(t, client)
+	token := GetUserToken(t, client)
 	userInfo, err := client.GetUserInfo(
 		context.Background(),
 		token.AccessToken,
@@ -802,7 +804,8 @@ func TestGocloak_RefreshToken(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
-	token := GetClientToken(t, client)
+	SetUpTestUser(t, client)
+	token := GetUserToken(t, client)
 
 	token, err := client.RefreshToken(
 		context.Background(),
