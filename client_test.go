@@ -5308,3 +5308,40 @@ func TestGocloak_GetClientsWithPagination(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, max, len(clients))
 }
+
+func TestGocloak_ImportIdentityProviderConfig(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	actual, err := client.ImportIdentityProviderConfig(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		"https://accounts.google.com/.well-known/openid-configuration",
+		"oidc")
+
+	require.NoError(t, err, "ImportIdentityProviderConfig failed")
+
+	expected := map[string]string{
+		"userInfoUrl":       "https://openidconnect.googleapis.com/v1/userinfo",
+		"validateSignature": "true",
+		"tokenUrl":          "https://oauth2.googleapis.com/token",
+		"authorizationUrl":  "https://accounts.google.com/o/oauth2/v2/auth",
+		"jwksUrl":           "https://www.googleapis.com/oauth2/v3/certs",
+		"issuer":            "https://accounts.google.com",
+		"useJwksUrl":        "true",
+	}
+
+	require.Len(
+		t, actual, len(expected),
+		"ImportIdentityProviderConfig should return exactly %d fields", len(expected))
+
+	for expectedKey, expectedVal := range expected {
+		require.Equal(
+			t, expectedVal, actual[expectedKey],
+			"ImportIdentityProviderConfig should return %q for %q, but returned %q",
+			expectedVal, expectedKey, actual[expectedKey])
+	}
+}
