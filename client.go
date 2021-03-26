@@ -2305,6 +2305,17 @@ func (client *gocloak) DeleteIdentityProvider(ctx context.Context, token, realm,
 	return checkForError(resp, err, errMessage)
 }
 
+// CreateIdentityProviderMapper creates an instance of an identity provider mapper associated with the given alias
+func (client *gocloak) CreateIdentityProviderMapper(ctx context.Context, token, realm, alias string, mapper IdentityProviderMapper) error {
+	const errMessage = "could not create mapper for identity provider"
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetBody(mapper).
+		Post(client.getAdminRealmURL(realm, "identity-provider", "instances", alias, "mappers"))
+
+	return checkForError(resp, err, errMessage)
+}
+
 // ------------------
 // Protection API
 // ------------------

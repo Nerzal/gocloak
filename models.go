@@ -899,6 +899,13 @@ type IdentityProviderRepresentation struct {
 	TrustEmail                *bool              `json:"trustEmail,omitempty"`
 }
 
+type IdentityProviderMapper struct {
+	Name                   *string            `json:"name,omitempty"`
+	IdentityProviderMapper *string            `json:"identityProviderMapper,omitempty"`
+	IdentityProviderAlias  *string            `json:"identityProviderAlias,omitempty"`
+	Config                 *map[string]string `json:"config"`
+}
+
 // GetResourceParams represents the optional parameters for getting resources
 type GetResourceParams struct {
 	Deep        *bool   `json:"deep,string,omitempty"`
