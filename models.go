@@ -899,6 +899,8 @@ type IdentityProviderRepresentation struct {
 	TrustEmail                *bool              `json:"trustEmail,omitempty"`
 }
 
+// IdentityProviderMapper represents the body of a call to add a mapper to
+// an identity provider
 type IdentityProviderMapper struct {
 	Name                   *string            `json:"name,omitempty"`
 	IdentityProviderMapper *string            `json:"identityProviderMapper,omitempty"`
