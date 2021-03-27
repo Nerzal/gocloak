@@ -62,6 +62,12 @@ func (client *gocloak) getRequestWithBearerAuth(ctx context.Context, token strin
 		SetHeader("Content-Type", "application/json")
 }
 
+func (client *gocloak) getRequestWithBearerAuthXMLHeader(ctx context.Context, token string) *resty.Request {
+	return client.getRequest(ctx).
+		SetAuthToken(token).
+		SetHeader("Content-Type", "application/xml;charset=UTF-8")
+}
+
 func (client *gocloak) getRequestWithBasicAuth(ctx context.Context, clientID, clientSecret string) *resty.Request {
 	req := client.getRequest(ctx).
 		SetHeader("Content-Type", "application/x-www-form-urlencoded")
@@ -2303,6 +2309,21 @@ func (client *gocloak) DeleteIdentityProvider(ctx context.Context, token, realm,
 		Delete(client.getAdminRealmURL(realm, "identity-provider", "instances", alias))
 
 	return checkForError(resp, err, errMessage)
+}
+
+// ExportIDPPublicBrokerConfig exports the broker config for a given alias
+func (client *gocloak) ExportIDPPublicBrokerConfig(ctx context.Context, token, realm, alias string) (*string, error) {
+	const errMessage = "could not get public identity provider configuration"
+
+	resp, err := client.getRequestWithBearerAuthXMLHeader(ctx, token).
+		Get(client.getAdminRealmURL(realm, "identity-provider", "instances", alias, "export"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	result := resp.String()
+	return &result, nil
 }
 
 // ImportIdentityProviderConfig parses and returns the identity provider config at a given URL
