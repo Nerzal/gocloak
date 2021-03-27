@@ -2305,6 +2305,26 @@ func (client *gocloak) DeleteIdentityProvider(ctx context.Context, token, realm,
 	return checkForError(resp, err, errMessage)
 }
 
+// ImportIdentityProviderConfig parses and returns the identity provider config at a given URL
+func (client *gocloak) ImportIdentityProviderConfig(ctx context.Context, token, realm, fromURL, providerID string) (map[string]string, error) {
+	const errMessage = "could not import config"
+
+	result := make(map[string]string)
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		SetBody(map[string]string{
+			"fromUrl":    fromURL,
+			"providerId": providerID,
+		}).
+		Post(client.getAdminRealmURL(realm, "identity-provider", "import-config"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // ------------------
 // Protection API
 // ------------------
