@@ -318,6 +318,8 @@ type GoCloak interface {
 	DeleteIdentityProvider(ctx context.Context, token, realm, alias string) error
 	// ImportIdentityProviderConfig parses and returns the identity provider config at a given URL
 	ImportIdentityProviderConfig(ctx context.Context, token, realm, fromURL, providerID string) (map[string]string, error)
+	// CreateIdentityProviderMapper creates an instance of an identity provider mapper associated with the given alias
+	CreateIdentityProviderMapper(ctx context.Context, token, realm, alias string, mapper IdentityProviderMapper) error
 
 	// *** Protection API ***
 	// GetResource returns a client's resource with the given id, using access token from client
