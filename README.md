@@ -24,6 +24,19 @@ Benchmarks: https://nerzal.github.io/gocloak/dev/bench/
 
 ## Changelog
 
+### v8:
+
+Features:
+
+- Add CreateIdentityProviderMapper call #268
+- Add ImportIdentityProviderConfig method #267
+- Added endpoint to support exporting public broker config info #266
+
+Fixes:
+
+- adding "DecisionStrategy" to "ResourceServerRepresentation" #264
+
+
 ### v7:
 Breaking Change
  * Added support for array values in aud claim
