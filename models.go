@@ -802,6 +802,7 @@ type RequestingPartyTokenOptions struct {
 	ResponsePermissionsLimit    *uint32   `json:"response_permissions_limit,omitempty"`
 	SubmitRequest               *bool     `json:"submit_request,string,omitempty"`
 	ResponseMode                *string   `json:"response_mode,omitempty"`
+	SubjectToken                *string   `json:"subject_token,omitempty"`
 }
 
 // FormData returns a map of options to be used in SetFormData function
