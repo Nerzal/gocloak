@@ -445,6 +445,7 @@ type ResourceServerRepresentation struct {
 	PolicyEnforcementMode         *PolicyEnforcementMode    `json:"policyEnforcementMode,omitempty"`
 	Resources                     *[]ResourceRepresentation `json:"resources,omitempty"`
 	Scopes                        *[]ScopeRepresentation    `json:"scopes,omitempty"`
+	DecisionStrategy              *DecisionStrategy         `json:"decisionStrategy,omitempty"`
 }
 
 // RoleDefinition represents a role in a RolePolicyRepresentation
