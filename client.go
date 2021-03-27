@@ -2354,6 +2354,7 @@ func (client *gocloak) CreateIdentityProviderMapper(ctx context.Context, token, 
 		Post(client.getAdminRealmURL(realm, "identity-provider", "instances", alias, "mappers"))
 	return checkForError(resp, err, errMessage)
 }
+
 // ------------------
 // Protection API
 // ------------------
