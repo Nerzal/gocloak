@@ -445,6 +445,7 @@ type ResourceServerRepresentation struct {
 	PolicyEnforcementMode         *PolicyEnforcementMode    `json:"policyEnforcementMode,omitempty"`
 	Resources                     *[]ResourceRepresentation `json:"resources,omitempty"`
 	Scopes                        *[]ScopeRepresentation    `json:"scopes,omitempty"`
+	DecisionStrategy              *DecisionStrategy         `json:"decisionStrategy,omitempty"`
 }
 
 // RoleDefinition represents a role in a RolePolicyRepresentation
@@ -801,6 +802,7 @@ type RequestingPartyTokenOptions struct {
 	ResponsePermissionsLimit    *uint32   `json:"response_permissions_limit,omitempty"`
 	SubmitRequest               *bool     `json:"submit_request,string,omitempty"`
 	ResponseMode                *string   `json:"response_mode,omitempty"`
+	SubjectToken                *string   `json:"subject_token,omitempty"`
 }
 
 // FormData returns a map of options to be used in SetFormData function
@@ -902,6 +904,15 @@ type IdentityProviderRepresentation struct {
 	ProviderID                *string            `json:"providerId,omitempty"`
 	StoreToken                *bool              `json:"storeToken,omitempty"`
 	TrustEmail                *bool              `json:"trustEmail,omitempty"`
+}
+
+// IdentityProviderMapper represents the body of a call to add a mapper to
+// an identity provider
+type IdentityProviderMapper struct {
+	Name                   *string            `json:"name,omitempty"`
+	IdentityProviderMapper *string            `json:"identityProviderMapper,omitempty"`
+	IdentityProviderAlias  *string            `json:"identityProviderAlias,omitempty"`
+	Config                 *map[string]string `json:"config"`
 }
 
 // GetResourceParams represents the optional parameters for getting resources

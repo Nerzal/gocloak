@@ -612,7 +612,8 @@ func TestGocloak_GetUserInfo(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
-	token := GetClientToken(t, client)
+	SetUpTestUser(t, client)
+	token := GetUserToken(t, client)
 	userInfo, err := client.GetUserInfo(
 		context.Background(),
 		token.AccessToken,
@@ -632,7 +633,8 @@ func TestGocloak_GetRawUserInfo(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
-	token := GetClientToken(t, client)
+	SetUpTestUser(t, client)
+	token := GetUserToken(t, client)
 	userInfo, err := client.GetUserInfo(
 		context.Background(),
 		token.AccessToken,
@@ -802,7 +804,8 @@ func TestGocloak_RefreshToken(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
-	token := GetClientToken(t, client)
+	SetUpTestUser(t, client)
+	token := GetUserToken(t, client)
 
 	token, err := client.RefreshToken(
 		context.Background(),
@@ -3816,6 +3819,24 @@ func TestGocloak_CreateGetDeleteUserFederatedIdentity(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, idp, res)
 
+	err = client.CreateIdentityProviderMapper(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		"google",
+		gocloak.IdentityProviderMapper{
+			Name:                   gocloak.StringP("add-google-origin-attribute"),
+			IdentityProviderMapper: gocloak.StringP("hardcoded-attribute-idp-mapper"),
+			IdentityProviderAlias:  gocloak.StringP("google"),
+			Config: &map[string]string{
+				"syncMode":        "INHERIT",
+				"attribute":       "origin",
+				"attribute.value": "google",
+			},
+		},
+	)
+	require.NoError(t, err)
+
 	defer func() {
 		err = client.DeleteIdentityProvider(
 			context.Background(),
@@ -3954,7 +3975,6 @@ func TestGocloak_CreateDeleteClientScopeWithMappers(t *testing.T) {
 // -----------------
 
 func TestGocloak_CreateProvider(t *testing.T) {
-	t.Parallel()
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
@@ -4109,6 +4129,59 @@ func TestGocloak_CreateProvider(t *testing.T) {
 			token.AccessToken,
 			cfg.GoCloak.Realm,
 			"github",
+		)
+		require.NoError(t, err)
+	})
+
+	t.Run("create SAML provider", func(t *testing.T) {
+		repr := gocloak.IdentityProviderRepresentation{
+			Alias:                     gocloak.StringP("saml"),
+			DisplayName:               gocloak.StringP("Generic SAML"),
+			Enabled:                   gocloak.BoolP(true),
+			ProviderID:                gocloak.StringP("saml"),
+			TrustEmail:                gocloak.BoolP(true),
+			FirstBrokerLoginFlowAlias: gocloak.StringP("first broker login"),
+			Config: &map[string]string{
+				"singleSignOnServiceUrl": "https://samlIDPexample.com",
+			},
+		}
+		provider, err := client.CreateIdentityProvider(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			repr,
+		)
+		require.NoError(t, err)
+		require.Equal(t, "saml", provider)
+	})
+
+	t.Run("Get saml provider", func(t *testing.T) {
+		provider, err := client.GetIdentityProvider(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			"saml",
+		)
+		require.NoError(t, err)
+		require.Equal(t, "saml", *(provider.Alias))
+	})
+
+	t.Run("Get saml provider public broker config", func(t *testing.T) {
+		config, err := client.ExportIDPPublicBrokerConfig(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			"saml",
+		)
+		require.NoError(t, err)
+		require.NotEmpty(t, *(config))
+	})
+	t.Run("Delete saml provider", func(t *testing.T) {
+		err := client.DeleteIdentityProvider(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			"saml",
 		)
 		require.NoError(t, err)
 	})
@@ -5304,4 +5377,41 @@ func TestGocloak_GetClientsWithPagination(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.Equal(t, max, len(clients))
+}
+
+func TestGocloak_ImportIdentityProviderConfig(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	actual, err := client.ImportIdentityProviderConfig(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		"https://accounts.google.com/.well-known/openid-configuration",
+		"oidc")
+
+	require.NoError(t, err, "ImportIdentityProviderConfig failed")
+
+	expected := map[string]string{
+		"userInfoUrl":       "https://openidconnect.googleapis.com/v1/userinfo",
+		"validateSignature": "true",
+		"tokenUrl":          "https://oauth2.googleapis.com/token",
+		"authorizationUrl":  "https://accounts.google.com/o/oauth2/v2/auth",
+		"jwksUrl":           "https://www.googleapis.com/oauth2/v3/certs",
+		"issuer":            "https://accounts.google.com",
+		"useJwksUrl":        "true",
+	}
+
+	require.Len(
+		t, actual, len(expected),
+		"ImportIdentityProviderConfig should return exactly %d fields", len(expected))
+
+	for expectedKey, expectedVal := range expected {
+		require.Equal(
+			t, expectedVal, actual[expectedKey],
+			"ImportIdentityProviderConfig should return %q for %q, but returned %q",
+			expectedVal, expectedKey, actual[expectedKey])
+	}
 }

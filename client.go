@@ -62,6 +62,12 @@ func (client *gocloak) getRequestWithBearerAuth(ctx context.Context, token strin
 		SetHeader("Content-Type", "application/json")
 }
 
+func (client *gocloak) getRequestWithBearerAuthXMLHeader(ctx context.Context, token string) *resty.Request {
+	return client.getRequest(ctx).
+		SetAuthToken(token).
+		SetHeader("Content-Type", "application/xml;charset=UTF-8")
+}
+
 func (client *gocloak) getRequestWithBasicAuth(ctx context.Context, clientID, clientSecret string) *resty.Request {
 	req := client.getRequest(ctx).
 		SetHeader("Content-Type", "application/x-www-form-urlencoded")
@@ -2319,6 +2325,50 @@ func (client *gocloak) DeleteIdentityProvider(ctx context.Context, token, realm,
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
 		Delete(client.getAdminRealmURL(realm, "identity-provider", "instances", alias))
 
+	return checkForError(resp, err, errMessage)
+}
+
+// ExportIDPPublicBrokerConfig exports the broker config for a given alias
+func (client *gocloak) ExportIDPPublicBrokerConfig(ctx context.Context, token, realm, alias string) (*string, error) {
+	const errMessage = "could not get public identity provider configuration"
+
+	resp, err := client.getRequestWithBearerAuthXMLHeader(ctx, token).
+		Get(client.getAdminRealmURL(realm, "identity-provider", "instances", alias, "export"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	result := resp.String()
+	return &result, nil
+}
+
+// ImportIdentityProviderConfig parses and returns the identity provider config at a given URL
+func (client *gocloak) ImportIdentityProviderConfig(ctx context.Context, token, realm, fromURL, providerID string) (map[string]string, error) {
+	const errMessage = "could not import config"
+
+	result := make(map[string]string)
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		SetBody(map[string]string{
+			"fromUrl":    fromURL,
+			"providerId": providerID,
+		}).
+		Post(client.getAdminRealmURL(realm, "identity-provider", "import-config"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// CreateIdentityProviderMapper creates an instance of an identity provider mapper associated with the given alias
+func (client *gocloak) CreateIdentityProviderMapper(ctx context.Context, token, realm, alias string, mapper IdentityProviderMapper) error {
+	const errMessage = "could not create mapper for identity provider"
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetBody(mapper).
+		Post(client.getAdminRealmURL(realm, "identity-provider", "instances", alias, "mappers"))
 	return checkForError(resp, err, errMessage)
 }
 
