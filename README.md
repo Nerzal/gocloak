@@ -156,7 +156,8 @@ type GoCloak interface {
 	GetToken(ctx context.Context, realm string, options TokenOptions) (*JWT, error)
 	GetRequestingPartyToken(ctx context.Context, token, realm string, options RequestingPartyTokenOptions) (*JWT, error)
 	GetRequestingPartyPermissions(ctx context.Context, token, realm string, options RequestingPartyTokenOptions) (*[]RequestingPartyPermission, error)
-
+	GetRequestingPartyPermissionDecision(ctx context.Context, token, realm string, options RequestingPartyTokenOptions) (*RequestingPartyPermissionDecision, error)
+	
 	Login(ctx context.Context, clientID, clientSecret, realm, username, password string) (*JWT, error)
 	LoginOtp(ctx context.Context, clientID, clientSecret, realm, username, password, totp string) (*JWT, error)
 	Logout(ctx context.Context, clientID, clientSecret, realm, refreshToken string) error

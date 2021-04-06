@@ -645,7 +645,7 @@ func TestGocloak_GetRawUserInfo(t *testing.T) {
 	require.NotEmpty(t, userInfo)
 }
 
-func TestGocloak_RequestPermission(t *testing.T) {
+func TestGocloak_RetrospectRequestingPartyToken(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
@@ -699,6 +699,90 @@ func TestGocloak_RequestPermission(t *testing.T) {
 	permissions := *rptResult.Permissions
 	require.Len(t, permissions, 1, "GetRequestingPartyToken failed")
 	require.Equal(t, "Default Resource", *permissions[0].RSName, "GetRequestingPartyToken failed")
+}
+
+func TestGocloak_GetRequestingPartyPermissions(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	SetUpTestUser(t, client)
+	token, err := client.Login(
+		context.Background(),
+		cfg.GoCloak.ClientID,
+		cfg.GoCloak.ClientSecret,
+		cfg.GoCloak.Realm,
+		cfg.GoCloak.UserName,
+		cfg.GoCloak.Password)
+	require.NoError(t, err, "login failed")
+
+	rpp, err := client.GetRequestingPartyPermissions(
+		context.Background(),
+		token.AccessToken,
+		"",
+		gocloak.RequestingPartyTokenOptions{
+			Audience: gocloak.StringP(cfg.GoCloak.ClientID),
+			Permissions: &[]string{
+				"Default Resource",
+			},
+		})
+	require.Error(t, err, "GetRequestingPartyPermissions failed")
+	require.Nil(t, rpp)
+
+	rpp, err = client.GetRequestingPartyPermissions(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloak.RequestingPartyTokenOptions{
+			Audience: gocloak.StringP(cfg.GoCloak.ClientID),
+			Permissions: &[]string{
+				"Default Resource",
+			},
+		})
+	require.NoError(t, err, "GetRequestingPartyPermissions failed")
+	require.NotNil(t, rpp)
+
+	t.Log(rpp)
+	permissions := *rpp
+	require.Len(t, permissions, 1, "GetRequestingPartyPermissions failed")
+	require.Equal(t, "Default Resource", *permissions[0].ResourceName, "GetRequestingPartyPermissions failed")
+}
+
+func TestGocloak_GetRequestingPartyPermissionDecision(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	SetUpTestUser(t, client)
+	token, err := client.Login(
+		context.Background(),
+		cfg.GoCloak.ClientID,
+		cfg.GoCloak.ClientSecret,
+		cfg.GoCloak.Realm,
+		cfg.GoCloak.UserName,
+		cfg.GoCloak.Password)
+	require.NoError(t, err, "login failed")
+
+	dec, err := client.GetRequestingPartyPermissionDecision(
+		context.Background(),
+		token.AccessToken,
+		"",
+		gocloak.RequestingPartyTokenOptions{
+			Audience: gocloak.StringP(cfg.GoCloak.ClientID),
+		})
+	require.Error(t, err, "GetRequestingPartyPermissions failed")
+	require.Nil(t, dec)
+
+	dec, err = client.GetRequestingPartyPermissionDecision(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloak.RequestingPartyTokenOptions{
+			Audience: gocloak.StringP(cfg.GoCloak.ClientID),
+		})
+	require.NoError(t, err, "GetRequestingPartyPermissions failed")
+	require.NotNil(t, dec)
+
+	t.Log(dec)
+	require.True(t, *dec.Result)
 }
 
 func TestGocloak_GetCerts(t *testing.T) {

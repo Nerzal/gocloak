@@ -828,6 +828,11 @@ type RequestingPartyPermission struct {
 	Scopes       *[]string          `json:"scopes,omitempty"`
 }
 
+// RequestingPartyPermissionDecision is returned by request party token with response type set to "decision"
+type RequestingPartyPermissionDecision struct {
+	Result *bool `json:"result,omitempty"`
+}
+
 // UserSessionRepresentation represents a list of user's sessions
 type UserSessionRepresentation struct {
 	Clients    *map[string]string `json:"clients,omitempty"`
