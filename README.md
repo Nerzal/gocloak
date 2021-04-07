@@ -112,7 +112,7 @@ go get github.com/Nerzal/gocloak/v8
 		panic("Inspection failed:"+ err.Error())
 	}
 
-	if !rptResult.Active {
+	if !*rptResult.Active {
 		panic("Token is not active")
 	}
 
