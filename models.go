@@ -602,10 +602,11 @@ type ProtocolMapperRepresentation struct {
 
 // GetClientsParams represents the query parameters
 type GetClientsParams struct {
-	ClientID     *string `json:"clientId,omitempty"`
-	ViewableOnly *bool   `json:"viewableOnly,string,omitempty"`
-	First        *int    `json:"first,string,omitempty"`
-	Max          *int    `json:"max,string,omitempty"`
+	ClientID            *string `json:"clientId,omitempty"`
+	ViewableOnly        *bool   `json:"viewableOnly,string,omitempty"`
+	First               *int    `json:"first,string,omitempty"`
+	Max                 *int    `json:"max,string,omitempty"`
+	SearchableAttribute *string `json:"q,string,omitempty"`
 }
 
 // UserInfoAddress is representation of the address sub-filed of UserInfo
