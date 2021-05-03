@@ -47,7 +47,7 @@ type GoCloak interface {
 	DecodeAccessToken(ctx context.Context, accessToken, realm, expectedAudience string) (*jwt.Token, *jwt.MapClaims, error)
 	// DecodeAccessTokenCustomClaims decodes the accessToken and fills the given claims
 	DecodeAccessTokenCustomClaims(ctx context.Context, accessToken, realm, expectedAudience string, claims jwt.Claims) (*jwt.Token, error)
-	// DecodeAccessTokenCustomClaims calls the token introspection endpoint
+	// RetrospectToken calls the openid-connect introspect endpoint
 	RetrospectToken(ctx context.Context, accessToken, clientID, clientSecret, realm string) (*RetrospecTokenResult, error)
 	// GetIssuer calls the issuer endpoint for the given realm
 	GetIssuer(ctx context.Context, realm string) (*IssuerResponse, error)
