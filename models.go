@@ -909,6 +909,7 @@ type IdentityProviderRepresentation struct {
 // IdentityProviderMapper represents the body of a call to add a mapper to
 // an identity provider
 type IdentityProviderMapper struct {
+	ID                     *string            `json:"id,omitempty"`
 	Name                   *string            `json:"name,omitempty"`
 	IdentityProviderMapper *string            `json:"identityProviderMapper,omitempty"`
 	IdentityProviderAlias  *string            `json:"identityProviderAlias,omitempty"`

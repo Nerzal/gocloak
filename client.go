@@ -2366,10 +2366,38 @@ func (client *gocloak) ImportIdentityProviderConfig(ctx context.Context, token, 
 // CreateIdentityProviderMapper creates an instance of an identity provider mapper associated with the given alias
 func (client *gocloak) CreateIdentityProviderMapper(ctx context.Context, token, realm, alias string, mapper IdentityProviderMapper) error {
 	const errMessage = "could not create mapper for identity provider"
+
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
 		SetBody(mapper).
 		Post(client.getAdminRealmURL(realm, "identity-provider", "instances", alias, "mappers"))
+
 	return checkForError(resp, err, errMessage)
+}
+
+// DeleteIdentityProviderMapper deletes an instance of an identity provider mapper associated with the given alias and mapper ID
+func (client *gocloak) DeleteIdentityProviderMapper(ctx context.Context, token, realm, alias, mapperID string) error {
+	const errMessage = "could not delete mapper for identity provider"
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		Delete(client.getAdminRealmURL(realm, "identity-provider", "instances", alias, "mappers", mapperID))
+
+	return checkForError(resp, err, errMessage)
+}
+
+// GetIdentityProviderMappers returns list of mappers associated with an identity provider
+func (client *gocloak) GetIdentityProviderMappers(ctx context.Context, token, realm, alias string) ([]*IdentityProviderMapper, error) {
+	const errMessage = "could not get identity provider mappers"
+
+	var result []*IdentityProviderMapper
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "identity-provider", "instances", alias, "mappers"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 // ------------------

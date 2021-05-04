@@ -324,6 +324,10 @@ type GoCloak interface {
 	ExportIDPPublicBrokerConfig(ctx context.Context, token, realm, alias string) (*string, error)
 	// CreateIdentityProviderMapper creates an instance of an identity provider mapper associated with the given alias
 	CreateIdentityProviderMapper(ctx context.Context, token, realm, alias string, mapper IdentityProviderMapper) error
+	// DeleteIdentityProviderMapper deletes an instance of an identity provider mapper associated with the given alias and mapper ID
+	DeleteIdentityProviderMapper(ctx context.Context, token, realm, alias, mapperID string) error
+	// GetIdentityProviderMappers returns list of mappers associated with an identity provider
+	GetIdentityProviderMappers(ctx context.Context, token, realm, alias string) ([]*IdentityProviderMapper, error)
 
 	// *** Protection API ***
 	// GetResource returns a client's resource with the given id, using access token from client
