@@ -28,6 +28,8 @@ Benchmarks can be found [here](https://nerzal.github.io/gocloak/dev/bench/)
 
 Features:
 
+- Add DeleteIdentityProviderMapper and GetIdentityProviderMappers #273
+- Adding search by attributes client param #272
 - Add CreateIdentityProviderMapper call #268
 - Add ImportIdentityProviderConfig method #267
 - Added endpoint to support exporting public broker config info #266
