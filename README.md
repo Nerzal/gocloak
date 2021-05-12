@@ -150,7 +150,7 @@ To get the `clientId` from `id`, use `GetClients` method with `GetClientsParams{
   },
  )
  if err != nil {
-  panic("List clinets failed:"+ err.Error())
+  panic("List clients failed:"+ err.Error())
  }
  for _, client := range clients {
   return *client.ID, nil
