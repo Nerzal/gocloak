@@ -1,6 +1,7 @@
 package gocloak_test
 
 import (
+	"bytes"
 	"context"
 	"crypto/rsa"
 	"crypto/tls"
@@ -5504,6 +5505,77 @@ func TestGocloak_ImportIdentityProviderConfig(t *testing.T) {
 		"jwksUrl":           "https://www.googleapis.com/oauth2/v3/certs",
 		"issuer":            "https://accounts.google.com",
 		"useJwksUrl":        "true",
+	}
+
+	require.Len(
+		t, actual, len(expected),
+		"ImportIdentityProviderConfig should return exactly %d fields", len(expected))
+
+	for expectedKey, expectedVal := range expected {
+		require.Equal(
+			t, expectedVal, actual[expectedKey],
+			"ImportIdentityProviderConfig should return %q for %q, but returned %q",
+			expectedVal, expectedKey, actual[expectedKey])
+	}
+}
+
+func TestGocloak_ImportIdentityProviderConfigFromFile(t *testing.T) {
+	//t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	sampleFile := `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" entityID="https://accounts.google.com/o/saml2?idpid=C01unc9st" validUntil="2026-04-29T21:34:48.000Z">
+  <md:IDPSSODescriptor WantAuthnRequestsSigned="false" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+    <md:KeyDescriptor use="signing">
+      <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+        <ds:X509Data>
+          <ds:X509Certificate>MIIDdDCCAlygAwIBAgIGAXkktKmDMA0GCSqGSIb3DQEBCwUAMHsxFDASBgNVBAoTC0dvb2dsZSBJ
+bmMuMRYwFAYDVQQHEw1Nb3VudGFpbiBWaWV3MQ8wDQYDVQQDEwZHb29nbGUxGDAWBgNVBAsTD0dv
+b2dsZSBGb3IgV29yazELMAkGA1UEBhMCVVMxEzARBgNVBAgTCkNhbGlmb3JuaWEwHhcNMjEwNDMw
+MjEzNDQ4WhcNMjYwNDI5MjEzNDQ4WjB7MRQwEgYDVQQKEwtHb29nbGUgSW5jLjEWMBQGA1UEBxMN
+TW91bnRhaW4gVmlldzEPMA0GA1UEAxMGR29vZ2xlMRgwFgYDVQQLEw9Hb29nbGUgRm9yIFdvcmsx
+CzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpDYWxpZm9ybmlhMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
+MIIBCgKCAQEAqU4c6Cc1+Iz38P9G4qOE9EMG/X6KdCQDEFm1xT1Bv4kWWMZhlnNh/pi94KgaSjJC
+L6kSK04KV0xGyPLu8BXI4ZMUlaSFx2qT4hzLmYf70CzfKzw482x9rN22bX3AA5fEf35vt1knCbYH
+3vC+GoDkmR4XrEEIocZpCxyfOokauyaUjyC1dhftl4dE3lP47e0xDEnZYNCivE29vNYIgXb5xwWM
+SfDu7MOoG4QP7VH/gOIxH+EIbgL7aTv1cCAfNToAGZatSYkKKsVIPiSeQIecmTEadS1ihJd2NyX8
+iCV32DM1CN6WvA7OnsZ3j2wRWWlY2Rgp68VShFR4w7BSfXB6XQIDAQABMA0GCSqGSIb3DQEBCwUA
+A4IBAQAvvMZ7lqk23QLOVQBTKxTgP0n6OGaNFc9tgW9Tzj/68bX9vFZCSJ0O17NOlKIZyWIYpcAF
+ty+ZK2rEv45zZRq+vx0qLc3bPheX1h/C7XS8EUDH69Qv8lApm7iw4gbMT4T4t4BDWFQ3C+Kf4XBN
+ev9MLMa9V6ad5kY1vFYQx7wTvsIwhIs5A4FSdJilDEFSSQ4vcmB41pXzuS2LPrppO5fESbdNDget
+tUrq/b7peqRdz0jkOgaaoszXEAF8WIx3Gty/BaQ2jNFVMvHDz51I2g8nSWNbsZ3VliAVkhkhLETB
+E8go1LcvbfHNyknHu2sptnRq55fHZSHr18vVsQRfDYMG</ds:X509Certificate>
+        </ds:X509Data>
+      </ds:KeyInfo>
+    </md:KeyDescriptor>
+    <md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</md:NameIDFormat>
+    <md:SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://accounts.google.com/o/saml2/idp?idpid=C01unc9st"/>
+    <md:SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://accounts.google.com/o/saml2/idp?idpid=C01unc9st"/>
+  </md:IDPSSODescriptor>
+</md:EntityDescriptor>`
+
+	actual, err := client.ImportIdentityProviderConfigFromFile(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		"saml",
+		"somefile.txt",
+		bytes.NewReader([]byte(sampleFile)))
+
+	require.NoError(t, err, "ImportIdentityProviderConfig failed")
+
+	expected := map[string]string{
+		"validateSignature":               "false",
+		"signingCertificate":              "MIIDdDCCAlygAwIBAgIGAXkktKmDMA0GCSqGSIb3DQEBCwUAMHsxFDASBgNVBAoTC0dvb2dsZSBJ\nbmMuMRYwFAYDVQQHEw1Nb3VudGFpbiBWaWV3MQ8wDQYDVQQDEwZHb29nbGUxGDAWBgNVBAsTD0dv\nb2dsZSBGb3IgV29yazELMAkGA1UEBhMCVVMxEzARBgNVBAgTCkNhbGlmb3JuaWEwHhcNMjEwNDMw\nMjEzNDQ4WhcNMjYwNDI5MjEzNDQ4WjB7MRQwEgYDVQQKEwtHb29nbGUgSW5jLjEWMBQGA1UEBxMN\nTW91bnRhaW4gVmlldzEPMA0GA1UEAxMGR29vZ2xlMRgwFgYDVQQLEw9Hb29nbGUgRm9yIFdvcmsx\nCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpDYWxpZm9ybmlhMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A\nMIIBCgKCAQEAqU4c6Cc1+Iz38P9G4qOE9EMG/X6KdCQDEFm1xT1Bv4kWWMZhlnNh/pi94KgaSjJC\nL6kSK04KV0xGyPLu8BXI4ZMUlaSFx2qT4hzLmYf70CzfKzw482x9rN22bX3AA5fEf35vt1knCbYH\n3vC+GoDkmR4XrEEIocZpCxyfOokauyaUjyC1dhftl4dE3lP47e0xDEnZYNCivE29vNYIgXb5xwWM\nSfDu7MOoG4QP7VH/gOIxH+EIbgL7aTv1cCAfNToAGZatSYkKKsVIPiSeQIecmTEadS1ihJd2NyX8\niCV32DM1CN6WvA7OnsZ3j2wRWWlY2Rgp68VShFR4w7BSfXB6XQIDAQABMA0GCSqGSIb3DQEBCwUA\nA4IBAQAvvMZ7lqk23QLOVQBTKxTgP0n6OGaNFc9tgW9Tzj/68bX9vFZCSJ0O17NOlKIZyWIYpcAF\nty+ZK2rEv45zZRq+vx0qLc3bPheX1h/C7XS8EUDH69Qv8lApm7iw4gbMT4T4t4BDWFQ3C+Kf4XBN\nev9MLMa9V6ad5kY1vFYQx7wTvsIwhIs5A4FSdJilDEFSSQ4vcmB41pXzuS2LPrppO5fESbdNDget\ntUrq/b7peqRdz0jkOgaaoszXEAF8WIx3Gty/BaQ2jNFVMvHDz51I2g8nSWNbsZ3VliAVkhkhLETB\nE8go1LcvbfHNyknHu2sptnRq55fHZSHr18vVsQRfDYMG",
+		"postBindingLogout":               "false",
+		"postBindingResponse":             "true",
+		"postBindingAuthnRequest":         "true",
+		"singleSignOnServiceUrl":          "https://accounts.google.com/o/saml2/idp?idpid=C01unc9st",
+		"nameIDPolicyFormat":              "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+		"wantAuthnRequestsSigned":         "false",
+		"addExtensionsElementWithKeyInfo": "false",
 	}
 
 	require.Len(
