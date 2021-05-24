@@ -432,4 +432,10 @@ type GoCloak interface {
 	MoveCredentialBehind(ctx context.Context, token, realm, userID, credentialID, newPreviousCredentialID string) error
 	// MoveCredentialToFirst move a credential to a first position in the credentials list of the user
 	MoveCredentialToFirst(ctx context.Context, token, realm, userID, credentialID string) error
+
+	// ---------------
+	// Events API
+	// ---------------
+	// GetEvents returns events
+	GetEvents(ctx context.Context, token string, realm string, params GetEventsParams) ([]*EventRepresentation, error)
 }

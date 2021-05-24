@@ -3220,3 +3220,27 @@ func (client *gocloak) MoveCredentialToFirst(ctx context.Context, token, realm, 
 
 	return checkForError(resp, err, errMessage)
 }
+
+// GetEvents returns events
+func (client *gocloak) GetEvents(ctx context.Context, token string, realm string, params GetEventsParams) ([]*EventRepresentation, error) {
+	const errMessage = "could not get events"
+
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, errors.Wrap(err, errMessage)
+	}
+
+	var result []*EventRepresentation
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		SetQueryParams(queryParams).
+		Get(client.getAdminRealmURL(realm, "events"))
+
+	fmt.Printf("%v+", result)
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}

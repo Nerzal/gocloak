@@ -385,6 +385,9 @@ type GoCloak interface {
  GetUserFederatedIdentities(ctx context.Context, token, realm, userID string) ([]*FederatedIdentityRepresentation, error)
  DeleteUserFederatedIdentity(ctx context.Context, token, realm, userID, providerID string) error
 
+ // *** Events API ***
+ GetEvents(ctx context.Context, token string, realm string, params GetEventsParams) ([]*EventRepresentation, error)
+
 }
 ```
 
