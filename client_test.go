@@ -3903,21 +3903,23 @@ func TestGocloak_CreateGetDeleteUserFederatedIdentity(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, idp, res)
 
+	mapperP := gocloak.IdentityProviderMapper{
+		Name:                   gocloak.StringP("add-google-origin-attribute"),
+		IdentityProviderMapper: gocloak.StringP("hardcoded-attribute-idp-mapper"),
+		IdentityProviderAlias:  gocloak.StringP("google"),
+		Config: &map[string]string{
+			"syncMode":        "INHERIT",
+			"attribute":       "origin",
+			"attribute.value": "google",
+		},
+	}
+
 	err = client.CreateIdentityProviderMapper(
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		"google",
-		gocloak.IdentityProviderMapper{
-			Name:                   gocloak.StringP("add-google-origin-attribute"),
-			IdentityProviderMapper: gocloak.StringP("hardcoded-attribute-idp-mapper"),
-			IdentityProviderAlias:  gocloak.StringP("google"),
-			Config: &map[string]string{
-				"syncMode":        "INHERIT",
-				"attribute":       "origin",
-				"attribute.value": "google",
-			},
-		},
+		mapperP,
 	)
 	require.NoError(t, err)
 
@@ -3929,6 +3931,17 @@ func TestGocloak_CreateGetDeleteUserFederatedIdentity(t *testing.T) {
 	)
 	require.Len(t, mappers, 1)
 	mapperID := mappers[0].ID
+
+	mapperP.ID = mapperID
+	// get single mapper
+	err = client.UpdateIdentityProviderMapper(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		"google",
+		mapperP,
+	)
+	require.NoError(t, err)
 
 	defer func() {
 		err = client.DeleteIdentityProviderMapper(

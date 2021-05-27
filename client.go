@@ -2400,6 +2400,17 @@ func (client *gocloak) GetIdentityProviderMappers(ctx context.Context, token, re
 	return result, nil
 }
 
+// UpdateIdentityProviderMapper updates mapper of an identity provider
+func (client *gocloak) UpdateIdentityProviderMapper(ctx context.Context, token, realm, alias string, mapper IdentityProviderMapper) error {
+	const errMessage = "could not get identity provider mapper"
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetBody(mapper).
+		Put(client.getAdminRealmURL(realm, "identity-provider", "instances", alias, "mappers", PString(mapper.ID)))
+
+	return checkForError(resp, err, errMessage)
+}
+
 // ------------------
 // Protection API
 // ------------------
