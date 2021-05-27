@@ -3943,6 +3943,19 @@ func TestGocloak_CreateGetDeleteUserFederatedIdentity(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	mapper, err := client.GetIdentityProviderMapperById(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		"google",
+		gocloak.PString(mapperID),
+	)
+	require.NoError(t, err, "GetIdentityProviderMapperById failed")
+	require.Equal(t, mapperP.Name, mapper.Name)
+	require.Equal(t, mapperP.IdentityProviderAlias, mapper.IdentityProviderAlias)
+	require.Equal(t, mapperP.IdentityProviderMapper, mapper.IdentityProviderMapper)
+	require.NotNil(t, mapper.Config)
+
 	defer func() {
 		err = client.DeleteIdentityProviderMapper(
 			context.Background(),
