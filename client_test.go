@@ -1684,6 +1684,7 @@ func TestGocloak_ClientScopeMappingsRealmRoles(t *testing.T) {
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
+		gocloak.GetRoleParams{},
 	)
 	require.NoError(t, err, "GetRealmRoles failed")
 
@@ -2281,7 +2282,8 @@ func TestGocloak_GetRealmRoles(t *testing.T) {
 	roles, err := client.GetRealmRoles(
 		context.Background(),
 		token.AccessToken,
-		cfg.GoCloak.Realm)
+		cfg.GoCloak.Realm,
+		gocloak.GetRoleParams{})
 	require.NoError(t, err, "GetRealmRoles failed")
 	t.Logf("Roles: %+v", roles)
 }
@@ -4766,6 +4768,7 @@ func TestGocloak_RolePolicy(t *testing.T) {
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
+		gocloak.GetRoleParams{},
 	)
 	require.NoError(t, err, "GetRealmRoles failed")
 	require.GreaterOrEqual(t, len(roles), 1, "GetRealmRoles failed")

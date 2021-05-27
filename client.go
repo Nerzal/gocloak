@@ -1612,12 +1612,18 @@ func (client *gocloak) GetRealmRole(ctx context.Context, token, realm, roleName 
 }
 
 // GetRealmRoles get all roles of the given realm.
-func (client *gocloak) GetRealmRoles(ctx context.Context, token, realm string) ([]*Role, error) {
+func (client *gocloak) GetRealmRoles(ctx context.Context, token, realm string, params GetRoleParams) ([]*Role, error) {
 	const errMessage = "could not get realm roles"
 
 	var result []*Role
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, errors.Wrap(err, errMessage)
+	}
+
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
 		SetResult(&result).
+		SetQueryParams(queryParams).
 		Get(client.getAdminRealmURL(realm, "roles"))
 
 	if err := checkForError(resp, err, errMessage); err != nil {

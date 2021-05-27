@@ -180,7 +180,7 @@ type GoCloak interface {
 	// GetRealmRole returns a role from a realm by role's name
 	GetRealmRole(ctx context.Context, token, realm, roleName string) (*Role, error)
 	// GetRealmRoles get all roles of the given realm. It's an alias for the GetRoles function
-	GetRealmRoles(ctx context.Context, accessToken, realm string) ([]*Role, error)
+	GetRealmRoles(ctx context.Context, accessToken, realm string, params GetRoleParams) ([]*Role, error)
 	// GetRealmRolesByUserID returns all roles assigned to the given user
 	GetRealmRolesByUserID(ctx context.Context, accessToken, realm, userID string) ([]*Role, error)
 	// GetRealmRolesByGroupID returns all roles assigned to the given group
