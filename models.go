@@ -340,6 +340,7 @@ type Role struct {
 	Attributes         *map[string][]string      `json:"attributes,omitempty"`
 }
 
+// GetRoleParams represents the optional parameters for getting roles
 type GetRoleParams struct {
 	First  *int    `json:"first,string,omitempty"`
 	Max    *int    `json:"max,string,omitempty"`

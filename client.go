@@ -2406,8 +2406,8 @@ func (client *gocloak) GetIdentityProviderMappers(ctx context.Context, token, re
 	return result, nil
 }
 
-// GetIdentityProviderMapperById gets the mapper of an identity provider
-func (client *gocloak) GetIdentityProviderMapperById(ctx context.Context, token, realm, alias, mapperID string) (*IdentityProviderMapper, error) {
+// GetIdentityProviderMapperByID gets the mapper of an identity provider
+func (client *gocloak) GetIdentityProviderMapperByID(ctx context.Context, token, realm, alias, mapperID string) (*IdentityProviderMapper, error) {
 	const errMessage = "could not get identity provider mappers"
 
 	var result IdentityProviderMapper
