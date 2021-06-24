@@ -29,7 +29,7 @@ type GoCloak interface {
 	// Logout sends a request to the logout endpoint using refresh token
 	Logout(ctx context.Context, clientID, clientSecret, realm, refreshToken string) error
 	// LogoutPublicClient sends a request to the logout endpoint using refresh token
-	LogoutPublicClient(ctx context.Context, clientID, realm, accessToken, refreshToken string) error
+	LogoutPublicClient(ctx context.Context, idOfClient, realm, accessToken, refreshToken string) error
 	// LogoutAllSessions logs out all sessions of a user given an id
 	LogoutAllSessions(ctx context.Context, accessToken, realm, userID string) error
 	// LogoutUserSessions logs out a single sessions of a user given a session id.
@@ -38,7 +38,7 @@ type GoCloak interface {
 	// LoginClient sends a request to the token endpoint using client credentials
 	LoginClient(ctx context.Context, clientID, clientSecret, realm string) (*JWT, error)
 	// LoginClientSignedJWT performs a login with client credentials and signed jwt claims
-	LoginClientSignedJWT(ctx context.Context, clientID, realm string, key interface{}, signedMethod jwt.SigningMethod, expiresAt *jwt.Time) (*JWT, error)
+	LoginClientSignedJWT(ctx context.Context, idOfClient, realm string, key interface{}, signedMethod jwt.SigningMethod, expiresAt *jwt.Time) (*JWT, error)
 	// LoginAdmin login as admin
 	LoginAdmin(ctx context.Context, username, password, realm string) (*JWT, error)
 	// RefreshToken used to refresh the token
@@ -68,20 +68,20 @@ type GoCloak interface {
 	// CreateChildGroup creates a new child group
 	CreateChildGroup(ctx context.Context, token, realm, groupID string, group Group) (string, error)
 	// CreateClient creates a new client
-	CreateClient(ctx context.Context, accessToken, realm string, clientID Client) (string, error)
+	CreateClient(ctx context.Context, accessToken, realm string, newClient Client) (string, error)
 	// CreateClientScope creates a new clientScope
 	CreateClientScope(ctx context.Context, accessToken, realm string, scope ClientScope) (string, error)
 	// CreateComponent creates a new component
 	CreateComponent(ctx context.Context, accessToken, realm string, component Component) (string, error)
 	// CreateClientScopeMappingsRealmRoles creates realm-level roles to the client’s scope
-	CreateClientScopeMappingsRealmRoles(ctx context.Context, token, realm, clientID string, roles []Role) error
+	CreateClientScopeMappingsRealmRoles(ctx context.Context, token, realm, idOfClient string, roles []Role) error
 	// CreateClientScopeMappingsClientRoles creates client-level roles from the client’s scope
-	CreateClientScopeMappingsClientRoles(ctx context.Context, token, realm, clientID, clientsID string, roles []Role) error
+	CreateClientScopeMappingsClientRoles(ctx context.Context, token, realm, idOfClient, idOfSelectedClient string, roles []Role) error
 
 	// UpdateGroup updates the given group
 	UpdateGroup(ctx context.Context, accessToken, realm string, updatedGroup Group) error
 	// UpdateRole updates the given role
-	UpdateRole(ctx context.Context, accessToken, realm, clientID string, role Role) error
+	UpdateRole(ctx context.Context, accessToken, realm, idOfClient string, role Role) error
 	// UpdateClient updates the given client
 	UpdateClient(ctx context.Context, accessToken, realm string, updatedClient Client) error
 	// UpdateClientScope updates the given clientScope
@@ -92,28 +92,28 @@ type GoCloak interface {
 	// DeleteGroup deletes the given group
 	DeleteGroup(ctx context.Context, accessToken, realm, groupID string) error
 	// DeleteClient deletes the given client
-	DeleteClient(ctx context.Context, accessToken, realm, clientID string) error
+	DeleteClient(ctx context.Context, accessToken, realm, idOfClient string) error
 	// DeleteClientScope
 	DeleteClientScope(ctx context.Context, accessToken, realm, scopeID string) error
 	// DeleteClientScopeMappingsRealmRoles deletes realm-level roles from the client’s scope
-	DeleteClientScopeMappingsRealmRoles(ctx context.Context, token, realm, clientID string, roles []Role) error
+	DeleteClientScopeMappingsRealmRoles(ctx context.Context, token, realm, idOfClient string, roles []Role) error
 	// DeleteClientScopeMappingsClientRoles deletes client-level roles from the client’s scope
-	DeleteClientScopeMappingsClientRoles(ctx context.Context, token, realm, clientID, clientsID string, roles []Role) error
+	DeleteClientScopeMappingsClientRoles(ctx context.Context, token, realm, idOfClient, idOfSelectedClient string, roles []Role) error
 
 	// GetClient returns a client
-	GetClient(ctx context.Context, accessToken, realm, clientID string) (*Client, error)
+	GetClient(ctx context.Context, accessToken, realm, idOfClient string) (*Client, error)
 	// GetClientsDefaultScopes returns a list of the client's default scopes
-	GetClientsDefaultScopes(ctx context.Context, token, realm, clientID string) ([]*ClientScope, error)
+	GetClientsDefaultScopes(ctx context.Context, token, realm, idOfClient string) ([]*ClientScope, error)
 	// AddDefaultScopeToClient adds a client scope to the list of client's default scopes
-	AddDefaultScopeToClient(ctx context.Context, token, realm, clientID, scopeID string) error
+	AddDefaultScopeToClient(ctx context.Context, token, realm, idOfClient, scopeID string) error
 	// RemoveDefaultScopeFromClient removes a client scope from the list of client's default scopes
-	RemoveDefaultScopeFromClient(ctx context.Context, token, realm, clientID, scopeID string) error
+	RemoveDefaultScopeFromClient(ctx context.Context, token, realm, idOfClient, scopeID string) error
 	// GetClientsOptionalScopes returns a list of the client's optional scopes
-	GetClientsOptionalScopes(ctx context.Context, token, realm, clientID string) ([]*ClientScope, error)
+	GetClientsOptionalScopes(ctx context.Context, token, realm, idOfClient string) ([]*ClientScope, error)
 	// AddOptionalScopeToClient adds a client scope to the list of client's optional scopes
-	AddOptionalScopeToClient(ctx context.Context, token, realm, clientID, scopeID string) error
+	AddOptionalScopeToClient(ctx context.Context, token, realm, idOfClient, scopeID string) error
 	// RemoveOptionalScopeFromClient deletes a client scope from the list of client's optional scopes
-	RemoveOptionalScopeFromClient(ctx context.Context, token, realm, clientID, scopeID string) error
+	RemoveOptionalScopeFromClient(ctx context.Context, token, realm, idOfClient, scopeID string) error
 	// GetDefaultOptionalClientScopes returns a list of default realm optional scopes
 	GetDefaultOptionalClientScopes(ctx context.Context, token, realm string) ([]*ClientScope, error)
 	// GetDefaultDefaultClientScopes returns a list of default realm default scopes
@@ -123,21 +123,21 @@ type GoCloak interface {
 	// GetClientScopes returns all client scopes
 	GetClientScopes(ctx context.Context, token, realm string) ([]*ClientScope, error)
 	// GetClientScopeMappings returns all scope mappings for the client
-	GetClientScopeMappings(ctx context.Context, token, realm, clientID string) (*MappingsRepresentation, error)
+	GetClientScopeMappings(ctx context.Context, token, realm, idOfClient string) (*MappingsRepresentation, error)
 	// GetClientScopeMappingsRealmRoles returns realm-level roles associated with the client’s scope
-	GetClientScopeMappingsRealmRoles(ctx context.Context, token, realm, clientID string) ([]*Role, error)
+	GetClientScopeMappingsRealmRoles(ctx context.Context, token, realm, idOfClient string) ([]*Role, error)
 	// GetClientScopeMappingsRealmRolesAvailable returns realm-level roles that are available to attach to this client’s scope
-	GetClientScopeMappingsRealmRolesAvailable(ctx context.Context, token, realm, clientID string) ([]*Role, error)
+	GetClientScopeMappingsRealmRolesAvailable(ctx context.Context, token, realm, idOfClient string) ([]*Role, error)
 	// GetClientScopeMappingsClientRoles returns roles associated with a client’s scope
-	GetClientScopeMappingsClientRoles(ctx context.Context, token, realm, clientID, clientsID string) ([]*Role, error)
+	GetClientScopeMappingsClientRoles(ctx context.Context, token, realm, idOfClient, idOfSelectedClient string) ([]*Role, error)
 	// GetClientScopeMappingsClientRolesAvailable returns available roles associated with a client’s scope
-	GetClientScopeMappingsClientRolesAvailable(ctx context.Context, token, realm, clientID, clientsID string) ([]*Role, error)
+	GetClientScopeMappingsClientRolesAvailable(ctx context.Context, token, realm, idOfClient, idOfSelectedClient string) ([]*Role, error)
 	// GetClientSecret returns a client's secret
-	GetClientSecret(ctx context.Context, token, realm, clientID string) (*CredentialRepresentation, error)
+	GetClientSecret(ctx context.Context, token, realm, idOfClient string) (*CredentialRepresentation, error)
 	// GetClientServiceAccount retrieves the service account "user" for a client if enabled
-	GetClientServiceAccount(ctx context.Context, token, realm, clientID string) (*User, error)
+	GetClientServiceAccount(ctx context.Context, token, realm, idOfClient string) (*User, error)
 	// RegenerateClientSecret creates a new client secret returning the updated CredentialRepresentation
-	RegenerateClientSecret(ctx context.Context, token, realm, clientID string) (*CredentialRepresentation, error)
+	RegenerateClientSecret(ctx context.Context, token, realm, idOfClient string) (*CredentialRepresentation, error)
 	// GetKeyStoreConfig gets the keyStoreConfig
 	GetKeyStoreConfig(ctx context.Context, accessToken, realm string) (*KeyStoreConfig, error)
 	// GetComponents gets components of the given realm
@@ -163,15 +163,15 @@ type GoCloak interface {
 	// GetClients gets the clients in the realm
 	GetClients(ctx context.Context, accessToken, realm string, params GetClientsParams) ([]*Client, error)
 	// GetClientOfflineSessions returns offline sessions associated with the client
-	GetClientOfflineSessions(ctx context.Context, token, realm, clientID string) ([]*UserSessionRepresentation, error)
+	GetClientOfflineSessions(ctx context.Context, token, realm, idOfClient string) ([]*UserSessionRepresentation, error)
 	// GetClientUserSessions returns user sessions associated with the client
-	GetClientUserSessions(ctx context.Context, token, realm, clientID string) ([]*UserSessionRepresentation, error)
+	GetClientUserSessions(ctx context.Context, token, realm, idOfClient string) ([]*UserSessionRepresentation, error)
 	// CreateClientProtocolMapper creates a protocol mapper in client scope
-	CreateClientProtocolMapper(ctx context.Context, token, realm, clientID string, mapper ProtocolMapperRepresentation) (string, error)
+	CreateClientProtocolMapper(ctx context.Context, token, realm, idOfClient string, mapper ProtocolMapperRepresentation) (string, error)
 	// CreateClientProtocolMapper updates a protocol mapper in client scope
-	UpdateClientProtocolMapper(ctx context.Context, token, realm, clientID, mapperID string, mapper ProtocolMapperRepresentation) error
+	UpdateClientProtocolMapper(ctx context.Context, token, realm, idOfClient, mapperID string, mapper ProtocolMapperRepresentation) error
 	// DeleteClientProtocolMapper deletes a protocol mapper in client scope
-	DeleteClientProtocolMapper(ctx context.Context, token, realm, clientID, mapperID string) error
+	DeleteClientProtocolMapper(ctx context.Context, token, realm, idOfClient, mapperID string) error
 
 	// *** Realm Roles ***
 
@@ -215,38 +215,38 @@ type GoCloak interface {
 	// *** Client Roles ***
 
 	// AddClientRoleToUser adds a client role to the user
-	AddClientRoleToUser(ctx context.Context, token, realm, clientID, userID string, roles []Role) error
+	AddClientRoleToUser(ctx context.Context, token, realm, idOfClient, userID string, roles []Role) error
 	// AddClientRoleToGroup adds a client role to the group
-	AddClientRoleToGroup(ctx context.Context, token, realm, clientID, groupID string, roles []Role) error
+	AddClientRoleToGroup(ctx context.Context, token, realm, idOfClient, groupID string, roles []Role) error
 	// CreateClientRole creates a new role for a client
-	CreateClientRole(ctx context.Context, accessToken, realm, clientID string, role Role) (string, error)
+	CreateClientRole(ctx context.Context, accessToken, realm, idOfClient string, role Role) (string, error)
 	// DeleteClientRole deletes the given role
-	DeleteClientRole(ctx context.Context, accessToken, realm, clientID, roleName string) error
+	DeleteClientRole(ctx context.Context, accessToken, realm, idOfClient, roleName string) error
 	// DeleteClientRoleFromUser removes a client role from from the user
-	DeleteClientRoleFromUser(ctx context.Context, token, realm, clientID, userID string, roles []Role) error
+	DeleteClientRoleFromUser(ctx context.Context, token, realm, idOfClient, userID string, roles []Role) error
 	// DeleteClientRoleFromGroup removes a client role from from the group
-	DeleteClientRoleFromGroup(ctx context.Context, token, realm, clientID, groupID string, roles []Role) error
+	DeleteClientRoleFromGroup(ctx context.Context, token, realm, idOfClient, groupID string, roles []Role) error
 	// GetClientRoles gets roles for the given client
-	GetClientRoles(ctx context.Context, accessToken, realm, clientID string) ([]*Role, error)
+	GetClientRoles(ctx context.Context, accessToken, realm, idOfClient string) ([]*Role, error)
 	// GetClientRoleById gets role for the given client using role id
 	GetClientRoleByID(ctx context.Context, accessToken, realm, roleID string) (*Role, error)
 	// GetRealmRolesByUserID returns all client roles assigned to the given user
-	GetClientRolesByUserID(ctx context.Context, token, realm, clientID, userID string) ([]*Role, error)
+	GetClientRolesByUserID(ctx context.Context, token, realm, idOfClient, userID string) ([]*Role, error)
 	// GetClientRolesByGroupID returns all client roles assigned to the given group
-	GetClientRolesByGroupID(ctx context.Context, token, realm, clientID, groupID string) ([]*Role, error)
+	GetClientRolesByGroupID(ctx context.Context, token, realm, idOfClient, groupID string) ([]*Role, error)
 	// GetCompositeClientRolesByRoleID returns all client composite roles associated with the given client role
-	GetCompositeClientRolesByRoleID(ctx context.Context, token, realm, clientID, roleID string) ([]*Role, error)
+	GetCompositeClientRolesByRoleID(ctx context.Context, token, realm, idOfClient, roleID string) ([]*Role, error)
 	// GetCompositeClientRolesByUserID returns all client roles and composite roles assigned to the given user
-	GetCompositeClientRolesByUserID(ctx context.Context, token, realm, clientID, userID string) ([]*Role, error)
+	GetCompositeClientRolesByUserID(ctx context.Context, token, realm, idOfClient, userID string) ([]*Role, error)
 	// GetCompositeClientRolesByGroupID returns all client roles and composite roles assigned to the given group
-	GetCompositeClientRolesByGroupID(ctx context.Context, token, realm, clientID, groupID string) ([]*Role, error)
+	GetCompositeClientRolesByGroupID(ctx context.Context, token, realm, idOfClient, groupID string) ([]*Role, error)
 	// GetAvailableClientRolesByUserID returns all available client roles to the given user
-	GetAvailableClientRolesByUserID(ctx context.Context, token, realm, clientID, userID string) ([]*Role, error)
+	GetAvailableClientRolesByUserID(ctx context.Context, token, realm, idOfClient, userID string) ([]*Role, error)
 	// GetAvailableClientRolesByGroupID returns all available client roles to the given group
-	GetAvailableClientRolesByGroupID(ctx context.Context, token, realm, clientID, groupID string) ([]*Role, error)
+	GetAvailableClientRolesByGroupID(ctx context.Context, token, realm, idOfClient, groupID string) ([]*Role, error)
 
 	// GetClientRole get a role for the given client in a realm by role name
-	GetClientRole(ctx context.Context, token, realm, clientID, roleName string) (*Role, error)
+	GetClientRole(ctx context.Context, token, realm, idOfClient, roleName string) (*Role, error)
 	// AddClientRoleComposite adds roles as composite
 	AddClientRoleComposite(ctx context.Context, token, realm, roleID string, roles []Role) error
 	// DeleteClientRoleComposite deletes composites from a role
@@ -287,7 +287,7 @@ type GoCloak interface {
 	// GetUsersByRoleName returns all users have a given role
 	GetUsersByRoleName(ctx context.Context, token, realm, roleName string) ([]*User, error)
 	// GetUsersByClientRoleName returns all users have a given client role
-	GetUsersByClientRoleName(ctx context.Context, token, realm, clientID, roleName string, params GetUsersByRoleParams) ([]*User, error)
+	GetUsersByClientRoleName(ctx context.Context, token, realm, idOfClient, roleName string, params GetUsersByRoleParams) ([]*User, error)
 	// SetPassword sets a new password for the user with the given id. Needs elevated privileges
 	SetPassword(ctx context.Context, token, userID, realm, password string, temporary bool) error
 	// UpdateUser updates the given user
@@ -299,7 +299,7 @@ type GoCloak interface {
 	// GetUserSessions returns user sessions associated with the user
 	GetUserSessions(ctx context.Context, token, realm, userID string) ([]*UserSessionRepresentation, error)
 	// GetUserOfflineSessionsForClient returns offline sessions associated with the user and client
-	GetUserOfflineSessionsForClient(ctx context.Context, token, realm, userID, clientID string) ([]*UserSessionRepresentation, error)
+	GetUserOfflineSessionsForClient(ctx context.Context, token, realm, userID, idOfClient string) ([]*UserSessionRepresentation, error)
 	// GetUserFederatedIdentities gets all user federated identities
 	GetUserFederatedIdentities(ctx context.Context, token, realm, userID string) ([]*FederatedIdentityRepresentation, error)
 	// CreateUserFederatedIdentity creates an user federated identity
@@ -342,26 +342,26 @@ type GoCloak interface {
 	DeleteResourceClient(ctx context.Context, token, realm, resourceID string) error
 
 	// GetResource returns a client's resource with the given id, using access token from admin
-	GetResource(ctx context.Context, token, realm, clientID, resourceID string) (*ResourceRepresentation, error)
+	GetResource(ctx context.Context, token, realm, idOfClient, resourceID string) (*ResourceRepresentation, error)
 	// GetResources a returns resources associated with the client, using access token from admin
-	GetResources(ctx context.Context, token, realm, clientID string, params GetResourceParams) ([]*ResourceRepresentation, error)
+	GetResources(ctx context.Context, token, realm, idOfClient string, params GetResourceParams) ([]*ResourceRepresentation, error)
 	// CreateResource creates a resource associated with the client, using access token from admin
-	CreateResource(ctx context.Context, token, realm, clientID string, resource ResourceRepresentation) (*ResourceRepresentation, error)
+	CreateResource(ctx context.Context, token, realm, idOfClient string, resource ResourceRepresentation) (*ResourceRepresentation, error)
 	// UpdateResource updates a resource associated with the client, using access token from admin
-	UpdateResource(ctx context.Context, token, realm, clientID string, resource ResourceRepresentation) error
+	UpdateResource(ctx context.Context, token, realm, idOfClient string, resource ResourceRepresentation) error
 	// DeleteResource deletes a resource associated with the client, using access token from admin
-	DeleteResource(ctx context.Context, token, realm, clientID, resourceID string) error
+	DeleteResource(ctx context.Context, token, realm, idOfClient, resourceID string) error
 
 	// GetScope returns a client's scope with the given id, using access token from admin
-	GetScope(ctx context.Context, token, realm, clientID, scopeID string) (*ScopeRepresentation, error)
+	GetScope(ctx context.Context, token, realm, idOfClient, scopeID string) (*ScopeRepresentation, error)
 	// GetScopes returns scopes associated with the client, using access token from admin
-	GetScopes(ctx context.Context, token, realm, clientID string, params GetScopeParams) ([]*ScopeRepresentation, error)
+	GetScopes(ctx context.Context, token, realm, idOfClient string, params GetScopeParams) ([]*ScopeRepresentation, error)
 	// CreateScope creates a scope associated with the client, using access token from admin
-	CreateScope(ctx context.Context, token, realm, clientID string, scope ScopeRepresentation) (*ScopeRepresentation, error)
+	CreateScope(ctx context.Context, token, realm, idOfClient string, scope ScopeRepresentation) (*ScopeRepresentation, error)
 	// UpdateScope updates a scope associated with the client, using access token from admin
-	UpdateScope(ctx context.Context, token, realm, clientID string, resource ScopeRepresentation) error
+	UpdateScope(ctx context.Context, token, realm, idOfClient string, resource ScopeRepresentation) error
 	// DeleteScope deletes a scope associated with the client, using access token from admin
-	DeleteScope(ctx context.Context, token, realm, clientID, scopeID string) error
+	DeleteScope(ctx context.Context, token, realm, idOfClient, scopeID string) error
 
 	// CreatePermissionTicket creates a permission ticket for a resource, using access token from client (typically a resource server)
 	CreatePermissionTicket(ctx context.Context, token, realm string, permissions []CreatePermissionTicketParams) (*PermissionTicketResponseRepresentation, error)
@@ -375,30 +375,30 @@ type GoCloak interface {
 	DeleteUserPermission(ctx context.Context, token, realm, ticketID string) error
 
 	// GetPermission returns a client's permission with the given id
-	GetPermission(ctx context.Context, token, realm, clientID, permissionID string) (*PermissionRepresentation, error)
+	GetPermission(ctx context.Context, token, realm, idOfClient, permissionID string) (*PermissionRepresentation, error)
 	// GetPermissions returns permissions associated with the client
-	GetPermissions(ctx context.Context, token, realm, clientID string, params GetPermissionParams) ([]*PermissionRepresentation, error)
+	GetPermissions(ctx context.Context, token, realm, idOfClient string, params GetPermissionParams) ([]*PermissionRepresentation, error)
 	// CreatePermission creates a permission associated with the client
-	CreatePermission(ctx context.Context, token, realm, clientID string, permission PermissionRepresentation) (*PermissionRepresentation, error)
+	CreatePermission(ctx context.Context, token, realm, idOfClient string, permission PermissionRepresentation) (*PermissionRepresentation, error)
 	// UpdatePermission updates a permission associated with the client
-	UpdatePermission(ctx context.Context, token, realm, clientID string, permission PermissionRepresentation) error
+	UpdatePermission(ctx context.Context, token, realm, idOfClient string, permission PermissionRepresentation) error
 	// DeletePermission deletes a permission associated with the client
-	DeletePermission(ctx context.Context, token, realm, clientID, permissionID string) error
+	DeletePermission(ctx context.Context, token, realm, idOfClient, permissionID string) error
 	// GetDependentPermissions returns client's permissions dependent on the policy with given ID
-	GetDependentPermissions(ctx context.Context, token, realm, clientID, policyID string) ([]*PermissionRepresentation, error)
-	GetPermissionResources(ctx context.Context, token, realm, clientID, permissionID string) ([]*PermissionResource, error)
-	GetPermissionScopes(ctx context.Context, token, realm, clientID, permissionID string) ([]*PermissionScope, error)
+	GetDependentPermissions(ctx context.Context, token, realm, idOfClient, policyID string) ([]*PermissionRepresentation, error)
+	GetPermissionResources(ctx context.Context, token, realm, idOfClient, permissionID string) ([]*PermissionResource, error)
+	GetPermissionScopes(ctx context.Context, token, realm, idOfClient, permissionID string) ([]*PermissionScope, error)
 
 	// GetPolicy returns a client's policy with the given id, using access token from admin
-	GetPolicy(ctx context.Context, token, realm, clientID, policyID string) (*PolicyRepresentation, error)
+	GetPolicy(ctx context.Context, token, realm, idOfClient, policyID string) (*PolicyRepresentation, error)
 	// GetPolicies returns policies associated with the client, using access token from admin
-	GetPolicies(ctx context.Context, token, realm, clientID string, params GetPolicyParams) ([]*PolicyRepresentation, error)
+	GetPolicies(ctx context.Context, token, realm, idOfClient string, params GetPolicyParams) ([]*PolicyRepresentation, error)
 	// CreatePolicy creates a policy associated with the client, using access token from admin
-	CreatePolicy(ctx context.Context, token, realm, clientID string, policy PolicyRepresentation) (*PolicyRepresentation, error)
+	CreatePolicy(ctx context.Context, token, realm, idOfClient string, policy PolicyRepresentation) (*PolicyRepresentation, error)
 	// UpdatePolicy updates a policy associated with the client, using access token from admin
-	UpdatePolicy(ctx context.Context, token, realm, clientID string, policy PolicyRepresentation) error
+	UpdatePolicy(ctx context.Context, token, realm, idOfClient string, policy PolicyRepresentation) error
 	// DeletePolicy deletes a policy associated with the client, using access token from admin
-	DeletePolicy(ctx context.Context, token, realm, clientID, policyID string) error
+	DeletePolicy(ctx context.Context, token, realm, idOfClient, policyID string) error
 
 	// GetResourcePolicy updates a permission for a specifc resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
 	GetResourcePolicy(ctx context.Context, token, realm, permissionID string) (*ResourcePolicyRepresentation, error)
