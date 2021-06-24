@@ -340,6 +340,13 @@ type Role struct {
 	Attributes         *map[string][]string      `json:"attributes,omitempty"`
 }
 
+// GetRoleParams represents the optional parameters for getting roles
+type GetRoleParams struct {
+	First  *int    `json:"first,string,omitempty"`
+	Max    *int    `json:"max,string,omitempty"`
+	Search *string `json:"search,omitempty"`
+}
+
 // ClientMappingsRepresentation is a client role mappings
 type ClientMappingsRepresentation struct {
 	ID       *string `json:"id,omitempty"`
@@ -1174,6 +1181,7 @@ func (v *GroupsCount) String() string                               { return pre
 func (obj *GetGroupsParams) String() string                         { return prettyStringStruct(obj) }
 func (v *CompositesRepresentation) String() string                  { return prettyStringStruct(v) }
 func (v *Role) String() string                                      { return prettyStringStruct(v) }
+func (v *GetRoleParams) String() string                             { return prettyStringStruct(v) }
 func (v *ClientMappingsRepresentation) String() string              { return prettyStringStruct(v) }
 func (v *MappingsRepresentation) String() string                    { return prettyStringStruct(v) }
 func (v *ClientScope) String() string                               { return prettyStringStruct(v) }

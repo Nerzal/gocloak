@@ -1638,12 +1638,18 @@ func (client *gocloak) GetRealmRole(ctx context.Context, token, realm, roleName 
 }
 
 // GetRealmRoles get all roles of the given realm.
-func (client *gocloak) GetRealmRoles(ctx context.Context, token, realm string) ([]*Role, error) {
+func (client *gocloak) GetRealmRoles(ctx context.Context, token, realm string, params GetRoleParams) ([]*Role, error) {
 	const errMessage = "could not get realm roles"
 
 	var result []*Role
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, errors.Wrap(err, errMessage)
+	}
+
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
 		SetResult(&result).
+		SetQueryParams(queryParams).
 		Get(client.getAdminRealmURL(realm, "roles"))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
@@ -2444,6 +2450,33 @@ func (client *gocloak) GetIdentityProviderMappers(ctx context.Context, token, re
 	}
 
 	return result, nil
+}
+
+// GetIdentityProviderMapperByID gets the mapper of an identity provider
+func (client *gocloak) GetIdentityProviderMapperByID(ctx context.Context, token, realm, alias, mapperID string) (*IdentityProviderMapper, error) {
+	const errMessage = "could not get identity provider mappers"
+
+	var result IdentityProviderMapper
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "identity-provider", "instances", alias, "mappers", mapperID))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// UpdateIdentityProviderMapper updates mapper of an identity provider
+func (client *gocloak) UpdateIdentityProviderMapper(ctx context.Context, token, realm, alias string, mapper IdentityProviderMapper) error {
+	const errMessage = "could not update identity provider mapper"
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetBody(mapper).
+		Put(client.getAdminRealmURL(realm, "identity-provider", "instances", alias, "mappers", PString(mapper.ID)))
+
+	return checkForError(resp, err, errMessage)
 }
 
 // ------------------

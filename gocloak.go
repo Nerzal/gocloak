@@ -181,7 +181,7 @@ type GoCloak interface {
 	// GetRealmRole returns a role from a realm by role's name
 	GetRealmRole(ctx context.Context, token, realm, roleName string) (*Role, error)
 	// GetRealmRoles get all roles of the given realm. It's an alias for the GetRoles function
-	GetRealmRoles(ctx context.Context, accessToken, realm string) ([]*Role, error)
+	GetRealmRoles(ctx context.Context, accessToken, realm string, params GetRoleParams) ([]*Role, error)
 	// GetRealmRolesByUserID returns all roles assigned to the given user
 	GetRealmRolesByUserID(ctx context.Context, accessToken, realm, userID string) ([]*Role, error)
 	// GetRealmRolesByGroupID returns all roles assigned to the given group
@@ -327,6 +327,10 @@ type GoCloak interface {
 	ExportIDPPublicBrokerConfig(ctx context.Context, token, realm, alias string) (*string, error)
 	// CreateIdentityProviderMapper creates an instance of an identity provider mapper associated with the given alias
 	CreateIdentityProviderMapper(ctx context.Context, token, realm, alias string, mapper IdentityProviderMapper) error
+	// GetIdentityProviderMapperByID gets the mapper of an identity provider
+	GetIdentityProviderMapperByID(ctx context.Context, token, realm, alias, mapperID string) (*IdentityProviderMapper, error)
+	// UpdateIdentityProviderMapper updates mapper of an identity provider
+	UpdateIdentityProviderMapper(ctx context.Context, token, realm, alias string, mapper IdentityProviderMapper) error
 	// DeleteIdentityProviderMapper deletes an instance of an identity provider mapper associated with the given alias and mapper ID
 	DeleteIdentityProviderMapper(ctx context.Context, token, realm, alias, mapperID string) error
 	// GetIdentityProviderMappers returns list of mappers associated with an identity provider

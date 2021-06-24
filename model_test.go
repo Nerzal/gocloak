@@ -235,6 +235,7 @@ func TestStringerOmitEmpty(t *testing.T) {
 		&gocloak.GetGroupsParams{},
 		&gocloak.CompositesRepresentation{},
 		&gocloak.Role{},
+		&gocloak.GetRoleParams{},
 		&gocloak.ClientMappingsRepresentation{},
 		&gocloak.MappingsRepresentation{},
 		&gocloak.ClientScope{},
