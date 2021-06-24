@@ -340,6 +340,13 @@ type Role struct {
 	Attributes         *map[string][]string      `json:"attributes,omitempty"`
 }
 
+// GetRoleParams represents the optional parameters for getting roles
+type GetRoleParams struct {
+	First  *int    `json:"first,string,omitempty"`
+	Max    *int    `json:"max,string,omitempty"`
+	Search *string `json:"search,omitempty"`
+}
+
 // ClientMappingsRepresentation is a client role mappings
 type ClientMappingsRepresentation struct {
 	ID       *string `json:"id,omitempty"`
@@ -1085,6 +1092,30 @@ type GetResourcePoliciesParams struct {
 	Max        *int    `json:"max,string,omitempty"`
 }
 
+// GetEventsParams represents the optional parameters for getting events
+type GetEventsParams struct {
+	Client    *string  `json:"client,omitempty"`
+	DateFrom  *string  `json:"dateFrom,omitempty"`
+	DateTo    *string  `json:"dateTo,omitempty"`
+	First     *int32   `json:"first,omitempty"`
+	IPAddress *string  `json:"ipAddress,omitempty"`
+	Max       *int32   `json:"max,omitempty"`
+	Type      []string `json:"type,omitempty"`
+	UserID    *string  `json:"user,omitempty"`
+}
+
+// EventRepresentation is a representation of a Event
+type EventRepresentation struct {
+	Time      int64             `json:"time,omitempty"`
+	Type      *string           `json:"type,omitempty"`
+	RealmID   *string           `json:"realmId,omitempty"`
+	ClientID  *string           `json:"clientId,omitempty"`
+	UserID    *string           `json:"userId,omitempty"`
+	SessionID *string           `json:"sessionId,omitempty"`
+	IPAddress *string           `json:"ipAddress,omitempty"`
+	Details   map[string]string `json:"details,omitempty"`
+}
+
 // CredentialRepresentation is a representations of the credentials
 // v7: https://www.keycloak.org/docs-api/7.0/rest-api/index.html#_credentialrepresentation
 // v8: https://www.keycloak.org/docs-api/8.0/rest-api/index.html#_credentialrepresentation
@@ -1150,6 +1181,7 @@ func (v *GroupsCount) String() string                               { return pre
 func (obj *GetGroupsParams) String() string                         { return prettyStringStruct(obj) }
 func (v *CompositesRepresentation) String() string                  { return prettyStringStruct(v) }
 func (v *Role) String() string                                      { return prettyStringStruct(v) }
+func (v *GetRoleParams) String() string                             { return prettyStringStruct(v) }
 func (v *ClientMappingsRepresentation) String() string              { return prettyStringStruct(v) }
 func (v *MappingsRepresentation) String() string                    { return prettyStringStruct(v) }
 func (v *ClientScope) String() string                               { return prettyStringStruct(v) }
