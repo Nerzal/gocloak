@@ -2,6 +2,7 @@ package gocloak
 
 import (
 	"context"
+	"io"
 
 	"github.com/dgrijalva/jwt-go/v4"
 	"github.com/go-resty/resty/v2"
@@ -320,6 +321,8 @@ type GoCloak interface {
 	DeleteIdentityProvider(ctx context.Context, token, realm, alias string) error
 	// ImportIdentityProviderConfig parses and returns the identity provider config at a given URL
 	ImportIdentityProviderConfig(ctx context.Context, token, realm, fromURL, providerID string) (map[string]string, error)
+	// ImportIdentityProviderConfigFromFile parses and returns the identity provider config from a given file
+	ImportIdentityProviderConfigFromFile(ctx context.Context, token, realm, providerID, fileName string, fileBody io.Reader) (map[string]string, error)
 	// ExportIDPPublicBrokerConfig exports the broker config for a given alias
 	ExportIDPPublicBrokerConfig(ctx context.Context, token, realm, alias string) (*string, error)
 	// CreateIdentityProviderMapper creates an instance of an identity provider mapper associated with the given alias

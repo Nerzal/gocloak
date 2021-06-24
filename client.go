@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -2377,6 +2378,26 @@ func (client *gocloak) ImportIdentityProviderConfig(ctx context.Context, token, 
 		SetResult(&result).
 		SetBody(map[string]string{
 			"fromUrl":    fromURL,
+			"providerId": providerID,
+		}).
+		Post(client.getAdminRealmURL(realm, "identity-provider", "import-config"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// ImportIdentityProviderConfigFromFile parses and returns the identity provider config from a given file
+func (client *gocloak) ImportIdentityProviderConfigFromFile(ctx context.Context, token, realm, providerID, fileName string, fileBody io.Reader) (map[string]string, error) {
+	const errMessage = "could not import config"
+
+	result := make(map[string]string)
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		SetFileReader("file", fileName, fileBody).
+		SetFormData(map[string]string{
 			"providerId": providerID,
 		}).
 		Post(client.getAdminRealmURL(realm, "identity-provider", "import-config"))
