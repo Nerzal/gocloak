@@ -5600,6 +5600,8 @@ E8go1LcvbfHNyknHu2sptnRq55fHZSHr18vVsQRfDYMG</ds:X509Certificate>
 		"nameIDPolicyFormat":              "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
 		"wantAuthnRequestsSigned":         "false",
 		"addExtensionsElementWithKeyInfo": "false",
+		"loginHint":                       "false",
+		"enabledFromMetadata":             "true",
 	}
 
 	require.Len(
