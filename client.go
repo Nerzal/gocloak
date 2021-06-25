@@ -3312,3 +3312,61 @@ func (client *gocloak) GetEvents(ctx context.Context, token string, realm string
 
 	return result, nil
 }
+
+// GetClientScopesScopeMappingsRealmRolesAvailable returns realm-level roles that are available to attach to this client scope
+func (client *gocloak) GetClientScopesScopeMappingsRealmRolesAvailable(ctx context.Context, token, realm, clientScopeID string) ([]*Role, error) {
+	const errMessage = "could not get available realm-level roles with the client-scope"
+
+	var result []*Role
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "client-scopes", clientScopeID, "scope-mappings", "realm", "available"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// GetClientScopesScopeMappingsRealmRoles returns roles associated with a client-scope
+func (client *gocloak) GetClientScopesScopeMappingsRealmRoles(ctx context.Context, token, realm, clientScopeID string) ([]*Role, error) {
+	const errMessage = "could not get realm-level roles with the client-scope"
+
+	var result []*Role
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "client-scopes", clientScopeID, "scope-mappings", "realm"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// DeleteClientScopesScopeMappingsRealmRoles deletes realm-level roles from the client-scope
+func (client *gocloak) DeleteClientScopesScopeMappingsRealmRoles(ctx context.Context, token, realm, clientScopeID string, roles []Role) error {
+	const errMessage = "could not delete realm-level roles from the client-scope"
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetBody(roles).
+		Delete(client.getAdminRealmURL(realm, "client-scopes", clientScopeID, "scope-mappings", "realm"))
+
+	return checkForError(resp, err, errMessage)
+}
+
+// CreateClientScopesScopeMappingsRealmRoles creates realm-level roles to the client scope
+func (client *gocloak) CreateClientScopesScopeMappingsRealmRoles(ctx context.Context, token, realm, clientScopeID string, roles []Role) error {
+	const errMessage = "could not create realm-level roles to the client-scope"
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetBody(roles).
+		Post(client.getAdminRealmURL(realm, "client-scopes", clientScopeID, "scope-mappings", "realm"))
+
+	return checkForError(resp, err, errMessage)
+}
+
+
