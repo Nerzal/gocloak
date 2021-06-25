@@ -188,6 +188,8 @@ type GoCloak interface {
 	CreateRealmRole(ctx context.Context, token, realm string, role Role) (string, error)
 	// GetRealmRole returns a role from a realm by role's name
 	GetRealmRole(ctx context.Context, token, realm, roleName string) (*Role, error)
+	// GetRealmRoleByID returns a role from a realm by role's ID
+	GetRealmRoleByID(ctx context.Context, token, realm, roleID string) (*Role, error)
 	// GetRealmRoles get all roles of the given realm. It's an alias for the GetRoles function
 	GetRealmRoles(ctx context.Context, accessToken, realm string, params GetRoleParams) ([]*Role, error)
 	// GetRealmRolesByUserID returns all roles assigned to the given user
@@ -196,6 +198,8 @@ type GoCloak interface {
 	GetRealmRolesByGroupID(ctx context.Context, accessToken, realm, groupID string) ([]*Role, error)
 	// UpdateRealmRole updates a role in a realm
 	UpdateRealmRole(ctx context.Context, token, realm, roleName string, role Role) error
+	// UpdateRealmRoleByID updates a role in a realm by role's ID
+	UpdateRealmRoleByID(ctx context.Context, token, realm, roleID string, role Role) error
 	// DeleteRealmRole deletes a role in a realm by role's name
 	DeleteRealmRole(ctx context.Context, token, realm, roleName string) error
 	// AddRealmRoleToUser adds realm-level role mappings
@@ -210,6 +214,8 @@ type GoCloak interface {
 	AddRealmRoleComposite(ctx context.Context, token, realm, roleName string, roles []Role) error
 	// AddRealmRoleComposite adds roles as composite
 	DeleteRealmRoleComposite(ctx context.Context, token, realm, roleName string, roles []Role) error
+	// GetCompositeRealmRoles returns all realm composite roles associated with the given realm role
+	GetCompositeRealmRoles(ctx context.Context, token, realm, roleName string) ([]*Role, error)
 	// GetCompositeRealmRolesByRoleID returns all realm composite roles associated with the given client role
 	GetCompositeRealmRolesByRoleID(ctx context.Context, token, realm, roleID string) ([]*Role, error)
 	// GetCompositeRealmRolesByUserID returns all realm roles and composite roles assigned to the given user
@@ -236,7 +242,7 @@ type GoCloak interface {
 	// DeleteClientRoleFromGroup removes a client role from from the group
 	DeleteClientRoleFromGroup(ctx context.Context, token, realm, idOfClient, groupID string, roles []Role) error
 	// GetClientRoles gets roles for the given client
-	GetClientRoles(ctx context.Context, accessToken, realm, idOfClient string) ([]*Role, error)
+	GetClientRoles(ctx context.Context, accessToken, realm, idOfClient string, params GetRoleParams) ([]*Role, error)
 	// GetClientRoleById gets role for the given client using role id
 	GetClientRoleByID(ctx context.Context, accessToken, realm, roleID string) (*Role, error)
 	// GetRealmRolesByUserID returns all client roles assigned to the given user
@@ -334,7 +340,7 @@ type GoCloak interface {
 	// ExportIDPPublicBrokerConfig exports the broker config for a given alias
 	ExportIDPPublicBrokerConfig(ctx context.Context, token, realm, alias string) (*string, error)
 	// CreateIdentityProviderMapper creates an instance of an identity provider mapper associated with the given alias
-	CreateIdentityProviderMapper(ctx context.Context, token, realm, alias string, mapper IdentityProviderMapper) error
+	CreateIdentityProviderMapper(ctx context.Context, token, realm, alias string, mapper IdentityProviderMapper) (string, error)
 	// GetIdentityProviderMapperByID gets the mapper of an identity provider
 	GetIdentityProviderMapperByID(ctx context.Context, token, realm, alias, mapperID string) (*IdentityProviderMapper, error)
 	// UpdateIdentityProviderMapper updates mapper of an identity provider
