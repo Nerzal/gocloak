@@ -1609,6 +1609,7 @@ func TestGocloak_ClientScopeMappingsClientRoles(t *testing.T) {
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		gocloakClientID,
+		gocloak.GetRoleParams{},
 	)
 	require.NoError(t, err, "GetClientRoles failed")
 
@@ -1991,7 +1992,8 @@ func TestGocloak_GetClientRoles(t *testing.T) {
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		*testClient.ID)
+		*testClient.ID,
+		gocloak.GetRoleParams{})
 	require.NoError(t, err, "GetClientRoles failed")
 }
 
@@ -3215,7 +3217,8 @@ func TestGoCloak_ClientSecret(t *testing.T) {
 	defer tearDown()
 	require.Equal(t, *testClient.ID, idOfClient)
 
-	oldCreds, err := client.GetClientSecret(
+	// Keycloak does not support setting the secret while creating the client
+	_, err := client.GetClientSecret(
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
@@ -3230,7 +3233,8 @@ func TestGoCloak_ClientSecret(t *testing.T) {
 		idOfClient,
 	)
 	require.NoError(t, err, "RegenerateClientSecret failed")
-	require.NotEqual(t, *oldCreds.Value, *regeneratedCreds.Value)
+	require.NotNil(t, regeneratedCreds.Value, "RegenerateClientSecret value is nil")
+	require.NotEmpty(t, *regeneratedCreds.Value, "RegenerateClientSecret value is empty")
 
 	err = client.DeleteClient(
 		context.Background(),
@@ -3916,7 +3920,7 @@ func TestGocloak_CreateGetDeleteUserFederatedIdentity(t *testing.T) {
 		},
 	}
 
-	err = client.CreateIdentityProviderMapper(
+	mapperPID, err := client.CreateIdentityProviderMapper(
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
@@ -3924,6 +3928,7 @@ func TestGocloak_CreateGetDeleteUserFederatedIdentity(t *testing.T) {
 		mapperP,
 	)
 	require.NoError(t, err)
+	require.NotEmpty(t, mapperPID)
 
 	mappers, err := client.GetIdentityProviderMappers(
 		context.Background(),
@@ -3934,6 +3939,7 @@ func TestGocloak_CreateGetDeleteUserFederatedIdentity(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, mappers, 1)
 	mapperID := mappers[0].ID
+	require.Equal(t, mapperPID, gocloak.PString(mapperID))
 
 	mapperP.ID = mapperID
 	// get single mapper
@@ -5594,6 +5600,8 @@ E8go1LcvbfHNyknHu2sptnRq55fHZSHr18vVsQRfDYMG</ds:X509Certificate>
 		"nameIDPolicyFormat":              "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
 		"wantAuthnRequestsSigned":         "false",
 		"addExtensionsElementWithKeyInfo": "false",
+		"loginHint":                       "false",
+		"enabledFromMetadata":             "true",
 	}
 
 	require.Len(
