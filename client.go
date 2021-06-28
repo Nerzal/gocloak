@@ -622,6 +622,15 @@ func (client *gocloak) LogoutAllSessions(ctx context.Context, accessToken, realm
 	return checkForError(resp, err, errMessage)
 }
 
+func (client *gocloak) RevokeUserConsents(ctx context.Context, accessToken, realm, userID, clientID string) error {
+	const errMessage = "could not revoke consents"
+
+	resp, err := client.getRequestWithBearerAuth(ctx, accessToken).
+		Delete(client.getAdminRealmURL(realm, "users", userID, "consents", clientID))
+
+	return checkForError(resp, err, errMessage)
+}
+
 // LogoutUserSessions logs out a single sessions of a user given a session id
 func (client *gocloak) LogoutUserSession(ctx context.Context, accessToken, realm, session string) error {
 	const errMessage = "could not logout"

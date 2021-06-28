@@ -33,6 +33,8 @@ type GoCloak interface {
 	LogoutPublicClient(ctx context.Context, idOfClient, realm, accessToken, refreshToken string) error
 	// LogoutAllSessions logs out all sessions of a user given an id
 	LogoutAllSessions(ctx context.Context, accessToken, realm, userID string) error
+	// RevokeConsents revoke consent and offline tokens for particular client from user
+	RevokeUserConsents(ctx context.Context, accessToken, realm, userID, clientID string) error
 	// LogoutUserSessions logs out a single sessions of a user given a session id.
 	// NOTE: this uses bearer token, but this token must belong to a user with proper privileges
 	LogoutUserSession(ctx context.Context, accessToken, realm, session string) error
