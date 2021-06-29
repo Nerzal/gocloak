@@ -2091,6 +2091,38 @@ func TestGocloak_LogoutAllSessions(t *testing.T) {
 	require.NoError(t, err, "Logout failed")
 }
 
+func TestGocloak_RevokeUserConsents(t *testing.T) {
+	// t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	SetUpTestUser(t, client)
+	_, err := client.GetToken(
+		context.Background(),
+		cfg.GoCloak.Realm,
+		gocloak.TokenOptions{
+			ClientID:      &cfg.GoCloak.ClientID,
+			ClientSecret:  &cfg.GoCloak.ClientSecret,
+			Username:      &cfg.GoCloak.UserName,
+			Password:      &cfg.GoCloak.Password,
+			GrantType:     gocloak.StringP("password"),
+			ResponseTypes: &[]string{"token", "id_token"},
+			Scopes:        &[]string{"openid", "offline_access"},
+		},
+	)
+	require.NoError(t, err, "Login failed")
+	token := GetAdminToken(t, client)
+
+	err = client.RevokeUserConsents(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		testUserID,
+		cfg.GoCloak.ClientID,
+	)
+
+	require.NoError(t, err, "Consent revocation failed")
+}
+
 func TestGocloak_LogoutUserSession(t *testing.T) {
 	// t.Parallel()
 	cfg := GetConfig(t)
