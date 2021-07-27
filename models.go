@@ -267,6 +267,7 @@ type GetUsersParams struct {
 	Exact               *bool   `json:"exact,string,omitempty"`
 	First               *int    `json:"first,string,omitempty"`
 	FirstName           *string `json:"firstName,omitempty"`
+	IDPAlias            *string `json:"idpAlias,omitempty"`
 	LastName            *string `json:"lastName,omitempty"`
 	Max                 *int    `json:"max,string,omitempty"`
 	Search              *string `json:"search,omitempty"`
