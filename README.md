@@ -95,9 +95,9 @@ go get github.com/Nerzal/gocloak/v8
  }
 
  user := gocloak.User{
-  FirstName: gocloak.StringP(""Bob"),
-  LastName:  gocloak.StringP(""Uncle"),
-  Email:     gocloak.StringP(""something@really.wrong"),
+  FirstName: gocloak.StringP("Bob"),
+  LastName:  gocloak.StringP("Uncle"),
+  Email:     gocloak.StringP("something@really.wrong"),
   Enabled:   gocloak.BoolP(true),
   Username:  gocloak.StringP("CoolGuy"),
  }
