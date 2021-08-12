@@ -983,7 +983,7 @@ type PermissionRepresentation struct {
 	Name             *string           `json:"name,omitempty"`
 	Policies         *[]string         `json:"policies,omitempty"`
 	Resources        *[]string         `json:"resources,omitempty"`
-	ResourceType     *string           `json:"resource_type,omitempty"`
+	ResourceType     *string           `json:"resourceType,omitempty"`
 	Scopes           *[]string         `json:"scopes,omitempty"`
 	Type             *string           `json:"type,omitempty"`
 }
