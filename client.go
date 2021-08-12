@@ -531,6 +531,20 @@ func (client *gocloak) LoginClient(ctx context.Context, clientID, clientSecret, 
 	})
 }
 
+// LoginClientTokenExchange will exchange the presented token for a user's token
+// Requires Token-Exchange is enabled: https://www.keycloak.org/docs/latest/securing_apps/index.html#_token-exchange
+func (client *gocloak) LoginClientTokenExchange(ctx context.Context, clientID, clientSecret, realm, token, targetClient, userID string) (*JWT, error) {
+	return client.GetToken(ctx, realm, TokenOptions{
+		ClientID:           &clientID,
+		ClientSecret:       &clientSecret,
+		GrantType:          StringP("urn:ietf:params:oauth:grant-type:token-exchange"),
+		SubjectToken:       &token,
+		RequestedTokenType: StringP("urn:ietf:params:oauth:token-type:refresh_token"),
+		Audience:           &targetClient,
+		RequestedSubject:   &userID,
+	})
+}
+
 // LoginClientSignedJWT performs a login with client credentials and signed jwt claims
 func (client *gocloak) LoginClientSignedJWT(
 	ctx context.Context,
