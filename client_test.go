@@ -4704,6 +4704,312 @@ func TestGocloak_CreateListGetUpdateDeletePolicy(t *testing.T) {
 	require.Equal(t, *(createdPolicy.Name), *(updatedPolicy.Name))
 }
 
+func TestGocloak_ErrorsGetAuthorizationPolicyAssociatedPolicies(t *testing.T) {
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	// Create Policy
+	policy, parentPolicyID := CreatePolicy(t, client, gocloakClientID, gocloak.PolicyRepresentation{
+		Name:        GetRandomNameP("PolicyName"),
+		Description: gocloak.StringP("Policy Description"),
+		Type:        gocloak.StringP("client"),
+		Logic:       gocloak.POSITIVE,
+		ClientPolicyRepresentation: gocloak.ClientPolicyRepresentation{
+			Clients: &[]string{
+				gocloakClientID,
+			},
+		},
+	})
+
+	// Create Resource
+	resource, resourceID := CreateResource(t, client, gocloakClientID)
+
+	// Create Permission
+	permission, permissionID := CreatePermission(t, client, gocloakClientID, gocloak.PermissionRepresentation{
+		Name:        GetRandomNameP("PermissionName"),
+		Description: gocloak.StringP("Permission Description"),
+		Resources: &[]string{
+			resourceID,
+		},
+		Policies: &[]string{
+			parentPolicyID,
+		},
+		Type: gocloak.StringP("resource"),
+	})
+
+	func() {
+		permission()
+		resource()
+		policy()
+	}()
+
+	// List Polices
+	_, err := client.GetAuthorizationPolicyAssociatedPolicies(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		permissionID,
+	)
+	require.Error(t, err, "GetAuthorizationPolicyAssociatedPolicies no error")
+}
+
+func TestGocloak_GetAuthorizationPolicyAssociatedPolicies(t *testing.T) {
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	// Create Policy
+	policyName := "parentPolicy"
+	parentPolicy, parentPolicyID := CreatePolicy(t, client, gocloakClientID, gocloak.PolicyRepresentation{
+		Name:        gocloak.StringP(policyName),
+		Description: gocloak.StringP("Policy Description"),
+		Type:        gocloak.StringP("client"),
+		Logic:       gocloak.POSITIVE,
+		ClientPolicyRepresentation: gocloak.ClientPolicyRepresentation{
+			Clients: &[]string{
+				gocloakClientID,
+			},
+		},
+	})
+
+	// Create Resource
+	resource, resourceID := CreateResource(t, client, gocloakClientID)
+
+	// Create Permission
+	permission, permissionID := CreatePermission(t, client, gocloakClientID, gocloak.PermissionRepresentation{
+		Name:        GetRandomNameP("PermissionName"),
+		Description: gocloak.StringP("Permission Description"),
+		Resources: &[]string{
+			resourceID,
+		},
+		Policies: &[]string{
+			parentPolicyID,
+		},
+		Type: gocloak.StringP("resource"),
+	})
+
+	// List Polices
+	policies, err := client.GetAuthorizationPolicyAssociatedPolicies(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		permissionID,
+	)
+	require.NoError(t, err, "GetAuthorizationPolicyAssociatedPolicies failed")
+	require.Equal(t, *policies[0].Name, policyName)
+
+	// Delete
+	defer func() {
+		permission()
+		resource()
+		parentPolicy()
+	}()
+}
+
+func TestGocloak_ErrorsGetAuthorizationPolicyResources(t *testing.T) {
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	// Create Policy
+	policy, policyID := CreatePolicy(t, client, gocloakClientID, gocloak.PolicyRepresentation{
+		Name:        GetRandomNameP("PolicyName"),
+		Description: gocloak.StringP("Policy Description"),
+		Type:        gocloak.StringP("client"),
+		Logic:       gocloak.POSITIVE,
+		ClientPolicyRepresentation: gocloak.ClientPolicyRepresentation{
+			Clients: &[]string{
+				gocloakClientID,
+			},
+		},
+	})
+
+	// Create Resource
+	resource, resourceID := CreateResource(t, client, gocloakClientID)
+
+	// Create Permission
+	_, permissionID := CreatePermission(t, client, gocloakClientID, gocloak.PermissionRepresentation{
+		Name:        GetRandomNameP("PermissionName"),
+		Description: gocloak.StringP("Permission Description"),
+		Resources: &[]string{
+			resourceID,
+		},
+		Policies: &[]string{
+			policyID,
+		},
+		Type: gocloak.StringP("resource"),
+	})
+
+	func() {
+		resource()
+		policy()
+	}()
+
+	// List Polices
+	_, err := client.GetAuthorizationPolicyResources(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		permissionID,
+	)
+	require.Error(t, err, "GetAuthorizationPolicyResources no error")
+}
+
+func TestGocloak_GetAuthorizationPolicyResources(t *testing.T) {
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	// Create Policy
+	policy, policyID := CreatePolicy(t, client, gocloakClientID, gocloak.PolicyRepresentation{
+		Name:        GetRandomNameP("PolicyName"),
+		Description: gocloak.StringP("Policy Description"),
+		Type:        gocloak.StringP("client"),
+		Logic:       gocloak.POSITIVE,
+		ClientPolicyRepresentation: gocloak.ClientPolicyRepresentation{
+			Clients: &[]string{
+				gocloakClientID,
+			},
+		},
+	})
+
+	// Create Resource
+	resource, resourceID := CreateResource(t, client, gocloakClientID)
+
+	// Create Permission
+	_, permissionID := CreatePermission(t, client, gocloakClientID, gocloak.PermissionRepresentation{
+		Name:        GetRandomNameP("PermissionName"),
+		Description: gocloak.StringP("Permission Description"),
+		Resources: &[]string{
+			resourceID,
+		},
+		Policies: &[]string{
+			policyID,
+		},
+		Type: gocloak.StringP("resource"),
+	})
+
+	// List Polices
+	resources, err := client.GetAuthorizationPolicyResources(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		permissionID,
+	)
+	require.NoError(t, err, "GetAuthorizationPolicyResources failed")
+	require.Equal(t, *resources[0].ID, resourceID)
+
+	defer func() {
+		resource()
+		policy()
+	}()
+}
+
+func TestGocloak_ErrorsGetAuthorizationPolicyScopes(t *testing.T) {
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	// Create Policy
+	policy, policyID := CreatePolicy(t, client, gocloakClientID, gocloak.PolicyRepresentation{
+		Name:        GetRandomNameP("PolicyName"),
+		Description: gocloak.StringP("Policy Description"),
+		Type:        gocloak.StringP("client"),
+		Logic:       gocloak.POSITIVE,
+		ClientPolicyRepresentation: gocloak.ClientPolicyRepresentation{
+			Clients: &[]string{
+				gocloakClientID,
+			},
+		},
+	})
+
+	// Create SCOPE
+	scope, scopeID := CreateScope(t, client, gocloakClientID)
+
+	// Create Permission
+	_, permissionID := CreatePermission(t, client, gocloakClientID, gocloak.PermissionRepresentation{
+		Name:        GetRandomNameP("PermissionName"),
+		Description: gocloak.StringP("Permission Description"),
+		Resources: &[]string{
+			scopeID,
+		},
+		Policies: &[]string{
+			policyID,
+		},
+		Type: gocloak.StringP("resource"),
+	})
+
+	func() {
+		scope()
+		policy()
+	}()
+
+	// List Polices
+	_, err := client.GetAuthorizationPolicyScopes(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		permissionID,
+	)
+	require.Error(t, err, "GetAuthorizationPolicyScopes no error")
+}
+
+func TestGocloak_GetAuthorizationPolicyScopes(t *testing.T) {
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	// Create Policy
+	policy, policyID := CreatePolicy(t, client, gocloakClientID, gocloak.PolicyRepresentation{
+		Name:        GetRandomNameP("PolicyName"),
+		Description: gocloak.StringP("Policy Description"),
+		Type:        gocloak.StringP("client"),
+		Logic:       gocloak.POSITIVE,
+		ClientPolicyRepresentation: gocloak.ClientPolicyRepresentation{
+			Clients: &[]string{
+				gocloakClientID,
+			},
+		},
+	})
+
+	// Create Resource
+	scope, scopeID := CreateScope(t, client, gocloakClientID)
+
+	// Create Permission
+	_, permissionID := CreatePermission(t, client, gocloakClientID, gocloak.PermissionRepresentation{
+		Name:        GetRandomNameP("PermissionName"),
+		Description: gocloak.StringP("Permission Description"),
+		Scopes: &[]string{
+			scopeID,
+		},
+		Policies: &[]string{
+			policyID,
+		},
+		Type: gocloak.StringP("resource"),
+	})
+	// List Polices
+	scopes, err := client.GetAuthorizationPolicyScopes(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		permissionID,
+	)
+	require.NoError(t, err, "GetAuthorizationPolicyScopes failed")
+	require.Equal(t, *scopes[0].ID, scopeID)
+
+	defer func() {
+		scope()
+		policy()
+	}()
+}
+
 func TestGocloak_CreateGetUpdateDeleteResourcePolicy(t *testing.T) {
 	// parallel is causing intermittent conflict with role-based test GetClientScopeMappingsClientRolesAvailable
 	cfg := GetConfig(t)
