@@ -20,6 +20,8 @@ import (
 	"github.com/Nerzal/gocloak/v8/pkg/jwx"
 )
 
+
+
 type gocloak struct {
 	basePath    string
 	certsCache  sync.Map
@@ -2121,7 +2123,21 @@ func (client *gocloak) GetUserGroups(ctx context.Context, token, realm, userID s
 
 	return result, nil
 }
+// GetUsersByRoleName returns all users have a given role
+func (client *gocloak) GetUsersByRoleName(ctx context.Context, token, realm, roleName string) ([]*User, error) {
+	const errMessage = "could not get users by role name"
 
+	var result []*User
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "roles", roleName, "users"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
 // GetUsers get all users in realm
 func (client *gocloak) GetUsers(ctx context.Context, token, realm string, params GetUsersParams) ([]*User, error) {
 	const errMessage = "could not get users"
