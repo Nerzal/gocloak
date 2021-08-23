@@ -20,8 +20,6 @@ import (
 	"github.com/Nerzal/gocloak/v8/pkg/jwx"
 )
 
-
-
 type gocloak struct {
 	basePath    string
 	certsCache  sync.Map
@@ -1392,6 +1390,22 @@ func (client *gocloak) GetGroups(ctx context.Context, token, realm string, param
 	return result, nil
 }
 
+// GetGroupsByRole gets groups assigned with a specific role of a realm
+func (client *gocloak) GetGroupsByRole(ctx context.Context, token, realm string, roleName string) ([]*Group, error) {
+	const errMessage = "could not get groups"
+
+	var result []*Group
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(fmt.Sprintf("%s/%s/%s", client.getAdminRealmURL(realm, "roles"), roleName, "groups"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // GetGroupsCount gets the groups count in the realm
 func (client *gocloak) GetGroupsCount(ctx context.Context, token, realm string, params GetGroupsParams) (int, error) {
 	const errMessage = "could not get groups count"
@@ -2123,21 +2137,7 @@ func (client *gocloak) GetUserGroups(ctx context.Context, token, realm, userID s
 
 	return result, nil
 }
-// GetUsersByRoleName returns all users have a given role
-func (client *gocloak) GetUsersByRoleName(ctx context.Context, token, realm, roleName string) ([]*User, error) {
-	const errMessage = "could not get users by role name"
 
-	var result []*User
-	resp, err := client.getRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
-		Get(client.getAdminRealmURL(realm, "roles", roleName, "users"))
-
-	if err := checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return result, nil
-}
 // GetUsers get all users in realm
 func (client *gocloak) GetUsers(ctx context.Context, token, realm string, params GetUsersParams) ([]*User, error) {
 	const errMessage = "could not get users"
