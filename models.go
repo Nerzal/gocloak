@@ -1090,6 +1090,18 @@ type ResourcePolicyRepresentation struct {
 	Type             *string           `json:"type,omitempty"`
 }
 
+// PolicyScopeRepresentation is a representation of a scopes of specific policy
+type PolicyScopeRepresentation struct {
+	ID   *string `json:"id,omitempty"`
+	Name *string `json:"name,omitempty"`
+}
+
+// PolicyResourceRepresentation is a representation of a resource of specific policy
+type PolicyResourceRepresentation struct {
+	ID   *string `json:"_id,omitempty"`
+	Name *string `json:"name,omitempty"`
+}
+
 // GetResourcePoliciesParams is a representation of the query params for getting policies
 type GetResourcePoliciesParams struct {
 	ResourceID *string `json:"resource_id,omitempty"`
