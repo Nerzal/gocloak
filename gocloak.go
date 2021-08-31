@@ -163,6 +163,8 @@ type GoCloak interface {
 	RemoveDefaultGroup(ctx context.Context, accessToken, realm, groupID string) error
 	// GetGroups gets all groups of the given realm
 	GetGroups(ctx context.Context, accessToken, realm string, params GetGroupsParams) ([]*Group, error)
+	// GetGroupsByRole gets groups with specified roles assigned of given realm
+	GetGroupsByRole(ctx context.Context, accessToken, realm string, roleName string) ([]*Group, error)
 	// GetGroupsCount gets groups count of the given realm
 	GetGroupsCount(ctx context.Context, token, realm string, params GetGroupsParams) (int, error)
 	// GetGroup gets the given group
