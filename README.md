@@ -30,14 +30,16 @@ Breaking changes were introduced in #285
 See: https://github.com/Nerzal/gocloak/pull/285/files
 
 New Features:
-- #301
-- #299
-- #296
-- #294
-- #293
-- #290
-- #288
-- #287
+- #301 adding APIs handler to fetch policy resources 
+- #299 GroupList Retrieval by RoleName
+- #296 Fixed incorrect json representation of ResourceType in PermissionRepresentation
+- #294 Remove duplicate quotes in README.md
+- #293 add IDPAlias IDPUserID query parameter to GetUsersParams
+- #290 Consent revocation endpoint
+- #288 Add support for token exchange login method
+
+Bugifxes:
+- #287 bugfix: clear up id of client and client_id confusion
 
 ### v8
 
