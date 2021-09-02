@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1616415682718,
+  "lastUpdate": 1630584570746,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -2781,6 +2781,52 @@ window.BENCHMARK_DATA = {
             "value": 58754202,
             "unit": "ns/op\t   51932 B/op\t     218 allocs/op",
             "extra": "19 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tt@fino.digital",
+            "name": "Tobias Theel"
+          },
+          "committer": {
+            "email": "tt@fino.digital",
+            "name": "Tobias Theel"
+          },
+          "distinct": true,
+          "id": "0bdb1134b12213545f53c414192afd2b85f703d0",
+          "message": "fix github action syntax error",
+          "timestamp": "2021-09-02T14:07:05+02:00",
+          "tree_id": "cda50f96a6642234894f7021bd567a4431be1427",
+          "url": "https://github.com/Nerzal/gocloak/commit/0bdb1134b12213545f53c414192afd2b85f703d0"
+        },
+        "date": 1630584570168,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 71286667,
+            "unit": "ns/op\t   72449 B/op\t     218 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 71802680,
+            "unit": "ns/op\t   62883 B/op\t     217 allocs/op",
+            "extra": "15 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 71674145,
+            "unit": "ns/op\t   59808 B/op\t     217 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 44761084,
+            "unit": "ns/op\t   65663 B/op\t     217 allocs/op",
+            "extra": "28 times\n2 procs"
           }
         ]
       }
