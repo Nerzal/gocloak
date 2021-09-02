@@ -92,13 +92,13 @@ There are a lot of backward incompatible changes:
 ### Installation
 
 ```shell
-go get github.com/Nerzal/gocloak/v8
+go get github.com/Nerzal/gocloak/v9
 ```
 
 ### Importing
 
 ```go
- import "github.com/Nerzal/gocloak/v8"
+ import "github.com/Nerzal/gocloak/v9"
 ```
 
 ### Create New User
