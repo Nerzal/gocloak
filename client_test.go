@@ -5914,7 +5914,7 @@ func Test_ImportIdentityProviderConfig(t *testing.T) {
 }
 
 func Test_ImportIdentityProviderConfigFromFile(t *testing.T) {
-	//t.Parallel()
+	//// t.Parallel()
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
