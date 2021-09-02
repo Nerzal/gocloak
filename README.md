@@ -24,6 +24,21 @@ Benchmarks can be found [here](https://nerzal.github.io/gocloak/dev/bench/)
 
 ## Changelog
 
+### V9
+
+Breaking changes were introduced in #285
+See: https://github.com/Nerzal/gocloak/pull/285/files
+
+New Features:
+- #301
+- #299
+- #296
+- #294
+- #293
+- #290
+- #288
+- #287
+
 ### v8
 
 Features:
