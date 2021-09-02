@@ -27,7 +27,7 @@ jobs:
           sleep 15
       - name: Unit Tests
         run: |
-          go test -race -cover -coverprofile=coverage.txt -covermode=atomic -cpu 1,2 -bench . -benchmem > test.log
+          go test -race -cover -coverprofile=coverage.txt -covermode=atomic -p 10 -cpu 1,2 -bench . -benchmem > test.log
           cat test.log
       - name: Failed Logs
         if: failure()
