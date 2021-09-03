@@ -1088,6 +1088,7 @@ type ResourcePolicyRepresentation struct {
 	DecisionStrategy *DecisionStrategy `json:"decisionStrategy,omitempty"`
 	Owner            *string           `json:"owner,omitempty"`
 	Type             *string           `json:"type,omitempty"`
+	Users            *[]string         `json:"users,omitempty"`
 }
 
 // PolicyScopeRepresentation is a representation of a scopes of specific policy

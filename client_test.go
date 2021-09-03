@@ -5067,66 +5067,80 @@ func Test_CreateGetUpdateDeleteResourcePolicy(t *testing.T) {
 	require.NoError(t, err, "could not create client role")
 	t.Logf("Created ClientRole: %+v", roleID)
 
+	tearDownUser, userID := CreateUser(t, client)
+	defer tearDownUser()
+
 	scopes := []string{"message-post"}
 	policyNameP := GetRandomNameP("PolicyName")
-	policy := gocloak.ResourcePolicyRepresentation{
-		Name:        policyNameP,
-		Description: gocloak.StringP("Role Policy"),
-		Scopes:      &scopes,
-		Roles:       &[]string{roleName},
+
+	policies := []gocloak.ResourcePolicyRepresentation{
+		{
+			Name:        policyNameP,
+			Description: gocloak.StringP("Role Policy"),
+			Scopes:      &scopes,
+			Roles:       &[]string{roleName},
+		},
+		{
+			Name:        policyNameP,
+			Description: gocloak.StringP("User Policy"),
+			Scopes:      &scopes,
+			Users:       &[]string{userID},
+		},
 	}
 
-	result, err := client.CreateResourcePolicy(context.Background(), token.AccessToken, cfg.GoCloak.Realm, resourceID, policy)
-	require.NoError(t, err, "could not create resource policy")
-	require.Equal(t, "Role Policy", *(result.Description))
+	for _, policy := range policies {
+		result, err := client.CreateResourcePolicy(context.Background(), token.AccessToken, cfg.GoCloak.Realm, resourceID, policy)
+		require.NoError(t, err, "could not create resource policy")
+		require.Equal(t, *(policy.Description), *(result.Description))
 
-	result, err = client.GetResourcePolicy(context.Background(), token.AccessToken, cfg.GoCloak.Realm, *(result.ID))
-	require.NoError(t, err, "could not get resource policy")
-	require.Equal(t, scopes, *(result.Scopes))
+		result, err = client.GetResourcePolicy(context.Background(), token.AccessToken, cfg.GoCloak.Realm, *(result.ID))
+		require.NoError(t, err, "could not get resource policy")
+		require.Equal(t, scopes, *(result.Scopes))
 
-	newScopes := []string{"message-view"}
-	result.Scopes = &newScopes
+		newScopes := []string{"message-view"}
+		result.Scopes = &newScopes
 
-	err = client.UpdateResourcePolicy(context.Background(), token.AccessToken, cfg.GoCloak.Realm, *(result.ID), *result)
-	require.NoError(t, err, "could not get resource policy")
+		err = client.UpdateResourcePolicy(context.Background(), token.AccessToken, cfg.GoCloak.Realm, *(result.ID), *result)
+		require.NoError(t, err, "could not get resource policy")
 
-	result, err = client.GetResourcePolicy(context.Background(), token.AccessToken, cfg.GoCloak.Realm, *(result.ID))
-	require.NoError(t, err, "could not get resource policy")
-	require.Equal(t, newScopes, *(result.Scopes))
+		result, err = client.GetResourcePolicy(context.Background(), token.AccessToken, cfg.GoCloak.Realm, *(result.ID))
+		require.NoError(t, err, "could not get resource policy")
+		require.Equal(t, newScopes, *(result.Scopes))
 
-	params := gocloak.GetResourcePoliciesParams{
-		Scope: gocloak.StringP("message-view"),
+		params := gocloak.GetResourcePoliciesParams{
+			Scope: gocloak.StringP("message-view"),
+		}
+		policies, err := client.GetResourcePolicies(context.Background(), token.AccessToken, cfg.GoCloak.Realm, params)
+		require.NoError(t, err, "could not get resource policies")
+		require.Equal(t, 1, len(policies))
+		require.False(t, policies[0] == nil)
+
+		if len(policies) == 1 && policies[0] != nil {
+			require.Equal(t, *policyNameP, *(policies[0].Name))
+		}
+		err = client.DeleteResourcePolicy(context.Background(), token.AccessToken, cfg.GoCloak.Realm, *(result.ID))
+		require.NoError(t, err, "could not delete resource policies")
+
+		policies, err = client.GetResourcePolicies(context.Background(), token.AccessToken, cfg.GoCloak.Realm, params)
+		require.NoError(t, err, "could not get resource policies")
+		require.Equal(t, 0, len(policies))
+
+		// Test error handling
+		_, err = client.CreateResourcePolicy(context.Background(), token.AccessToken, cfg.GoCloak.Realm, "", policy)
+		require.Error(t, err, "should not create resource policy without resourceID")
+
+		_, err = client.GetResourcePolicy(context.Background(), "", cfg.GoCloak.Realm, "asdfasdfasdfasdf")
+		require.Error(t, err, "should not get resource policy without token")
+
+		err = client.UpdateResourcePolicy(context.Background(), token.AccessToken, cfg.GoCloak.Realm, "", policy)
+		require.Error(t, err, "should not update resource policy without token")
+
+		_, err = client.GetResourcePolicies(context.Background(), "", cfg.GoCloak.Realm, params)
+		require.Error(t, err, "should not get resource policies without token")
+
+		err = client.DeleteResourcePolicy(context.Background(), token.AccessToken, cfg.GoCloak.Realm, "")
+		require.Error(t, err, "should not delete resource policy without permission ID")
 	}
-	policies, err := client.GetResourcePolicies(context.Background(), token.AccessToken, cfg.GoCloak.Realm, params)
-	require.NoError(t, err, "could not get resource policies")
-	require.Equal(t, 1, len(policies))
-	require.False(t, policies[0] == nil)
-
-	if len(policies) == 1 && policies[0] != nil {
-		require.Equal(t, *policyNameP, *(policies[0].Name))
-	}
-	err = client.DeleteResourcePolicy(context.Background(), token.AccessToken, cfg.GoCloak.Realm, *(result.ID))
-	require.NoError(t, err, "could not delete resource policies")
-
-	policies, err = client.GetResourcePolicies(context.Background(), token.AccessToken, cfg.GoCloak.Realm, params)
-	require.NoError(t, err, "could not get resource policies")
-	require.Equal(t, 0, len(policies))
-
-	// Test error handling
-	_, err = client.CreateResourcePolicy(context.Background(), token.AccessToken, cfg.GoCloak.Realm, "", policy)
-	require.Error(t, err, "should not create resource policy without resourceID")
-
-	_, err = client.GetResourcePolicy(context.Background(), "", cfg.GoCloak.Realm, "asdfasdfasdfasdf")
-	require.Error(t, err, "should not get resource policy without token")
-
-	err = client.UpdateResourcePolicy(context.Background(), token.AccessToken, cfg.GoCloak.Realm, "", policy)
-	require.Error(t, err, "should not update resource policy without token")
-
-	_, err = client.GetResourcePolicies(context.Background(), "", cfg.GoCloak.Realm, params)
-	require.Error(t, err, "should not get resource policies without token")
-
-	err = client.DeleteResourcePolicy(context.Background(), token.AccessToken, cfg.GoCloak.Realm, "")
-	require.Error(t, err, "should not delete resource policy without permission ID")
 }
 
 func Test_RolePolicy(t *testing.T) {
