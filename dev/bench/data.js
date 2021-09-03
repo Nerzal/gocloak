@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1630585902372,
+  "lastUpdate": 1630657601298,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -2873,6 +2873,54 @@ window.BENCHMARK_DATA = {
             "value": 47254681,
             "unit": "ns/op\t   56970 B/op\t     216 allocs/op",
             "extra": "24 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "theel.tobias@gmx.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "55a9df0b418207ed0a166820ff41fa0fb8282d5e",
+          "message": "Merge pull request #303 from mpawlowski/main\n\nadd Users to ResourcePolicyRepresentation",
+          "timestamp": "2021-09-03T10:24:16+02:00",
+          "tree_id": "d2ce12ad510de5168b838ed1fea678587224f860",
+          "url": "https://github.com/Nerzal/gocloak/commit/55a9df0b418207ed0a166820ff41fa0fb8282d5e"
+        },
+        "date": 1630657600826,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 71716813,
+            "unit": "ns/op\t   61337 B/op\t     219 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 73035706,
+            "unit": "ns/op\t   60789 B/op\t     218 allocs/op",
+            "extra": "14 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 72880815,
+            "unit": "ns/op\t   63017 B/op\t     219 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 41935828,
+            "unit": "ns/op\t   56186 B/op\t     216 allocs/op",
+            "extra": "28 times\n2 procs"
           }
         ]
       }
