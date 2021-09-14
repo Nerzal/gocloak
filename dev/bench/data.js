@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1630657601298,
+  "lastUpdate": 1631608211032,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -2921,6 +2921,54 @@ window.BENCHMARK_DATA = {
             "value": 41935828,
             "unit": "ns/op\t   56186 B/op\t     216 allocs/op",
             "extra": "28 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "theel.tobias@gmx.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "028d38203f4a3b0e69848da4f148fd8afc236525",
+          "message": "Merge pull request #305 from moritz-muecke/wrong-function-signature-token-exchange\n\nFix wrong function signature",
+          "timestamp": "2021-09-14T10:27:30+02:00",
+          "tree_id": "53aba0130b4d2f47f7c0df45440b3fb76929b231",
+          "url": "https://github.com/Nerzal/gocloak/commit/028d38203f4a3b0e69848da4f148fd8afc236525"
+        },
+        "date": 1631608210480,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 73618318,
+            "unit": "ns/op\t   65050 B/op\t     218 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 82876739,
+            "unit": "ns/op\t   76887 B/op\t     219 allocs/op",
+            "extra": "15 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 71096240,
+            "unit": "ns/op\t   48632 B/op\t     217 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 47089474,
+            "unit": "ns/op\t   54029 B/op\t     215 allocs/op",
+            "extra": "30 times\n2 procs"
           }
         ]
       }
