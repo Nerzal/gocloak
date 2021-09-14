@@ -26,6 +26,13 @@ Benchmarks can be found [here](https://nerzal.github.io/gocloak/dev/bench/)
 
 ### V9
 
+#### V9.0.2
+
+Bugfix: #305 Fix function signature of LoginClientTokenExchange function
+
+
+#### V9.0.1
+
 Breaking changes were introduced in #285
 See: https://github.com/Nerzal/gocloak/pull/285/files
 
