@@ -26,7 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/pkcs12"
 
-	"github.com/Nerzal/gocloak/v9"
+	"github.com/Nerzal/gocloak/v10"
 )
 
 type configAdmin struct {
@@ -872,7 +872,6 @@ func Test_DecodeAccessToken(t *testing.T) {
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		"",
 	)
 	require.NoError(t, err)
 	t.Log(resultToken)
@@ -889,7 +888,6 @@ func Test_DecodeAccessTokenCustomClaims(t *testing.T) {
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		"",
 		claims,
 	)
 	require.NoError(t, err)
