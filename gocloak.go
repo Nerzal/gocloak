@@ -43,7 +43,7 @@ type GoCloak interface {
 	// LoginClientTokenExchange requests a login on a specified users behalf. Returning a user's tokens.
 	LoginClientTokenExchange(ctx context.Context, clientID, token, clientSecret, realm, targetClient, userID string) (*JWT, error)
 	// LoginClientSignedJWT performs a login with client credentials and signed jwt claims
-	LoginClientSignedJWT(ctx context.Context, idOfClient, realm string, key interface{}, signedMethod jwt.SigningMethod, expiresAt *jwt.Time) (*JWT, error)
+	LoginClientSignedJWT(ctx context.Context, idOfClient, realm string, key interface{}, signedMethod jwt.SigningMethod, expiresAt *jwt.NumericDate) (*JWT, error)
 	// LoginAdmin login as admin
 	LoginAdmin(ctx context.Context, username, password, realm string) (*JWT, error)
 	// RefreshToken used to refresh the token
