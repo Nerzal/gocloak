@@ -10,7 +10,7 @@ import (
 	"math/big"
 	"strings"
 
-	jwt "github.com/dgrijalva/jwt-go/v4"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/pkg/errors"
 )
 
@@ -97,7 +97,7 @@ func DecodeAccessToken(accessToken string, e, n *string, expectedAudience string
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return rsaPublicKey, nil
-	}, audValidation)
+	})
 
 	if err != nil {
 		return nil, nil, errors.Wrap(err, errMessage)

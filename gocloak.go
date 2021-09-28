@@ -4,8 +4,8 @@ import (
 	"context"
 	"io"
 
-	"github.com/dgrijalva/jwt-go/v4"
 	"github.com/go-resty/resty/v2"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 // GoCloak holds all methods a client should fulfill

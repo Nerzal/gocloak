@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dgrijalva/jwt-go/v4"
 	"github.com/go-resty/resty/v2"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/segmentio/ksuid"
@@ -552,9 +552,9 @@ func (client *gocloak) LoginClientSignedJWT(
 	realm string,
 	key interface{},
 	signedMethod jwt.SigningMethod,
-	expiresAt *jwt.Time,
+	expiresAt *jwt.NumericDate,
 ) (*JWT, error) {
-	claims := jwt.StandardClaims{
+	claims := jwt.RegisteredClaims{
 		ExpiresAt: expiresAt,
 		Issuer:    clientID,
 		Subject:   clientID,
