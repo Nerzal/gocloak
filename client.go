@@ -2914,7 +2914,7 @@ func (client *gocloak) UpdatePolicy(ctx context.Context, token, realm, idOfClien
 
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
 		SetBody(policy).
-		Put(client.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "policy", *(policy.ID)))
+		Put(client.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "policy", *(policy.Type), *(policy.ID)))
 
 	return checkForError(resp, err, errMessage)
 }
@@ -3325,7 +3325,7 @@ func (client *gocloak) UpdatePermission(ctx context.Context, token, realm, idOfC
 	}
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
 		SetBody(permission).
-		Put(client.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "permission", *permission.ID))
+		Put(client.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "permission", *permission.Type, *permission.ID))
 
 	return checkForError(resp, err, errMessage)
 }
