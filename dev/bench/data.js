@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1631611817674,
+  "lastUpdate": 1633606834185,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -3015,6 +3015,54 @@ window.BENCHMARK_DATA = {
             "value": 58626461,
             "unit": "ns/op\t   64616 B/op\t     219 allocs/op",
             "extra": "21 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "theel.tobias@gmx.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "be5eb89ecb833e341414209403f7e7dffc5b61f7",
+          "message": "Merge pull request #310 from Omnia-Wahid/main\n\ntype are added to the path of update policy and update permission fix #308",
+          "timestamp": "2021-10-07T13:37:32+02:00",
+          "tree_id": "1fbcdc32a967be514052cb6948228d48a487edbd",
+          "url": "https://github.com/Nerzal/gocloak/commit/be5eb89ecb833e341414209403f7e7dffc5b61f7"
+        },
+        "date": 1633606833631,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 88279456,
+            "unit": "ns/op\t   52704 B/op\t     216 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 90349972,
+            "unit": "ns/op\t   66934 B/op\t     221 allocs/op",
+            "extra": "12 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 89268310,
+            "unit": "ns/op\t   42735 B/op\t     219 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 52468756,
+            "unit": "ns/op\t   63360 B/op\t     217 allocs/op",
+            "extra": "25 times\n2 procs"
           }
         ]
       }
