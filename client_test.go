@@ -4701,7 +4701,16 @@ func Test_CreateListGetUpdateDeletePolicy(t *testing.T) {
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		gocloakClientID,
-		*createdPolicy,
+		gocloak.PolicyRepresentation{
+			ID:          createdPolicy.ID,
+			Name:        createdPolicy.Name,
+			Description: createdPolicy.Description,
+			Type:        createdPolicy.Type,
+			Logic:       createdPolicy.Logic,
+			JSPolicyRepresentation: gocloak.JSPolicyRepresentation{
+				Code: gocloak.StringP("$evaluation.grant();"),
+			},
+		},
 	)
 	require.NoError(t, err, "UpdatePolicy failed")
 
