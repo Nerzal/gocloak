@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1634125039312,
+  "lastUpdate": 1634125124348,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -3109,6 +3109,54 @@ window.BENCHMARK_DATA = {
             "value": 42242212,
             "unit": "ns/op\t   60547 B/op\t     217 allocs/op",
             "extra": "28 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "theel.tobias@gmx.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "42526f4576b0abe7fefe44420bfc70d4dd0e55ff",
+          "message": "Create codeql-analysis.yml",
+          "timestamp": "2021-10-13T13:36:06+02:00",
+          "tree_id": "73b627fcf44615548aba4c21fd5534a192025e8e",
+          "url": "https://github.com/Nerzal/gocloak/commit/42526f4576b0abe7fefe44420bfc70d4dd0e55ff"
+        },
+        "date": 1634125123830,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 80901275,
+            "unit": "ns/op\t   63634 B/op\t     217 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 71548663,
+            "unit": "ns/op\t   58593 B/op\t     218 allocs/op",
+            "extra": "15 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 77056284,
+            "unit": "ns/op\t   60416 B/op\t     217 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 51975812,
+            "unit": "ns/op\t   43484 B/op\t     219 allocs/op",
+            "extra": "24 times\n2 procs"
           }
         ]
       }
