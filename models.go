@@ -688,6 +688,7 @@ type RealmRepresentation struct {
 	DefaultGroups                       *[]string            `json:"defaultGroups,omitempty"`
 	DefaultLocale                       *string              `json:"defaultLocale,omitempty"`
 	DefaultOptionalClientScopes         *[]string            `json:"defaultOptionalClientScopes,omitempty"`
+	DefaultRole                         *Role                `json:"defaultRole,omitempty"`
 	DefaultRoles                        *[]string            `json:"defaultRoles,omitempty"`
 	DefaultSignatureAlgorithm           *string              `json:"defaultSignatureAlgorithm,omitempty"`
 	DirectGrantFlow                     *string              `json:"directGrantFlow,omitempty"`
