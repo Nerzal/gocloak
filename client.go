@@ -728,6 +728,24 @@ func (client *gocloak) CreateClient(ctx context.Context, accessToken, realm stri
 	return getID(resp), nil
 }
 
+// CreateClientRepresentation creates a new client representation
+func (client *gocloak) CreateClientRepresentation(ctx context.Context, realm string) (*Client, error) {
+	const errMessage = "could not create client representation"
+
+	var result Client
+
+	resp, err := client.getRequest(ctx).
+		SetResult(&result).
+		SetBody(Client{}).
+		Post(client.getRealmURL(realm, "clients-registrations", "default"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
 // CreateClientRole creates a new role for a client
 func (client *gocloak) CreateClientRole(ctx context.Context, token, realm, idOfClient string, role Role) (string, error) {
 	const errMessage = "could not create client role"
@@ -786,6 +804,28 @@ func (client *gocloak) UpdateClient(ctx context.Context, token, realm string, up
 	return checkForError(resp, err, errMessage)
 }
 
+// UpdateClientRepresentation updates the given client representation
+func (client *gocloak) UpdateClientRepresentation(ctx context.Context, accessToken, realm string, updatedClient Client) (*Client, error) {
+	const errMessage = "could not update client representation"
+
+	if NilOrEmpty(updatedClient.ID) {
+		return nil, errors.Wrap(errors.New("ID of a client required"), errMessage)
+	}
+
+	var result Client
+
+	resp, err := client.getRequestWithBearerAuth(ctx, accessToken).
+		SetResult(&result).
+		SetBody(updatedClient).
+		Put(client.getRealmURL(realm, "clients-registrations", "default", PString(updatedClient.ID)))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
 func (client *gocloak) UpdateRole(ctx context.Context, token, realm, idOfClient string, role Role) error {
 	const errMessage = "could not update role"
 
@@ -834,6 +874,16 @@ func (client *gocloak) DeleteComponent(ctx context.Context, token, realm, compon
 	return checkForError(resp, err, errMessage)
 }
 
+// DeleteClientRepresentation deletes a given client representation
+func (client *gocloak) DeleteClientRepresentation(ctx context.Context, accessToken, realm, clientID string) error {
+	const errMessage = "could not delete client representation"
+
+	resp, err := client.getRequestWithBearerAuth(ctx, accessToken).
+		Delete(client.getRealmURL(realm, "clients-registrations", "default", clientID))
+
+	return checkForError(resp, err, errMessage)
+}
+
 // DeleteClientRole deletes a given role
 func (client *gocloak) DeleteClientRole(ctx context.Context, token, realm, idOfClient, roleName string) error {
 	const errMessage = "could not delete client role"
@@ -862,6 +912,40 @@ func (client *gocloak) GetClient(ctx context.Context, token, realm, idOfClient s
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
 		SetResult(&result).
 		Get(client.getAdminRealmURL(realm, "clients", idOfClient))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// GetClientRepresentation returns a client representation
+func (client *gocloak) GetClientRepresentation(ctx context.Context, accessToken, realm, clientID string) (*Client, error) {
+	const errMessage = "could not get client representation"
+
+	var result Client
+
+	resp, err := client.getRequestWithBearerAuth(ctx, accessToken).
+		SetResult(&result).
+		Get(client.getRealmURL(realm, "clients-registrations", "default", clientID))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// GetAdapterConfiguration returns a adapter configuration
+func (client *gocloak) GetAdapterConfiguration(ctx context.Context, accessToken, realm, clientID string) (*AdapterConfiguration, error) {
+	const errMessage = "could not get adapter configuration"
+
+	var result AdapterConfiguration
+
+	resp, err := client.getRequestWithBearerAuth(ctx, accessToken).
+		SetResult(&result).
+		Get(client.getRealmURL(realm, "clients-registrations", "install", clientID))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
 		return nil, err

@@ -84,6 +84,8 @@ type GoCloak interface {
 	CreateClientScopeMappingsClientRoles(ctx context.Context, token, realm, idOfClient, idOfSelectedClient string, roles []Role) error
 	// CreateClientScopesScopeMappingsRealmRoles creates realm-level roles to the client-scope
 	CreateClientScopesScopeMappingsRealmRoles(ctx context.Context, token, realm, idOfClientScope string, roles []Role) error
+	// CreateClientRepresentation creates a new client representation
+	CreateClientRepresentation(ctx context.Context, realm string) (*Client, error)
 
 	// UpdateGroup updates the given group
 	UpdateGroup(ctx context.Context, accessToken, realm string, updatedGroup Group) error
@@ -93,6 +95,8 @@ type GoCloak interface {
 	UpdateClient(ctx context.Context, accessToken, realm string, updatedClient Client) error
 	// UpdateClientScope updates the given clientScope
 	UpdateClientScope(ctx context.Context, accessToken, realm string, scope ClientScope) error
+	// UpdateClientRepresentation updates the given client representation
+	UpdateClientRepresentation(ctx context.Context, accessToken, realm string, updatedClient Client) (*Client, error)
 
 	// DeleteComponent deletes the given component
 	DeleteComponent(ctx context.Context, accessToken, realm, componentID string) error
@@ -108,6 +112,8 @@ type GoCloak interface {
 	DeleteClientScopeMappingsClientRoles(ctx context.Context, token, realm, idOfClient, idOfSelectedClient string, roles []Role) error
 	// DeleteClientScopesScopeMappingsRealmRoles deletes realm-level roles from the client-scope
 	DeleteClientScopesScopeMappingsRealmRoles(ctx context.Context, token, realm, idOfClientScope string, roles []Role) error
+	// DeleteClientRepresentation deletes a given client representation
+	DeleteClientRepresentation(ctx context.Context, accessToken, realm, clientID string) error
 
 	// GetClient returns a client
 	GetClient(ctx context.Context, accessToken, realm, idOfClient string) (*Client, error)
@@ -187,6 +193,10 @@ type GoCloak interface {
 	UpdateClientProtocolMapper(ctx context.Context, token, realm, idOfClient, mapperID string, mapper ProtocolMapperRepresentation) error
 	// DeleteClientProtocolMapper deletes a protocol mapper in client scope
 	DeleteClientProtocolMapper(ctx context.Context, token, realm, idOfClient, mapperID string) error
+	// GetClientRepresentation return a client representation
+	GetClientRepresentation(ctx context.Context, accessToken, realm, clientID string) (*Client, error)
+	// GetAdapterConfiguration returns a adapter configuration
+	GetAdapterConfiguration(ctx context.Context, accessToken, realm, clientID string) (*AdapterConfiguration, error)
 
 	// *** Realm Roles ***
 
