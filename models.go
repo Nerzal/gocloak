@@ -267,6 +267,8 @@ type GetUsersParams struct {
 	Exact               *bool   `json:"exact,string,omitempty"`
 	First               *int    `json:"first,string,omitempty"`
 	FirstName           *string `json:"firstName,omitempty"`
+	IDPAlias            *string `json:"idpAlias,omitempty"`
+	IDPUserID           *string `json:"idpUserId,omitempty"`
 	LastName            *string `json:"lastName,omitempty"`
 	Max                 *int    `json:"max,string,omitempty"`
 	Search              *string `json:"search,omitempty"`
@@ -779,6 +781,10 @@ type TokenOptions struct {
 	Code                *string   `json:"code,omitempty"`
 	ClientAssertionType *string   `json:"client_assertion_type,omitempty"`
 	ClientAssertion     *string   `json:"client_assertion,omitempty"`
+	SubjectToken        *string   `json:"subject_token,omitempty"`
+	RequestedSubject    *string   `json:"requested_subject,omitempty"`
+	Audience            *string   `json:"audience,omitempty"`
+	RequestedTokenType  *string   `json:"requested_token_type,omitempty"`
 }
 
 // FormData returns a map of options to be used in SetFormData function
@@ -1083,6 +1089,19 @@ type ResourcePolicyRepresentation struct {
 	DecisionStrategy *DecisionStrategy `json:"decisionStrategy,omitempty"`
 	Owner            *string           `json:"owner,omitempty"`
 	Type             *string           `json:"type,omitempty"`
+	Users            *[]string         `json:"users,omitempty"`
+}
+
+// PolicyScopeRepresentation is a representation of a scopes of specific policy
+type PolicyScopeRepresentation struct {
+	ID   *string `json:"id,omitempty"`
+	Name *string `json:"name,omitempty"`
+}
+
+// PolicyResourceRepresentation is a representation of a resource of specific policy
+type PolicyResourceRepresentation struct {
+	ID   *string `json:"_id,omitempty"`
+	Name *string `json:"name,omitempty"`
 }
 
 // GetResourcePoliciesParams is a representation of the query params for getting policies

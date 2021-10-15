@@ -33,11 +33,15 @@ type GoCloak interface {
 	LogoutPublicClient(ctx context.Context, idOfClient, realm, accessToken, refreshToken string) error
 	// LogoutAllSessions logs out all sessions of a user given an id
 	LogoutAllSessions(ctx context.Context, accessToken, realm, userID string) error
+	// RevokeConsents revoke consent and offline tokens for particular client from user
+	RevokeUserConsents(ctx context.Context, accessToken, realm, userID, clientID string) error
 	// LogoutUserSessions logs out a single sessions of a user given a session id.
 	// NOTE: this uses bearer token, but this token must belong to a user with proper privileges
 	LogoutUserSession(ctx context.Context, accessToken, realm, session string) error
 	// LoginClient sends a request to the token endpoint using client credentials
 	LoginClient(ctx context.Context, clientID, clientSecret, realm string) (*JWT, error)
+	// LoginClientTokenExchange requests a login on a specified users behalf. Returning a user's tokens.
+	LoginClientTokenExchange(ctx context.Context, clientID, token, clientSecret, realm, targetClient, userID string) (*JWT, error)
 	// LoginClientSignedJWT performs a login with client credentials and signed jwt claims
 	LoginClientSignedJWT(ctx context.Context, idOfClient, realm string, key interface{}, signedMethod jwt.SigningMethod, expiresAt *jwt.Time) (*JWT, error)
 	// LoginAdmin login as admin
@@ -159,6 +163,8 @@ type GoCloak interface {
 	RemoveDefaultGroup(ctx context.Context, accessToken, realm, groupID string) error
 	// GetGroups gets all groups of the given realm
 	GetGroups(ctx context.Context, accessToken, realm string, params GetGroupsParams) ([]*Group, error)
+	// GetGroupsByRole gets groups with specified roles assigned of given realm
+	GetGroupsByRole(ctx context.Context, accessToken, realm string, roleName string) ([]*Group, error)
 	// GetGroupsCount gets groups count of the given realm
 	GetGroupsCount(ctx context.Context, token, realm string, params GetGroupsParams) (int, error)
 	// GetGroup gets the given group
@@ -420,6 +426,12 @@ type GoCloak interface {
 	UpdatePolicy(ctx context.Context, token, realm, idOfClient string, policy PolicyRepresentation) error
 	// DeletePolicy deletes a policy associated with the client, using access token from admin
 	DeletePolicy(ctx context.Context, token, realm, idOfClient, policyID string) error
+	// GetPolicyAssociatedPolicies returns a client's policy associated policies with the given policy id, using access token from admin
+	GetAuthorizationPolicyAssociatedPolicies(ctx context.Context, token, realm, idOfClient, policyID string) ([]*PolicyRepresentation, error)
+	// GetPolicyResources returns a client's resources of specific policy with the given policy id, using access token from admin
+	GetAuthorizationPolicyResources(ctx context.Context, token, realm, idOfClient, policyID string) ([]*PolicyResourceRepresentation, error)
+	// GetPolicyScopes returns a client's scopes of specific policy with the given policy id, using access token from admin
+	GetAuthorizationPolicyScopes(ctx context.Context, token, realm, idOfClient, policyID string) ([]*PolicyScopeRepresentation, error)
 
 	// GetResourcePolicy updates a permission for a specifc resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
 	GetResourcePolicy(ctx context.Context, token, realm, permissionID string) (*ResourcePolicyRepresentation, error)

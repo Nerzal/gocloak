@@ -9,7 +9,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2.1.3
         with:
-          go-version: 1.15
+          go-version: 1.17
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Run golangci-lint
@@ -22,12 +22,12 @@ jobs:
         uses: sonatype-nexus-community/nancy-github-action@main
       - name: Run Keycloak
         run: |
-          docker pull jboss/keycloak:latest
-          docker run -d -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=secret -e KEYCLOAK_IMPORT=/tmp/gocloak-realm.json -v "`pwd`/testdata/gocloak-realm.json:/tmp/gocloak-realm.json" -p 8080:8080 --name keycloak jboss/keycloak:latest -Dkeycloak.profile.feature.upload_scripts=enabled
-          sleep 10
+          docker pull jboss/keycloak:12.0.3
+          docker run -d -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=secret -e KEYCLOAK_IMPORT=/tmp/gocloak-realm.json -v "`pwd`/testdata/gocloak-realm.json:/tmp/gocloak-realm.json" -p 8080:8080 --name keycloak jboss/keycloak:12.0.3 -Dkeycloak.profile.feature.upload_scripts=enabled
+          sleep 15
       - name: Unit Tests
         run: |
-          go test -race -cover -coverprofile=coverage.txt -covermode=atomic -cpu 1,2 -bench . -benchmem > test.log
+          go test -failfast -race -cover -coverprofile=coverage.txt -covermode=atomic -p 100 -cpu 1,2 -bench . -benchmem > test.log
           cat test.log
       - name: Failed Logs
         if: failure()

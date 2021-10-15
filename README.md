@@ -1,6 +1,6 @@
 # gocloak
 
-[![codebeat badge](https://codebeat.co/badges/c699bc56-aa5f-4cf5-893f-5cf564391b94)](https://codebeat.co/projects/github-com-nerzal-gocloak-master)
+[![codebeat badge](https://codebeat.co/badges/18a37f35-6a95-4e40-9e78-272233892332)](https://codebeat.co/projects/github-com-nerzal-gocloak-main)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Nerzal/gocloak)](https://goreportcard.com/report/github.com/Nerzal/gocloak)
 [![Go Doc](https://godoc.org/github.com/Nerzal/gocloak?status.svg)](https://godoc.org/github.com/Nerzal/gocloak)
 [![Build Status](https://github.com/Nerzal/gocloak/workflows/Tests/badge.svg)](https://github.com/Nerzal/gocloak/actions?query=branch%3Amain+event%3Apush)
@@ -23,6 +23,30 @@ Benchmarks can be found [here](https://nerzal.github.io/gocloak/dev/bench/)
 (WIP) <https://github.com/Nerzal/gocloak/wiki/Contribute>
 
 ## Changelog
+
+### V9
+
+#### V9.0.2
+
+Bugfix: #305 Fix function signature of LoginClientTokenExchange function
+
+
+#### V9.0.1
+
+Breaking changes were introduced in #285
+See: https://github.com/Nerzal/gocloak/pull/285/files
+
+New Features:
+- #301 adding APIs handler to fetch policy resources 
+- #299 GroupList Retrieval by RoleName
+- #296 Fixed incorrect json representation of ResourceType in PermissionRepresentation
+- #294 Remove duplicate quotes in README.md
+- #293 add IDPAlias IDPUserID query parameter to GetUsersParams
+- #290 Consent revocation endpoint
+- #288 Add support for token exchange login method
+
+Bugifxes:
+- #287 bugfix: clear up id of client and client_id confusion
 
 ### v8
 
@@ -75,13 +99,13 @@ There are a lot of backward incompatible changes:
 ### Installation
 
 ```shell
-go get github.com/Nerzal/gocloak/v8
+go get github.com/Nerzal/gocloak/v9
 ```
 
 ### Importing
 
 ```go
- import "github.com/Nerzal/gocloak/v8"
+ import "github.com/Nerzal/gocloak/v9"
 ```
 
 ### Create New User
@@ -95,9 +119,9 @@ go get github.com/Nerzal/gocloak/v8
  }
 
  user := gocloak.User{
-  FirstName: gocloak.StringP(""Bob"),
-  LastName:  gocloak.StringP(""Uncle"),
-  Email:     gocloak.StringP(""something@really.wrong"),
+  FirstName: gocloak.StringP("Bob"),
+  LastName:  gocloak.StringP("Uncle"),
+  Email:     gocloak.StringP("something@really.wrong"),
   Enabled:   gocloak.BoolP(true),
   Username:  gocloak.StringP("CoolGuy"),
  }
@@ -176,6 +200,7 @@ type GoCloak interface {
  Logout(ctx context.Context, clientID, clientSecret, realm, refreshToken string) error
  LogoutPublicClient(ctx context.Context, clientID, realm, accessToken, refreshToken string) error
  LogoutAllSessions(ctx context.Context, accessToken, realm, userID string) error
+ RevokeUserConsents(ctx context.Context, accessToken, realm, userID, clientID string) error
  LogoutUserSession(ctx context.Context, accessToken, realm, session string) error
  LoginClient(ctx context.Context, clientID, clientSecret, realm string) (*JWT, error)
  LoginClientSignedJWT(ctx context.Context, clientID, realm string, key interface{}, signedMethod jwt.SigningMethod, expiresAt *jwt.Time) (*JWT, error)

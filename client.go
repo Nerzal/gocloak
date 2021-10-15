@@ -17,7 +17,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/segmentio/ksuid"
 
-	"github.com/Nerzal/gocloak/v8/pkg/jwx"
+	"github.com/Nerzal/gocloak/v9/pkg/jwx"
 )
 
 type gocloak struct {
@@ -531,6 +531,20 @@ func (client *gocloak) LoginClient(ctx context.Context, clientID, clientSecret, 
 	})
 }
 
+// LoginClientTokenExchange will exchange the presented token for a user's token
+// Requires Token-Exchange is enabled: https://www.keycloak.org/docs/latest/securing_apps/index.html#_token-exchange
+func (client *gocloak) LoginClientTokenExchange(ctx context.Context, clientID, token, clientSecret, realm, targetClient, userID string) (*JWT, error) {
+	return client.GetToken(ctx, realm, TokenOptions{
+		ClientID:           &clientID,
+		ClientSecret:       &clientSecret,
+		GrantType:          StringP("urn:ietf:params:oauth:grant-type:token-exchange"),
+		SubjectToken:       &token,
+		RequestedTokenType: StringP("urn:ietf:params:oauth:token-type:refresh_token"),
+		Audience:           &targetClient,
+		RequestedSubject:   &userID,
+	})
+}
+
 // LoginClientSignedJWT performs a login with client credentials and signed jwt claims
 func (client *gocloak) LoginClientSignedJWT(
 	ctx context.Context,
@@ -618,6 +632,15 @@ func (client *gocloak) LogoutAllSessions(ctx context.Context, accessToken, realm
 
 	resp, err := client.getRequestWithBearerAuth(ctx, accessToken).
 		Post(client.getAdminRealmURL(realm, "users", userID, "logout"))
+
+	return checkForError(resp, err, errMessage)
+}
+
+func (client *gocloak) RevokeUserConsents(ctx context.Context, accessToken, realm, userID, clientID string) error {
+	const errMessage = "could not revoke consents"
+
+	resp, err := client.getRequestWithBearerAuth(ctx, accessToken).
+		Delete(client.getAdminRealmURL(realm, "users", userID, "consents", clientID))
 
 	return checkForError(resp, err, errMessage)
 }
@@ -1359,6 +1382,22 @@ func (client *gocloak) GetGroups(ctx context.Context, token, realm string, param
 		SetResult(&result).
 		SetQueryParams(queryParams).
 		Get(client.getAdminRealmURL(realm, "groups"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// GetGroupsByRole gets groups assigned with a specific role of a realm
+func (client *gocloak) GetGroupsByRole(ctx context.Context, token, realm string, roleName string) ([]*Group, error) {
+	const errMessage = "could not get groups"
+
+	var result []*Group
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(fmt.Sprintf("%s/%s/%s", client.getAdminRealmURL(realm, "roles"), roleName, "groups"))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
 		return nil, err
@@ -2875,7 +2914,7 @@ func (client *gocloak) UpdatePolicy(ctx context.Context, token, realm, idOfClien
 
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
 		SetBody(policy).
-		Put(client.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "policy", *(policy.ID)))
+		Put(client.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "policy", *(policy.Type), *(policy.ID)))
 
 	return checkForError(resp, err, errMessage)
 }
@@ -2888,6 +2927,54 @@ func (client *gocloak) DeletePolicy(ctx context.Context, token, realm, idOfClien
 		Delete(client.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "policy", policyID))
 
 	return checkForError(resp, err, errMessage)
+}
+
+// GetAuthorizationPolicyAssociatedPolicies returns a client's associated policies of specific policy with the given policy id, using access token from admin
+func (client *gocloak) GetAuthorizationPolicyAssociatedPolicies(ctx context.Context, token, realm, idOfClient, policyID string) ([]*PolicyRepresentation, error) {
+	const errMessage = "could not get policy associated policies"
+
+	var result []*PolicyRepresentation
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "policy", policyID, "associatedPolicies"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// GetAuthorizationPolicyResources returns a client's resources of specific policy with the given policy id, using access token from admin
+func (client *gocloak) GetAuthorizationPolicyResources(ctx context.Context, token, realm, idOfClient, policyID string) ([]*PolicyResourceRepresentation, error) {
+	const errMessage = "could not get policy resources"
+
+	var result []*PolicyResourceRepresentation
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "policy", policyID, "resources"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// GetAuthorizationPolicyScopes returns a client's scopes of specific policy with the given policy id, using access token from admin
+func (client *gocloak) GetAuthorizationPolicyScopes(ctx context.Context, token, realm, idOfClient, policyID string) ([]*PolicyScopeRepresentation, error) {
+	const errMessage = "could not get policy scopes"
+
+	var result []*PolicyScopeRepresentation
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "policy", policyID, "scopes"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 // GetResourcePolicy updates a permission for a specifc resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
@@ -3238,7 +3325,7 @@ func (client *gocloak) UpdatePermission(ctx context.Context, token, realm, idOfC
 	}
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
 		SetBody(permission).
-		Put(client.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "permission", *permission.ID))
+		Put(client.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "permission", *permission.Type, *permission.ID))
 
 	return checkForError(resp, err, errMessage)
 }
