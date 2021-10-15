@@ -936,6 +936,7 @@ type GetResourceParams struct {
 	URI         *string `json:"uri,omitempty"`
 	Scope       *string `json:"scope,omitempty"`
 	MatchingURI *bool   `json:"matchingUri,string,omitempty"`
+	ExactName   *bool `json:"exactName,string,omitempty"`
 }
 
 // GetScopeParams represents the optional parameters for getting scopes
