@@ -616,6 +616,7 @@ type GetClientsParams struct {
 	ViewableOnly         *bool   `json:"viewableOnly,string,omitempty"`
 	First                *int    `json:"first,string,omitempty"`
 	Max                  *int    `json:"max,string,omitempty"`
+	Search               *bool   `json:"search,string,omitempty"`
 	SearchableAttributes *string `json:"q,omitempty"`
 }
 
