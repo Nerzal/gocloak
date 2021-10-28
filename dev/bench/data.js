@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1635425629383,
+  "lastUpdate": 1635425659414,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -3301,6 +3301,54 @@ window.BENCHMARK_DATA = {
             "value": 46006097,
             "unit": "ns/op\t   56578 B/op\t     217 allocs/op",
             "extra": "24 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "theel.tobias@gmx.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "05ae2abca43317b3da8f7d58e7bfba496222cb95",
+          "message": "Merge pull request #312 from teemuteemu/client-registration-api\n\nAdd support for client registration API",
+          "timestamp": "2021-10-28T14:51:03+02:00",
+          "tree_id": "73b8fb387947436bac35b221eabfeec0615b5437",
+          "url": "https://github.com/Nerzal/gocloak/commit/05ae2abca43317b3da8f7d58e7bfba496222cb95"
+        },
+        "date": 1635425658848,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 94955886,
+            "unit": "ns/op\t   64344 B/op\t     216 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 93544310,
+            "unit": "ns/op\t   55740 B/op\t     221 allocs/op",
+            "extra": "12 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 93543219,
+            "unit": "ns/op\t   57774 B/op\t     219 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 57707749,
+            "unit": "ns/op\t   65862 B/op\t     219 allocs/op",
+            "extra": "22 times\n2 procs"
           }
         ]
       }
