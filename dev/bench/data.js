@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1635425590180,
+  "lastUpdate": 1635425629383,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -3253,6 +3253,54 @@ window.BENCHMARK_DATA = {
             "value": 58060379,
             "unit": "ns/op\t   57929 B/op\t     219 allocs/op",
             "extra": "19 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "theel.tobias@gmx.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9226d49bdefa96af08f400558525a2c6d4518346",
+          "message": "Merge pull request #311 from bastianccm/add-default-role\n\nadd defaultRole to RealmRepresentation",
+          "timestamp": "2021-10-28T14:51:20+02:00",
+          "tree_id": "7cb8d395b86043c3388aa044c80d4df3601b75ea",
+          "url": "https://github.com/Nerzal/gocloak/commit/9226d49bdefa96af08f400558525a2c6d4518346"
+        },
+        "date": 1635425628817,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 77061388,
+            "unit": "ns/op\t   81720 B/op\t     219 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 74217088,
+            "unit": "ns/op\t   92733 B/op\t     219 allocs/op",
+            "extra": "15 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 75323486,
+            "unit": "ns/op\t   66492 B/op\t     219 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 46006097,
+            "unit": "ns/op\t   56578 B/op\t     217 allocs/op",
+            "extra": "24 times\n2 procs"
           }
         ]
       }
