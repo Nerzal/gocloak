@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1635425541837,
+  "lastUpdate": 1635425590180,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -3205,6 +3205,54 @@ window.BENCHMARK_DATA = {
             "value": 48347439,
             "unit": "ns/op\t   66037 B/op\t     218 allocs/op",
             "extra": "25 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "theel.tobias@gmx.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b135fbbe50569720821bcb1e1cc48df27297daa2",
+          "message": "Merge pull request #313 from vennekilde/main\n\nAdded ExactName param to GetResourceParams",
+          "timestamp": "2021-10-28T14:50:13+02:00",
+          "tree_id": "339ee0783e44f1ebadd8a4fdbcd3b27091657b3c",
+          "url": "https://github.com/Nerzal/gocloak/commit/b135fbbe50569720821bcb1e1cc48df27297daa2"
+        },
+        "date": 1635425589642,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 87357349,
+            "unit": "ns/op\t   73580 B/op\t     222 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 86884421,
+            "unit": "ns/op\t   57550 B/op\t     218 allocs/op",
+            "extra": "13 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 88032798,
+            "unit": "ns/op\t   55009 B/op\t     218 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 58060379,
+            "unit": "ns/op\t   57929 B/op\t     219 allocs/op",
+            "extra": "19 times\n2 procs"
           }
         ]
       }
