@@ -26,6 +26,14 @@ Benchmarks can be found [here](https://nerzal.github.io/gocloak/dev/bench/)
 
 ### V9
 
+#### V9.0.4
+
+Feature: #314 Add query parameter search to model GetClientsParams
+Feature: #313 Added ExactName param to GetSourceParams
+Feature: #312 Add support for client registration API
+Feature: #311 Add defaultRole to RealmRepresentation
+
+
 #### V9.0.2
 
 Bugfix: #305 Fix function signature of LoginClientTokenExchange function
