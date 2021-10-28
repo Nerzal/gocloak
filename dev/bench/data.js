@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1634125124348,
+  "lastUpdate": 1635425541837,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -3157,6 +3157,54 @@ window.BENCHMARK_DATA = {
             "value": 51975812,
             "unit": "ns/op\t   43484 B/op\t     219 allocs/op",
             "extra": "24 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "theel.tobias@gmx.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1735136de139ba898279ce74771381c161e73983",
+          "message": "Merge pull request #314 from yue-wen/main\n\nAdd query parameter search to model GetClientsParams",
+          "timestamp": "2021-10-28T14:49:52+02:00",
+          "tree_id": "7b959b9a2f2ee269c7af306051307c87843145be",
+          "url": "https://github.com/Nerzal/gocloak/commit/1735136de139ba898279ce74771381c161e73983"
+        },
+        "date": 1635425541090,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 75409311,
+            "unit": "ns/op\t   63494 B/op\t     219 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 72036706,
+            "unit": "ns/op\t   60201 B/op\t     218 allocs/op",
+            "extra": "14 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 75531300,
+            "unit": "ns/op\t   52242 B/op\t     218 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 48347439,
+            "unit": "ns/op\t   66037 B/op\t     218 allocs/op",
+            "extra": "25 times\n2 procs"
           }
         ]
       }
