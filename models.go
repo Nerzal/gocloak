@@ -465,6 +465,16 @@ type RoleDefinition struct {
 	Required *bool   `json:"required,omitempty"`
 }
 
+// AdapterConfiguration represents adapter configuration of a client
+type AdapterConfiguration struct {
+	Realm            *string     `json:"realm"`
+	AuthServerURL    *string     `json:"auth-server-url"`
+	SSLRequired      *string     `json:"ssl-required"`
+	Resource         *string     `json:"resource"`
+	Credentials      interface{} `json:"credentials"`
+	ConfidentialPort *int        `json:"confidential-port"`
+}
+
 // PolicyEnforcementMode is an enum type for PolicyEnforcementMode of ResourceServerRepresentation
 type PolicyEnforcementMode int
 

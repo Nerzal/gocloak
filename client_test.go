@@ -1810,6 +1810,128 @@ func Test_CreateListGetUpdateDeleteClient(t *testing.T) {
 	require.Len(t, clients, 0, "GetClients should not return any clients")
 }
 
+func Test_CreateListGetUpdateDeleteClientRepresentation(t *testing.T) {
+	// t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+
+	// Creating a client representation
+	createdClient, err := client.CreateClientRepresentation(context.Background(), cfg.GoCloak.Realm)
+	require.NoError(t, err, "CreateClientRepresentation failed")
+
+	t.Logf("Client ID: %s", gocloak.PString(createdClient.ID))
+
+	// Get the created client representation
+	gotClient, err := client.GetClientRepresentation(
+		context.Background(),
+		gocloak.PString(createdClient.RegistrationAccessToken),
+		cfg.GoCloak.Realm,
+		gocloak.PString(createdClient.ID),
+	)
+	require.NoError(t, err, "GetClientRepresentation failed")
+	require.Equal(t, gocloak.PString(createdClient.ID), gocloak.PString(gotClient.ID))
+
+	// Updating the client representation
+
+	// Should fail
+	_, err = client.UpdateClientRepresentation(
+		context.Background(),
+		gocloak.PString(gotClient.RegistrationAccessToken),
+		cfg.GoCloak.Realm,
+		gocloak.Client{},
+	)
+	require.Error(t, err, "Should fail because of missing ID of the client")
+
+	// Update existing client representation
+	createdClient.Name = GetRandomNameP("Name")
+	updatedClient, err := client.UpdateClientRepresentation(
+		context.Background(),
+		gocloak.PString(gotClient.RegistrationAccessToken),
+		cfg.GoCloak.Realm,
+		*createdClient,
+	)
+	require.NoError(t, err, "UpdateClientRepresentation failed")
+	t.Log("Updated successfully")
+
+	// Getting updated client representation
+	gotClient, err = client.GetClientRepresentation(
+		context.Background(),
+		gocloak.PString(updatedClient.RegistrationAccessToken),
+		cfg.GoCloak.Realm,
+		gocloak.PString(createdClient.ID),
+	)
+	require.NoError(t, err, "GetClientRepresentation failed")
+	require.Equal(t, gocloak.PString(createdClient.Name), gocloak.PString(gotClient.Name))
+
+	// Deleting the client representation
+	err = client.DeleteClientRepresentation(
+		context.Background(),
+		gocloak.PString(gotClient.RegistrationAccessToken),
+		cfg.GoCloak.Realm,
+		gocloak.PString(createdClient.ID),
+	)
+	require.NoError(t, err, "DeleteClientRepresentation failed")
+
+	// Verifying that the client representation was deleted
+	_, err = client.GetClientRepresentation(
+		context.Background(),
+		gocloak.PString(gotClient.RegistrationAccessToken),
+		cfg.GoCloak.Realm,
+		gocloak.PString(createdClient.ID),
+	)
+	require.Error(t, err, "Should fail because the deleted client doesn't exist anymore")
+}
+
+func Test_GetAdapterConfigurationForClientRepresentation(t *testing.T) {
+	// t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+
+	// Creating a client representation
+	createdClient, err := client.CreateClientRepresentation(context.Background(), cfg.GoCloak.Realm)
+	require.NoError(t, err, "CreateClientRepresentation failed")
+
+	t.Logf("Client ID: %s", gocloak.PString(createdClient.ID))
+
+	// Get the created client representation
+	gotClient, err := client.GetClientRepresentation(
+		context.Background(),
+		gocloak.PString(createdClient.RegistrationAccessToken),
+		cfg.GoCloak.Realm,
+		gocloak.PString(createdClient.ID),
+	)
+	require.NoError(t, err, "GetClientRepresentation failed")
+	require.Equal(t, gocloak.PString(createdClient.ID), gocloak.PString(gotClient.ID))
+
+	// Get adapter configuration for the client representation
+	adapterConfig, err := client.GetAdapterConfiguration(
+		context.Background(),
+		gocloak.PString(gotClient.RegistrationAccessToken),
+		cfg.GoCloak.Realm,
+		gocloak.PString(createdClient.ID),
+	)
+	require.NoError(t, err, "GetAdapterConfiguration failed")
+	require.Equal(t, gocloak.PString(gotClient.ID), gocloak.PString(adapterConfig.Resource))
+
+	// Deleting the client representation
+	err = client.DeleteClientRepresentation(
+		context.Background(),
+		gocloak.PString(gotClient.RegistrationAccessToken),
+		cfg.GoCloak.Realm,
+		gocloak.PString(createdClient.ID),
+	)
+	require.NoError(t, err, "DeleteClientRepresentation failed")
+
+	// Verifying that the client representation was deleted
+	_, err = client.GetClientRepresentation(
+		context.Background(),
+		gocloak.PString(gotClient.RegistrationAccessToken),
+		cfg.GoCloak.Realm,
+		gocloak.PString(createdClient.ID),
+	)
+	require.Error(t, err, "Should fail because the deleted client doesn't exist anymore")
+}
+
 func Test_GetGroups(t *testing.T) {
 	// t.Parallel()
 	cfg := GetConfig(t)

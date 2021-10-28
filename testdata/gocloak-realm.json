@@ -1015,7 +1015,7 @@
         "subComponents": {},
         "config": {
           "host-sending-registration-request-must-match": [
-            "true"
+            "false"
           ],
           "client-uris-must-match": [
             "true"
