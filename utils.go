@@ -104,8 +104,13 @@ func DecisionStrategyP(value DecisionStrategy) *DecisionStrategy {
 	return &value
 }
 
-// LogicP returns a pointer for a LogicP value
+// LogicP returns a pointer for a Logic value
 func LogicP(value Logic) *Logic {
+	return &value
+}
+
+// PolicyEnforcementModeP returns a pointer for a PolicyEnforcementMode value
+func PolicyEnforcementModeP(value PolicyEnforcementMode) *PolicyEnforcementMode {
 	return &value
 }
 
