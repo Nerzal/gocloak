@@ -792,10 +792,12 @@ type AuthenticationExecutionRepresentation struct {
 	UserSetupAllowed    *bool   `json:"userSetupAllowed,omitempty"`
 }
 
+// CreateAuthenticationExecutionRepresentation contains the provider to be used for a new authentication representation
 type CreateAuthenticationExecutionRepresentation struct {
 	Provider *string `json:"provider,omitempty"`
 }
 
+// ModifyAuthenticationExecutionRepresentation is the payload for updating an execution representation
 type ModifyAuthenticationExecutionRepresentation struct {
 	ID                  *string `json:"id,omitempty"`
 	Provider            *string `json:"providerId,omitempty"`

@@ -6216,11 +6216,21 @@ func TestGocloak_CreateAuthenticationFlowsAndCreateAuthenticationExecution(t *te
 	require.NoError(t, err, "Failed to get authentication executions second time")
 	t.Logf("authentication executions after update: %+v", authExecs)
 
-	err = client.DeleteAuthenticationFlow(
-		context.Background(),
-		token.AccessToken,
-		cfg.GoCloak.Realm,
-		*authFlow.Alias,
-	)
-	require.NoError(t, err, "Failed to delete authentication flow")
+	flows, err := client.GetAuthenticationFlows(context.Background(), token.AccessToken, cfg.GoCloak.Realm)
+	require.NoError(t, err, "Failed to get authentication flows")
+	deleted := false
+	for _, flow := range flows {
+		if flow.Alias != nil && *flow.Alias == "testauthflow2" {
+			err = client.DeleteAuthenticationFlow(
+				context.Background(),
+				token.AccessToken,
+				cfg.GoCloak.Realm,
+				*flow.ID,
+			)
+			require.NoError(t, err, "Failed to delete authentication flow")
+			deleted = true
+			break
+		}
+	}
+	require.True(t, deleted, "Failed to delete authentication flow, no flow was deleted")
 }
