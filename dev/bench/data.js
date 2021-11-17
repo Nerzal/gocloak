@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1635425808719,
+  "lastUpdate": 1637148772435,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -3394,6 +3394,54 @@ window.BENCHMARK_DATA = {
             "name": "BenchmarkLoginParallel",
             "value": 43802851,
             "unit": "ns/op\t   59509 B/op\t     214 allocs/op",
+            "extra": "27 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "theel.tobias@gmx.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4f624d6513eff0d193aba7bbeb75fa157c42ab2a",
+          "message": "Merge pull request #318 from bastianccm/auth-flows-and-executions\n\nAuth flows and executions",
+          "timestamp": "2021-11-17T12:29:50+01:00",
+          "tree_id": "f3c0ac615885c13f452911691d026b6ee9d3b772",
+          "url": "https://github.com/Nerzal/gocloak/commit/4f624d6513eff0d193aba7bbeb75fa157c42ab2a"
+        },
+        "date": 1637148771684,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 73671797,
+            "unit": "ns/op\t   64601 B/op\t     219 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 73813406,
+            "unit": "ns/op\t   60770 B/op\t     216 allocs/op",
+            "extra": "15 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 73200118,
+            "unit": "ns/op\t   74588 B/op\t     218 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 45611964,
+            "unit": "ns/op\t   49189 B/op\t     216 allocs/op",
             "extra": "27 times\n2 procs"
           }
         ]
