@@ -945,10 +945,20 @@ type MemoryInfoRepresentation struct {
 	UsedFormated   *string `json:"usedFormated,omitempty"`
 }
 
+// PasswordPolicy represents the configuration for a supported password policy
+type PasswordPolicy struct {
+	ConfigType        string `json:"configType,omitempty"`
+	DefaultValue      string `json:"defaultValue,omitempty"`
+	DisplayName       string `json:"displayName,omitempty"`
+	ID                string `json:"id,omitempty"`
+	MultipleSupported bool   `json:"multipleSupported,omitempty"`
+}
+
 // ServerInfoRepesentation represents a server info
 type ServerInfoRepesentation struct {
-	SystemInfo *SystemInfoRepresentation `json:"systemInfo,omitempty"`
-	MemoryInfo *MemoryInfoRepresentation `json:"memoryInfo,omitempty"`
+	SystemInfo       *SystemInfoRepresentation `json:"systemInfo,omitempty"`
+	MemoryInfo       *MemoryInfoRepresentation `json:"memoryInfo,omitempty"`
+	PasswordPolicies []*PasswordPolicy         `json:"passwordPolicies,omitempty"`
 }
 
 // FederatedIdentityRepresentation represents an user federated identity
