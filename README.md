@@ -39,22 +39,22 @@ I'm open for better ideas regarding the audience validation.
 
 The second breaking change is we switched the type of enum PolicyEnforcementMode from int to string.
 
-Feature: #315 change type of enum PolicyEnforcementMode from int to string
-Feature: #307 switch jwt lib
-Feature: #310 type are added to the path of update policy and update permission fix #308
-Feature: #315 change type of enum PolicyEnforcementMode from int to string
-Feature: #318 Auth flows and executions
-Feature: #319 defaults for P* utils
-Feature: #320 add password policies to server info
+* Feature: #315 change type of enum PolicyEnforcementMode from int to string
+* Feature: #307 switch jwt lib
+* Feature: #310 type are added to the path of update policy and update permission fix #308
+* Feature: #315 change type of enum PolicyEnforcementMode from int to string
+* Feature: #318 Auth flows and executions
+* Feature: #319 defaults for P* utils
+* Feature: #320 add password policies to server info
 
 ### V9
 
 #### V9.0.4
 
-Feature: #314 Add query parameter search to model GetClientsParams
-Feature: #313 Added ExactName param to GetSourceParams
-Feature: #312 Add support for client registration API
-Feature: #311 Add defaultRole to RealmRepresentation
+* Feature: #314 Add query parameter search to model GetClientsParams
+* Feature: #313 Added ExactName param to GetSourceParams
+* Feature: #312 Add support for client registration API
+* Feature: #311 Add defaultRole to RealmRepresentation
 
 
 #### V9.0.2
