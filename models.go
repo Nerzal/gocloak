@@ -476,13 +476,13 @@ type AdapterConfiguration struct {
 }
 
 // PolicyEnforcementMode is an enum type for PolicyEnforcementMode of ResourceServerRepresentation
-type PolicyEnforcementMode int
+type PolicyEnforcementMode string
 
 // PolicyEnforcementMode values
-const (
-	ENFORCING PolicyEnforcementMode = iota
-	PERMISSIVE
-	DISABLED
+var (
+	ENFORCING  = PolicyEnforcementModeP("ENFORCING")
+	PERMISSIVE = PolicyEnforcementModeP("PERMISSIVE")
+	DISABLED   = PolicyEnforcementModeP("DISABLED")
 )
 
 // Logic is an enum type for policy logic
