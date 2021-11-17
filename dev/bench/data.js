@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1637148772435,
+  "lastUpdate": 1637148801402,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -3443,6 +3443,54 @@ window.BENCHMARK_DATA = {
             "value": 45611964,
             "unit": "ns/op\t   49189 B/op\t     216 allocs/op",
             "extra": "27 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "theel.tobias@gmx.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a4e6ca852cdfa34e61fa8435dbddc43cdfb2e3f2",
+          "message": "Merge pull request #320 from bastianccm/passwordpolicy\n\nadd password policies to server info",
+          "timestamp": "2021-11-17T12:30:35+01:00",
+          "tree_id": "7a35d1bd8fdb65804bfc40b38438d679219a71f5",
+          "url": "https://github.com/Nerzal/gocloak/commit/a4e6ca852cdfa34e61fa8435dbddc43cdfb2e3f2"
+        },
+        "date": 1637148800853,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 86743561,
+            "unit": "ns/op\t   55781 B/op\t     220 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 74207733,
+            "unit": "ns/op\t   70343 B/op\t     218 allocs/op",
+            "extra": "15 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 83900901,
+            "unit": "ns/op\t   90496 B/op\t     219 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 52290228,
+            "unit": "ns/op\t   69204 B/op\t     218 allocs/op",
+            "extra": "26 times\n2 procs"
           }
         ]
       }
