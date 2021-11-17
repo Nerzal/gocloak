@@ -42,6 +42,9 @@ func TestPBool(t *testing.T) {
 	p = false
 	v = gocloak.PBool(&p)
 	assert.False(t, v)
+
+	v = gocloak.PBool(nil)
+	assert.False(t, v)
 }
 
 func TestIntP(t *testing.T) {
@@ -66,6 +69,10 @@ func TestPInt(t *testing.T) {
 	v := gocloak.PInt(&p)
 	assert.Equal(t, p, v)
 	assert.IsType(t, p, v)
+
+	v = gocloak.PInt(nil)
+	assert.Equal(t, int(0), v)
+	assert.IsType(t, int(0), v)
 }
 
 func TestPInt32(t *testing.T) {
@@ -73,6 +80,10 @@ func TestPInt32(t *testing.T) {
 	v := gocloak.PInt32(&p)
 	assert.Equal(t, p, v)
 	assert.IsType(t, p, v)
+
+	v = gocloak.PInt32(nil)
+	assert.Equal(t, int32(0), v)
+	assert.IsType(t, int32(0), v)
 }
 
 func TestPInt64(t *testing.T) {
@@ -80,6 +91,10 @@ func TestPInt64(t *testing.T) {
 	v := gocloak.PInt64(&p)
 	assert.Equal(t, p, v)
 	assert.IsType(t, p, v)
+
+	v = gocloak.PInt64(nil)
+	assert.Equal(t, int64(0), v)
+	assert.IsType(t, int64(0), v)
 }
 
 func TestFloat32P(t *testing.T) {
@@ -98,12 +113,20 @@ func TestPFloat32(t *testing.T) {
 	v := gocloak.PFloat32(&p)
 	assert.Equal(t, p, v)
 	assert.IsType(t, p, v)
+
+	v = gocloak.PFloat32(nil)
+	assert.Equal(t, float32(0), v)
+	assert.IsType(t, float32(0), v)
 }
 func TestPFloat64(t *testing.T) {
 	p := 42.42
 	v := gocloak.PFloat64(&p)
 	assert.Equal(t, p, v)
 	assert.IsType(t, p, v)
+
+	v = gocloak.PFloat64(nil)
+	assert.Equal(t, float64(0), v)
+	assert.IsType(t, float64(0), v)
 }
 func TestNilOrEmptyArray(t *testing.T) {
 	a := gocloak.NilOrEmptyArray(&[]string{"c", "d"})

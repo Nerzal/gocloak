@@ -30,6 +30,9 @@ func BoolP(value bool) *bool {
 
 // PBool returns a boolean value from a pointer
 func PBool(value *bool) bool {
+	if value == nil {
+		return false
+	}
 	return *value
 }
 
@@ -50,16 +53,25 @@ func Int64P(value int64) *int64 {
 
 // PInt returns an integer value from a pointer
 func PInt(value *int) int {
+	if value == nil {
+		return 0
+	}
 	return *value
 }
 
 // PInt32 returns an int32 value from a pointer
 func PInt32(value *int32) int32 {
+	if value == nil {
+		return 0
+	}
 	return *value
 }
 
 // PInt64 returns an int64 value from a pointer
 func PInt64(value *int64) int64 {
+	if value == nil {
+		return 0
+	}
 	return *value
 }
 
@@ -75,11 +87,17 @@ func Float64P(value float64) *float64 {
 
 // PFloat32 returns an flaot32 value from a pointer
 func PFloat32(value *float32) float32 {
+	if value == nil {
+		return 0
+	}
 	return *value
 }
 
 // PFloat64 returns an flaot64 value from a pointer
 func PFloat64(value *float64) float64 {
+	if value == nil {
+		return 0
+	}
 	return *value
 }
 
