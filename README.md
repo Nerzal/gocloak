@@ -24,6 +24,29 @@ Benchmarks can be found [here](https://nerzal.github.io/gocloak/dev/bench/)
 
 ## Changelog
 
+### V10
+
+#### V10.0.1
+
+We introduced 2 breaking changes.
+
+We switched the internal used JWT library, because the old one was no longer supported.
+
+Instead of passing the expected audience into the DecodeToken functions, we can validate the expected audience with a call to VerifyAudience: https://pkg.go.dev/github.com/golang-jwt/jwt#MapClaims.VerifyAudience
+
+When using custom claims, you'd have to implement the audience check for yourself for now.
+I'm open for better ideas regarding the audience validation.
+
+The second breaking change is we switched the type of enum PolicyEnforcementMode from int to string.
+
+Feature: #315 change type of enum PolicyEnforcementMode from int to string
+Feature: #307 switch jwt lib
+Feature: #310 type are added to the path of update policy and update permission fix #308
+Feature: #315 change type of enum PolicyEnforcementMode from int to string
+Feature: #318 Auth flows and executions
+Feature: #319 defaults for P* utils
+Feature: #320 add password policies to server info
+
 ### V9
 
 #### V9.0.4
