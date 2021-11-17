@@ -992,7 +992,7 @@ func Test_LoginSignedJWT(t *testing.T) {
 		cfg.GoCloak.Realm,
 		rsaKey,
 		jwt.SigningMethodRS256,
-		&jwt.NumericDate{},
+		&jwt.NumericDate{time.Now().Add(2 * time.Hour)},
 	)
 	require.NoError(t, err, "Login failed")
 }
@@ -5688,7 +5688,7 @@ func Test_CreatePermissionTicket(t *testing.T) {
 	})
 
 	// we're expecting validity error because we didn't supply secret
-	require.Equal(t, "token signature is invalid", err.Error())
+	require.Equal(t, "signature is invalid", err.Error())
 
 	claims, ok := pt.Claims.(*gocloak.PermissionTicketRepresentation) // ticketClaims)
 	require.Equal(t, true, ok)
