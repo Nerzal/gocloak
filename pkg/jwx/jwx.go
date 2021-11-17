@@ -10,7 +10,7 @@ import (
 	"math/big"
 	"strings"
 
-	jwt "github.com/dgrijalva/jwt-go/v4"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/pkg/errors"
 )
 
@@ -75,7 +75,7 @@ func decodePublicKey(e, n *string) (*rsa.PublicKey, error) {
 }
 
 // DecodeAccessToken currently only supports RSA - sorry for that
-func DecodeAccessToken(accessToken string, e, n *string, expectedAudience string) (*jwt.Token, *jwt.MapClaims, error) {
+func DecodeAccessToken(accessToken string, e, n *string) (*jwt.Token, *jwt.MapClaims, error) {
 	const errMessage = "could not decode accessToken"
 	accessToken = strings.Replace(accessToken, "Bearer ", "", 1)
 
@@ -86,18 +86,13 @@ func DecodeAccessToken(accessToken string, e, n *string, expectedAudience string
 
 	claims := &jwt.MapClaims{}
 
-	audValidation := jwt.WithoutAudienceValidation()
-	if expectedAudience != "" {
-		audValidation = jwt.WithAudience(expectedAudience)
-	}
-
 	token2, err := jwt.ParseWithClaims(accessToken, claims, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return rsaPublicKey, nil
-	}, audValidation)
+	})
 
 	if err != nil {
 		return nil, nil, errors.Wrap(err, errMessage)
@@ -107,7 +102,7 @@ func DecodeAccessToken(accessToken string, e, n *string, expectedAudience string
 }
 
 // DecodeAccessTokenCustomClaims currently only supports RSA - sorry for that
-func DecodeAccessTokenCustomClaims(accessToken string, e, n *string, customClaims jwt.Claims, expectedAudience string) (*jwt.Token, error) {
+func DecodeAccessTokenCustomClaims(accessToken string, e, n *string, customClaims jwt.Claims) (*jwt.Token, error) {
 	const errMessage = "could not decode accessToken with custom claims"
 	accessToken = strings.Replace(accessToken, "Bearer ", "", 1)
 
@@ -116,18 +111,13 @@ func DecodeAccessTokenCustomClaims(accessToken string, e, n *string, customClaim
 		return nil, errors.Wrap(err, errMessage)
 	}
 
-	audValidation := jwt.WithoutAudienceValidation()
-	if expectedAudience != "" {
-		audValidation = jwt.WithAudience(expectedAudience)
-	}
-
 	token2, err := jwt.ParseWithClaims(accessToken, customClaims, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return rsaPublicKey, nil
-	}, audValidation)
+	})
 
 	if err != nil {
 		return nil, errors.Wrap(err, errMessage)

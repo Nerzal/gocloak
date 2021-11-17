@@ -4,8 +4,8 @@ import (
 	"context"
 	"io"
 
-	"github.com/dgrijalva/jwt-go/v4"
 	"github.com/go-resty/resty/v2"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 // GoCloak holds all methods a client should fulfill
@@ -43,15 +43,15 @@ type GoCloak interface {
 	// LoginClientTokenExchange requests a login on a specified users behalf. Returning a user's tokens.
 	LoginClientTokenExchange(ctx context.Context, clientID, token, clientSecret, realm, targetClient, userID string) (*JWT, error)
 	// LoginClientSignedJWT performs a login with client credentials and signed jwt claims
-	LoginClientSignedJWT(ctx context.Context, idOfClient, realm string, key interface{}, signedMethod jwt.SigningMethod, expiresAt *jwt.Time) (*JWT, error)
+	LoginClientSignedJWT(ctx context.Context, idOfClient, realm string, key interface{}, signedMethod jwt.SigningMethod, expiresAt *jwt.NumericDate) (*JWT, error)
 	// LoginAdmin login as admin
 	LoginAdmin(ctx context.Context, username, password, realm string) (*JWT, error)
 	// RefreshToken used to refresh the token
 	RefreshToken(ctx context.Context, refreshToken, clientID, clientSecret, realm string) (*JWT, error)
 	// DecodeAccessToken decodes the accessToken
-	DecodeAccessToken(ctx context.Context, accessToken, realm, expectedAudience string) (*jwt.Token, *jwt.MapClaims, error)
+	DecodeAccessToken(ctx context.Context, accessToken, realm string) (*jwt.Token, *jwt.MapClaims, error)
 	// DecodeAccessTokenCustomClaims decodes the accessToken and fills the given claims
-	DecodeAccessTokenCustomClaims(ctx context.Context, accessToken, realm, expectedAudience string, claims jwt.Claims) (*jwt.Token, error)
+	DecodeAccessTokenCustomClaims(ctx context.Context, accessToken, realm string, claims jwt.Claims) (*jwt.Token, error)
 	// RetrospectToken calls the openid-connect introspect endpoint
 	RetrospectToken(ctx context.Context, accessToken, clientID, clientSecret, realm string) (*RetrospecTokenResult, error)
 	// GetIssuer calls the issuer endpoint for the given realm
