@@ -675,6 +675,8 @@ func Test_RetrospectRequestingPartyToken(t *testing.T) {
 	rpt, err := client.GetRequestingPartyToken(
 		context.Background(),
 		token.AccessToken,
+		"",
+		"",
 		cfg.GoCloak.Realm,
 		gocloak.RequestingPartyTokenOptions{
 			Audience: gocloak.StringP(cfg.GoCloak.ClientID),
@@ -688,6 +690,8 @@ func Test_RetrospectRequestingPartyToken(t *testing.T) {
 	rpt, err = client.GetRequestingPartyToken(
 		context.Background(),
 		token.AccessToken,
+		"",
+		"",
 		cfg.GoCloak.Realm,
 		gocloak.RequestingPartyTokenOptions{
 			Audience: gocloak.StringP(cfg.GoCloak.ClientID),
@@ -732,6 +736,8 @@ func Test_GetRequestingPartyPermissions(t *testing.T) {
 		context.Background(),
 		token.AccessToken,
 		"",
+		"",
+		"",
 		gocloak.RequestingPartyTokenOptions{
 			Audience: gocloak.StringP(cfg.GoCloak.ClientID),
 			Permissions: &[]string{
@@ -744,9 +750,63 @@ func Test_GetRequestingPartyPermissions(t *testing.T) {
 	rpp, err = client.GetRequestingPartyPermissions(
 		context.Background(),
 		token.AccessToken,
+		"",
+		"",
 		cfg.GoCloak.Realm,
 		gocloak.RequestingPartyTokenOptions{
 			Audience: gocloak.StringP(cfg.GoCloak.ClientID),
+			Permissions: &[]string{
+				"Default Resource",
+			},
+		})
+	require.NoError(t, err, "GetRequestingPartyPermissions failed")
+	require.NotNil(t, rpp)
+
+	t.Log(rpp)
+	permissions := *rpp
+	require.Len(t, permissions, 1, "GetRequestingPartyPermissions failed")
+	require.Equal(t, "Default Resource", *permissions[0].ResourceName, "GetRequestingPartyPermissions failed")
+}
+
+func Test_GetRequestingPartyPermissionsBasicAuth(t *testing.T) {
+	// t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	SetUpTestUser(t, client)
+	token, err := client.Login(
+		context.Background(),
+		cfg.GoCloak.ClientID,
+		cfg.GoCloak.ClientSecret,
+		cfg.GoCloak.Realm,
+		cfg.GoCloak.UserName,
+		cfg.GoCloak.Password)
+	require.NoError(t, err, "login failed")
+
+	rpp, err := client.GetRequestingPartyPermissions(
+		context.Background(),
+		"",
+		cfg.GoCloak.ClientID,
+		cfg.GoCloak.ClientSecret,
+		"",
+		gocloak.RequestingPartyTokenOptions{
+			Audience:     gocloak.StringP(cfg.GoCloak.ClientID),
+			SubjectToken: gocloak.StringP(token.AccessToken),
+			Permissions: &[]string{
+				"Default Resource",
+			},
+		})
+	require.Error(t, err, "GetRequestingPartyPermissions failed")
+	require.Nil(t, rpp)
+
+	rpp, err = client.GetRequestingPartyPermissions(
+		context.Background(),
+		"",
+		cfg.GoCloak.ClientID,
+		cfg.GoCloak.ClientSecret,
+		cfg.GoCloak.Realm,
+		gocloak.RequestingPartyTokenOptions{
+			Audience:     gocloak.StringP(cfg.GoCloak.ClientID),
+			SubjectToken: gocloak.StringP(token.AccessToken),
 			Permissions: &[]string{
 				"Default Resource",
 			},
@@ -778,6 +838,8 @@ func Test_GetRequestingPartyPermissionDecision(t *testing.T) {
 		context.Background(),
 		token.AccessToken,
 		"",
+		"",
+		"",
 		gocloak.RequestingPartyTokenOptions{
 			Audience: gocloak.StringP(cfg.GoCloak.ClientID),
 		})
@@ -787,6 +849,8 @@ func Test_GetRequestingPartyPermissionDecision(t *testing.T) {
 	dec, err = client.GetRequestingPartyPermissionDecision(
 		context.Background(),
 		token.AccessToken,
+		"",
+		"",
 		cfg.GoCloak.Realm,
 		gocloak.RequestingPartyTokenOptions{
 			Audience: gocloak.StringP(cfg.GoCloak.ClientID),
@@ -1064,6 +1128,8 @@ func Test_GetRequestingPartyToken(t *testing.T) {
 	rpt, err := client.GetRequestingPartyToken(
 		context.Background(),
 		newToken.AccessToken,
+		"",
+		"",
 		cfg.GoCloak.Realm,
 		gocloak.RequestingPartyTokenOptions{
 			Audience: &cfg.GoCloak.ClientID,
