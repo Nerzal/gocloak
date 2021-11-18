@@ -130,7 +130,7 @@ There are a lot of backward incompatible changes:
 ### Installation
 
 ```shell
-go get github.com/Nerzal/10
+go get github.com/Nerzal/gocloak/v10
 ```
 
 ### Importing
