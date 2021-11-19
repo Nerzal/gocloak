@@ -1,4 +1,4 @@
-module github.com/doktormerlin/gocloak/v10
+module github.com/Nerzal/gocloak/v10
 
 go 1.15
 

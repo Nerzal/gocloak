@@ -56,4 +56,4 @@ jobs:
       # Updating go report card for main branch only
       - name: GoReportCard
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: curl --fail --request POST "https://goreportcard.com/checks" --data "repo=github.com/doktormerlin/gocloak"
+        run: curl --fail --request POST "https://goreportcard.com/checks" --data "repo=github.com/Nerzal/gocloak"

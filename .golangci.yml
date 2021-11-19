@@ -24,7 +24,7 @@ linters-settings:
   govet:
     check-shadowing: false
   goimports:
-    local-prefixes: github.com/doktormerlin/gocloak
+    local-prefixes: github.com/Nerzal/gocloak
   gocognit:
     min-complexity: 15
   gocyclo:
