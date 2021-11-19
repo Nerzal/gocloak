@@ -1,6 +1,6 @@
 # gocloak
 
-[![codebeat badge](https://codebeat.co/badges/18a37f35-6a95-4e40-9e78-272233892332)](https://codebeat.co/projects/github-com-Nerzal-gocloak-main)
+[![codebeat badge](https://codebeat.co/badges/18a37f35-6a95-4e40-9e78-272233892332)](https://codebeat.co/projects/github-com-nerzal-gocloak-main)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Nerzal/gocloak)](https://goreportcard.com/report/github.com/Nerzal/gocloak)
 [![Go Doc](https://godoc.org/github.com/Nerzal/gocloak?status.svg)](https://godoc.org/github.com/Nerzal/gocloak)
 [![Build Status](https://github.com/Nerzal/gocloak/workflows/Tests/badge.svg)](https://github.com/Nerzal/gocloak/actions?query=branch%3Amain+event%3Apush)
@@ -16,7 +16,7 @@ For Questions either raise an issue, or come to the [gopher-slack](https://invit
 
 If u are using the echo framework have a look at [gocloak-echo](https://github.com/Nerzal/gocloak-echo)
 
-Benchmarks can be found [here](https://Nerzal.github.io/gocloak/dev/bench/)
+Benchmarks can be found [here](https://nerzal.github.io/gocloak/dev/bench/)
 
 ## Contribution
 
