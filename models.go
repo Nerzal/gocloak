@@ -197,19 +197,13 @@ type SetPasswordRequest struct {
 
 // Component is a component
 type Component struct {
-	ID              *string          `json:"id,omitempty"`
-	Name            *string          `json:"name,omitempty"`
-	ProviderID      *string          `json:"providerId,omitempty"`
-	ProviderType    *string          `json:"providerType,omitempty"`
-	ParentID        *string          `json:"parentId,omitempty"`
-	ComponentConfig *ComponentConfig `json:"config,omitempty"`
-	SubType         *string          `json:"subType,omitempty"`
-}
-
-// ComponentConfig is a componentconfig
-type ComponentConfig struct {
-	Priority  *[]string `json:"priority,omitempty"`
-	Algorithm *[]string `json:"algorithm,omitempty"`
+	ID              *string              `json:"id,omitempty"`
+	Name            *string              `json:"name,omitempty"`
+	ProviderID      *string              `json:"providerId,omitempty"`
+	ProviderType    *string              `json:"providerType,omitempty"`
+	ParentID        *string              `json:"parentId,omitempty"`
+	ComponentConfig *map[string][]string `json:"config,omitempty"`
+	SubType         *string              `json:"subType,omitempty"`
 }
 
 // KeyStoreConfig holds the keyStoreConfig
@@ -1251,7 +1245,6 @@ func (v *RetrospecTokenResult) String() string                      { return pre
 func (v *User) String() string                                      { return prettyStringStruct(v) }
 func (v *SetPasswordRequest) String() string                        { return prettyStringStruct(v) }
 func (v *Component) String() string                                 { return prettyStringStruct(v) }
-func (v *ComponentConfig) String() string                           { return prettyStringStruct(v) }
 func (v *KeyStoreConfig) String() string                            { return prettyStringStruct(v) }
 func (v *ActiveKeys) String() string                                { return prettyStringStruct(v) }
 func (v *Key) String() string                                       { return prettyStringStruct(v) }
