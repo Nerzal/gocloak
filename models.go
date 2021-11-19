@@ -197,13 +197,13 @@ type SetPasswordRequest struct {
 
 // Component is a component
 type Component struct {
-	ID              *string            `json:"id,omitempty"`
-	Name            *string            `json:"name,omitempty"`
-	ProviderID      *string            `json:"providerId,omitempty"`
-	ProviderType    *string            `json:"providerType,omitempty"`
-	ParentID        *string            `json:"parentId,omitempty"`
-	ComponentConfig *map[string]string `json:"config,omitempty"`
-	SubType         *string            `json:"subType,omitempty"`
+	ID              *string              `json:"id,omitempty"`
+	Name            *string              `json:"name,omitempty"`
+	ProviderID      *string              `json:"providerId,omitempty"`
+	ProviderType    *string              `json:"providerType,omitempty"`
+	ParentID        *string              `json:"parentId,omitempty"`
+	ComponentConfig *map[string][]string `json:"config,omitempty"`
+	SubType         *string              `json:"subType,omitempty"`
 }
 
 // KeyStoreConfig holds the keyStoreConfig
