@@ -1,9 +1,9 @@
-#!/bin/sh
+#!/bin/bash
 
 docker-compose down
 docker-compose up -d
 
-sleep 10
+sleep 30
 
 ARGS=()
 if [ $# -gt 0 ]; then

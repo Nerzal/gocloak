@@ -222,7 +222,6 @@ func TestStringerOmitEmpty(t *testing.T) {
 		&gocloak.User{},
 		&gocloak.SetPasswordRequest{},
 		&gocloak.Component{},
-		&gocloak.ComponentConfig{},
 		&gocloak.KeyStoreConfig{},
 		&gocloak.ActiveKeys{},
 		&gocloak.Key{},
