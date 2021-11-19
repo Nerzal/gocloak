@@ -3,7 +3,7 @@
 docker-compose down
 docker-compose up -d
 
-sleep 30
+sleep 10
 
 ARGS=()
 if [ $# -gt 0 ]; then
