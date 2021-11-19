@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1637333497927,
+  "lastUpdate": 1637334808537,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -3585,6 +3585,54 @@ window.BENCHMARK_DATA = {
             "value": 42775098,
             "unit": "ns/op\t   62385 B/op\t     217 allocs/op",
             "extra": "27 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "theel.tobias@gmx.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "44f36fb244a4e6d8cf5996d6f7b72dbc1e5c62e9",
+          "message": "Merge pull request #322 from latipovsharif/patch-1\n\nUpdate README.md",
+          "timestamp": "2021-11-19T16:10:40+01:00",
+          "tree_id": "8a81a9365850b7c733e94a46465cf46381fa220c",
+          "url": "https://github.com/Nerzal/gocloak/commit/44f36fb244a4e6d8cf5996d6f7b72dbc1e5c62e9"
+        },
+        "date": 1637334807982,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 103189547,
+            "unit": "ns/op\t   59216 B/op\t     220 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 102121590,
+            "unit": "ns/op\t   63318 B/op\t     222 allocs/op",
+            "extra": "12 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 99421664,
+            "unit": "ns/op\t   56188 B/op\t     220 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 66241736,
+            "unit": "ns/op\t   69928 B/op\t     221 allocs/op",
+            "extra": "19 times\n2 procs"
           }
         ]
       }
