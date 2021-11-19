@@ -13,5 +13,3 @@ require (
 	golang.org/x/net v0.0.0-20210928044308-7d9f5e0b762b // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
-
-replace github.com/Nerzal/gocloak/v10 => github.com/doktormerlin/gocloak/v10
