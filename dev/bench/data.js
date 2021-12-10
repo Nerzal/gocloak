@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1637334808537,
+  "lastUpdate": 1639133073329,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -3633,6 +3633,54 @@ window.BENCHMARK_DATA = {
             "value": 66241736,
             "unit": "ns/op\t   69928 B/op\t     221 allocs/op",
             "extra": "19 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "theel.tobias@gmx.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "dd6b55b25888e7b9327ad957902b638aa4604d93",
+          "message": "Merge pull request #329 from igorkim/main\n\nAdd RedirectURI field in TokenOptions structure",
+          "timestamp": "2021-12-10T11:41:50+01:00",
+          "tree_id": "5a0170415aec4b13fe8a95b73eb67982ed3fa116",
+          "url": "https://github.com/Nerzal/gocloak/commit/dd6b55b25888e7b9327ad957902b638aa4604d93"
+        },
+        "date": 1639133072810,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 82706074,
+            "unit": "ns/op\t   50024 B/op\t     219 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 83573742,
+            "unit": "ns/op\t   73092 B/op\t     220 allocs/op",
+            "extra": "13 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 84790736,
+            "unit": "ns/op\t   55755 B/op\t     218 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 52308590,
+            "unit": "ns/op\t   56123 B/op\t     218 allocs/op",
+            "extra": "25 times\n2 procs"
           }
         ]
       }
