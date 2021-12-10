@@ -832,6 +832,7 @@ type TokenOptions struct {
 	Password            *string   `json:"password,omitempty"`
 	Totp                *string   `json:"totp,omitempty"`
 	Code                *string   `json:"code,omitempty"`
+	RedirectURI         *string   `json:"redirect_uri,omitempty"`
 	ClientAssertionType *string   `json:"client_assertion_type,omitempty"`
 	ClientAssertion     *string   `json:"client_assertion,omitempty"`
 	SubjectToken        *string   `json:"subject_token,omitempty"`
