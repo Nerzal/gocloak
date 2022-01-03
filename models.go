@@ -840,6 +840,8 @@ type TokenOptions struct {
 	ClientAssertionType *string   `json:"client_assertion_type,omitempty"`
 	ClientAssertion     *string   `json:"client_assertion,omitempty"`
 	SubjectToken        *string   `json:"subject_token,omitempty"`
+	SubjectTokenType    *string   `json:"subject_token_type,omitempty"`
+	SubjectIssuer       *string   `json:"subject_issuer,omitempty"`
 	RequestedSubject    *string   `json:"requested_subject,omitempty"`
 	Audience            *string   `json:"audience,omitempty"`
 	RequestedTokenType  *string   `json:"requested_token_type,omitempty"`
