@@ -6233,13 +6233,34 @@ func TestGocloak_CreateAuthenticationFlowsAndCreateAuthenticationExecutionAndFlo
 	)
 	require.NoError(t, err, "Failed to get authentication executions second time")
 	t.Logf("authentication executions after update: %+v", authExecs)
+
+	var (
+		execDeleted   bool
+		execFlowFound bool
+	)
 	for _, execution := range authExecs {
+		if execution.DisplayName != nil && *execution.DisplayName == *authExecFlow.Alias {
+			execFlowFound = true
+			continue
+		}
 		if execution.ProviderID != nil && *execution.ProviderID == *authExec.Provider {
 			require.NotNil(t, execution.Requirement)
 			require.Equal(t, *execution.Requirement, "ALTERNATIVE")
+			err = client.DeleteAuthenticationExecution(
+				context.Background(),
+				token.AccessToken,
+				cfg.GoCloak.Realm,
+				*execution.ID,
+			)
+			require.NoError(t, err, "Failed to delete authentication execution")
+			execDeleted = true
+		}
+		if execDeleted && execFlowFound {
 			break
 		}
 	}
+	require.True(t, execDeleted, "Failed to delete authentication execution, no execution was deleted")
+	require.True(t, execFlowFound, "Failed to find authentication execution flow")
 
 	flows, err := client.GetAuthenticationFlows(context.Background(), token.AccessToken, cfg.GoCloak.Realm)
 	require.NoError(t, err, "Failed to get authentication flows")
@@ -6258,30 +6279,4 @@ func TestGocloak_CreateAuthenticationFlowsAndCreateAuthenticationExecutionAndFlo
 		}
 	}
 	require.True(t, deleted, "Failed to delete authentication flow, no flow was deleted")
-
-	var (
-		execDeleted   bool
-		execFlowFound bool
-	)
-	for _, execution := range authExecs {
-		if execution.DisplayName != nil && *execution.DisplayName == *authExecFlow.Alias {
-			execFlowFound = true
-			continue
-		}
-		if execution.ProviderID != nil && *execution.ProviderID == *authExec.Provider {
-			err = client.DeleteAuthenticationExecution(
-				context.Background(),
-				token.AccessToken,
-				cfg.GoCloak.Realm,
-				*execution.ID,
-			)
-			require.NoError(t, err, "Failed to delete authentication execution")
-			execDeleted = true
-		}
-		if execDeleted && execFlowFound {
-			break
-		}
-	}
-	require.True(t, execDeleted, "Failed to delete authentication execution, no execution was deleted")
-	require.True(t, execFlowFound, "Failed to find authentication execution flow")
 }
