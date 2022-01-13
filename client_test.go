@@ -40,7 +40,10 @@ type configGoCloak struct {
 	Password     string `json:"password"`
 	Realm        string `json:"realm"`
 	ClientID     string `json:"client_id"`
+	Token        string `json:"token"`
 	ClientSecret string `json:"client_secret"`
+	Issuer       string `json:"issuer"`
+	TargetClient string `json:"audience"`
 }
 
 type Config struct {
@@ -1092,6 +1095,68 @@ func Test_LoginClient(t *testing.T) {
 		cfg.GoCloak.ClientSecret,
 		cfg.GoCloak.Realm)
 	require.NoError(t, err, "LoginClient failed")
+}
+
+func Test_LoginSocialTokenExchange_UnknownRealm(t *testing.T) {
+	// t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	_, err := client.LoginSocialTokenExchange(
+		context.Background(),
+		cfg.GoCloak.ClientID,
+		cfg.GoCloak.Token,
+		cfg.GoCloak.ClientSecret,
+		"ThisRealmDoesNotExists",
+		cfg.GoCloak.Issuer,
+	)
+
+	require.Error(t, err, "Login shouldn't be successful")
+	require.EqualError(t, err, "404 Not Found: Realm does not exist")
+}
+
+func Test_LoginSocialTokenExchange_UnknownIssuer(t *testing.T) {
+	// t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	_, err := client.LoginSocialTokenExchange(
+		context.Background(),
+		cfg.GoCloak.ClientID,
+		cfg.GoCloak.Token,
+		cfg.GoCloak.ClientSecret,
+		cfg.GoCloak.Realm,
+		"ThisIssuerDoesNotExists",
+	)
+
+	require.Error(t, err, "Login shouldn't be successful")
+	require.EqualError(t, err, "400 Bad Request: invalid_issuer: Invalid subject_issuer parameter")
+}
+
+func Test_LoginSocialTokenExchange(t *testing.T) {
+	// t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	_, err := client.LoginSocialTokenExchange(
+		context.Background(),
+		cfg.GoCloak.ClientID,
+		cfg.GoCloak.Token,
+		cfg.GoCloak.ClientSecret,
+		cfg.GoCloak.Realm,
+		cfg.GoCloak.Issuer,
+	)
+
+	require.NoError(t, err, "LoginSocialTokenExchange failed")
+
+	t.Run("Delete google provider", func(t *testing.T) {
+		err := client.DeleteIdentityProvider(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			"google",
+		)
+		require.NoError(t, err)
+	})
 }
 
 func Test_LoginAdmin(t *testing.T) {

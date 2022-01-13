@@ -3,11 +3,11 @@ version: '3'
 services:
   keycloak:
     image: jboss/keycloak:latest
-    command: -Dkeycloak.profile.feature.upload_scripts=enabled
     environment:
       KEYCLOAK_IMPORT: /tmp/gocloak-realm.json
       KEYCLOAK_USER: admin
       KEYCLOAK_PASSWORD: secret
+      JAVA_OPTS_APPEND: "-Dkeycloak.profile=preview -Dkeycloak.profile.feature.admin_fine_grained_authz=enabled -Dkeycloak.profile.feature.token_exchange=enabled -Dkeycloak.profile.feature.upload_scripts=enabled"
     ports:
       - "8080:8080"
     volumes:
