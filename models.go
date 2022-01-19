@@ -263,6 +263,7 @@ type UserGroup struct {
 type GetUsersParams struct {
 	BriefRepresentation *bool   `json:"briefRepresentation,string,omitempty"`
 	Email               *string `json:"email,omitempty"`
+	EmailVerified       *bool   `json:"emailVerified,string,omitempty"`
 	Enabled             *bool   `json:"enabled,string,omitempty"`
 	Exact               *bool   `json:"exact,string,omitempty"`
 	First               *int    `json:"first,string,omitempty"`
@@ -271,6 +272,7 @@ type GetUsersParams struct {
 	IDPUserID           *string `json:"idpUserId,omitempty"`
 	LastName            *string `json:"lastName,omitempty"`
 	Max                 *int    `json:"max,string,omitempty"`
+	Q                   *string `json:"q,omitempty"`
 	Search              *string `json:"search,omitempty"`
 	Username            *string `json:"username,omitempty"`
 }
