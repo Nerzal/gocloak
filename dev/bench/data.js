@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1639136333588,
+  "lastUpdate": 1643020923769,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -3729,6 +3729,54 @@ window.BENCHMARK_DATA = {
             "value": 40685151,
             "unit": "ns/op\t   63465 B/op\t     218 allocs/op",
             "extra": "26 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "sirockin@gmail.com",
+            "name": "Dave Sirockin",
+            "username": "sirockin"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "76b1bd1e3b71ab7f376d5ec41650620c207404af",
+          "message": "add `Q` and `EmailVerified` to GetUsersParams (#337)\n\nCo-authored-by: Dave Sirockin <dave@flow-systems.net>",
+          "timestamp": "2022-01-24T11:39:20+01:00",
+          "tree_id": "0b71fcbb303d817b2feebf7467ab6613b0d20a39",
+          "url": "https://github.com/Nerzal/gocloak/commit/76b1bd1e3b71ab7f376d5ec41650620c207404af"
+        },
+        "date": 1643020922854,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 85958892,
+            "unit": "ns/op\t   52392 B/op\t     220 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 83533600,
+            "unit": "ns/op\t   71292 B/op\t     221 allocs/op",
+            "extra": "13 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 83754964,
+            "unit": "ns/op\t   60714 B/op\t     221 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 49329060,
+            "unit": "ns/op\t   55621 B/op\t     218 allocs/op",
+            "extra": "24 times\n2 procs"
           }
         ]
       }
