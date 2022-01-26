@@ -1359,6 +1359,40 @@ type EventRepresentation struct {
 	Details   map[string]string `json:"details,omitempty"`
 }
 
+// GetAdminEventsParams represents the optional parameters for getting events
+type GetAdminEventsParams struct {
+	AuthClient     *string  `json:"authClient,omitempty"`
+	AuthIpAddress  *string  `json:"authIpAddress,omitempty"`
+	AuthRealm      *string  `json:"authRealm,omitempty"`
+	AuthUser       *string  `json:"authUser,omitempty"`
+	DateFrom       *string  `json:"dateFrom,omitempty"`
+	DateTo         *string  `json:"dateTo,omitempty"`
+	First          *int32   `json:"first,omitempty"`
+	Max            *int32   `json:"max,omitempty"`
+	OperationTypes []string `json:"operationTypes,omitempty"`
+	ResourcePath   *string  `json:"resourcePath,omitempty"`
+	ResourceTypes  []string `json:"resourceTypes,omitempty"`
+}
+
+// AdminEventRepresentation is a representation of an Admin Event
+type AdminEventRepresentation struct {
+	Time           int64                                `json:"time,omitempty"`
+	OperationType  *string                              `json:"operationType,omitempty"`
+	RealmID        *string                              `json:"realmId,omitempty"`
+	ResourceType   *string                              `json:"resourceType,omitempty"`
+	ResourcePath   *string                              `json:"resourcePath,omitempty"`
+	AuthDetails    *AdminEventAuthDetailsRepresentation `json:"authDetails,omitempty"`
+	Representation *string                              `json:"representation,omitempty"`
+}
+
+// AdminEventAuthDetailsRepresentation is a representation of an Admin Event Details
+type AdminEventAuthDetailsRepresentation struct {
+	RealmID   *string `json:"realmId,omitempty"`
+	ClientID  *string `json:"clientId,omitempty"`
+	UserID    *string `json:"userId,omitempty"`
+	IPAddress *string `json:"ipAddress,omitempty"`
+}
+
 // CredentialRepresentation is a representations of the credentials
 // v7: https://www.keycloak.org/docs-api/7.0/rest-api/index.html#_credentialrepresentation
 // v8: https://www.keycloak.org/docs-api/8.0/rest-api/index.html#_credentialrepresentation
