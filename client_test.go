@@ -6230,3 +6230,21 @@ func TestGocloak_CreateAuthenticationFlowsAndCreateAuthenticationExecution(t *te
 	}
 	require.True(t, deleted, "Failed to delete authentication flow, no flow was deleted")
 }
+
+func TestGocloak_UpdateRequiredAction(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	requiredAction := gocloak.RequiredActionProviderRepresentation{
+		Alias:         gocloak.StringP("VERIFY_EMAIL"),
+		Config:        nil,
+		DefaultAction: gocloak.BoolP(false),
+		Enabled:       gocloak.BoolP(true),
+		Name:          gocloak.StringP("Verify Email"),
+		Priority:      gocloak.Int32P(50),
+		ProviderID:    gocloak.StringP("VERIFY_EMAIL"),
+	}
+	err := client.UpdateRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, requiredAction)
+	require.NoError(t, err, "Failed to update required action")
+}

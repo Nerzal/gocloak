@@ -1236,6 +1236,18 @@ type CredentialRepresentation struct {
 	UserLabel      *string `json:"userLabel,omitempty"`
 }
 
+// RequiredActionProviderRepresentation is a representation of required actions
+// v15: https://www.keycloak.org/docs-api/15.0/rest-api/index.html#_requiredactionproviderrepresentation
+type RequiredActionProviderRepresentation struct {
+	Alias         *string            `json:"alias,omitempty"`
+	Config        *map[string]string `json:"config,omitempty"`
+	DefaultAction *bool              `json:"defaultAction,omitempty"`
+	Enabled       *bool              `json:"enabled,omitempty"`
+	Name          *string            `json:"name,omitempty"`
+	Priority      *int32             `json:"priority,omitempty"`
+	ProviderID    *string            `json:"providerId,omitempty"`
+}
+
 // prettyStringStruct returns struct formatted into pretty string
 func prettyStringStruct(t interface{}) string {
 
@@ -1328,3 +1340,4 @@ func (v *GetUserPermissionParams) String() string                   { return pre
 func (v *ResourcePolicyRepresentation) String() string              { return prettyStringStruct(v) }
 func (v *GetResourcePoliciesParams) String() string                 { return prettyStringStruct(v) }
 func (v *CredentialRepresentation) String() string                  { return prettyStringStruct(v) }
+func (v *RequiredActionProviderRepresentation) String() string      { return prettyStringStruct(v) }
