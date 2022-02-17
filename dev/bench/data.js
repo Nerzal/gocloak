@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1645104440803,
+  "lastUpdate": 1645104538125,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -3825,6 +3825,54 @@ window.BENCHMARK_DATA = {
             "value": 46200397,
             "unit": "ns/op\t   59328 B/op\t     219 allocs/op",
             "extra": "25 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "github@mdrone.de",
+            "name": "Merlin Dienst",
+            "username": "doktormerlin"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4716d38a7db252adb5f3b3b5ebaeb89166538927",
+          "message": "Changed ComponentConfig to be a map[string][]string instead of its own struct (#325)\n\n* Feature: #321 ComponentConfig now is a map[string]string to generalize it's usage\r\n\r\n* changed module name\r\n\r\n* changed all nerzal to doktormerlin\r\n\r\n* added replacement directive\r\n\r\n* Added newline to end of file\r\n\r\n* removed replacement directive\r\n\r\n* map[string]string now map[string][]string in ComponentConfig\r\n\r\n* Changed ComponentConfig to be a map[string][]string instead of its own struct\r\n\r\n* Fixed issues caused by renaming. Go and forking just doesnt go well together\r\n\r\n* Renamed some stuff from Nerzal to nerzal\r\n\r\n* tests sleeping 10 seconds again\r\n\r\n* reverted tests\r\n\r\nCo-authored-by: merl_umlaut <merlin.dienst@umlaut.com>",
+          "timestamp": "2022-02-17T14:26:26+01:00",
+          "tree_id": "b6d7b6ff2bf49073e2e3d44a4cd34fbe8e0fbeca",
+          "url": "https://github.com/Nerzal/gocloak/commit/4716d38a7db252adb5f3b3b5ebaeb89166538927"
+        },
+        "date": 1645104536679,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 73474112,
+            "unit": "ns/op\t   52667 B/op\t     218 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 79426320,
+            "unit": "ns/op\t   60300 B/op\t     220 allocs/op",
+            "extra": "15 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 72432054,
+            "unit": "ns/op\t   65299 B/op\t     218 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 52293455,
+            "unit": "ns/op\t   64149 B/op\t     219 allocs/op",
+            "extra": "26 times\n2 procs"
           }
         ]
       }
