@@ -3683,3 +3683,17 @@ func (client *gocloak) CreateClientScopesScopeMappingsRealmRoles(ctx context.Con
 
 	return checkForError(resp, err, errMessage)
 }
+
+// UpdateRequiredAction updates a required action for a given realm
+func (client *gocloak) UpdateRequiredAction(ctx context.Context, token string, realm string, requiredAction RequiredActionProviderRepresentation) error {
+	const errMessage = "could not update required action"
+
+	if NilOrEmpty(requiredAction.ProviderID) {
+		return errors.New("providerId is required for updating a required action")
+	}
+	_, err := client.getRequestWithBearerAuth(ctx, token).
+		SetBody(requiredAction).
+		Put(client.getAdminRealmURL(realm, "authentication", "required-actions", *requiredAction.ProviderID))
+
+	return err
+}

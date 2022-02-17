@@ -493,6 +493,14 @@ type GoCloak interface {
 	// ---------------
 	// Events API
 	// ---------------
+
 	// GetEvents returns events
 	GetEvents(ctx context.Context, token string, realm string, params GetEventsParams) ([]*EventRepresentation, error)
+
+	// -------------------
+	// RequiredActions API
+	// -------------------
+
+	// UpdateRequiredAction updates a required action for a given realm
+	UpdateRequiredAction(ctx context.Context, token string, realm string, requiredAction RequiredActionProviderRepresentation) error
 }
