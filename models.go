@@ -793,6 +793,14 @@ type CreateAuthenticationExecutionRepresentation struct {
 	Provider *string `json:"provider,omitempty"`
 }
 
+// CreateAuthenticationExecutionFlowRepresentation contains the provider to be used for a new authentication representation
+type CreateAuthenticationExecutionFlowRepresentation struct {
+	Alias       *string `json:"alias,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Provider    *string `json:"provider,omitempty"`
+	Type        *string `json:"type,omitempty"`
+}
+
 // ModifyAuthenticationExecutionRepresentation is the payload for updating an execution representation
 type ModifyAuthenticationExecutionRepresentation struct {
 	ID                   *string   `json:"id,omitempty"`

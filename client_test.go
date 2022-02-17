@@ -6149,7 +6149,7 @@ func TestGocloak_GetAuthenticationFlows(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestGocloak_CreateAuthenticationFlowsAndCreateAuthenticationExecution(t *testing.T) {
+func TestGocloak_CreateAuthenticationFlowsAndCreateAuthenticationExecutionAndFlow(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
@@ -6164,6 +6164,13 @@ func TestGocloak_CreateAuthenticationFlowsAndCreateAuthenticationExecution(t *te
 		Description: gocloak.StringP("my test description"),
 		TopLevel:    gocloak.BoolP(true),
 		ProviderID:  gocloak.StringP("basic-flow"),
+	}
+
+	authExecFlow := gocloak.CreateAuthenticationExecutionFlowRepresentation{
+		Alias:       gocloak.StringP("testauthexecflow"),
+		Description: gocloak.StringP("test"),
+		Provider:    gocloak.StringP("basic-flow"),
+		Type:        gocloak.StringP("basic-flow"),
 	}
 
 	err := client.CreateAuthenticationFlow(
@@ -6184,6 +6191,15 @@ func TestGocloak_CreateAuthenticationFlowsAndCreateAuthenticationExecution(t *te
 	)
 	require.NoError(t, err, "Failed to create authentication execution")
 
+	err = client.CreateAuthenticationExecutionFlow(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		*authFlow.Alias,
+		authExecFlow,
+	)
+	require.NoError(t, err, "Failed to create authentication execution flow")
+
 	authExecs, err := client.GetAuthenticationExecutions(
 		context.Background(),
 		token.AccessToken,
@@ -6194,15 +6210,21 @@ func TestGocloak_CreateAuthenticationFlowsAndCreateAuthenticationExecution(t *te
 	t.Logf("authentication executions: %+v", authExecs)
 	require.NoError(t, err, "Failed to get authentication executions")
 
-	authExecs[0].Requirement = gocloak.StringP("ALTERNATIVE")
-	err = client.UpdateAuthenticationExecution(
-		context.Background(),
-		token.AccessToken,
-		cfg.GoCloak.Realm,
-		*authFlow.Alias,
-		*authExecs[0],
-	)
-	require.NoError(t, err, "Failed to update authentication executions")
+	// UpdateAuthenticationExecution
+	for _, execution := range authExecs {
+		if execution.ProviderID != nil && *execution.ProviderID == *authExec.Provider {
+			execution.Requirement = gocloak.StringP("ALTERNATIVE")
+			err = client.UpdateAuthenticationExecution(
+				context.Background(),
+				token.AccessToken,
+				cfg.GoCloak.Realm,
+				*authFlow.Alias,
+				*execution,
+			)
+			require.NoError(t, err, fmt.Sprintf("Failed to update authentication executions, realm: %+v, flow: %+v, execution: %+v", cfg.GoCloak.Realm, *authFlow.Alias, *execution.ProviderID))
+			break
+		}
+	}
 	authExecs, err = client.GetAuthenticationExecutions(
 		context.Background(),
 		token.AccessToken,
@@ -6211,6 +6233,34 @@ func TestGocloak_CreateAuthenticationFlowsAndCreateAuthenticationExecution(t *te
 	)
 	require.NoError(t, err, "Failed to get authentication executions second time")
 	t.Logf("authentication executions after update: %+v", authExecs)
+
+	var (
+		execDeleted   bool
+		execFlowFound bool
+	)
+	for _, execution := range authExecs {
+		if execution.DisplayName != nil && *execution.DisplayName == *authExecFlow.Alias {
+			execFlowFound = true
+			continue
+		}
+		if execution.ProviderID != nil && *execution.ProviderID == *authExec.Provider {
+			require.NotNil(t, execution.Requirement)
+			require.Equal(t, *execution.Requirement, "ALTERNATIVE")
+			err = client.DeleteAuthenticationExecution(
+				context.Background(),
+				token.AccessToken,
+				cfg.GoCloak.Realm,
+				*execution.ID,
+			)
+			require.NoError(t, err, "Failed to delete authentication execution")
+			execDeleted = true
+		}
+		if execDeleted && execFlowFound {
+			break
+		}
+	}
+	require.True(t, execDeleted, "Failed to delete authentication execution, no execution was deleted")
+	require.True(t, execFlowFound, "Failed to find authentication execution flow")
 
 	flows, err := client.GetAuthenticationFlows(context.Background(), token.AccessToken, cfg.GoCloak.Realm)
 	require.NoError(t, err, "Failed to get authentication flows")

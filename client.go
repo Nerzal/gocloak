@@ -2204,6 +2204,15 @@ func (client *gocloak) DeleteAuthenticationExecution(ctx context.Context, token,
 	return checkForError(resp, err, errMessage)
 }
 
+//CreateAuthenticationExecutionFlow creates a new execution for the given flow name in the given realm
+func (client *gocloak) CreateAuthenticationExecutionFlow(ctx context.Context, token, realm, flow string, executionFlow CreateAuthenticationExecutionFlowRepresentation) error {
+	const errMessage = "could not create authentication execution flow"
+	resp, err := client.getRequestWithBearerAuth(ctx, token).SetBody(executionFlow).
+		Post(client.getAdminRealmURL(realm, "authentication", "flows", flow, "executions", "flow"))
+
+	return checkForError(resp, err, errMessage)
+}
+
 // -----
 // Users
 // -----

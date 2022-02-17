@@ -316,6 +316,9 @@ type GoCloak interface {
 	// DeleteAuthenticationExecution delete a single execution with the given ID
 	DeleteAuthenticationExecution(ctx context.Context, token, realm, executionID string) error
 
+	//CreateAuthenticationExecutionFlow creates a new flow execution for the given flow name in the given realm
+	CreateAuthenticationExecutionFlow(ctx context.Context, token, realm, flow string, execution CreateAuthenticationExecutionFlowRepresentation) error
+
 	// *** Users ***
 	// CreateUser creates a new user
 	CreateUser(ctx context.Context, token, realm string, user User) (string, error)
