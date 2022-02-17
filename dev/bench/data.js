@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1643020923769,
+  "lastUpdate": 1645104440803,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -3777,6 +3777,54 @@ window.BENCHMARK_DATA = {
             "value": 49329060,
             "unit": "ns/op\t   55621 B/op\t     218 allocs/op",
             "extra": "24 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chris@shibumi.dev",
+            "name": "Christian Rebischke",
+            "username": "shibumi"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7fa5389b9f83a2be4ee2d372b9d7cbaf54402154",
+          "message": "feat: add requiredActionProviderRepresentation (#339)\n\nThis commit adds the requiredActionProviderRepresentation and a function for updating required actions",
+          "timestamp": "2022-02-17T14:24:22+01:00",
+          "tree_id": "076bec138675a63029ab111614f6522b772a155c",
+          "url": "https://github.com/Nerzal/gocloak/commit/7fa5389b9f83a2be4ee2d372b9d7cbaf54402154"
+        },
+        "date": 1645104439844,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 79408505,
+            "unit": "ns/op\t   75061 B/op\t     221 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 80309614,
+            "unit": "ns/op\t   69213 B/op\t     220 allocs/op",
+            "extra": "14 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 85229091,
+            "unit": "ns/op\t   57287 B/op\t     219 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 46200397,
+            "unit": "ns/op\t   59328 B/op\t     219 allocs/op",
+            "extra": "25 times\n2 procs"
           }
         ]
       }
