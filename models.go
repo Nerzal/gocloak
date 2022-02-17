@@ -1190,9 +1190,9 @@ type GetEventsParams struct {
 	Client    *string  `json:"client,omitempty"`
 	DateFrom  *string  `json:"dateFrom,omitempty"`
 	DateTo    *string  `json:"dateTo,omitempty"`
-	First     *int32   `json:"first,omitempty"`
+	First     *int32   `json:"first,string,omitempty"`
 	IPAddress *string  `json:"ipAddress,omitempty"`
-	Max       *int32   `json:"max,omitempty"`
+	Max       *int32   `json:"max,string,omitempty"`
 	Type      []string `json:"type,omitempty"`
 	UserID    *string  `json:"user,omitempty"`
 }
