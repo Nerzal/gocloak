@@ -40,5 +40,6 @@ issues:
         - gocyclo
         - dupl
         - gosec
+        - gocognit
   exclude:
     - should have a package comment
