@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1646127472289,
+  "lastUpdate": 1646127777815,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -3965,6 +3965,54 @@ window.BENCHMARK_DATA = {
             "value": 56046811,
             "unit": "ns/op\t   60192 B/op\t     219 allocs/op",
             "extra": "20 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "77924577+tjarkmeyer@users.noreply.github.com",
+            "name": "Tjark Meyer",
+            "username": "tjarkmeyer"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "44d3a1f80082495a5bc11e23f806cb0541741feb",
+          "message": "fix: json tags in GetEventsParams (#335) (#340)\n\nCo-authored-by: Tjark Meyer <t.meyer@e-mission.de>",
+          "timestamp": "2022-03-01T10:31:56+01:00",
+          "tree_id": "1488f732d394854e411f0feee4435447e093737c",
+          "url": "https://github.com/Nerzal/gocloak/commit/44d3a1f80082495a5bc11e23f806cb0541741feb"
+        },
+        "date": 1646127776331,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 77091331,
+            "unit": "ns/op\t   70689 B/op\t     222 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 77233511,
+            "unit": "ns/op\t   62671 B/op\t     219 allocs/op",
+            "extra": "15 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 76410301,
+            "unit": "ns/op\t   49217 B/op\t     219 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 43413906,
+            "unit": "ns/op\t   64435 B/op\t     220 allocs/op",
+            "extra": "25 times\n2 procs"
           }
         ]
       }
