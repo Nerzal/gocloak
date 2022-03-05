@@ -522,7 +522,7 @@ func (client *gocloak) LoginAdmin(ctx context.Context, username, password, realm
 	})
 }
 
-// Login performs a login with client credentials
+// LoginClient performs a login with client credentials
 func (client *gocloak) LoginClient(ctx context.Context, clientID, clientSecret, realm string) (*JWT, error) {
 	return client.GetToken(ctx, realm, TokenOptions{
 		ClientID:     &clientID,
@@ -534,15 +534,18 @@ func (client *gocloak) LoginClient(ctx context.Context, clientID, clientSecret, 
 // LoginClientTokenExchange will exchange the presented token for a user's token
 // Requires Token-Exchange is enabled: https://www.keycloak.org/docs/latest/securing_apps/index.html#_token-exchange
 func (client *gocloak) LoginClientTokenExchange(ctx context.Context, clientID, token, clientSecret, realm, targetClient, userID string) (*JWT, error) {
-	return client.GetToken(ctx, realm, TokenOptions{
+	tokenOptions := TokenOptions{
 		ClientID:           &clientID,
 		ClientSecret:       &clientSecret,
 		GrantType:          StringP("urn:ietf:params:oauth:grant-type:token-exchange"),
 		SubjectToken:       &token,
 		RequestedTokenType: StringP("urn:ietf:params:oauth:token-type:refresh_token"),
 		Audience:           &targetClient,
-		RequestedSubject:   &userID,
-	})
+	}
+	if userID != "" {
+		tokenOptions.RequestedSubject = &userID
+	}
+	return client.GetToken(ctx, realm, tokenOptions)
 }
 
 // LoginClientSignedJWT performs a login with client credentials and signed jwt claims
