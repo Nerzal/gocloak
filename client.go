@@ -3631,8 +3631,6 @@ func (client *gocloak) GetEvents(ctx context.Context, token string, realm string
 		SetQueryParams(queryParams).
 		Get(client.getAdminRealmURL(realm, "events"))
 
-	fmt.Printf("%v+", result)
-
 	if err := checkForError(resp, err, errMessage); err != nil {
 		return nil, err
 	}
