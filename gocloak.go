@@ -86,6 +86,8 @@ type GoCloak interface {
 	CreateClientScopeMappingsClientRoles(ctx context.Context, token, realm, idOfClient, idOfSelectedClient string, roles []Role) error
 	// CreateClientScopesScopeMappingsRealmRoles creates realm-level roles to the client-scope
 	CreateClientScopesScopeMappingsRealmRoles(ctx context.Context, token, realm, idOfClientScope string, roles []Role) error
+	// CreateClientScopesScopeMappingsClientRoles creates client-level roles to the client-scope
+	CreateClientScopesScopeMappingsClientRoles(ctx context.Context, token, realm, idOfClientScope, idOfClient string, roles []Role) error
 	// CreateClientRepresentation creates a new client representation
 	CreateClientRepresentation(ctx context.Context, realm string) (*Client, error)
 
@@ -118,6 +120,8 @@ type GoCloak interface {
 	DeleteClientScopeMappingsClientRoles(ctx context.Context, token, realm, idOfClient, idOfSelectedClient string, roles []Role) error
 	// DeleteClientScopesScopeMappingsRealmRoles deletes realm-level roles from the client-scope
 	DeleteClientScopesScopeMappingsRealmRoles(ctx context.Context, token, realm, idOfClientScope string, roles []Role) error
+	// DeleteClientScopesScopeMappingsClientRoles deletes client-level roles from the client-scope
+	DeleteClientScopesScopeMappingsClientRoles(ctx context.Context, token, realm, idOfClientScope, ifOfClient string, roles []Role) error
 	// DeleteClientRepresentation deletes a given client representation
 	DeleteClientRepresentation(ctx context.Context, accessToken, realm, clientID string) error
 
@@ -155,10 +159,14 @@ type GoCloak interface {
 	GetClientScopeMappingsRealmRolesAvailable(ctx context.Context, token, realm, idOfClient string) ([]*Role, error)
 	// GetClientScopesScopeMappingsRealmRolesAvailable returns realm-level roles that are available to attach to this client-scope
 	GetClientScopesScopeMappingsRealmRolesAvailable(ctx context.Context, token, realm, idOfClientScope string) ([]*Role, error)
+	// GetClientScopesScopeMappingsClientRolesAvailable returns client-level roles that are available to attach to this client-scope
+	GetClientScopesScopeMappingsClientRolesAvailable(ctx context.Context, token, realm, idOfClientScope, idOfClient string) ([]*Role, error)
 	// GetClientScopeMappingsClientRoles returns roles associated with a client’s scope
 	GetClientScopeMappingsClientRoles(ctx context.Context, token, realm, idOfClient, idOfSelectedClient string) ([]*Role, error)
 	// GetClientScopesScopeMappingsRealmRoles returns roles associated with a client-scope
 	GetClientScopesScopeMappingsRealmRoles(ctx context.Context, token, realm, idOfClientScope string) ([]*Role, error)
+	// GetClientScopesScopeMappingsClientRoles returns client roles associated with a client-scope
+	GetClientScopesScopeMappingsClientRoles(ctx context.Context, token, realm, idOfClientScope, idOfClient string) ([]*Role, error)
 	// GetClientScopeMappingsClientRolesAvailable returns available roles associated with a client’s scope
 	GetClientScopeMappingsClientRolesAvailable(ctx context.Context, token, realm, idOfClient, idOfSelectedClient string) ([]*Role, error)
 	// GetClientSecret returns a client's secret
