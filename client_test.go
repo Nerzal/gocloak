@@ -5412,7 +5412,9 @@ func Test_CreateGetUpdateDeleteResourcePolicy(t *testing.T) {
 			Name:        policyNameP,
 			Description: gocloak.StringP("Role Policy"),
 			Scopes:      &scopes,
-			Roles:       &[]string{roleName},
+			// "gocloak" is the client name here, apparently it's necessary to scope client roles like that here.
+			// ref: https://github.com/keycloak/keycloak/blob/main/core/src/main/java/org/keycloak/representations/idm/authorization/UmaPermissionRepresentation.java#L53
+			Roles: &[]string{fmt.Sprintf("gocloak/%v", roleName)},
 		},
 		{
 			Name:        policyNameP,
