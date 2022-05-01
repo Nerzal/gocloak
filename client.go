@@ -779,6 +779,21 @@ func (client *gocloak) CreateClientScope(ctx context.Context, token, realm strin
 	return getID(resp), nil
 }
 
+// CreateClientScopeProtocolMapper creates a new protocolMapper under the given client scope
+func (client *gocloak) CreateClientScopeProtocolMapper(ctx context.Context, token, realm, scopeID string, protocolMapper ProtocolMappers) (string, error) {
+	const errMessage = "could not create client scope protocol mapper"
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetBody(protocolMapper).
+		Post(client.getAdminRealmURL(realm, "client-scopes", scopeID, "protocol-mappers", "models"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return "", err
+	}
+
+	return getID(resp), nil
+}
+
 func (client *gocloak) UpdateGroup(ctx context.Context, token, realm string, updatedGroup Group) error {
 	const errMessage = "could not update group"
 
@@ -849,6 +864,17 @@ func (client *gocloak) UpdateClientScope(ctx context.Context, token, realm strin
 	return checkForError(resp, err, errMessage)
 }
 
+// UpdateClientScopeProtocolMapper updates the given protocol mapper for a client scope
+func (client *gocloak) UpdateClientScopeProtocolMapper(ctx context.Context, token, realm, scopeID string, protocolMapper ProtocolMappers) error {
+	const errMessage = "could not update client scope"
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetBody(protocolMapper).
+		Put(client.getAdminRealmURL(realm, "client-scopes", scopeID, "protocol-mappers", "models", PString(protocolMapper.ID)))
+
+	return checkForError(resp, err, errMessage)
+}
+
 func (client *gocloak) DeleteGroup(ctx context.Context, token, realm, groupID string) error {
 	const errMessage = "could not delete group"
 
@@ -902,6 +928,16 @@ func (client *gocloak) DeleteClientScope(ctx context.Context, token, realm, scop
 
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
 		Delete(client.getAdminRealmURL(realm, "client-scopes", scopeID))
+
+	return checkForError(resp, err, errMessage)
+}
+
+// DeleteClientScopeProtocolMapper deletes the given protocol mapper from the client scope
+func (client *gocloak) DeleteClientScopeProtocolMapper(ctx context.Context, token, realm, scopeID, protocolMapperID string) error {
+	const errMessage = "could not delete client scope"
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		Delete(client.getAdminRealmURL(realm, "client-scopes", scopeID, "protocol-mappers", "models", protocolMapperID))
 
 	return checkForError(resp, err, errMessage)
 }
@@ -1091,6 +1127,40 @@ func (client *gocloak) GetClientScopes(ctx context.Context, token, realm string)
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
 		SetResult(&result).
 		Get(client.getAdminRealmURL(realm, "client-scopes"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// GetClientScopeProtocolMappers returns all protocol mappers of a client scope
+func (client *gocloak) GetClientScopeProtocolMappers(ctx context.Context, token, realm, scopeID string) ([]*ProtocolMappers, error) {
+	const errMessage = "could not get client scope protocol mappers"
+
+	var result []*ProtocolMappers
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "client-scopes", scopeID, "protocol-mappers", "models"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// GetClientScopeProtocolMapper returns a protocol mapper of a client scope
+func (client *gocloak) GetClientScopeProtocolMapper(ctx context.Context, token, realm, scopeID, protocolMapperID string) (*ProtocolMappers, error) {
+	const errMessage = "could not get client scope protocol mappers"
+
+	var result *ProtocolMappers
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "client-scopes", scopeID, "protocol-mappers", "models", protocolMapperID))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
 		return nil, err
