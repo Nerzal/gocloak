@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1651682579517,
+  "lastUpdate": 1651694138362,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -4341,6 +4341,54 @@ window.BENCHMARK_DATA = {
             "value": 50987091,
             "unit": "ns/op\t   61495 B/op\t     220 allocs/op",
             "extra": "27 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "mpawlowski@users.noreply.github.com",
+            "name": "Marcin Pawlowski",
+            "username": "mpawlowski"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "289eed6740763c589dc44bee0a0ba16178371fec",
+          "message": " update GetResourcePoliciesParams to use correct filter key (#350)",
+          "timestamp": "2022-05-04T21:53:08+02:00",
+          "tree_id": "19626bf7dd811fc0cf942c9da131393398557e7b",
+          "url": "https://github.com/Nerzal/gocloak/commit/289eed6740763c589dc44bee0a0ba16178371fec"
+        },
+        "date": 1651694137921,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 71480217,
+            "unit": "ns/op\t   74522 B/op\t     220 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 71955918,
+            "unit": "ns/op\t   68379 B/op\t     222 allocs/op",
+            "extra": "15 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 70994658,
+            "unit": "ns/op\t   56851 B/op\t     221 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 41705048,
+            "unit": "ns/op\t   72375 B/op\t     221 allocs/op",
+            "extra": "30 times\n2 procs"
           }
         ]
       }
