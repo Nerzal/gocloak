@@ -1178,7 +1178,7 @@ type PolicyResourceRepresentation struct {
 
 // GetResourcePoliciesParams is a representation of the query params for getting policies
 type GetResourcePoliciesParams struct {
-	ResourceID *string `json:"resource_id,omitempty"`
+	ResourceID *string `json:"resource,omitempty"`
 	Name       *string `json:"name,omitempty"`
 	Scope      *string `json:"scope,omitempty"`
 	First      *int    `json:"first,string,omitempty"`
