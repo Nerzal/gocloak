@@ -6,8 +6,8 @@ jobs:
   tests:
     runs-on: ubuntu-latest
     steps:
-      - name: Install Go
-        uses: actions/setup-go@v2.1.3
+      - name: Setup Go environment
+        uses: actions/setup-go@v3.0.0
         with:
           go-version: 1.18
       - name: Checkout code
