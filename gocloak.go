@@ -76,6 +76,8 @@ type GoCloak interface {
 	CreateClient(ctx context.Context, accessToken, realm string, newClient Client) (string, error)
 	// CreateClientScope creates a new clientScope
 	CreateClientScope(ctx context.Context, accessToken, realm string, scope ClientScope) (string, error)
+	// CreateClientScopeProtocolMapper creates a new protocolMapper under the given client scope
+	CreateClientScopeProtocolMapper(ctx context.Context, accessToken, realm, scopeID string, protocolMapper ProtocolMappers) (string, error)
 	// CreateComponent creates a new component
 	CreateComponent(ctx context.Context, accessToken, realm string, component Component) (string, error)
 	// CreateClientScopeMappingsRealmRoles creates realm-level roles to the client’s scope
@@ -95,6 +97,8 @@ type GoCloak interface {
 	UpdateClient(ctx context.Context, accessToken, realm string, updatedClient Client) error
 	// UpdateClientScope updates the given clientScope
 	UpdateClientScope(ctx context.Context, accessToken, realm string, scope ClientScope) error
+	// UpdateClientScopeProtocolMapper updates the given protocol mapper for a client scope
+	UpdateClientScopeProtocolMapper(ctx context.Context, accessToken, realm, scopeID string, protocolMapper ProtocolMappers) error
 	// UpdateClientRepresentation updates the given client representation
 	UpdateClientRepresentation(ctx context.Context, accessToken, realm string, updatedClient Client) (*Client, error)
 
@@ -106,6 +110,8 @@ type GoCloak interface {
 	DeleteClient(ctx context.Context, accessToken, realm, idOfClient string) error
 	// DeleteClientScope
 	DeleteClientScope(ctx context.Context, accessToken, realm, scopeID string) error
+	// DeleteClientScopeProtocolMapper deletes the given protocol mapper from the client scope
+	DeleteClientScopeProtocolMapper(ctx context.Context, accessToken, realm, scopeID, protocolMapperID string) error
 	// DeleteClientScopeMappingsRealmRoles deletes realm-level roles from the client’s scope
 	DeleteClientScopeMappingsRealmRoles(ctx context.Context, token, realm, idOfClient string, roles []Role) error
 	// DeleteClientScopeMappingsClientRoles deletes client-level roles from the client’s scope
@@ -137,6 +143,10 @@ type GoCloak interface {
 	GetClientScope(ctx context.Context, token, realm, scopeID string) (*ClientScope, error)
 	// GetClientScopes returns all client scopes
 	GetClientScopes(ctx context.Context, token, realm string) ([]*ClientScope, error)
+	// GetClientScopeProtocolMappers returns all protocol mappers of a client scope
+	GetClientScopeProtocolMappers(ctx context.Context, token, realm, scopeID string) ([]*ProtocolMappers, error)
+	// GetClientScopeProtocolMapper returns a protocol mapper of a client scope
+	GetClientScopeProtocolMapper(ctx context.Context, token, realm, scopeID, protocolMapperID string) (*ProtocolMappers, error)
 	// GetClientScopeMappings returns all scope mappings for the client
 	GetClientScopeMappings(ctx context.Context, token, realm, idOfClient string) (*MappingsRepresentation, error)
 	// GetClientScopeMappingsRealmRoles returns realm-level roles associated with the client’s scope

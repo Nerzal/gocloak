@@ -1309,6 +1309,87 @@ func Test_CreateClientScope_DeleteClientScope(t *testing.T) {
 	tearDown()
 }
 
+func CreateUpdateClientScopeProtocolMapper(t *testing.T, client gocloak.GoCloak, scopeID string, protocolMapper *gocloak.ProtocolMappers) (func(), string) {
+	cfg := GetConfig(t)
+	token := GetAdminToken(t, client)
+
+	if protocolMapper == nil {
+		protocolMapper = &gocloak.ProtocolMappers{
+			ID:             GetRandomNameP("proto-map-"),
+			Name:           GetRandomNameP("proto-map-"),
+			Protocol:       GetRandomNameP("openid-connect"),
+			ProtocolMapper: gocloak.StringP("oidc-usermodel-realm-role-mapper"),
+			ProtocolMappersConfig: &gocloak.ProtocolMappersConfig{
+				UserAttribute:      gocloak.StringP("foo"),
+				IDTokenClaim:       gocloak.StringP("true"),
+				UserinfoTokenClaim: gocloak.StringP("true"),
+				AccessTokenClaim:   gocloak.StringP("true"),
+				ClaimName:          gocloak.StringP("realm.roles"),
+				JSONTypeLabel:      gocloak.StringP("String"),
+				Multivalued:        gocloak.StringP("true"),
+			},
+		}
+	}
+
+	t.Logf("Creating Client Scope Protocol Mapper: %+v", protocolMapper)
+	protocolMapperID, err := client.CreateClientScopeProtocolMapper(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		scopeID,
+		*protocolMapper,
+	)
+	require.NoError(t, err, "CreateClientScopeProtocolMapper failed")
+	if !gocloak.NilOrEmpty(protocolMapper.ID) {
+		require.Equal(t, protocolMapperID, *protocolMapper.ID)
+	}
+
+	protocolMapper.Name = GetRandomNameP("proto-map2-")
+	protocolMapper.ProtocolMappersConfig.AccessTokenClaim = gocloak.StringP("false")
+	err = client.UpdateClientScopeProtocolMapper(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		scopeID,
+		*protocolMapper,
+	)
+	require.NoError(t, err, "UpdateClientScopeProtocolMapper failed")
+
+	tearDown := func() {
+		err := client.DeleteClientScopeProtocolMapper(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			scopeID,
+			protocolMapperID,
+		)
+		require.NoError(t, err, "DeleteClientScopeProtocolMapper failed")
+	}
+	return tearDown, protocolMapperID
+}
+
+func Test_CreateClientScopeProtocolMapper_DeleteClientScopeProtocolMapper(t *testing.T) {
+	// t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	tearDown1, scopeID := CreateClientScope(t, client, nil)
+	tearDown2, protocolMapperID := CreateUpdateClientScopeProtocolMapper(t, client, scopeID, nil)
+	protocolMapper, err := client.GetClientScopeProtocolMapper(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		scopeID,
+		protocolMapperID,
+	)
+	require.NoError(t, err)
+	require.NotEmpty(t, protocolMapper)
+	require.Equal(t, protocolMapper.ProtocolMappersConfig.AccessTokenClaim, gocloak.StringP("false"))
+	tearDown2()
+	tearDown1()
+}
+
 func Test_ListAddRemoveDefaultClientScopes(t *testing.T) {
 	// t.Parallel()
 	cfg := GetConfig(t)
@@ -1499,6 +1580,26 @@ func Test_GetClientScopes(t *testing.T) {
 	require.NoError(t, err, "GetClientScopes failed")
 	// Checking that GetClientScopes returns scopes
 	require.NotZero(t, len(scopes), "there should be client scopes")
+}
+
+func Test_GetClientScopeProtocolMappers(t *testing.T) {
+	// t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	tearDown, scopeID := CreateClientScope(t, client, nil)
+	defer tearDown()
+
+	// Getting client scope protocol mappers
+	protocolMappers, err := client.GetClientScopeProtocolMappers(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		scopeID,
+	)
+	require.NoError(t, err, "GetClientScopeProtocolMappers failed")
+	// Checking that GetClientScopeProtocolMappers returns something
+	require.NotNil(t, protocolMappers)
 }
 
 func CreateClientScopeMappingsRealmRoles(t *testing.T, client gocloak.GoCloak, idOfClient string, roles []gocloak.Role) func() {
