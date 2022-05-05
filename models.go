@@ -398,6 +398,7 @@ type ProtocolMappersConfig struct {
 	Multivalued                        *string `json:"multivalued,omitempty"`
 	UsermodelClientRoleMappingClientID *string `json:"usermodel.clientRoleMapping.clientId,omitempty"`
 	IncludedClientAudience             *string `json:"included.client.audience,omitempty"`
+	FullPath                           *string `json:"full.path,omitempty"`
 }
 
 // Client is a ClientRepresentation
