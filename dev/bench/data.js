@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1651737780762,
+  "lastUpdate": 1651740525705,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -4437,6 +4437,54 @@ window.BENCHMARK_DATA = {
             "value": 55396409,
             "unit": "ns/op\t   66468 B/op\t     221 allocs/op",
             "extra": "22 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "msdmelo@inf.ufpel.edu.br",
+            "name": "Mateus Santos de Melo",
+            "username": "mateussm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c740220171ec1414a232fafb2543d213d23b8232",
+          "message": "add: full path field (#349)",
+          "timestamp": "2022-05-05T10:46:21+02:00",
+          "tree_id": "1d2be99346470ea14b153f9a6b4e928bfb4c735b",
+          "url": "https://github.com/Nerzal/gocloak/commit/c740220171ec1414a232fafb2543d213d23b8232"
+        },
+        "date": 1651740525247,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 75481509,
+            "unit": "ns/op\t   55396 B/op\t     220 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 73372828,
+            "unit": "ns/op\t   74990 B/op\t     223 allocs/op",
+            "extra": "15 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 74513140,
+            "unit": "ns/op\t   78169 B/op\t     222 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 45152997,
+            "unit": "ns/op\t   65058 B/op\t     222 allocs/op",
+            "extra": "25 times\n2 procs"
           }
         ]
       }
