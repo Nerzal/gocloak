@@ -11,7 +11,7 @@ linters:
     - gosec
     - maligned
     - unconvert
-    - golint
+    - revive
     - gocognit
     - gocyclo
   fast: true
