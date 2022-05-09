@@ -21,7 +21,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-resty/resty/v2"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/pkcs12"
@@ -6398,4 +6397,16 @@ func TestGocloak_UpdateRequiredAction(t *testing.T) {
 	}
 	err := client.UpdateRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, requiredAction)
 	require.NoError(t, err, "Failed to update required action")
+}
+func Test_GetUserFederation(t *testing.T) {
+	// t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	_, err := client.GetUserFederation(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm)
+	require.NoError(t, err, "GetUserFederation failed")
 }

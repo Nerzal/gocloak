@@ -1343,3 +1343,64 @@ func (v *ResourcePolicyRepresentation) String() string              { return pre
 func (v *GetResourcePoliciesParams) String() string                 { return prettyStringStruct(v) }
 func (v *CredentialRepresentation) String() string                  { return prettyStringStruct(v) }
 func (v *RequiredActionProviderRepresentation) String() string      { return prettyStringStruct(v) }
+
+//CreateUserFederationRequest - struct for get the request
+type CreateUserFederationRequest struct {
+	Name         string        `json:"name"`
+	ProviderId   string        `json:"provideId"`
+	ProviderType string        `json:"providerType"`
+	ParentId     string        `json:"parentId"`
+	Config       RequestConfig `json:"config"`
+}
+
+//RequestConfig - struct for get request config
+type RequestConfig struct {
+	FullSyncPeriod                       []string `json:"fullSyncPeriod"`
+	Pagination                           []string `json:"pagination"`
+	ConnectionPooling                    []string `json:"connectionPooling"`
+	UsersDn                              []string `json:"usersDn"`
+	CachePolicy                          []string `json:"cachePolicy"`
+	UseKerberosForPasswordAuthentication []string `json:"useKerberosForPasswordAuthentication"`
+	ImportEnabled                        []string `json:"importEnabled"`
+	Enabled                              []string `json:"enabled"`
+	BindDn                               []string `json:"bindDn"`
+	ChangedSyncPeriod                    []string `json:"changedSyncPeriod"`
+	BindCredential                       []string `json:"bindCredential"`
+	UsernameLDAPAttribute                []string `json:"usernameLDAPAttribute"`
+	LastSync                             []string `json:"lastSync"`
+	Vendor                               []string `json:"vendor"`
+	UuidLDAPAttribute                    []string `json:"uuidLDAPAttribute"`
+	AllowKerberosAuthentication          []string `json:"allowKerberosAuthentication"`
+	ConnectionUrl                        []string `json:"connectionUrl"`
+	SyncRegistrations                    []string `json:"syncRegistrations"`
+	AuthType                             []string `json:"authType"`
+	debug                                []string `json:"debug"`
+	SearchScope                          []string `json:"searchScope"`
+	UseTruststoreSpi                     []string `json:"useTruststoreSpi"`
+	TrustEmail                           []string `json:"trustEmail"`
+	Priority                             []string `json:"priority"`
+	UserObjectClasses                    []string `json:"userObjectClasses"`
+	RdnLDAPAttribute                     []string `json:"rdnLDAPAttribute"`
+	EditMode                             []string `json:"editMode"`
+	ValidatePasswordPolicy               []string `json:"validatePasswordPolicy"`
+	BatchSizeForSync                     []string `json:"batchSizeForSync"`
+	EvictionDay                          []string `json:"evictionDay"`
+	EvictionHour                         []string `json:"evictionHour"`
+	EvictionMinute                       []string `json:"evictionMinute"`
+	MaxLifespan                          []string `json:"maxLifespan"`
+	UsePasswordModifyExtendedOp          []string `json:"usePasswordModifyExtendedOp"`
+	StartTls                             []string `json:"startTls"`
+	CustomUserSearchFilter               []string `json:"customUserSearchFilter"`
+	ConnectionPoolingAuthentication      []string `json:"connectionPoolingAuthentication"`
+	ConnectionPoolingDebug               []string `json:"connectionPoolingDebug"`
+	ConnectionPoolingInitSize            []string `json:"connectionPoolingDebug"`
+	ConnectionPoolingMaxSize             []string `json:"connectionPoolingMaxSize"`
+	ConnectionPoolingPrefSize            []string `json:"connectionPoolingPrefSize"`
+	ConnectionPoolingProtocol            []string `json:"connectionPoolingProtocol"`
+	ConnectionPoolingTimeout             []string `json:"connectionPoolingTimeout"`
+	ConnectionTimeout                    []string `json:"connectionTimeout"`
+	ReadTimeout                          []string `json:"readTimeout"`
+	ServerPrincipal                      []string `json:"serverPrincipal"`
+	KeyTab                               []string `json:"keyTab"`
+	KerberosRealm                        []string `json:"kerberosRealm"`
+}

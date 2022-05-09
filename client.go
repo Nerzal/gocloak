@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-resty/resty/v2"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
@@ -3776,4 +3775,33 @@ func (client *gocloak) UpdateRequiredAction(ctx context.Context, token string, r
 		Put(client.getAdminRealmURL(realm, "authentication", "required-actions", *requiredAction.ProviderID))
 
 	return err
+}
+
+func (client *gocloak) CreateUserFederation(ctx context.Context, accessToken, realm string, request CreateUserFederationRequest) (string, error) {
+	const errMessage = "could not create user federation"
+	resp, err := client.getRequestWithBearerAuth(ctx, accessToken).
+		SetBody(request).
+		Post(client.getAdminRealmURL(realm, "components"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return "", err
+	}
+
+	return getID(resp), nil
+
+}
+
+func (client *gocloak) GetUserFederation(ctx context.Context, accessToken, realm string) (*Component, error) {
+	var component *Component
+	components, err := client.GetComponents(ctx, accessToken, realm)
+	if err != nil {
+		return component, err
+	}
+	providerId := "ldap"
+	if components[0].ProviderID == &providerId && components[0].ParentID == &realm {
+		component = components[0]
+		return component, nil
+	} else {
+		return component, nil
+	}
 }
