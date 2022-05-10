@@ -1665,7 +1665,7 @@ func Test_ClientScopeMappingsClientRoles(t *testing.T) {
 	token := GetAdminToken(t, client)
 	testClient := gocloak.Client{
 		ClientID:         GetRandomNameP("ClientID"),
-		BaseURL:          gocloak.StringP("http://example.com"),
+		BaseURL:          gocloak.StringP("https://example.com"),
 		FullScopeAllowed: gocloak.BoolP(false),
 	}
 	// Creating client
@@ -1809,6 +1809,112 @@ func Test_ClientScopeMappingsRealmRoles(t *testing.T) {
 		t, realmRolesAvailable, len(realmRoles)-len(roles),
 		"GetClientScopeMappingsRealmRolesAvailable should return exact %s realm", len(realmRoles)-len(roles),
 	)
+}
+
+func CreateClientScopesMappingsClientRoles(
+	t *testing.T, client gocloak.GoCloak, scopeID, idOfClient string, roles []gocloak.Role,
+) func() {
+	token := GetAdminToken(t, client)
+	cfg := GetConfig(t)
+
+	// Creating client scope mappings
+	err := client.CreateClientScopesScopeMappingsClientRoles(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		scopeID,
+		idOfClient,
+		roles,
+	)
+	require.NoError(t, err, "CreateClientScopesScopeMappingsClientRoles failed")
+
+	tearDown := func() {
+		err = client.DeleteClientScopesScopeMappingsClientRoles(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			scopeID,
+			idOfClient,
+			roles,
+		)
+		require.NoError(t, err, "DeleteClientScopesScopeMappingsClientRoles failed")
+	}
+	return tearDown
+}
+
+// Test_ClientScopesMappingsClientRoles tests API calls related to client role attachment for a client scope.
+func Test_ClientScopesMappingsClientRoles(t *testing.T) {
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	// Creating client roles (on shared client)
+	var roles []gocloak.Role
+	tearDownRole1, assignRoleName := CreateClientRole(t, client)
+	defer tearDownRole1()
+	role, err := client.GetClientRole(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		assignRoleName,
+	)
+	require.NoError(t, err, "CreateClientRole failed")
+	roles = append(roles, *role)
+	tearDownRole2, noAssignRoleName := CreateClientRole(t, client)
+	defer tearDownRole2()
+	role, err = client.GetClientRole(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		noAssignRoleName,
+	)
+	require.NoError(t, err, "GetClientRole after CreateClientRole failed")
+	roles = append(roles, *role)
+
+	// Creating scope
+	tearDownScope, scopeID := CreateClientScope(t, client, nil)
+	defer tearDownScope()
+
+	// Creating client roles for client scope mappings
+	onlyFirstRole := roles[:1]
+	tearDownMappings := CreateClientScopesMappingsClientRoles(t, client, scopeID, gocloakClientID, onlyFirstRole)
+	defer tearDownMappings()
+
+	// Check client roles
+	mappedRoles, err := client.GetClientScopesScopeMappingsClientRoles(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		scopeID,
+		gocloakClientID,
+	)
+	require.NoError(t, err, "GetClientScopesScopeMappingsClientRoles failed")
+	require.Len(
+		t, mappedRoles, len(onlyFirstRole),
+		"GetClientScopeMappingsClientRoles should return exact %s roles", len(onlyFirstRole),
+	)
+
+	clientRolesAvailable, err := client.GetClientScopesScopeMappingsClientRolesAvailable(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		scopeID,
+		gocloakClientID,
+	)
+	require.NoError(t, err, "GetClientScopesScopeMappingsClientRolesAvailable failed")
+	foundUnassignedRole := false
+	for _, roleAvailable := range clientRolesAvailable {
+		require.NotEqual(
+			t, assignRoleName, roleAvailable.Name,
+			"assigned role %v should not be available", assignRoleName,
+		)
+		if *roleAvailable.Name == noAssignRoleName {
+			foundUnassignedRole = true
+		}
+	}
+	require.True(t, foundUnassignedRole, "expected role %s to be available", noAssignRoleName)
 }
 
 func Test_CreateListGetUpdateDeleteClient(t *testing.T) {
@@ -5306,7 +5412,9 @@ func Test_CreateGetUpdateDeleteResourcePolicy(t *testing.T) {
 			Name:        policyNameP,
 			Description: gocloak.StringP("Role Policy"),
 			Scopes:      &scopes,
-			Roles:       &[]string{roleName},
+			// "gocloak" is the client name here, apparently it's necessary to scope client roles like that here.
+			// ref: https://github.com/keycloak/keycloak/blob/main/core/src/main/java/org/keycloak/representations/idm/authorization/UmaPermissionRepresentation.java#L53
+			Roles: &[]string{fmt.Sprintf("gocloak/%v", roleName)},
 		},
 		{
 			Name:        policyNameP,
