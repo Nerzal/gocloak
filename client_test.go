@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/go-resty/resty/v2"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -6409,4 +6410,69 @@ func Test_GetUserFederation(t *testing.T) {
 		token.AccessToken,
 		cfg.GoCloak.Realm)
 	require.NoError(t, err, "GetUserFederation failed")
+}
+func Test_CreateUserFederation(t *testing.T) {
+	// t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	request := gocloak.CreateUserFederationRequest{}
+	request.Name = "ldap"
+	request.ProviderId = "ldap"
+	request.ProviderType = "org.keycloak.storage.UserStorageProvider"
+	request.ParentId = "4d4af722-700f-43fd-8878-16ae029aef97"
+	var requestConfig gocloak.RequestConfig
+	requestConfig.Enabled = []string{"true"}
+	requestConfig.Priority = []string{"0"}
+	requestConfig.FullSyncPeriod = []string{"-1"}
+	requestConfig.ChangedSyncPeriod = []string{"-1"}
+	requestConfig.CachePolicy = []string{"DEFAULT"}
+	requestConfig.EvictionDay = []string{}
+	requestConfig.EvictionHour = []string{}
+	requestConfig.EvictionMinute = []string{}
+	requestConfig.MaxLifespan = []string{}
+	requestConfig.BatchSizeForSync = []string{"1000"}
+	requestConfig.EditMode = []string{"READ_ONLY"}
+	requestConfig.ImportEnabled = []string{"true"}
+	requestConfig.SyncRegistrations = []string{"false"}
+	requestConfig.Vendor = []string{"ad"}
+	requestConfig.UsePasswordModifyExtendedOp = []string{}
+	requestConfig.UsernameLDAPAttribute = []string{"cn"}
+	requestConfig.RdnLDAPAttribute = []string{"cn"}
+	requestConfig.UuidLDAPAttribute = []string{"objectGUID"}
+	requestConfig.UserObjectClasses = []string{"*"}
+	requestConfig.ConnectionUrl = []string{"ldap://ldap.example.com"}
+	requestConfig.UsersDn = []string{"cn=people,dn=example,dn=com"}
+	requestConfig.AuthType = []string{"simple"}
+	requestConfig.StartTls = []string{}
+	requestConfig.BindDn = []string{"cn=admin,dn=example,dn=com"}
+	requestConfig.BindCredential = []string{"admin"}
+	requestConfig.CustomUserSearchFilter = []string{}
+	requestConfig.SearchScope = []string{"1"}
+	requestConfig.ValidatePasswordPolicy = []string{"false"}
+	requestConfig.TrustEmail = []string{"false"}
+	requestConfig.UseTruststoreSpi = []string{"ldapsOnly"}
+	requestConfig.ConnectionPooling = []string{"true"}
+	requestConfig.ConnectionPoolingAuthentication = []string{}
+	requestConfig.ConnectionPoolingDebug = []string{}
+	requestConfig.ConnectionPoolingInitSize = []string{}
+	requestConfig.ConnectionPoolingMaxSize = []string{}
+	requestConfig.ConnectionPoolingPrefSize = []string{}
+	requestConfig.ConnectionPoolingProtocol = []string{}
+	requestConfig.ConnectionPoolingTimeout = []string{}
+	requestConfig.ConnectionTimeout = []string{}
+	requestConfig.ReadTimeout = []string{}
+	requestConfig.Pagination = []string{"true"}
+	requestConfig.AllowKerberosAuthentication = []string{"false"}
+	requestConfig.ServerPrincipal = []string{}
+	requestConfig.KeyTab = []string{}
+	requestConfig.KerberosRealm = []string{}
+	requestConfig.Debug = []string{"false"}
+	requestConfig.UseKerberosForPasswordAuthentication = []string{"false"}
+	request.Config = requestConfig
+	_, err := client.CreateUserFederation(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm, request)
+	require.NoError(t, err, "CreateUserFederation failed")
 }
