@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"github.com/go-resty/resty/v2"
 	"io"
 	"net/http"
 	"net/url"
@@ -3792,16 +3793,27 @@ func (client *gocloak) CreateUserFederation(ctx context.Context, accessToken, re
 }
 
 func (client *gocloak) GetUserFederation(ctx context.Context, accessToken, realm string) (*Component, error) {
-	var component *Component
+	var componentDetails *Component
 	components, err := client.GetComponents(ctx, accessToken, realm)
 	if err != nil {
-		return component, err
+		return componentDetails, err
 	}
-	providerId := "ldap"
-	if components[0].ProviderID == &providerId && components[0].ParentID == &realm {
-		component = components[0]
-		return component, nil
-	} else {
-		return component, nil
+	for _, component := range components {
+		providerId := *component.ProviderID
+		if "ldap" == providerId {
+			componentParentId := *component.ParentID
+			realmDetails, err := client.GetRealm(ctx, accessToken, realm)
+			if err != nil {
+				return componentDetails, err
+			}
+			realmId := *realmDetails.ID
+			if componentParentId == realmId {
+				componentDetails = component
+			} else {
+				return componentDetails, nil
+			}
+		}
 	}
+	return componentDetails, nil
+
 }

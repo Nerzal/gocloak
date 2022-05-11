@@ -1347,7 +1347,7 @@ func (v *RequiredActionProviderRepresentation) String() string      { return pre
 //CreateUserFederationRequest - struct for get the request
 type CreateUserFederationRequest struct {
 	Name         string        `json:"name"`
-	ProviderId   string        `json:"provideId"`
+	ProviderId   string        `json:"providerId"`
 	ProviderType string        `json:"providerType"`
 	ParentId     string        `json:"parentId"`
 	Config       RequestConfig `json:"config"`
@@ -1374,7 +1374,7 @@ type RequestConfig struct {
 	ConnectionUrl                        []string `json:"connectionUrl"`
 	SyncRegistrations                    []string `json:"syncRegistrations"`
 	AuthType                             []string `json:"authType"`
-	debug                                []string `json:"debug"`
+	Debug                                []string `json:"debug"`
 	SearchScope                          []string `json:"searchScope"`
 	UseTruststoreSpi                     []string `json:"useTruststoreSpi"`
 	TrustEmail                           []string `json:"trustEmail"`
