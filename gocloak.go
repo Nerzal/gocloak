@@ -400,6 +400,10 @@ type GoCloak interface {
 	// GetIdentityProviderMappers returns list of mappers associated with an identity provider
 	GetIdentityProviderMappers(ctx context.Context, token, realm, alias string) ([]*IdentityProviderMapper, error)
 
+	// *** User Federation API ***
+	// CheckLdapConnection tests connection with LDAP
+	CheckLdapConnection(ctx context.Context, accessToken, realm string, reqBody CheckLdapConnection) error
+
 	// *** Protection API ***
 	// GetResource returns a client's resource with the given id, using access token from client
 	GetResourceClient(ctx context.Context, token, realm, resourceID string) (*ResourceRepresentation, error)

@@ -1310,6 +1310,16 @@ type RequestConfig struct {
 	ServerPrincipal                      []string `json:"serverPrincipal"`
 	KeyTab                               []string `json:"keyTab"`
 	KerberosRealm                        []string `json:"kerberosRealm"`
+// CheckLdapConnection represents request params for testing ldap connection
+type CheckLdapConnection struct {
+	Action            *string `json:"action"`
+	ConnectionUrl     *string `json:"connectionUrl"`
+	AuthType          *string `json:"authType"`
+	BindDn            *string `json:"bindDn"`
+	BindCredential    *string `json:"bindCredential"`
+	UseTruststoreSpi  *string `json:"useTruststoreSpi"`
+	ConnectionTimeout *string `json:"connectionTimeout"`
+	StartTls          *string `json:"startTls"`
 }
 
 // prettyStringStruct returns struct formatted into pretty string
@@ -1405,3 +1415,4 @@ func (v *GetResourcePoliciesParams) String() string                 { return pre
 func (v *CredentialRepresentation) String() string                  { return prettyStringStruct(v) }
 func (v *RequiredActionProviderRepresentation) String() string      { return prettyStringStruct(v) }
 func (v *CreateUserFederationRequest) String() string               { return prettyStringStruct(v) }
+func (v *CheckLdapConnection) String() string                       { return prettyStringStruct(v) }

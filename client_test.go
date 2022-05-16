@@ -2182,6 +2182,28 @@ func Test_GetGroupsFull(t *testing.T) {
 	require.Fail(t, "GetGroupsFull failed")
 }
 
+func Test_CheckLdapConnection(t *testing.T) {
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	reqBody := gocloak.CheckLdapConnection{
+		Action:            gocloak.StringP("testConnection"),
+		ConnectionUrl:     gocloak.StringP("ldap://10.193.162.61:389"),
+		AuthType:          gocloak.StringP("simple"),
+		BindCredential:    gocloak.StringP("netapp"),
+		BindDn:            gocloak.StringP("JMZFLGGQMGSP\\administrator"),
+		UseTruststoreSpi:  gocloak.StringP("ldapsOnly"),
+		ConnectionTimeout: gocloak.StringP(""),
+		StartTls:          gocloak.StringP(""),
+	}
+	err := client.CheckLdapConnection(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		reqBody)
+	require.NoError(t, err, "could not test ldap connection")
+}
+
 func Test_GetGroupsBriefRepresentation(t *testing.T) {
 	// t.Parallel()
 	cfg := GetConfig(t)
