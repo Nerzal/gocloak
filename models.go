@@ -1310,6 +1310,8 @@ type RequestConfig struct {
 	ServerPrincipal                      []string `json:"serverPrincipal"`
 	KeyTab                               []string `json:"keyTab"`
 	KerberosRealm                        []string `json:"kerberosRealm"`
+}
+
 // CheckLdapConnection represents request params for testing ldap connection
 type CheckLdapConnection struct {
 	Action            *string `json:"action"`

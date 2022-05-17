@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/golang-jwt/jwt/v4"
 )
 
