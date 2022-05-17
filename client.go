@@ -3792,6 +3792,7 @@ func (client *gocloak) UpdateRequiredAction(ctx context.Context, token string, r
 	return err
 }
 
+// CreateUserFederation create a user federation for a given realm
 func (client *gocloak) CreateUserFederation(ctx context.Context, accessToken, realm string, request CreateUserFederationRequest) (string, error) {
 	const errMessage = "could not create user federation"
 	resp, err := client.getRequestWithBearerAuth(ctx, accessToken).
@@ -3806,6 +3807,7 @@ func (client *gocloak) CreateUserFederation(ctx context.Context, accessToken, re
 
 }
 
+// GetUserFederation get a ldap connection details for a given realm
 func (client *gocloak) GetUserFederation(ctx context.Context, accessToken, realm string) (*Component, error) {
 	var componentDetails *Component
 	components, err := client.GetComponents(ctx, accessToken, realm)
@@ -3830,6 +3832,8 @@ func (client *gocloak) GetUserFederation(ctx context.Context, accessToken, realm
 		}
 	}
 	return componentDetails, nil
+}
+
 // CreateClientScopesScopeMappingsClientRoles attaches a client role to a client scope (not client's scope)
 func (client *gocloak) CreateClientScopesScopeMappingsClientRoles(
 	ctx context.Context, token, realm, idOfClientScope, idOfClient string, roles []Role,
