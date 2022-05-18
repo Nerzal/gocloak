@@ -36,8 +36,53 @@ func TestStringOrArray_Marshal(t *testing.T) {
 
 	dataArray := gocloak.StringOrArray{"1", "2", "3"}
 	jsonArray, err := json.Marshal(&dataArray)
-	assert.NoError(t, err, "Marshaling failed for array of strings: %s", dataString)
+	assert.NoError(t, err, "Marshaling failed for array of strings: %s", dataArray)
 	assert.Equal(t, "[\"1\",\"2\",\"3\"]", string(jsonArray))
+}
+
+func TestEnforcedString_UnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	type testData struct {
+		In  []byte
+		Out gocloak.EnforcedString
+	}
+
+	data := []testData{{
+		In:  []byte(`"string value"`),
+		Out: "string value",
+	}, {
+		In:  []byte(`"\"quoted string value\""`),
+		Out: `"quoted string value"`,
+	}, {
+		In:  []byte(`true`),
+		Out: "true",
+	}, {
+		In:  []byte(`42`),
+		Out: "42",
+	}, {
+		In:  []byte(`{"foo": "bar"}`),
+		Out: `{"foo": "bar"}`,
+	}, {
+		In:  []byte(`["foo"]`),
+		Out: `["foo"]`,
+	}}
+
+	for _, d := range data {
+		var val gocloak.EnforcedString
+		err := json.Unmarshal(d.In, &val)
+		assert.NoErrorf(t, err, "Unmarshalling failed with data: %v", d.In)
+		assert.Equal(t, d.Out, val)
+	}
+}
+
+func TestEnforcedString_MarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	data := gocloak.EnforcedString("foo")
+	jsonString, err := json.Marshal(&data)
+	assert.NoErrorf(t, err, "Unmarshalling failed with data: %v", data)
+	assert.Equal(t, `"foo"`, string(jsonString))
 }
 
 func TestGetQueryParams(t *testing.T) {
