@@ -528,4 +528,8 @@ type GoCloak interface {
 
 	// UpdateRequiredAction updates a required action for a given realm
 	UpdateRequiredAction(ctx context.Context, token string, realm string, requiredAction RequiredActionProviderRepresentation) error
+	//CreateUserFederation create a user federation action for a given relam
+	CreateUserFederation(ctx context.Context, token string, realm string, request CreateUserFederationRequest) (string, error)
+	//GetUserFederation get the user federation details for a given relam
+	GetUserFederation(ctx context.Context, token string, realm string) (*Component, error)
 }

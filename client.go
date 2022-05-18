@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
+
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
@@ -3789,6 +3790,48 @@ func (client *gocloak) UpdateRequiredAction(ctx context.Context, token string, r
 		Put(client.getAdminRealmURL(realm, "authentication", "required-actions", *requiredAction.ProviderID))
 
 	return err
+}
+
+// CreateUserFederation create a user federation for a given realm
+func (client *gocloak) CreateUserFederation(ctx context.Context, accessToken, realm string, request CreateUserFederationRequest) (string, error) {
+	const errMessage = "could not create user federation"
+	resp, err := client.getRequestWithBearerAuth(ctx, accessToken).
+		SetBody(request).
+		Post(client.getAdminRealmURL(realm, "components"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return "", err
+	}
+
+	return getID(resp), nil
+
+}
+
+// GetUserFederation get a ldap connection details for a given realm
+func (client *gocloak) GetUserFederation(ctx context.Context, accessToken, realm string) (*Component, error) {
+	var componentDetails *Component
+	components, err := client.GetComponents(ctx, accessToken, realm)
+	if err != nil {
+		return componentDetails, err
+	}
+	for _, component := range components {
+		providerId := *component.ProviderID
+		if "ldap" == providerId {
+			componentParentId := *component.ParentID
+			realmDetails, err := client.GetRealm(ctx, accessToken, realm)
+			if err != nil {
+				return componentDetails, err
+			}
+			realmId := *realmDetails.ID
+			if componentParentId == realmId {
+				componentDetails = component
+				return componentDetails, nil
+			} else {
+				return componentDetails, nil
+			}
+		}
+	}
+	return componentDetails, nil
 }
 
 // CreateClientScopesScopeMappingsClientRoles attaches a client role to a client scope (not client's scope)
