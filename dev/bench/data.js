@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1652172883810,
+  "lastUpdate": 1652961770063,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -4533,6 +4533,54 @@ window.BENCHMARK_DATA = {
             "value": 63098721,
             "unit": "ns/op\t   68609 B/op\t     225 allocs/op",
             "extra": "18 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49190107+dmnkdmnt@users.noreply.github.com",
+            "name": "Dominik Dumont",
+            "username": "dmnkdmnt"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9556250acd6a20d04682540e7a40230daaac9ca7",
+          "message": "resolve protocol mapper types and builtin protocol mappers on server info (#354)",
+          "timestamp": "2022-05-19T13:59:43+02:00",
+          "tree_id": "0ccf59556839b12783539482ff14f28a586656cb",
+          "url": "https://github.com/Nerzal/gocloak/commit/9556250acd6a20d04682540e7a40230daaac9ca7"
+        },
+        "date": 1652961769593,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 92195903,
+            "unit": "ns/op\t   63526 B/op\t     222 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 91831893,
+            "unit": "ns/op\t   70396 B/op\t     222 allocs/op",
+            "extra": "12 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 92842482,
+            "unit": "ns/op\t   56756 B/op\t     222 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 55249346,
+            "unit": "ns/op\t   61928 B/op\t     223 allocs/op",
+            "extra": "21 times\n2 procs"
           }
         ]
       }
