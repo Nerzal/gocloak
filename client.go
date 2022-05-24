@@ -3922,7 +3922,7 @@ func (client *gocloak) SyncLdapUsers(ctx context.Context, accessToken, realm str
 
 // AddGroupMapper will add ldap mapper
 func (client *gocloak) AddGroupMapper(ctx context.Context, accessToken, realm string, reqBody LdapGroupMapper) error {
-	const errMessage = "failed to create ldap mapper"
+	const errMessage = "failed to create ldap group mapper"
 
 	resp, err := client.getRequestWithBearerAuth(ctx, accessToken).
 		SetBody(reqBody).
