@@ -269,19 +269,6 @@ func (client *gocloak) GetServerInfo(ctx context.Context, accessToken string) (*
 	return &result, nil
 }
 
-// CheckLdapConnection is used to test ldap connection
-func (client *gocloak) CheckLdapConnection(ctx context.Context, accessToken, realm string, reqBody CheckLdapConnection) error {
-	const errMessage = "could not test ldap connection"
-
-	resp, err := client.getRequestWithBearerAuth(ctx, accessToken).
-		SetBody(reqBody).
-		Post(client.getAdminRealmURL(realm, "testLDAPConnection"))
-	if err := checkForError(resp, err, errMessage); err != nil {
-		return err
-	}
-	return nil
-}
-
 // GetUserInfo calls the UserInfo endpoint
 func (client *gocloak) GetUserInfo(ctx context.Context, accessToken, realm string) (*UserInfo, error) {
 	const errMessage = "could not get user info"
@@ -2596,7 +2583,7 @@ func (client *gocloak) DeleteClientRoleComposite(ctx context.Context, token, rea
 
 // GetUserFederatedIdentities gets all user federated identities
 func (client *gocloak) GetUserFederatedIdentities(ctx context.Context, token, realm, userID string) ([]*FederatedIdentityRepresentation, error) {
-	const errMessage = "could not get user federeated identities"
+	const errMessage = "could not get user federated identities"
 
 	var res []*FederatedIdentityRepresentation
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
@@ -2612,7 +2599,7 @@ func (client *gocloak) GetUserFederatedIdentities(ctx context.Context, token, re
 
 // CreateUserFederatedIdentity creates an user federated identity
 func (client *gocloak) CreateUserFederatedIdentity(ctx context.Context, token, realm, userID, providerID string, federatedIdentityRep FederatedIdentityRepresentation) error {
-	const errMessage = "could not create user federeated identity"
+	const errMessage = "could not create user federated identity"
 
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
 		SetBody(federatedIdentityRep).
@@ -2623,7 +2610,7 @@ func (client *gocloak) CreateUserFederatedIdentity(ctx context.Context, token, r
 
 // DeleteUserFederatedIdentity deletes an user federated identity
 func (client *gocloak) DeleteUserFederatedIdentity(ctx context.Context, token, realm, userID, providerID string) error {
-	const errMessage = "could not delete user federeated identity"
+	const errMessage = "could not delete user federated identity"
 
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
 		Delete(client.getAdminRealmURL(realm, "users", userID, "federated-identity", providerID))
@@ -3894,4 +3881,97 @@ func (client *gocloak) DeleteClientScopesScopeMappingsClientRoles(ctx context.Co
 		Delete(client.getAdminRealmURL(realm, "client-scopes", idOfClientScope, "scope-mappings", "clients", idOfClient))
 
 	return checkForError(resp, err, errMessage)
+}
+
+// ------------------
+// User Federation
+// ------------------
+
+// CheckLdapConnection is used to test ldap connection
+func (client *gocloak) CheckLdapConnection(ctx context.Context, accessToken, realm string, reqBody CheckLdapConnection) error {
+	const errMessage = "could not test ldap connection"
+
+	resp, err := client.getRequestWithBearerAuth(ctx, accessToken).
+		SetBody(reqBody).
+		Post(client.getAdminRealmURL(realm, "testLDAPConnection"))
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return err
+	}
+	return nil
+}
+
+// SyncLdapUsers will sync all Ldap users to keycloak
+func (client *gocloak) SyncLdapUsers(ctx context.Context, accessToken, realm string, providerId *string, queryParam SyncLdapUsersParams) (*SyncLdapUsersGroupsResponse, error) {
+	const errMessage = "failed to sync ldap users to keycloak"
+
+	var result *SyncLdapUsersGroupsResponse
+	params, err := GetQueryParams(queryParam)
+	if err != nil {
+		return nil, errors.Wrap(err, errMessage)
+	}
+	resp, err := client.getRequestWithBearerAuth(ctx, accessToken).
+		SetQueryParams(params).
+		SetResult(&result).
+		Post(client.getAdminRealmURL(realm, "user-storage", *providerId, "sync"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// AddGroupMapper will add ldap mapper
+func (client *gocloak) AddGroupMapper(ctx context.Context, accessToken, realm string, reqBody LdapGroupMapper) error {
+	const errMessage = "failed to create ldap group mapper"
+
+	resp, err := client.getRequestWithBearerAuth(ctx, accessToken).
+		SetBody(reqBody).
+		Post(client.getAdminRealmURL(realm, "components"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetLdapMappers will get details of all the mappers created in ldap
+func (client *gocloak) GetLdapMappers(ctx context.Context, accessToken, realm string, queryParams GetLdapMapperParams) ([]*LdapMapperDetail, error) {
+	var errMessage = "could not get ldap mappers details"
+
+	var result []*LdapMapperDetail
+	params, err := GetQueryParams(queryParams)
+	if err != nil {
+		return nil, errors.Wrap(err, errMessage)
+	}
+
+	resp, err := client.getRequestWithBearerAuth(ctx, accessToken).
+		SetQueryParams(params).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "components"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// SyncLdapGroups will sync all ldap groups to keycloak
+func (client *gocloak) SyncLdapGroups(ctx context.Context, accessToken, realm, mapperId string, parentId *string, queryParam SyncLdapGroupParam) (*SyncLdapUsersGroupsResponse, error) {
+	const errMessage = "could not sync ldap groups to keycloak"
+
+	var result *SyncLdapUsersGroupsResponse
+	params, err := GetQueryParams(queryParam)
+	if err != nil {
+		return nil, errors.Wrap(err, errMessage)
+	}
+
+	resp, err := client.getRequestWithBearerAuth(ctx, accessToken).
+		SetQueryParams(params).
+		SetResult(&result).
+		Post(client.getAdminRealmURL(realm, "user-storage", *parentId, "mappers", mapperId, "sync"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+	return result, nil
 }

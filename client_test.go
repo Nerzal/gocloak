@@ -8,7 +8,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/go-resty/resty/v2"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -21,6 +20,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/go-resty/resty/v2"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/stretchr/testify/require"
@@ -2202,6 +2203,127 @@ func Test_CheckLdapConnection(t *testing.T) {
 		cfg.GoCloak.Realm,
 		reqBody)
 	require.NoError(t, err, "could not test ldap connection")
+}
+
+func Test_SyncLdapUsers(t *testing.T) {
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	ldapDetails, err := client.GetUserFederation(context.Background(), token.AccessToken, cfg.GoCloak.Realm)
+	if err != nil {
+		return
+	}
+	queryParams := gocloak.SyncLdapUsersParams{
+		Action: gocloak.StringP("triggerFullSync"),
+	}
+
+	result, err := client.SyncLdapUsers(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		ldapDetails.ID,
+		queryParams)
+	require.NoError(t, err, "could not sync ldap users to keycloak")
+	require.True(t, nil != result)
+}
+
+func Test_AddGroupMapper(t *testing.T) {
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	ldapDetails, err := client.GetUserFederation(context.Background(), token.AccessToken, cfg.GoCloak.Realm)
+	if err != nil {
+		return
+	}
+	reqBody := gocloak.LdapGroupMapper{
+		Config: &map[string][]string{
+			"groups.dn":                            {"ou=Groups,dc=JMZFLGGQMGSP,dc=astra-acc-adtest"},
+			"group.name.ldap.attribute":            {"cn"},
+			"group.object.classes":                 {"group"},
+			"preserve.group.inheritance":           {"true"},
+			"ignore.missing.groups":                {"false"},
+			"membership.ldap.attribute":            {"member"},
+			"membership.attribute.type":            {"DN"},
+			"membership.user.ldap.attribute":       {"cn"},
+			"groups.ldap.filter":                   {},
+			"mode":                                 {"READ_ONLY"},
+			"user.roles.retrieve.strategy":         {"LOAD_GROUPS_BY_MEMBER_ATTRIBUTE"},
+			"memberof.ldap.attribute":              {"memberOf"},
+			"mapped.group.attributes":              {},
+			"drop.non.existing.groups.during.sync": {"false"},
+			"groups.path":                          {"/"},
+		},
+		Name:         gocloak.StringP("test"),
+		ProviderId:   gocloak.StringP("group-ldap-mapper"),
+		ProviderType: gocloak.StringP("org.keycloak.storage.ldap.mappers.LDAPStorageMapper"),
+		ParentId:     ldapDetails.ID,
+	}
+	err = client.AddGroupMapper(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		reqBody)
+	require.NoError(t, err, "could not add ldap group mapper")
+}
+
+func Test_GetLdapMappers(t *testing.T) {
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	ldapDetails, err := client.GetUserFederation(context.Background(), token.AccessToken, cfg.GoCloak.Realm)
+	if err != nil {
+		return
+	}
+	queryParams := gocloak.GetLdapMapperParams{
+		Parent: ldapDetails.ID,
+		Type:   gocloak.StringP("org.keycloak.storage.ldap.mappers.LDAPStorageMapper"),
+	}
+	result, err := client.GetLdapMappers(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		queryParams)
+	require.NoError(t, err, "could not get ldap mapper details")
+	require.True(t, nil != result)
+}
+
+func Test_SyncLdapGroups(t *testing.T) {
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	ldapDetails, err := client.GetUserFederation(context.Background(), token.AccessToken, cfg.GoCloak.Realm)
+	if err != nil {
+		return
+	}
+	queryParams := gocloak.GetLdapMapperParams{
+		Parent: ldapDetails.ID,
+		Type:   gocloak.StringP("org.keycloak.storage.ldap.mappers.LDAPStorageMapper"),
+	}
+	mapperDetails, err := client.GetLdapMappers(context.Background(), token.AccessToken, cfg.GoCloak.Realm, queryParams)
+	if err != nil {
+		return
+	}
+
+	var mapperId string
+	for _, detail := range mapperDetails {
+		groupName := *detail.Name
+		if groupName == "test" {
+			mapperId = *detail.Id
+			break
+		}
+	}
+	qParams := gocloak.SyncLdapGroupParam{
+		Direction: gocloak.StringP("fedToKeycloak"),
+	}
+	result, err := client.SyncLdapGroups(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		mapperId,
+		ldapDetails.ID,
+		qParams)
+	require.NoError(t, err, "could not test ldap connection")
+	require.True(t, nil != result)
 }
 
 func Test_GetGroupsBriefRepresentation(t *testing.T) {

@@ -404,6 +404,14 @@ type GoCloak interface {
 	// *** User Federation API ***
 	// CheckLdapConnection tests connection with LDAP
 	CheckLdapConnection(ctx context.Context, accessToken, realm string, reqBody CheckLdapConnection) error
+	// SyncLdapUsers will sync all Ldap users to keycloak
+	SyncLdapUsers(ctx context.Context, accessToken, realm string, providerId *string, queryParam SyncLdapUsersParams) (*SyncLdapUsersGroupsResponse, error)
+	// AddGroupMapper will add ldap mapper
+	AddGroupMapper(ctx context.Context, accessToken, realm string, reqBody LdapGroupMapper) error
+	// GetLdapMappers will get details of all the mappers created in ldap
+	GetLdapMappers(ctx context.Context, accessToken, realm string, queryParam GetLdapMapperParams) ([]*LdapMapperDetail, error)
+	// SyncLdapGroups will sync all ldap groups to keycloak
+	SyncLdapGroups(ctx context.Context, accessToken, realm, mapperId string, parentId *string, queryParam SyncLdapGroupParam) (*SyncLdapUsersGroupsResponse, error)
 
 	// *** Protection API ***
 	// GetResource returns a client's resource with the given id, using access token from client
@@ -530,6 +538,6 @@ type GoCloak interface {
 	UpdateRequiredAction(ctx context.Context, token string, realm string, requiredAction RequiredActionProviderRepresentation) error
 	//CreateUserFederation create a user federation action for a given relam
 	CreateUserFederation(ctx context.Context, token string, realm string, request CreateUserFederationRequest) (string, error)
-	//GetUserFederation get the user federation details for a given relam
+	//GetUserFederation get the user federation details for a given realm
 	GetUserFederation(ctx context.Context, token string, realm string) (*Component, error)
 }

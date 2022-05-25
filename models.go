@@ -1324,6 +1324,50 @@ type CheckLdapConnection struct {
 	StartTls          *string `json:"startTls"`
 }
 
+type SyncLdapUsersParams struct {
+	Action *string `json:"action"`
+}
+
+// LdapGroupMapper represents request body for ldap group mapper
+type LdapGroupMapper struct {
+	Config       *map[string][]string `json:"config"`
+	Name         *string              `json:"name"`
+	ProviderId   *string              `json:"providerId"`
+	ProviderType *string              `json:"providerType"`
+	ParentId     *string              `json:"parentId"`
+}
+
+// GetLdapMapperParams represents query parameters for getting ldap mappers
+type GetLdapMapperParams struct {
+	Parent *string `json:"parent"`
+	Type   *string `json:"type"`
+}
+
+// LdapMapperDetail represents details of each ldap mapper
+type LdapMapperDetail struct {
+	Id           *string              `json:"id"`
+	Name         *string              `json:"name"`
+	ProviderId   *string              `json:"providerId"`
+	ProviderType *string              `json:"providerType"`
+	ParentId     *string              `json:"parentId"`
+	Config       *map[string][]string `json:"config"`
+}
+
+// SyncLdapGroupParam represent query params required for sync ldap group api
+type SyncLdapGroupParam struct {
+	Direction *string `json:"direction"`
+}
+
+// SyncLdapUsersGroupsResponse represents the result of sync ldap group api
+type SyncLdapUsersGroupsResponse struct {
+	Ignored *bool   `json:"ignored"`
+	Added   *int    `json:"added"`
+	Updated *int    `json:"updated"`
+	Removed *int    `json:"removed"`
+	Failed  *int    `json:"failed"`
+	Status  *string `json:"status"`
+}
+
 // prettyStringStruct returns struct formatted into pretty string
 func prettyStringStruct(t interface{}) string {
 
@@ -1418,3 +1462,9 @@ func (v *CredentialRepresentation) String() string                  { return pre
 func (v *RequiredActionProviderRepresentation) String() string      { return prettyStringStruct(v) }
 func (v *CreateUserFederationRequest) String() string               { return prettyStringStruct(v) }
 func (v *CheckLdapConnection) String() string                       { return prettyStringStruct(v) }
+func (v *SyncLdapUsersParams) String() string                       { return prettyStringStruct(v) }
+func (v *LdapGroupMapper) String() string                           { return prettyStringStruct(v) }
+func (v *GetLdapMapperParams) String() string                       { return prettyStringStruct(v) }
+func (v *LdapMapperDetail) String() string                          { return prettyStringStruct(v) }
+func (v *SyncLdapGroupParam) String() string                        { return prettyStringStruct(v) }
+func (v *SyncLdapUsersGroupsResponse) String() string               { return prettyStringStruct(v) }
