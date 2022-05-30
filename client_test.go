@@ -6728,3 +6728,132 @@ func Test_CreateUserFederation(t *testing.T) {
 		cfg.GoCloak.Realm, request)
 	require.NoError(t, err, "CreateUserFederation failed")
 }
+
+func Test_ModifyLdapDetails(t *testing.T) {
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	ldapDetails, err := client.GetUserFederation(context.Background(), token.AccessToken, cfg.GoCloak.Realm)
+	if err != nil {
+		return
+	}
+	reqBody := gocloak.Component{
+		ID:           ldapDetails.ID,
+		Name:         ldapDetails.Name,
+		ProviderID:   ldapDetails.ProviderID,
+		ProviderType: ldapDetails.ProviderType,
+		ParentID:     ldapDetails.ParentID,
+		ComponentConfig: &map[string][]string{
+			"fullSyncPeriod":                       {"-1"},
+			"pagination":                           {"true"},
+			"connectionPooling":                    {"true"},
+			"usersDn":                              {"cn=Users,dc=JMZFLGGQMGSP,dc=astra-acc-adtest"},
+			"cachePolicy":                          {"DEFAULT"},
+			"useKerberosForPasswordAuthentication": {"false"},
+			"importEnabled":                        {"true"},
+			"enabled":                              {"true"},
+			"changedSyncPeriod":                    {"-1"},
+			"bindCredential":                       {"ldap@321"},
+			"bindDn":                               {"JMZFLGGQMGSP\\administrator"},
+			"usernameLDAPAttribute":                {"cn"},
+			"vendor":                               {"ad"},
+			"uuidLDAPAttribute":                    {"*"},
+			"allowKerberosAuthentication":          {"false"},
+			"connectionUrl":                        {"ldap://10.193.162.61:389"},
+			"syncRegistrations":                    {"false"},
+			"authType":                             {"simple"},
+			"debug":                                {"false"},
+			"searchScope":                          {"1"},
+			"useTruststoreSpi":                     {"ldapsOnly"},
+			"priority":                             {"0"},
+			"trustEmail":                           {"false"},
+			"userObjectClasses":                    {"*"},
+			"rdnLDAPAttribute":                     {"cn"},
+			"editMode":                             {"READ_ONLY"},
+			"validatePasswordPolicy":               {"false"},
+			"batchSizeForSync":                     {"1000"},
+			"evictionDay":                          {},
+			"evictionHour":                         {},
+			"evictionMinute":                       {},
+			"maxLifespan":                          {},
+			"usePasswordModifyExtendedOp":          {},
+			"startTls":                             {},
+			"customUserSearchFilter":               {},
+			"connectionPoolingAuthentication":      {},
+			"connectionPoolingDebug":               {},
+			"connectionPoolingInitSize":            {},
+			"connectionPoolingMaxSize":             {},
+			"connectionPoolingPrefSize":            {},
+			"connectionPoolingProtocol":            {},
+			"connectionPoolingTimeout":             {},
+			"connectionTimeout":                    {},
+			"readTimeout":                          {},
+			"serverPrincipal":                      {},
+			"keyTab":                               {},
+			"kerberosRealm":                        {},
+		},
+	}
+	err = client.ModifyLdapDetails(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		ldapDetails.ID,
+		reqBody)
+	require.NoError(t, err, "could not modify ldap details")
+}
+
+func Test_ModifyMapperDetails(t *testing.T) {
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	ldapDetails, err := client.GetUserFederation(context.Background(), token.AccessToken, cfg.GoCloak.Realm)
+	if err != nil {
+		return
+	}
+	getMappersQueryParam := gocloak.GetLdapMapperParams{
+		Parent: ldapDetails.ID,
+		Type:   gocloak.StringP("org.keycloak.storage.ldap.mappers.LDAPStorageMapper"),
+	}
+	mapperDetails, err := client.GetLdapMappers(context.Background(), token.AccessToken, cfg.GoCloak.Realm, getMappersQueryParam)
+	var mapperId string
+	for _, detail := range mapperDetails {
+		groupName := *detail.Name
+		if groupName == "ldap_group_mapper" {
+			mapperId = *detail.Id
+			break
+		}
+	}
+
+	reqBody := gocloak.LdapMapperDetail{
+		Id:           gocloak.StringP(mapperId),
+		Name:         gocloak.StringP("ldap_group_mapper"),
+		ProviderType: gocloak.StringP("org.keycloak.storage.ldap.mappers.LDAPStorageMapper"),
+		ProviderId:   gocloak.StringP("group-ldap-mapper"),
+		ParentId:     ldapDetails.ID,
+		Config: &map[string][]string{
+			"membership.attribute.type":            {"DN"},
+			"group.name.ldap.attribute":            {"cn"},
+			"membership.user.ldap.attribute":       {"cn"},
+			"preserve.group.inheritance":           {"false"},
+			"groups.dn":                            {"ou=Groups,dc=JMZFLGGQMGSP,dc=astra-acc"},
+			"mode":                                 {"LDAP_ONLY"},
+			"user.roles.retrieve.strategy":         {"LOAD_GROUPS_BY_MEMBER_ATTRIBUTE_RECURSIVELY"},
+			"membership.ldap.attribute":            {"member"},
+			"ignore.missing.groups":                {"false"},
+			"group.object.classes":                 {"group"},
+			"memberof.ldap.attribute":              {"memberOf"},
+			"drop.non.existing.groups.during.sync": {"true"},
+			"groups.path":                          {"/"},
+			"groups.ldap.filter":                   {},
+			"mapped.group.attributes":              {},
+		},
+	}
+
+	err = client.ModifyMapperDetails(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		mapperId,
+		reqBody)
+	require.NoError(t, err, "could not modify ldap group mapper details")
+}
