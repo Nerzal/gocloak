@@ -6767,7 +6767,7 @@ func Test_ModifyLdapDetails(t *testing.T) {
 			"useTruststoreSpi":                     {"ldapsOnly"},
 			"priority":                             {"0"},
 			"trustEmail":                           {"false"},
-			"userObjectClasses":                    {"*"},
+			"userObjectClasses":                    {"person, organizationalPerson, user"},
 			"rdnLDAPAttribute":                     {"cn"},
 			"editMode":                             {"READ_ONLY"},
 			"validatePasswordPolicy":               {"false"},

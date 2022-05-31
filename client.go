@@ -3978,7 +3978,7 @@ func (client *gocloak) SyncLdapGroups(ctx context.Context, accessToken, realm, m
 
 // ModifyLdapDetails will modify ldap user federation details according to settings
 func (client *gocloak) ModifyLdapDetails(ctx context.Context, accessToken, realm string, ldapId *string, reqBody Component) error {
-	const errMessage = "could not modify ldap details"
+	const errMessage = "could not modify ldap user federation details"
 
 	resp, err := client.getRequestWithBearerAuth(ctx, accessToken).
 		SetBody(reqBody).
