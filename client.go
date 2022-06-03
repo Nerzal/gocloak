@@ -3975,3 +3975,31 @@ func (client *gocloak) SyncLdapGroups(ctx context.Context, accessToken, realm, m
 	}
 	return result, nil
 }
+
+// ModifyLdapDetails will modify ldap user federation details according to settings
+func (client *gocloak) ModifyLdapDetails(ctx context.Context, accessToken, realm string, ldapId *string, reqBody Component) error {
+	const errMessage = "could not modify ldap user federation details"
+
+	resp, err := client.getRequestWithBearerAuth(ctx, accessToken).
+		SetBody(reqBody).
+		Put(client.getAdminRealmURL(realm, "components", *ldapId))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ModifyMapperDetails will modify ldap group mapper according to ldap settings
+func (client *gocloak) ModifyMapperDetails(ctx context.Context, accessToken, realm, mapperId string, reqBody LdapMapperDetail) error {
+	const errMessage = "could not modify ldap group mapper details"
+
+	resp, err := client.getRequestWithBearerAuth(ctx, accessToken).
+		SetBody(reqBody).
+		Put(client.getAdminRealmURL(realm, "components", mapperId))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return err
+	}
+	return nil
+}

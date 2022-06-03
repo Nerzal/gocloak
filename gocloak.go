@@ -412,6 +412,10 @@ type GoCloak interface {
 	GetLdapMappers(ctx context.Context, accessToken, realm string, queryParam GetLdapMapperParams) ([]*LdapMapperDetail, error)
 	// SyncLdapGroups will sync all ldap groups to keycloak
 	SyncLdapGroups(ctx context.Context, accessToken, realm, mapperId string, parentId *string, queryParam SyncLdapGroupParam) (*SyncLdapUsersGroupsResponse, error)
+	// ModifyLdapDetails will modify ldap user federation details according to settings
+	ModifyLdapDetails(ctx context.Context, accessToken, realm string, ldapId *string, reqBody Component) error
+	// ModifyMapperDetails will modify ldap group mapper according to ldap settings
+	ModifyMapperDetails(ctx context.Context, accessToken, realm, mapperId string, reqBody LdapMapperDetail) error
 
 	// *** Protection API ***
 	// GetResource returns a client's resource with the given id, using access token from client
