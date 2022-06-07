@@ -1,6 +1,7 @@
 package gocloak
 
 import (
+	"bytes"
 	"encoding/json"
 	"strings"
 
@@ -58,6 +59,32 @@ func (s *StringOrArray) MarshalJSON() ([]byte, error) {
 		return json.Marshal([]string(*s)[0])
 	}
 	return json.Marshal([]string(*s))
+}
+
+// EnforcedString can be used when the expected value is string but Keycloak in some cases gives you mixed types
+type EnforcedString string
+
+// UnmarshalJSON modify data as string before json unmarshal
+func (s *EnforcedString) UnmarshalJSON(data []byte) error {
+	if data[0] != '"' {
+		// Escape unescaped quotes
+		data = bytes.ReplaceAll(data, []byte(`"`), []byte(`\"`))
+		data = bytes.ReplaceAll(data, []byte(`\\"`), []byte(`\"`))
+
+		// Wrap data in quotes
+		data = append([]byte(`"`), data...)
+		data = append(data, []byte(`"`)...)
+	}
+
+	var val string
+	err := json.Unmarshal(data, &val)
+	*s = EnforcedString(val)
+	return err
+}
+
+// MarshalJSON return json marshal
+func (s *EnforcedString) MarshalJSON() ([]byte, error) {
+	return json.Marshal(*s)
 }
 
 // APIErrType is a field containing more specific API error types
@@ -610,11 +637,12 @@ type ScopeRepresentation struct {
 
 // ProtocolMapperRepresentation represents....
 type ProtocolMapperRepresentation struct {
-	Config         *map[string]string `json:"config,omitempty"`
-	ID             *string            `json:"id,omitempty"`
-	Name           *string            `json:"name,omitempty"`
-	Protocol       *string            `json:"protocol,omitempty"`
-	ProtocolMapper *string            `json:"protocolMapper,omitempty"`
+	Config          *map[string]string `json:"config,omitempty"`
+	ID              *string            `json:"id,omitempty"`
+	Name            *string            `json:"name,omitempty"`
+	Protocol        *string            `json:"protocol,omitempty"`
+	ProtocolMapper  *string            `json:"protocolMapper,omitempty"`
+	ConsentRequired *bool              `json:"consentRequired,omitempty"`
 }
 
 // GetClientsParams represents the query parameters
@@ -964,11 +992,48 @@ type PasswordPolicy struct {
 	MultipleSupported bool   `json:"multipleSupported,omitempty"`
 }
 
+// ProtocolMapperTypeProperty represents a property of a ProtocolMapperType
+type ProtocolMapperTypeProperty struct {
+	Name         string         `json:"name,omitempty"`
+	Label        string         `json:"label,omitempty"`
+	HelpText     string         `json:"helpText,omitempty"`
+	Type         string         `json:"type,omitempty"`
+	Options      []string       `json:"options,omitempty"`
+	DefaultValue EnforcedString `json:"defaultValue,omitempty"`
+	Secret       bool           `json:"secret,omitempty"`
+	ReadOnly     bool           `json:"readOnly,omitempty"`
+}
+
+// ProtocolMapperType represents a type of protocol mapper
+type ProtocolMapperType struct {
+	ID         string                       `json:"id,omitempty"`
+	Name       string                       `json:"name,omitempty"`
+	Category   string                       `json:"category,omitempty"`
+	HelpText   string                       `json:"helpText,omitempty"`
+	Priority   int                          `json:"priority,omitempty"`
+	Properties []ProtocolMapperTypeProperty `json:"properties,omitempty"`
+}
+
+// ProtocolMapperTypes holds the currently available ProtocolMapperType-s grouped by protocol
+type ProtocolMapperTypes struct {
+	DockerV2      []ProtocolMapperType `json:"docker-v2,omitempty"`
+	SAML          []ProtocolMapperType `json:"saml,omitempty"`
+	OpenIDConnect []ProtocolMapperType `json:"openid-connect,omitempty"`
+}
+
+// BuiltinProtocolMappers holds the currently available built-in blueprints of ProtocolMapper-s grouped by protocol
+type BuiltinProtocolMappers struct {
+	SAML          []ProtocolMapperRepresentation `json:"saml,omitempty"`
+	OpenIDConnect []ProtocolMapperRepresentation `json:"openid-connect,omitempty"`
+}
+
 // ServerInfoRepesentation represents a server info
 type ServerInfoRepesentation struct {
-	SystemInfo       *SystemInfoRepresentation `json:"systemInfo,omitempty"`
-	MemoryInfo       *MemoryInfoRepresentation `json:"memoryInfo,omitempty"`
-	PasswordPolicies []*PasswordPolicy         `json:"passwordPolicies,omitempty"`
+	SystemInfo             *SystemInfoRepresentation `json:"systemInfo,omitempty"`
+	MemoryInfo             *MemoryInfoRepresentation `json:"memoryInfo,omitempty"`
+	PasswordPolicies       []*PasswordPolicy         `json:"passwordPolicies,omitempty"`
+	ProtocolMapperTypes    *ProtocolMapperTypes      `json:"protocolMapperTypes,omitempty"`
+	BuiltinProtocolMappers *BuiltinProtocolMappers   `json:"builtinProtocolMappers,omitempty"`
 }
 
 // FederatedIdentityRepresentation represents an user federated identity
