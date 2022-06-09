@@ -869,6 +869,21 @@ func (client *gocloak) UpdateClientScopeProtocolMapper(ctx context.Context, toke
 	return checkForError(resp, err, errMessage)
 }
 
+// UpdateComponent updates the given component
+func (client *gocloak) UpdateComponent(ctx context.Context, token, realm string, updatedComponent Component) (string, error) {
+	const errMessage = "could not update component"
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetBody(updatedComponent).
+		Put(client.getAdminRealmURL(realm, "components", *updatedComponent.ID))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return "", err
+	}
+
+	return getID(resp), nil
+}
+
 func (client *gocloak) DeleteGroup(ctx context.Context, token, realm, groupID string) error {
 	const errMessage = "could not delete group"
 
