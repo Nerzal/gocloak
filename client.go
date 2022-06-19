@@ -433,7 +433,14 @@ func (client *gocloak) DecodeAccessTokenCustomClaims(ctx context.Context, access
 		return nil, errors.Wrap(errors.New("cannot find a key to decode the token"), errMessage)
 	}
 
-	return jwx.DecodeAccessTokenCustomClaims(accessToken, usedKey.E, usedKey.N, claims)
+	switch decodedHeader.Alg {
+	case "ES256":
+		return jwx.DecodeAccessTokenECDSAWithClaims(accessToken, usedKey.X, usedKey.Y, usedKey.Crv, claims)
+	case "RS256":
+		return jwx.DecodeAccessTokenRSACustomClaims(accessToken, usedKey.E, usedKey.N, claims)
+	default:
+		return nil, fmt.Errorf("unsupported algorithm")
+	}
 }
 
 func (client *gocloak) GetToken(ctx context.Context, realm string, options TokenOptions) (*JWT, error) {
