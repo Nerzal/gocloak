@@ -435,7 +435,7 @@ func (client *gocloak) DecodeAccessTokenCustomClaims(ctx context.Context, access
 
 	switch decodedHeader.Alg {
 	case "ES256":
-		return jwx.DecodeAccessTokenECDSAWithClaims(accessToken, usedKey.X, usedKey.Y, usedKey.Crv, claims)
+		return jwx.DecodeAccessTokenECDSACustomClaims(accessToken, usedKey.X, usedKey.Y, usedKey.Crv, claims)
 	case "RS256":
 		return jwx.DecodeAccessTokenRSACustomClaims(accessToken, usedKey.E, usedKey.N, claims)
 	default:

@@ -187,7 +187,7 @@ func DecodeAccessTokenRSACustomClaims(accessToken string, e, n *string, customCl
 	return token2, nil
 }
 
-func DecodeAccessTokenECDSAWithClaims(accessToken string, x, y, crv *string, customClaims jwt.Claims) (*jwt.Token, error) {
+func DecodeAccessTokenECDSACustomClaims(accessToken string, x, y, crv *string, customClaims jwt.Claims) (*jwt.Token, error) {
 	const errMessage = "could not decode accessToken"
 	accessToken = strings.Replace(accessToken, "Bearer ", "", 1)
 
