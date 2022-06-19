@@ -146,7 +146,6 @@ func DecodeAccessTokenECDSACustomClaims(accessToken string, x, y, crv *string, c
 	token2, err := jwt.ParseWithClaims(accessToken, customClaims, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
 		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
-			fmt.Println()
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		return publicKey, nil
