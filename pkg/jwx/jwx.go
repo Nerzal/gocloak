@@ -41,23 +41,29 @@ func DecodeAccessTokenHeader(token string) (*DecodedAccessTokenHeader, error) {
 	return result, nil
 }
 
+func toBigInt(v string) (*big.Int, error) {
+	decRes, err := base64.RawURLEncoding.DecodeString(v)
+	if err != nil {
+		return nil, err
+	}
+
+	res := big.NewInt(0)
+	res.SetBytes(decRes)
+	return res, nil
+}
+
 func decodeECDSAPublicKey(x, y, crv *string) (*ecdsa.PublicKey, error) {
 	const errMessage = "could not decode public key"
-	decX, err := base64.RawURLEncoding.DecodeString(*x)
+
+	xInt, err := toBigInt(*x)
 	if err != nil {
 		return nil, errors.Wrap(err, errMessage)
 	}
 
-	xInt := big.NewInt(0)
-	xInt.SetBytes(decX)
-
-	decY, err := base64.RawURLEncoding.DecodeString(*y)
+	yInt, err := toBigInt(*y)
 	if err != nil {
 		return nil, errors.Wrap(err, errMessage)
 	}
-
-	yInt := big.NewInt(0)
-	yInt.SetBytes(decY)
 
 	var c elliptic.Curve
 	switch *crv {
@@ -78,13 +84,10 @@ func decodeECDSAPublicKey(x, y, crv *string) (*ecdsa.PublicKey, error) {
 func decodeRSAPublicKey(e, n *string) (*rsa.PublicKey, error) {
 	const errMessage = "could not decode public key"
 
-	decN, err := base64.RawURLEncoding.DecodeString(*n)
+	nInt, err := toBigInt(*n)
 	if err != nil {
 		return nil, errors.Wrap(err, errMessage)
 	}
-
-	nInt := big.NewInt(0)
-	nInt.SetBytes(decN)
 
 	decE, err := base64.RawURLEncoding.DecodeString(*e)
 	if err != nil {
@@ -130,7 +133,6 @@ func DecodeAccessTokenRSACustomClaims(accessToken string, e, n *string, customCl
 	if err != nil {
 		return nil, errors.Wrap(err, errMessage)
 	}
-
 	return token2, nil
 }
 
@@ -154,6 +156,5 @@ func DecodeAccessTokenECDSACustomClaims(accessToken string, x, y, crv *string, c
 	if err != nil {
 		return nil, errors.Wrap(err, errMessage)
 	}
-
 	return token2, nil
 }
