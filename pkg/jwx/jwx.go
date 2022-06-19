@@ -110,59 +110,6 @@ func decodeRSAPublicKey(e, n *string) (*rsa.PublicKey, error) {
 	return &pKey, nil
 }
 
-func DecodeAccessTokenECDSA(accessToken string, x, y, crv *string) (*jwt.Token, *jwt.MapClaims, error) {
-	const errMessage = "could not decode accessToken"
-	accessToken = strings.Replace(accessToken, "Bearer ", "", 1)
-
-	publicKey, err := decodeECDSAPublicKey(x, y, crv)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, errMessage)
-	}
-
-	claims := &jwt.MapClaims{}
-
-	token2, err := jwt.ParseWithClaims(accessToken, claims, func(token *jwt.Token) (interface{}, error) {
-		// Don't forget to validate the alg is what you expect:
-		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
-			fmt.Println()
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return publicKey, nil
-	})
-
-	if err != nil {
-		return nil, nil, errors.Wrap(err, errMessage)
-	}
-
-	return token2, claims, nil
-}
-
-func DecodeAccessTokenRSA(accessToken string, e, n *string) (*jwt.Token, *jwt.MapClaims, error) {
-	const errMessage = "could not decode accessToken"
-	accessToken = strings.Replace(accessToken, "Bearer ", "", 1)
-
-	rsaPublicKey, err := decodeRSAPublicKey(e, n)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, errMessage)
-	}
-
-	claims := &jwt.MapClaims{}
-
-	token2, err := jwt.ParseWithClaims(accessToken, claims, func(token *jwt.Token) (interface{}, error) {
-		// Don't forget to validate the alg is what you expect:
-		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return rsaPublicKey, nil
-	})
-
-	if err != nil {
-		return nil, nil, errors.Wrap(err, errMessage)
-	}
-
-	return token2, claims, nil
-}
-
 func DecodeAccessTokenRSACustomClaims(accessToken string, e, n *string, customClaims jwt.Claims) (*jwt.Token, error) {
 	const errMessage = "could not decode accessToken with custom claims"
 	accessToken = strings.Replace(accessToken, "Bearer ", "", 1)
