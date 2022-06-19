@@ -137,6 +137,9 @@ type CertResponseKey struct {
 	Use     *string   `json:"use,omitempty"`
 	N       *string   `json:"n,omitempty"`
 	E       *string   `json:"e,omitempty"`
+	X       *string   `json:"x,omitempty"`
+	Y       *string   `json:"y,omitempty"`
+	Crv     *string   `json:"crv,omitempty"`
 	KeyOps  *[]string `json:"key_ops,omitempty"`
 	X5u     *string   `json:"x5u,omitempty"`
 	X5c     *[]string `json:"x5c,omitempty"`
