@@ -401,14 +401,12 @@ func (client *gocloak) DecodeAccessToken(ctx context.Context, accessToken, realm
 		return nil, nil, errors.Wrap(errors.New("cannot find a key to decode the token"), errMessage)
 	}
 
-	switch decodedHeader.Alg {
-	case "ES256":
+	if strings.HasPrefix(decodedHeader.Alg, "ES") {
 		return jwx.DecodeAccessTokenECDSA(accessToken, usedKey.X, usedKey.Y, usedKey.Crv)
-	case "RS256":
+	} else if strings.HasPrefix(decodedHeader.Alg, "RS") {
 		return jwx.DecodeAccessTokenRSA(accessToken, usedKey.E, usedKey.N)
-	default:
-		return nil, nil, fmt.Errorf("unsupported algorithm")
 	}
+	return nil, nil, fmt.Errorf("unsupported algorithm")
 }
 
 // DecodeAccessTokenCustomClaims decodes the accessToken and writes claims into the given claims
@@ -433,14 +431,12 @@ func (client *gocloak) DecodeAccessTokenCustomClaims(ctx context.Context, access
 		return nil, errors.Wrap(errors.New("cannot find a key to decode the token"), errMessage)
 	}
 
-	switch decodedHeader.Alg {
-	case "ES256":
+	if strings.HasPrefix(decodedHeader.Alg, "ES") {
 		return jwx.DecodeAccessTokenECDSACustomClaims(accessToken, usedKey.X, usedKey.Y, usedKey.Crv, claims)
-	case "RS256":
+	} else if strings.HasPrefix(decodedHeader.Alg, "RS") {
 		return jwx.DecodeAccessTokenRSACustomClaims(accessToken, usedKey.E, usedKey.N, claims)
-	default:
-		return nil, fmt.Errorf("unsupported algorithm")
 	}
+	return nil, fmt.Errorf("unsupported algorithm")
 }
 
 func (client *gocloak) GetToken(ctx context.Context, realm string, options TokenOptions) (*JWT, error) {
