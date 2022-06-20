@@ -113,6 +113,7 @@ func decodeRSAPublicKey(e, n *string) (*rsa.PublicKey, error) {
 	return &pKey, nil
 }
 
+// DecodeAccessTokenRSACustomClaims decodes string access token into jwt.Token
 func DecodeAccessTokenRSACustomClaims(accessToken string, e, n *string, customClaims jwt.Claims) (*jwt.Token, error) {
 	const errMessage = "could not decode accessToken with custom claims"
 	accessToken = strings.Replace(accessToken, "Bearer ", "", 1)
@@ -136,6 +137,7 @@ func DecodeAccessTokenRSACustomClaims(accessToken string, e, n *string, customCl
 	return token2, nil
 }
 
+// DecodeAccessTokenECDSACustomClaims decodes string access token into jwt.Token
 func DecodeAccessTokenECDSACustomClaims(accessToken string, x, y, crv *string, customClaims jwt.Claims) (*jwt.Token, error) {
 	const errMessage = "could not decode accessToken"
 	accessToken = strings.Replace(accessToken, "Bearer ", "", 1)
