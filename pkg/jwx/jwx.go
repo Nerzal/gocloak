@@ -52,6 +52,15 @@ func toBigInt(v string) (*big.Int, error) {
 	return res, nil
 }
 
+var (
+	curves = map[string]elliptic.Curve{
+		"P-224": elliptic.P224(),
+		"P-256": elliptic.P256(),
+		"P-384": elliptic.P384(),
+		"P-521": elliptic.P521(),
+	}
+)
+
 func decodeECDSAPublicKey(x, y, crv *string) (*ecdsa.PublicKey, error) {
 	const errMessage = "could not decode public key"
 
@@ -64,21 +73,12 @@ func decodeECDSAPublicKey(x, y, crv *string) (*ecdsa.PublicKey, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, errMessage)
 	}
-
 	var c elliptic.Curve
-	switch *crv {
-	case "P-224":
-		c = elliptic.P224()
-	case "P-256":
-		c = elliptic.P256()
-	case "P-384":
-		c = elliptic.P384()
-	case "P-521":
-		c = elliptic.P521()
+	var ok bool
+	if c, ok = curves[*crv]; !ok {
+		return nil, errors.Wrap(fmt.Errorf("unknown curve alg: %s", *crv), errMessage)
 	}
-
-	pKey := &ecdsa.PublicKey{X: xInt, Y: yInt, Curve: c}
-	return pKey, nil
+	return &ecdsa.PublicKey{X: xInt, Y: yInt, Curve: c}, nil
 }
 
 func decodeRSAPublicKey(e, n *string) (*rsa.PublicKey, error) {
