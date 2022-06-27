@@ -379,34 +379,8 @@ func (client *gocloak) RetrospectToken(ctx context.Context, accessToken, clientI
 	return &result, nil
 }
 
-// DecodeAccessToken decodes the accessToken
-func (client *gocloak) DecodeAccessToken(ctx context.Context, accessToken, realm string) (*jwt.Token, *jwt.MapClaims, error) {
+func (client *gocloak) decodeAccessTokenWithClaims(ctx context.Context, accessToken, realm string, claims jwt.Claims) (*jwt.Token, error) {
 	const errMessage = "could not decode access token"
-	accessToken = strings.Replace(accessToken, "Bearer ", "", 1)
-
-	decodedHeader, err := jwx.DecodeAccessTokenHeader(accessToken)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, errMessage)
-	}
-
-	certResult, err := client.GetCerts(ctx, realm)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, errMessage)
-	}
-	if certResult.Keys == nil {
-		return nil, nil, errors.Wrap(errors.New("there is no keys to decode the token"), errMessage)
-	}
-	usedKey := findUsedKey(decodedHeader.Kid, *certResult.Keys)
-	if usedKey == nil {
-		return nil, nil, errors.Wrap(errors.New("cannot find a key to decode the token"), errMessage)
-	}
-
-	return jwx.DecodeAccessToken(accessToken, usedKey.E, usedKey.N)
-}
-
-// DecodeAccessTokenCustomClaims decodes the accessToken and writes claims into the given claims
-func (client *gocloak) DecodeAccessTokenCustomClaims(ctx context.Context, accessToken, realm string, claims jwt.Claims) (*jwt.Token, error) {
-	const errMessage = "could not decode access token with custom claims"
 	accessToken = strings.Replace(accessToken, "Bearer ", "", 1)
 
 	decodedHeader, err := jwx.DecodeAccessTokenHeader(accessToken)
@@ -426,7 +400,27 @@ func (client *gocloak) DecodeAccessTokenCustomClaims(ctx context.Context, access
 		return nil, errors.Wrap(errors.New("cannot find a key to decode the token"), errMessage)
 	}
 
-	return jwx.DecodeAccessTokenCustomClaims(accessToken, usedKey.E, usedKey.N, claims)
+	if strings.HasPrefix(decodedHeader.Alg, "ES") {
+		return jwx.DecodeAccessTokenECDSACustomClaims(accessToken, usedKey.X, usedKey.Y, usedKey.Crv, claims)
+	} else if strings.HasPrefix(decodedHeader.Alg, "RS") {
+		return jwx.DecodeAccessTokenRSACustomClaims(accessToken, usedKey.E, usedKey.N, claims)
+	}
+	return nil, fmt.Errorf("unsupported algorithm")
+}
+
+// DecodeAccessToken decodes the accessToken
+func (client *gocloak) DecodeAccessToken(ctx context.Context, accessToken, realm string) (*jwt.Token, *jwt.MapClaims, error) {
+	claims := jwt.MapClaims{}
+	token, err := client.decodeAccessTokenWithClaims(ctx, accessToken, realm, claims)
+	if err != nil {
+		return nil, nil, err
+	}
+	return token, &claims, nil
+}
+
+// DecodeAccessTokenCustomClaims decodes the accessToken and writes claims into the given claims
+func (client *gocloak) DecodeAccessTokenCustomClaims(ctx context.Context, accessToken, realm string, claims jwt.Claims) (*jwt.Token, error) {
+	return client.decodeAccessTokenWithClaims(ctx, accessToken, realm, claims)
 }
 
 func (client *gocloak) GetToken(ctx context.Context, realm string, options TokenOptions) (*JWT, error) {

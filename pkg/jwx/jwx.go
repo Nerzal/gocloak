@@ -2,6 +2,8 @@ package jwx
 
 import (
 	"bytes"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/binary"
@@ -39,16 +41,53 @@ func DecodeAccessTokenHeader(token string) (*DecodedAccessTokenHeader, error) {
 	return result, nil
 }
 
-func decodePublicKey(e, n *string) (*rsa.PublicKey, error) {
+func toBigInt(v string) (*big.Int, error) {
+	decRes, err := base64.RawURLEncoding.DecodeString(v)
+	if err != nil {
+		return nil, err
+	}
+
+	res := big.NewInt(0)
+	res.SetBytes(decRes)
+	return res, nil
+}
+
+var (
+	curves = map[string]elliptic.Curve{
+		"P-224": elliptic.P224(),
+		"P-256": elliptic.P256(),
+		"P-384": elliptic.P384(),
+		"P-521": elliptic.P521(),
+	}
+)
+
+func decodeECDSAPublicKey(x, y, crv *string) (*ecdsa.PublicKey, error) {
 	const errMessage = "could not decode public key"
 
-	decN, err := base64.RawURLEncoding.DecodeString(*n)
+	xInt, err := toBigInt(*x)
 	if err != nil {
 		return nil, errors.Wrap(err, errMessage)
 	}
 
-	nInt := big.NewInt(0)
-	nInt.SetBytes(decN)
+	yInt, err := toBigInt(*y)
+	if err != nil {
+		return nil, errors.Wrap(err, errMessage)
+	}
+	var c elliptic.Curve
+	var ok bool
+	if c, ok = curves[*crv]; !ok {
+		return nil, errors.Wrap(fmt.Errorf("unknown curve alg: %s", *crv), errMessage)
+	}
+	return &ecdsa.PublicKey{X: xInt, Y: yInt, Curve: c}, nil
+}
+
+func decodeRSAPublicKey(e, n *string) (*rsa.PublicKey, error) {
+	const errMessage = "could not decode public key"
+
+	nInt, err := toBigInt(*n)
+	if err != nil {
+		return nil, errors.Wrap(err, errMessage)
+	}
 
 	decE, err := base64.RawURLEncoding.DecodeString(*e)
 	if err != nil {
@@ -74,39 +113,12 @@ func decodePublicKey(e, n *string) (*rsa.PublicKey, error) {
 	return &pKey, nil
 }
 
-// DecodeAccessToken currently only supports RSA - sorry for that
-func DecodeAccessToken(accessToken string, e, n *string) (*jwt.Token, *jwt.MapClaims, error) {
-	const errMessage = "could not decode accessToken"
-	accessToken = strings.Replace(accessToken, "Bearer ", "", 1)
-
-	rsaPublicKey, err := decodePublicKey(e, n)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, errMessage)
-	}
-
-	claims := &jwt.MapClaims{}
-
-	token2, err := jwt.ParseWithClaims(accessToken, claims, func(token *jwt.Token) (interface{}, error) {
-		// Don't forget to validate the alg is what you expect:
-		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return rsaPublicKey, nil
-	})
-
-	if err != nil {
-		return nil, nil, errors.Wrap(err, errMessage)
-	}
-
-	return token2, claims, nil
-}
-
-// DecodeAccessTokenCustomClaims currently only supports RSA - sorry for that
-func DecodeAccessTokenCustomClaims(accessToken string, e, n *string, customClaims jwt.Claims) (*jwt.Token, error) {
+// DecodeAccessTokenRSACustomClaims decodes string access token into jwt.Token
+func DecodeAccessTokenRSACustomClaims(accessToken string, e, n *string, customClaims jwt.Claims) (*jwt.Token, error) {
 	const errMessage = "could not decode accessToken with custom claims"
 	accessToken = strings.Replace(accessToken, "Bearer ", "", 1)
 
-	rsaPublicKey, err := decodePublicKey(e, n)
+	rsaPublicKey, err := decodeRSAPublicKey(e, n)
 	if err != nil {
 		return nil, errors.Wrap(err, errMessage)
 	}
@@ -122,6 +134,29 @@ func DecodeAccessTokenCustomClaims(accessToken string, e, n *string, customClaim
 	if err != nil {
 		return nil, errors.Wrap(err, errMessage)
 	}
+	return token2, nil
+}
 
+// DecodeAccessTokenECDSACustomClaims decodes string access token into jwt.Token
+func DecodeAccessTokenECDSACustomClaims(accessToken string, x, y, crv *string, customClaims jwt.Claims) (*jwt.Token, error) {
+	const errMessage = "could not decode accessToken"
+	accessToken = strings.Replace(accessToken, "Bearer ", "", 1)
+
+	publicKey, err := decodeECDSAPublicKey(x, y, crv)
+	if err != nil {
+		return nil, errors.Wrap(err, errMessage)
+	}
+
+	token2, err := jwt.ParseWithClaims(accessToken, customClaims, func(token *jwt.Token) (interface{}, error) {
+		// Don't forget to validate the alg is what you expect:
+		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return publicKey, nil
+	})
+
+	if err != nil {
+		return nil, errors.Wrap(err, errMessage)
+	}
 	return token2, nil
 }
