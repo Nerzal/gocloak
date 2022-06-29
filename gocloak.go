@@ -179,6 +179,8 @@ type GoCloak interface {
 	GetKeyStoreConfig(ctx context.Context, accessToken, realm string) (*KeyStoreConfig, error)
 	// GetComponents gets components of the given realm
 	GetComponents(ctx context.Context, accessToken, realm string) ([]*Component, error)
+	// GetComponentsWithParams get all components in realm with query params
+	GetComponentsWithParams(ctx context.Context, token, realm string, params GetComponentsParams) ([]*Component, error)
 	// GetDefaultGroups returns a list of default groups
 	GetDefaultGroups(ctx context.Context, accessToken, realm string) ([]*Group, error)
 	// AddDefaultGroup adds group to the list of default groups
@@ -319,22 +321,22 @@ type GoCloak interface {
 	ClearUserCache(ctx context.Context, token, realm string) error
 	// ClearKeysCache clears realm cache
 	ClearKeysCache(ctx context.Context, token, realm string) error
-	//GetAuthenticationFlows get all authentication flows from a realm
+	// GetAuthenticationFlows get all authentication flows from a realm
 	GetAuthenticationFlows(ctx context.Context, token, realm string) ([]*AuthenticationFlowRepresentation, error)
-	//Create a new Authentication flow in a realm
+	// Create a new Authentication flow in a realm
 	CreateAuthenticationFlow(ctx context.Context, token, realm string, flow AuthenticationFlowRepresentation) error
-	//DeleteAuthenticationFlow deletes a flow in a realm with the given ID
+	// DeleteAuthenticationFlow deletes a flow in a realm with the given ID
 	DeleteAuthenticationFlow(ctx context.Context, token, realm, flowID string) error
-	//GetAuthenticationExecutions retrieves all executions of a given flow
+	// GetAuthenticationExecutions retrieves all executions of a given flow
 	GetAuthenticationExecutions(ctx context.Context, token, realm, flow string) ([]*ModifyAuthenticationExecutionRepresentation, error)
-	//CreateAuthenticationExecution creates a new execution for the given flow name in the given realm
+	// CreateAuthenticationExecution creates a new execution for the given flow name in the given realm
 	CreateAuthenticationExecution(ctx context.Context, token, realm, flow string, execution CreateAuthenticationExecutionRepresentation) error
-	//UpdateAuthenticationExecution updates an authentication execution for the given flow in the given realm
+	// UpdateAuthenticationExecution updates an authentication execution for the given flow in the given realm
 	UpdateAuthenticationExecution(ctx context.Context, token, realm, flow string, execution ModifyAuthenticationExecutionRepresentation) error
 	// DeleteAuthenticationExecution delete a single execution with the given ID
 	DeleteAuthenticationExecution(ctx context.Context, token, realm, executionID string) error
 
-	//CreateAuthenticationExecutionFlow creates a new flow execution for the given flow name in the given realm
+	// CreateAuthenticationExecutionFlow creates a new flow execution for the given flow name in the given realm
 	CreateAuthenticationExecutionFlow(ctx context.Context, token, realm, flow string, execution CreateAuthenticationExecutionFlowRepresentation) error
 
 	// *** Users ***

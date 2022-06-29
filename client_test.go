@@ -6363,10 +6363,9 @@ func TestGocloak_CreateAuthenticationFlowsAndCreateAuthenticationExecutionAndFlo
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
-	authExec :=
-		gocloak.CreateAuthenticationExecutionRepresentation{
-			Provider: gocloak.StringP("idp-auto-link"),
-		}
+	authExec := gocloak.CreateAuthenticationExecutionRepresentation{
+		Provider: gocloak.StringP("idp-auto-link"),
+	}
 	authFlow := gocloak.AuthenticationFlowRepresentation{
 		Alias:       gocloak.StringP("testauthflow2"),
 		BuiltIn:     gocloak.BoolP(false),
@@ -6506,4 +6505,58 @@ func TestGocloak_UpdateRequiredAction(t *testing.T) {
 	}
 	err := client.UpdateRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, requiredAction)
 	require.NoError(t, err, "Failed to update required action")
+}
+
+func CreateComponent(t *testing.T, client gocloak.GoCloak, newComponent *gocloak.Component) (func(), string) {
+	if newComponent == nil {
+		newComponent = &gocloak.Component{
+			Name:         GetRandomNameP("CreateComponent"),
+			ProviderID:   gocloak.StringP("rsa-generated"),
+			ProviderType: gocloak.StringP("org.keycloak.keys.KeyProvider"),
+		}
+	}
+	cfg := GetConfig(t)
+	token := GetAdminToken(t, client)
+	createdID, err := client.CreateComponent(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		*newComponent,
+	)
+	require.NoError(t, err, "CreateComponent failed")
+	tearDown := func() {
+		_ = client.DeleteClient(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			createdID,
+		)
+	}
+	return tearDown, createdID
+}
+
+func Test_GetComponentsWithParams(t *testing.T) {
+	// t.Parallel()
+	var newComponent *gocloak.Component
+
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	tearDownComponent, _ := CreateComponent(t, client, newComponent)
+	defer tearDownComponent()
+
+	components, err := client.GetComponentsWithParams(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloak.GetComponentsParams{
+			Name:         newComponent.Name,
+			ProviderType: newComponent.ProviderType,
+			ParentID:     newComponent.ParentID,
+		},
+	)
+	require.NoError(t, err, "GetComponentsWithParams failed")
+	if len(components) != 1 {
+		require.NoError(t, fmt.Errorf("Expected 1 component, got %d", len(components)), "GetComponentsWithParams failed")
+	}
 }

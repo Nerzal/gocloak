@@ -1440,6 +1440,27 @@ func (client *gocloak) GetComponents(ctx context.Context, token, realm string) (
 	return result, nil
 }
 
+// GetComponentsWithParams get all components in realm with query params
+func (client *gocloak) GetComponentsWithParams(ctx context.Context, token, realm string, params GetComponentsParams) ([]*Component, error) {
+	const errMessage = "could not get components"
+
+	var result []*Component
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, errors.Wrap(err, errMessage)
+	}
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		SetQueryParams(queryParams).
+		Get(client.getAdminRealmURL(realm, "components"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // GetDefaultGroups returns a list of default groups
 func (client *gocloak) GetDefaultGroups(ctx context.Context, token, realm string) ([]*Group, error) {
 	const errMessage = "could not get default groups"
