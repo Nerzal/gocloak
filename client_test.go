@@ -6591,10 +6591,10 @@ func Test_UpdateComponent(t *testing.T) {
 	if len(components) != 1 {
 		require.NoError(t, fmt.Errorf("Expected 1 component, got %d", len(components)), "UpdateComponent failed")
 	}
-	if components[0].Name != component.Name {
+	if *components[0].Name != *component.Name {
 		require.NoError(
 			t,
-			fmt.Errorf("Expected name after update '%s', got %s", *component.Name, *components[0].Name),
+			fmt.Errorf("Expected name after update '%s', got '%s'", *component.Name, *components[0].Name),
 			"UpdateComponent failed",
 		)
 	}
