@@ -1462,12 +1462,12 @@ func (client *gocloak) GetComponentsWithParams(ctx context.Context, token, realm
 }
 
 // UpdateComponent updates the given component
-func (client *gocloak) UpdateComponent(ctx context.Context, token, realm string, updatedComponent Component) error {
+func (client *gocloak) UpdateComponent(ctx context.Context, token, realm string, component Component) error {
 	const errMessage = "could not update component"
 
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
-		SetBody(updatedComponent).
-		Put(client.getAdminRealmURL(realm, "components", *updatedComponent.ID))
+		SetBody(component).
+		Put(client.getAdminRealmURL(realm, "components", PString(component.ID)))
 
 	return checkForError(resp, err, errMessage)
 }

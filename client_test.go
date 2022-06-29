@@ -6507,13 +6507,11 @@ func TestGocloak_UpdateRequiredAction(t *testing.T) {
 	require.NoError(t, err, "Failed to update required action")
 }
 
-func CreateComponent(t *testing.T, client gocloak.GoCloak, newComponent *gocloak.Component) (func(), string, *gocloak.Component) {
-	if newComponent == nil {
-		newComponent = &gocloak.Component{
-			Name:         GetRandomNameP("CreateComponent"),
-			ProviderID:   gocloak.StringP("rsa-generated"),
-			ProviderType: gocloak.StringP("org.keycloak.keys.KeyProvider"),
-		}
+func CreateComponent(t *testing.T, client gocloak.GoCloak) (func(), *gocloak.Component) {
+	newComponent := &gocloak.Component{
+		Name:         GetRandomNameP("CreateComponent"),
+		ProviderID:   gocloak.StringP("rsa-generated"),
+		ProviderType: gocloak.StringP("org.keycloak.keys.KeyProvider"),
 	}
 	cfg := GetConfig(t)
 	token := GetAdminToken(t, client)
@@ -6532,7 +6530,8 @@ func CreateComponent(t *testing.T, client gocloak.GoCloak, newComponent *gocloak
 			createdID,
 		)
 	}
-	return tearDown, createdID, newComponent
+	newComponent.ID = &createdID
+	return tearDown, newComponent
 }
 
 func Test_GetComponentsWithParams(t *testing.T) {
@@ -6540,7 +6539,7 @@ func Test_GetComponentsWithParams(t *testing.T) {
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
-	tearDownComponent, _, component := CreateComponent(t, client, nil)
+	tearDownComponent, component := CreateComponent(t, client)
 	defer tearDownComponent()
 
 	components, err := client.GetComponentsWithParams(
@@ -6564,7 +6563,7 @@ func Test_UpdateComponent(t *testing.T) {
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
-	tearDownComponent, _, component := CreateComponent(t, client, nil)
+	tearDownComponent, component := CreateComponent(t, client)
 	defer tearDownComponent()
 
 	component.Name = GetRandomNameP("UpdateComponent")
