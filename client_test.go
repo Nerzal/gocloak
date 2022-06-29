@@ -6558,3 +6558,45 @@ func Test_GetComponentsWithParams(t *testing.T) {
 		require.NoError(t, fmt.Errorf("Expected 1 component, got %d", len(components)), "GetComponentsWithParams failed")
 	}
 }
+
+func Test_UpdateComponent(t *testing.T) {
+	// t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	tearDownComponent, _, component := CreateComponent(t, client, nil)
+	defer tearDownComponent()
+
+	component.Name = GetRandomNameP("UpdateComponent")
+
+	err := client.UpdateComponent(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		*component,
+	)
+	require.NoError(t, err, "UpdateComponent failed")
+
+	components, err := client.GetComponentsWithParams(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloak.GetComponentsParams{
+			Name:         component.Name,
+			ProviderType: component.ProviderType,
+			ParentID:     component.ParentID,
+		},
+	)
+	require.NoError(t, err, "GetComponentWithParams after UpdateComponent failed")
+
+	if len(components) != 1 {
+		require.NoError(t, fmt.Errorf("Expected 1 component, got %d", len(components)), "UpdateComponent failed")
+	}
+	if components[0].Name != component.Name {
+		require.NoError(
+			t,
+			fmt.Errorf("Expected name after update '%s', got %s", *component.Name, *components[0].Name),
+			"UpdateComponent failed",
+		)
+	}
+}

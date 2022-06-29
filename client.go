@@ -1461,6 +1461,17 @@ func (client *gocloak) GetComponentsWithParams(ctx context.Context, token, realm
 	return result, nil
 }
 
+// UpdateComponent updates the given component
+func (client *gocloak) UpdateComponent(ctx context.Context, token, realm string, updatedComponent Component) error {
+	const errMessage = "could not update component"
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetBody(updatedComponent).
+		Put(client.getAdminRealmURL(realm, "components", *updatedComponent.ID))
+
+	return checkForError(resp, err, errMessage)
+}
+
 // GetDefaultGroups returns a list of default groups
 func (client *gocloak) GetDefaultGroups(ctx context.Context, token, realm string) ([]*Group, error) {
 	const errMessage = "could not get default groups"
