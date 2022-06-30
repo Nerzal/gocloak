@@ -1463,7 +1463,7 @@ func (client *gocloak) GetComponentsWithParams(ctx context.Context, token, realm
 // GetComponent get exactly one component by ID
 func (client *gocloak) GetComponent(ctx context.Context, token, realm string, componentID string) (*Component, error) {
 	const errMessage = "could not get components"
-	var result []*Component
+	var result *Component
 
 	componentURL := fmt.Sprintf("components/%s", componentID)
 
@@ -1475,11 +1475,7 @@ func (client *gocloak) GetComponent(ctx context.Context, token, realm string, co
 		return nil, err
 	}
 
-	if len(result) != 1 {
-		return nil, fmt.Errorf("get %d components from keycloak by ID instead of one", len(result))
-	}
-
-	return result[0], nil
+	return result, nil
 }
 
 // UpdateComponent updates the given component
