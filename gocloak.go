@@ -181,6 +181,8 @@ type GoCloak interface {
 	GetComponents(ctx context.Context, accessToken, realm string) ([]*Component, error)
 	// GetComponentsWithParams get all components in realm with query params
 	GetComponentsWithParams(ctx context.Context, token, realm string, params GetComponentsParams) ([]*Component, error)
+	// GetComponent get exactly one component by ID
+	GetComponent(ctx context.Context, token, realm string, componentID string) (*Component, error)
 	// UpdateComponent updates the given component
 	UpdateComponent(ctx context.Context, token, realm string, component Component) error
 	// GetDefaultGroups returns a list of default groups

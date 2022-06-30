@@ -5279,7 +5279,6 @@ func Test_ErrorsGetAuthorizationPolicyScopes(t *testing.T) {
 				},
 			},
 		})
-
 	})
 
 	// Create SCOPE
@@ -6556,6 +6555,23 @@ func Test_GetComponentsWithParams(t *testing.T) {
 	if len(components) != 1 {
 		require.NoError(t, fmt.Errorf("Expected 1 component, got %d", len(components)), "GetComponentsWithParams failed")
 	}
+}
+
+func Test_GetComponent(t *testing.T) {
+	// t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	tearDownComponent, component := CreateComponent(t, client)
+	defer tearDownComponent()
+
+	_, err := client.GetComponent(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		*component.ID,
+	)
+	require.NoError(t, err, "GetComponent failed")
 }
 
 func Test_UpdateComponent(t *testing.T) {
