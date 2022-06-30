@@ -306,6 +306,7 @@ type GetComponentsParams struct {
 	Name         *string `json:"name,omitempty"`
 	ProviderType *string `json:"providerType,omitempty"`
 	ParentID     *string `json:"parentId,omitempty"`
+	ID           *string `json:"-"` // This is the path parameter.
 }
 
 // ExecuteActionsEmail represents parameters for executing action emails
