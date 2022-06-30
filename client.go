@@ -2352,7 +2352,7 @@ func (client *gocloak) GetUserCount(ctx context.Context, token string, realm str
 		Get(client.getAdminRealmURL(realm, "users", "count"))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
-		return -1, errors.Wrap(err, errMessage)
+		return -1, err
 	}
 
 	return result, nil
