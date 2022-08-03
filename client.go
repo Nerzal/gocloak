@@ -3758,6 +3758,57 @@ func (client *gocloak) CreateClientScopesScopeMappingsRealmRoles(ctx context.Con
 	return checkForError(resp, err, errMessage)
 }
 
+// CreateRequiredAction creates a required action for a given realm
+func (client *gocloak) RegisterRequiredAction(ctx context.Context, token string, realm string, requiredAction RequiredActionProviderRepresentation) error {
+	const errMessage = "could not create required action"
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetBody(requiredAction).
+		Post(client.getAdminRealmURL(realm, "authentication", "register-required-action"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return err
+	}
+
+	return err
+}
+
+// GetRequiredActions gets a list of required actions for a given realm
+func (client *gocloak) GetRequiredActions(ctx context.Context, token string, realm string) ([]*RequiredActionProviderRepresentation, error) {
+	const errMessage = "could not get required actions"
+	var result []*RequiredActionProviderRepresentation
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "authentication", "required-actions"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
+// GetRequiredAction gets a required action for a given realm
+func (client *gocloak) GetRequiredAction(ctx context.Context, token string, realm string, alias string) (*RequiredActionProviderRepresentation, error) {
+	const errMessage = "could not get required action"
+	var result RequiredActionProviderRepresentation
+
+	if alias == "" {
+		return nil, errors.New("alias is required for getting a required action")
+	}
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "authentication", "required-actions", alias))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &result, err
+}
+
 // UpdateRequiredAction updates a required action for a given realm
 func (client *gocloak) UpdateRequiredAction(ctx context.Context, token string, realm string, requiredAction RequiredActionProviderRepresentation) error {
 	const errMessage = "could not update required action"
@@ -3768,6 +3819,23 @@ func (client *gocloak) UpdateRequiredAction(ctx context.Context, token string, r
 	_, err := client.getRequestWithBearerAuth(ctx, token).
 		SetBody(requiredAction).
 		Put(client.getAdminRealmURL(realm, "authentication", "required-actions", *requiredAction.ProviderID))
+
+	return err
+}
+
+// DeleteRequiredAction updates a required action for a given realm
+func (client *gocloak) DeleteRequiredAction(ctx context.Context, token string, realm string, alias string) error {
+	const errMessage = "could not delete required action"
+
+	if alias == "" {
+		return errors.New("alias is required for deleting a required action")
+	}
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		Delete(client.getAdminRealmURL(realm, "authentication", "required-actions", alias))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return err
+	}
 
 	return err
 }
