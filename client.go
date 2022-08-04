@@ -217,6 +217,14 @@ func (g *GoCloak) getAdminRealmURL(realm string, path ...string) string {
 
 // ==== Functional Options ===
 
+// SetLegacyWildFlySupport maintain legacy WildFly support.
+func SetLegacyWildFlySupport() func(g *GoCloak) {
+	return func(g *GoCloak) {
+		g.Config.authAdminRealms = makeURL("auth", "admin", "realms")
+		g.Config.authRealms = makeURL("auth", "realms")
+	}
+}
+
 // SetAuthRealms sets the auth realm
 func SetAuthRealms(url string) func(g *GoCloak) {
 	return func(g *GoCloak) {
@@ -672,6 +680,28 @@ func (g *GoCloak) ExecuteActionsEmail(ctx context.Context, token, realm string, 
 		SetBody(params.Actions).
 		SetQueryParams(queryParams).
 		Put(g.getAdminRealmURL(realm, "users", *(params.UserID), "execute-actions-email"))
+
+	return checkForError(resp, err, errMessage)
+}
+
+// SendVerifyEmail sends a verification e-mail to a user.
+func (g *GoCloak) SendVerifyEmail(ctx context.Context, token, userID, realm string, params ...SendVerificationMailParams) error {
+	const errMessage = "could not execute actions email"
+
+	queryParams := map[string]string{}
+	if params != nil {
+		if params[0].ClientID != nil {
+			queryParams["client_id"] = *params[0].ClientID
+		}
+
+		if params[0].RedirectURI != nil {
+			queryParams["redirect_uri"] = *params[0].RedirectURI
+		}
+	}
+
+	resp, err := g.getRequestWithBearerAuth(ctx, token).
+		SetQueryParams(queryParams).
+		Put(g.getAdminRealmURL(realm, "users", userID, "send-verify-email"))
 
 	return checkForError(resp, err, errMessage)
 }

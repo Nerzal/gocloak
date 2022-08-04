@@ -492,7 +492,7 @@ func (w *RestyLogWriter) write(format string, v ...interface{}) {
 
 func NewClientWithDebug(t testing.TB) *gocloak.GoCloak {
 	cfg := GetConfig(t)
-	client := gocloak.NewClient(cfg.HostName)
+	client := gocloak.NewClient(cfg.HostName, gocloak.SetLegacyWildFlySupport())
 	cond := func(resp *resty.Response, err error) bool {
 		if resp != nil && resp.IsError() {
 			if e, ok := resp.Error().(*gocloak.HTTPErrorResponse); ok {

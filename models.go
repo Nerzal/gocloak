@@ -310,6 +310,12 @@ type ExecuteActionsEmail struct {
 	Actions     *[]string `json:"-"`
 }
 
+// SendVerificationMailParams is being used to send verification params
+type SendVerificationMailParams struct {
+	ClientID    *string
+	RedirectURI *string
+}
+
 // Group is a Group
 type Group struct {
 	ID          *string              `json:"id,omitempty"`
