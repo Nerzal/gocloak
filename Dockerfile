@@ -2,7 +2,6 @@ FROM quay.io/keycloak/keycloak:latest
 COPY testdata data/import
 WORKDIR /opt/keycloak
 ENV KC_HOSTNAME=localhost
-ENV KEYCLOAK_IMPORT=/tmp/gocloak-realm.json -Dkeycloak.profile.feature.upload_scripts=enabled
 ENV KEYCLOAK_USER=admin
 ENV KEYCLOAK_PASSWORD=secret
 ENV KEYCLOAK_ADMIN=admin

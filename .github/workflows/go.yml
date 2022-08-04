@@ -20,8 +20,6 @@ jobs:
         uses: sonatype-nexus-community/nancy-github-action@main
       - name: Run Keycloak
         run: |
-          # docker build -t my-keycloak .          
-          # docker run -p 8080:8080 --name keycloak my-keycloak
           make start-keycloak
           sleep 15
       - name: Unit Tests
