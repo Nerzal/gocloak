@@ -263,7 +263,7 @@ func TestStringerOmitEmpty(t *testing.T) {
 		&gocloak.ResourcePermission{},
 		&gocloak.PermissionResource{},
 		&gocloak.PermissionScope{},
-		&gocloak.RetrospecTokenResult{},
+		&gocloak.IntroSpectTokenResult{},
 		&gocloak.User{},
 		&gocloak.SetPasswordRequest{},
 		&gocloak.Component{},

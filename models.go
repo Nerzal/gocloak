@@ -182,8 +182,8 @@ type PermissionScope struct {
 	ScopeName *string `json:"name,omitempty"`
 }
 
-// RetrospecTokenResult is returned when a token was checked
-type RetrospecTokenResult struct {
+// IntroSpectTokenResult is returned when a token was checked
+type IntroSpectTokenResult struct {
 	Permissions *[]ResourcePermission `json:"permissions,omitempty"`
 	Exp         *int                  `json:"exp,omitempty"`
 	Nbf         *int                  `json:"nbf,omitempty"`
@@ -1337,7 +1337,7 @@ func (v *IssuerResponse) String() string                            { return pre
 func (v *ResourcePermission) String() string                        { return prettyStringStruct(v) }
 func (v *PermissionResource) String() string                        { return prettyStringStruct(v) }
 func (v *PermissionScope) String() string                           { return prettyStringStruct(v) }
-func (v *RetrospecTokenResult) String() string                      { return prettyStringStruct(v) }
+func (v *IntroSpectTokenResult) String() string                     { return prettyStringStruct(v) }
 func (v *User) String() string                                      { return prettyStringStruct(v) }
 func (v *SetPasswordRequest) String() string                        { return prettyStringStruct(v) }
 func (v *Component) String() string                                 { return prettyStringStruct(v) }

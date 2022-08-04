@@ -367,10 +367,10 @@ func (g *GoCloak) GetIssuer(ctx context.Context, realm string) (*IssuerResponse,
 }
 
 // RetrospectToken calls the openid-connect introspect endpoint
-func (g *GoCloak) RetrospectToken(ctx context.Context, accessToken, clientID, clientSecret, realm string) (*RetrospecTokenResult, error) {
+func (g *GoCloak) RetrospectToken(ctx context.Context, accessToken, clientID, clientSecret, realm string) (*IntroSpectTokenResult, error) {
 	const errMessage = "could not introspect requesting party token"
 
-	var result RetrospecTokenResult
+	var result IntroSpectTokenResult
 	resp, err := g.getRequestWithBasicAuth(ctx, clientID, clientSecret).
 		SetFormData(map[string]string{
 			"token_type_hint": "requesting_party_token",
@@ -1641,7 +1641,7 @@ func (g *GoCloak) GetClientRoles(ctx context.Context, token, realm, idOfClient s
 	return result, nil
 }
 
-// GetClientRoleById gets role for the given client in realm using role ID
+// GetClientRoleByID gets role for the given client in realm using role ID
 func (g *GoCloak) GetClientRoleByID(ctx context.Context, token, realm, roleID string) (*Role, error) {
 	const errMessage = "could not get client role"
 
@@ -1657,7 +1657,7 @@ func (g *GoCloak) GetClientRoleByID(ctx context.Context, token, realm, roleID st
 	return &result, nil
 }
 
-// GetRealmRolesByUserID returns all client roles assigned to the given user
+// GetClientRolesByUserID returns all client roles assigned to the given user
 func (g *GoCloak) GetClientRolesByUserID(ctx context.Context, token, realm, idOfClient, userID string) ([]*Role, error) {
 	const errMessage = "could not client roles by user id"
 
