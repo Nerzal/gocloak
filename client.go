@@ -1,3 +1,4 @@
+// Package gocloak is a golang keycloak adaptor.
 package gocloak
 
 import (
@@ -131,6 +132,7 @@ func checkForError(resp *resty.Response, err error, errMessage string) error {
 func getID(resp *resty.Response) string {
 	header := resp.Header().Get("Location")
 	splittedPath := strings.Split(header, urlSeparator)
+
 	return splittedPath[len(splittedPath)-1]
 }
 
@@ -192,10 +194,13 @@ func NewClient(basePath string, options ...func(*GoCloak)) *GoCloak {
 	return &c
 }
 
+// RestyClient returns the internal resty client.
+// This can be used to configure the client.
 func (g *GoCloak) RestyClient() *resty.Client {
 	return g.restyClient
 }
 
+// SetRestyClient overwrites the internal resty client.
 func (g *GoCloak) SetRestyClient(restyClient *resty.Client) {
 	g.restyClient = restyClient
 }
@@ -254,6 +259,7 @@ func SetCertCacheInvalidationTime(duration time.Duration) func(g *GoCloak) {
 	}
 }
 
+// GetServerInfo fetches the server info.
 func (g *GoCloak) GetServerInfo(ctx context.Context, accessToken string) (*ServerInfoRepesentation, error) {
 	errMessage := "could not get server info"
 	var result ServerInfoRepesentation
@@ -611,6 +617,7 @@ func (g *GoCloak) Logout(ctx context.Context, clientID, clientSecret, realm, ref
 	return checkForError(resp, err, errMessage)
 }
 
+// LogoutPublicClient performs a logout using a public client and the accessToken.
 func (g *GoCloak) LogoutPublicClient(ctx context.Context, clientID, realm, accessToken, refreshToken string) error {
 	const errMessage = "could not logout public client"
 
@@ -624,7 +631,7 @@ func (g *GoCloak) LogoutPublicClient(ctx context.Context, clientID, realm, acces
 	return checkForError(resp, err, errMessage)
 }
 
-// LogoutAllSessions logs out all sessions of a user given an id
+// LogoutAllSessions logs out all sessions of a user given an id.
 func (g *GoCloak) LogoutAllSessions(ctx context.Context, accessToken, realm, userID string) error {
 	const errMessage = "could not logout"
 
@@ -634,6 +641,7 @@ func (g *GoCloak) LogoutAllSessions(ctx context.Context, accessToken, realm, use
 	return checkForError(resp, err, errMessage)
 }
 
+// RevokeUserConsents revokes the given user consent.
 func (g *GoCloak) RevokeUserConsents(ctx context.Context, accessToken, realm, userID, clientID string) error {
 	const errMessage = "could not revoke consents"
 
@@ -643,7 +651,7 @@ func (g *GoCloak) RevokeUserConsents(ctx context.Context, accessToken, realm, us
 	return checkForError(resp, err, errMessage)
 }
 
-// LogoutUserSessions logs out a single sessions of a user given a session id
+// LogoutUserSession logs out a single sessions of a user given a session id
 func (g *GoCloak) LogoutUserSession(ctx context.Context, accessToken, realm, session string) error {
 	const errMessage = "could not logout"
 
@@ -670,6 +678,7 @@ func (g *GoCloak) ExecuteActionsEmail(ctx context.Context, token, realm string, 
 	return checkForError(resp, err, errMessage)
 }
 
+// CreateGroup creates a new group.
 func (g *GoCloak) CreateGroup(ctx context.Context, token, realm string, group Group) (string, error) {
 	const errMessage = "could not create group"
 
@@ -698,6 +707,7 @@ func (g *GoCloak) CreateChildGroup(ctx context.Context, token, realm, groupID st
 	return getID(resp), nil
 }
 
+// CreateComponent creates the given component.
 func (g *GoCloak) CreateComponent(ctx context.Context, token, realm string, component Component) (string, error) {
 	const errMessage = "could not create component"
 
@@ -712,6 +722,7 @@ func (g *GoCloak) CreateComponent(ctx context.Context, token, realm string, comp
 	return getID(resp), nil
 }
 
+// CreateClient creates the given client.
 func (g *GoCloak) CreateClient(ctx context.Context, accessToken, realm string, newClient Client) (string, error) {
 	const errMessage = "could not create client"
 
@@ -789,6 +800,7 @@ func (g *GoCloak) CreateClientScopeProtocolMapper(ctx context.Context, token, re
 	return getID(resp), nil
 }
 
+// UpdateGroup updates the given group.
 func (g *GoCloak) UpdateGroup(ctx context.Context, token, realm string, updatedGroup Group) error {
 	const errMessage = "could not update group"
 
@@ -839,6 +851,7 @@ func (g *GoCloak) UpdateClientRepresentation(ctx context.Context, accessToken, r
 	return &result, nil
 }
 
+// UpdateRole updates the given role.
 func (g *GoCloak) UpdateRole(ctx context.Context, token, realm, idOfClient string, role Role) error {
 	const errMessage = "could not update role"
 
@@ -849,6 +862,7 @@ func (g *GoCloak) UpdateRole(ctx context.Context, token, realm, idOfClient strin
 	return checkForError(resp, err, errMessage)
 }
 
+// UpdateClientScope updates the given client scope.
 func (g *GoCloak) UpdateClientScope(ctx context.Context, token, realm string, scope ClientScope) error {
 	const errMessage = "could not update client scope"
 
@@ -870,6 +884,7 @@ func (g *GoCloak) UpdateClientScopeProtocolMapper(ctx context.Context, token, re
 	return checkForError(resp, err, errMessage)
 }
 
+// DeleteGroup deletes the group with the given groupID.
 func (g *GoCloak) DeleteGroup(ctx context.Context, token, realm, groupID string) error {
 	const errMessage = "could not delete group"
 
@@ -889,6 +904,7 @@ func (g *GoCloak) DeleteClient(ctx context.Context, token, realm, idOfClient str
 	return checkForError(resp, err, errMessage)
 }
 
+// DeleteComponent deletes the component with the given id.
 func (g *GoCloak) DeleteComponent(ctx context.Context, token, realm, componentID string) error {
 	const errMessage = "could not delete component"
 
@@ -898,7 +914,7 @@ func (g *GoCloak) DeleteComponent(ctx context.Context, token, realm, componentID
 	return checkForError(resp, err, errMessage)
 }
 
-// DeleteClientRepresentation deletes a given client representation
+// DeleteClientRepresentation deletes a given client representation.
 func (g *GoCloak) DeleteClientRepresentation(ctx context.Context, accessToken, realm, clientID string) error {
 	const errMessage = "could not delete client representation"
 
@@ -908,7 +924,7 @@ func (g *GoCloak) DeleteClientRepresentation(ctx context.Context, accessToken, r
 	return checkForError(resp, err, errMessage)
 }
 
-// DeleteClientRole deletes a given role
+// DeleteClientRole deletes a given role.
 func (g *GoCloak) DeleteClientRole(ctx context.Context, token, realm, idOfClient, roleName string) error {
 	const errMessage = "could not delete client role"
 
@@ -918,6 +934,7 @@ func (g *GoCloak) DeleteClientRole(ctx context.Context, token, realm, idOfClient
 	return checkForError(resp, err, errMessage)
 }
 
+// DeleteClientScope deletes the scope with the given id.
 func (g *GoCloak) DeleteClientScope(ctx context.Context, token, realm, scopeID string) error {
 	const errMessage = "could not delete client scope"
 
@@ -1326,6 +1343,7 @@ func (g *GoCloak) GetClientServiceAccount(ctx context.Context, token, realm, idO
 	return &result, nil
 }
 
+// RegenerateClientSecret triggers the creation of the new client secret.
 func (g *GoCloak) RegenerateClientSecret(ctx context.Context, token, realm, idOfClient string) (*CredentialRepresentation, error) {
 	const errMessage = "could not regenerate client secret"
 
@@ -1980,6 +1998,7 @@ func (g *GoCloak) DeleteRealmRoleFromGroup(ctx context.Context, token, realm, gr
 	return checkForError(resp, err, errMessage)
 }
 
+// AddRealmRoleComposite adds a role to the composite.
 func (g *GoCloak) AddRealmRoleComposite(ctx context.Context, token, realm, roleName string, roles []Role) error {
 	const errMessage = "could not add realm role composite"
 
@@ -1990,6 +2009,7 @@ func (g *GoCloak) AddRealmRoleComposite(ctx context.Context, token, realm, roleN
 	return checkForError(resp, err, errMessage)
 }
 
+// DeleteRealmRoleComposite deletes a role from the composite.
 func (g *GoCloak) DeleteRealmRoleComposite(ctx context.Context, token, realm, roleName string, roles []Role) error {
 	const errMessage = "could not delete realm role composite"
 
@@ -2211,7 +2231,7 @@ func (g *GoCloak) GetAuthenticationFlows(ctx context.Context, token, realm strin
 	return result, nil
 }
 
-// Create a new Authentication flow in a realm
+// CreateAuthenticationFlow creates a new Authentication flow in a realm
 func (g *GoCloak) CreateAuthenticationFlow(ctx context.Context, token, realm string, flow AuthenticationFlowRepresentation) error {
 	const errMessage = "could not create authentication flows"
 	var result []*AuthenticationFlowRepresentation
@@ -2843,7 +2863,7 @@ func (g *GoCloak) GetResource(ctx context.Context, token, realm, idOfClient, res
 	return &result, nil
 }
 
-// GetResource returns a client's resource with the given id, using access token from client
+// GetResourceClient returns a client's resource with the given id, using access token from client
 func (g *GoCloak) GetResourceClient(ctx context.Context, token, realm, resourceID string) (*ResourceRepresentation, error) {
 	const errMessage = "could not get resource"
 
@@ -2883,7 +2903,7 @@ func (g *GoCloak) GetResources(ctx context.Context, token, realm, idOfClient str
 	return result, nil
 }
 
-// GetResources returns resources associated with the client, using access token from client
+// GetResourcesClient returns resources associated with the client, using access token from client
 func (g *GoCloak) GetResourcesClient(ctx context.Context, token, realm string, params GetResourceParams) ([]*ResourceRepresentation, error) {
 	const errMessage = "could not get resources"
 
@@ -2928,7 +2948,7 @@ func (g *GoCloak) UpdateResource(ctx context.Context, token, realm, idOfClient s
 	return checkForError(resp, err, errMessage)
 }
 
-// UpdateResource updates a resource associated with the client, using access token from client
+// UpdateResourceClient updates a resource associated with the client, using access token from client
 func (g *GoCloak) UpdateResourceClient(ctx context.Context, token, realm string, resource ResourceRepresentation) error {
 	const errMessage = "could not update resource"
 
@@ -2960,7 +2980,7 @@ func (g *GoCloak) CreateResource(ctx context.Context, token, realm string, idOfC
 	return &result, nil
 }
 
-// CreateResource creates a resource associated with the client, using access token from client
+// CreateResourceClient creates a resource associated with the client, using access token from client
 func (g *GoCloak) CreateResourceClient(ctx context.Context, token, realm string, resource ResourceRepresentation) (*ResourceRepresentation, error) {
 	const errMessage = "could not create resource"
 
@@ -2987,7 +3007,7 @@ func (g *GoCloak) DeleteResource(ctx context.Context, token, realm, idOfClient, 
 	return checkForError(resp, err, errMessage)
 }
 
-// DeleteResource deletes a resource associated with the client (using a client token)
+// DeleteResourceClient deletes a resource associated with the client (using a client token)
 func (g *GoCloak) DeleteResourceClient(ctx context.Context, token, realm, resourceID string) error {
 	const errMessage = "could not delete resource"
 
@@ -3213,7 +3233,7 @@ func (g *GoCloak) GetAuthorizationPolicyScopes(ctx context.Context, token, realm
 	return result, nil
 }
 
-// GetResourcePolicy updates a permission for a specifc resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+// GetResourcePolicy updates a permission for a specific resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
 func (g *GoCloak) GetResourcePolicy(ctx context.Context, token, realm, permissionID string) (*ResourcePolicyRepresentation, error) {
 	const errMessage = "could not get resource policy"
 
@@ -3251,7 +3271,7 @@ func (g *GoCloak) GetResourcePolicies(ctx context.Context, token, realm string, 
 	return result, nil
 }
 
-// CreateResourcePolicy associates a permission with a specifc resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+// CreateResourcePolicy associates a permission with a specific resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
 func (g *GoCloak) CreateResourcePolicy(ctx context.Context, token, realm, resourceID string, policy ResourcePolicyRepresentation) (*ResourcePolicyRepresentation, error) {
 	const errMessage = "could not create resource policy"
 
@@ -3268,7 +3288,7 @@ func (g *GoCloak) CreateResourcePolicy(ctx context.Context, token, realm, resour
 	return &result, nil
 }
 
-// UpdateResourcePolicy updates a permission for a specifc resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+// UpdateResourcePolicy updates a permission for a specific resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
 func (g *GoCloak) UpdateResourcePolicy(ctx context.Context, token, realm, permissionID string, policy ResourcePolicyRepresentation) error {
 	const errMessage = "could not update resource policy"
 
@@ -3279,7 +3299,7 @@ func (g *GoCloak) UpdateResourcePolicy(ctx context.Context, token, realm, permis
 	return checkForError(resp, err, errMessage)
 }
 
-// DeleteResourcePolicy deletes a permission for a specifc resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+// DeleteResourcePolicy deletes a permission for a specific resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
 func (g *GoCloak) DeleteResourcePolicy(ctx context.Context, token, realm, permissionID string) error {
 	const errMessage = "could not  delete resource policy"
 
@@ -3321,7 +3341,7 @@ func (g *GoCloak) GetDependentPermissions(ctx context.Context, token, realm, idO
 	return result, nil
 }
 
-// GetPermissionResource returns a client's resource attached for the given permission id
+// GetPermissionResources returns a client's resource attached for the given permission id
 func (g *GoCloak) GetPermissionResources(ctx context.Context, token, realm, idOfClient, permissionID string) ([]*PermissionResource, error) {
 	const errMessage = "could not get permission resource"
 
@@ -3436,7 +3456,7 @@ func checkPermissionGrantParams(permission PermissionGrantParams) error {
 	return nil
 }
 
-// GrantPermission lets resource owner grant permission for specific resource ID to specific user ID
+// GrantUserPermission lets resource owner grant permission for specific resource ID to specific user ID
 func (g *GoCloak) GrantUserPermission(ctx context.Context, token, realm string, permission PermissionGrantParams) (*PermissionGrantResponseRepresentation, error) {
 	const errMessage = "could not grant user permission"
 
@@ -3474,6 +3494,7 @@ func checkPermissionUpdateParams(permission PermissionGrantParams) error {
 	return nil
 }
 
+// UpdateUserPermission updates user permissions.
 func (g *GoCloak) UpdateUserPermission(ctx context.Context, token, realm string, permission PermissionGrantParams) (*PermissionGrantResponseRepresentation, error) {
 	const errMessage = "could not update user permission"
 
@@ -3500,7 +3521,7 @@ func (g *GoCloak) UpdateUserPermission(ctx context.Context, token, realm string,
 	return &result, nil
 }
 
-// GetUserPermission gets granted permissions according query parameters
+// GetUserPermissions gets granted permissions according query parameters
 func (g *GoCloak) GetUserPermissions(ctx context.Context, token, realm string, params GetUserPermissionParams) ([]*PermissionGrantResponseRepresentation, error) {
 	const errMessage = "could not get user permissions"
 
@@ -3522,6 +3543,7 @@ func (g *GoCloak) GetUserPermissions(ctx context.Context, token, realm string, p
 	return result, nil
 }
 
+// DeleteUserPermission revokes permissions according query parameters
 func (g *GoCloak) DeleteUserPermission(ctx context.Context, token, realm, ticketID string) error {
 	const errMessage = "could not delete user permission"
 
