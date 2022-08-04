@@ -20,8 +20,8 @@ jobs:
         uses: sonatype-nexus-community/nancy-github-action@main
       - name: Run Keycloak
         run: |
-          docker pull quay.io/keycloak/keycloak:legacy
-          docker run -d -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=secret -e KEYCLOAK_IMPORT=/tmp/gocloak-realm.json -v "`pwd`/testdata/gocloak-realm.json:/tmp/gocloak-realm.json" -p 8080:8080 --name keycloak quay.io/keycloak/keycloak:legacy -Dkeycloak.profile.feature.upload_scripts=enabled
+          docker build -t my-keycloak .
+          docker run -p 8080:8080 --name keycloak my-keycloak
           sleep 15
       - name: Unit Tests
         run: |
