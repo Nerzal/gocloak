@@ -1030,8 +1030,8 @@ type BuiltinProtocolMappers struct {
 	OpenIDConnect []ProtocolMapperRepresentation `json:"openid-connect,omitempty"`
 }
 
-// ServerInfoRepesentation represents a server info
-type ServerInfoRepesentation struct {
+// ServerInfoRepresentation represents a server info
+type ServerInfoRepresentation struct {
 	SystemInfo             *SystemInfoRepresentation `json:"systemInfo,omitempty"`
 	MemoryInfo             *MemoryInfoRepresentation `json:"memoryInfo,omitempty"`
 	PasswordPolicies       []*PasswordPolicy         `json:"passwordPolicies,omitempty"`
@@ -1389,7 +1389,7 @@ func (v *RequestingPartyPermission) String() string                 { return pre
 func (v *UserSessionRepresentation) String() string                 { return prettyStringStruct(v) }
 func (v *SystemInfoRepresentation) String() string                  { return prettyStringStruct(v) }
 func (v *MemoryInfoRepresentation) String() string                  { return prettyStringStruct(v) }
-func (v *ServerInfoRepesentation) String() string                   { return prettyStringStruct(v) }
+func (v *ServerInfoRepresentation) String() string                  { return prettyStringStruct(v) }
 func (v *FederatedIdentityRepresentation) String() string           { return prettyStringStruct(v) }
 func (v *IdentityProviderRepresentation) String() string            { return prettyStringStruct(v) }
 func (v *GetResourceParams) String() string                         { return prettyStringStruct(v) }

@@ -311,7 +311,7 @@ func TestStringerOmitEmpty(t *testing.T) {
 		&gocloak.UserSessionRepresentation{},
 		&gocloak.SystemInfoRepresentation{},
 		&gocloak.MemoryInfoRepresentation{},
-		&gocloak.ServerInfoRepesentation{},
+		&gocloak.ServerInfoRepresentation{},
 		&gocloak.FederatedIdentityRepresentation{},
 		&gocloak.IdentityProviderRepresentation{},
 		&gocloak.GetResourceParams{},

@@ -260,9 +260,9 @@ func SetCertCacheInvalidationTime(duration time.Duration) func(g *GoCloak) {
 }
 
 // GetServerInfo fetches the server info.
-func (g *GoCloak) GetServerInfo(ctx context.Context, accessToken string) (*ServerInfoRepesentation, error) {
+func (g *GoCloak) GetServerInfo(ctx context.Context, accessToken string) (*ServerInfoRepresentation, error) {
 	errMessage := "could not get server info"
-	var result ServerInfoRepesentation
+	var result ServerInfoRepresentation
 
 	resp, err := g.getRequestWithBearerAuth(ctx, accessToken).
 		SetResult(&result).
