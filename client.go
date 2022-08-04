@@ -739,14 +739,14 @@ func (g *GoCloak) CreateClient(ctx context.Context, accessToken, realm string, n
 }
 
 // CreateClientRepresentation creates a new client representation
-func (g *GoCloak) CreateClientRepresentation(ctx context.Context, realm string) (*Client, error) {
+func (g *GoCloak) CreateClientRepresentation(ctx context.Context, token, realm string, newClient Client) (*Client, error) {
 	const errMessage = "could not create client representation"
 
 	var result Client
 
-	resp, err := g.getRequest(ctx).
+	resp, err := g.getRequestWithBearerAuth(ctx, token).
 		SetResult(&result).
-		SetBody(Client{}).
+		SetBody(newClient).
 		Post(g.getRealmURL(realm, "clients-registrations", "default"))
 
 	if err := checkForError(resp, err, errMessage); err != nil {

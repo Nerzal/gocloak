@@ -2018,9 +2018,13 @@ func Test_CreateListGetUpdateDeleteClientRepresentation(t *testing.T) {
 	// t.Parallel()
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	testClient := gocloak.Client{
+		ClientID: GetRandomNameP("gocloak-client-secret-client-id-"),
+	}
 
 	// Creating a client representation
-	createdClient, err := client.CreateClientRepresentation(context.Background(), cfg.GoCloak.Realm)
+	createdClient, err := client.CreateClientRepresentation(context.Background(), token.AccessToken, cfg.GoCloak.Realm, testClient)
 	require.NoError(t, err, "CreateClientRepresentation failed")
 
 	t.Logf("Client ID: %s", gocloak.PString(createdClient.ID))
@@ -2090,9 +2094,13 @@ func Test_GetAdapterConfigurationForClientRepresentation(t *testing.T) {
 	// t.Parallel()
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	testClient := gocloak.Client{
+		ClientID: GetRandomNameP("gocloak-client-secret-client-id-"),
+	}
 
 	// Creating a client representation
-	createdClient, err := client.CreateClientRepresentation(context.Background(), cfg.GoCloak.Realm)
+	createdClient, err := client.CreateClientRepresentation(context.Background(), token.AccessToken, cfg.GoCloak.Realm, testClient)
 	require.NoError(t, err, "CreateClientRepresentation failed")
 
 	t.Logf("Client ID: %s", gocloak.PString(createdClient.ID))
