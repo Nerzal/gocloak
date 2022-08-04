@@ -2334,6 +2334,8 @@ func (g *GoCloak) CreateAuthenticationExecutionFlow(ctx context.Context, token, 
 // -----
 
 // CreateUser creates the given user in the given realm and returns it's userID
+// Note: Keycloak has not documented what members of the User object are actually being accepted, when creating a user.
+// Things like RealmRoles must be attached using followup calls to the respective functions.
 func (g *GoCloak) CreateUser(ctx context.Context, token, realm string, user User) (string, error) {
 	const errMessage = "could not create user"
 
@@ -2557,8 +2559,8 @@ func (g *GoCloak) GetUserOfflineSessionsForClient(ctx context.Context, token, re
 	return res, nil
 }
 
-// AddClientRoleToUser adds client-level role mappings
-func (g *GoCloak) AddClientRoleToUser(ctx context.Context, token, realm, idOfClient, userID string, roles []Role) error {
+// AddClientRolesToUser adds client-level role mappings
+func (g *GoCloak) AddClientRolesToUser(ctx context.Context, token, realm, idOfClient, userID string, roles []Role) error {
 	const errMessage = "could not add client role to user"
 
 	resp, err := g.getRequestWithBearerAuth(ctx, token).
@@ -2568,8 +2570,15 @@ func (g *GoCloak) AddClientRoleToUser(ctx context.Context, token, realm, idOfCli
 	return checkForError(resp, err, errMessage)
 }
 
-// AddClientRoleToGroup adds a client role to the group
-func (g *GoCloak) AddClientRoleToGroup(ctx context.Context, token, realm, idOfClient, groupID string, roles []Role) error {
+// AddClientRoleToUser adds client-level role mappings
+//
+// Deprecated: replaced by AddClientRolesToUser
+func (g *GoCloak) AddClientRoleToUser(ctx context.Context, token, realm, idOfClient, userID string, roles []Role) error {
+	return g.AddClientRolesToUser(ctx, token, realm, idOfClient, userID, roles)
+}
+
+// AddClientRolesToGroup adds a client role to the group
+func (g *GoCloak) AddClientRolesToGroup(ctx context.Context, token, realm, idOfClient, groupID string, roles []Role) error {
 	const errMessage = "could not add client role to group"
 
 	resp, err := g.getRequestWithBearerAuth(ctx, token).
@@ -2579,8 +2588,15 @@ func (g *GoCloak) AddClientRoleToGroup(ctx context.Context, token, realm, idOfCl
 	return checkForError(resp, err, errMessage)
 }
 
-// DeleteClientRoleFromUser adds client-level role mappings
-func (g *GoCloak) DeleteClientRoleFromUser(ctx context.Context, token, realm, idOfClient, userID string, roles []Role) error {
+// AddClientRoleToGroup adds a client role to the group
+//
+// Deprecated: replaced by AddClientRolesToGroup
+func (g *GoCloak) AddClientRoleToGroup(ctx context.Context, token, realm, idOfClient, groupID string, roles []Role) error {
+	return g.AddClientRolesToGroup(ctx, token, realm, idOfClient, groupID, roles)
+}
+
+// DeleteClientRolesFromUser adds client-level role mappings
+func (g *GoCloak) DeleteClientRolesFromUser(ctx context.Context, token, realm, idOfClient, userID string, roles []Role) error {
 	const errMessage = "could not delete client role from user"
 
 	resp, err := g.getRequestWithBearerAuth(ctx, token).
@@ -2588,6 +2604,13 @@ func (g *GoCloak) DeleteClientRoleFromUser(ctx context.Context, token, realm, id
 		Delete(g.getAdminRealmURL(realm, "users", userID, "role-mappings", "clients", idOfClient))
 
 	return checkForError(resp, err, errMessage)
+}
+
+// DeleteClientRoleFromUser adds client-level role mappings
+//
+// Deprecated: replaced by DeleteClientRolesFrom
+func (g *GoCloak) DeleteClientRoleFromUser(ctx context.Context, token, realm, idOfClient, userID string, roles []Role) error {
+	return g.DeleteClientRolesFromUser(ctx, token, realm, idOfClient, userID, roles)
 }
 
 // DeleteClientRoleFromGroup removes a client role from from the group

@@ -3349,7 +3349,7 @@ func Test_GetUsersByClientRoleName(t *testing.T) {
 		gocloakClientID,
 		roleName)
 	require.NoError(t, err)
-	err = client.AddClientRoleToUser(
+	err = client.AddClientRolesToUser(
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
@@ -3697,7 +3697,7 @@ func Test_AddClientRoleToUser_DeleteClientRoleFromUser(t *testing.T) {
 	)
 	require.NoError(t, err, "GetClientRole failed")
 	roles := []gocloak.Role{*role1, *role2}
-	err = client.AddClientRoleToUser(
+	err = client.AddClientRolesToUser(
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
@@ -3707,7 +3707,7 @@ func Test_AddClientRoleToUser_DeleteClientRoleFromUser(t *testing.T) {
 	)
 	require.NoError(t, err, "AddClientRoleToUser failed")
 
-	err = client.DeleteClientRoleFromUser(
+	err = client.DeleteClientRolesFromUser(
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
@@ -3736,7 +3736,7 @@ func Test_GetClientRolesByUserID(t *testing.T) {
 		roleName)
 	require.NoError(t, err)
 
-	err = client.AddClientRoleToUser(
+	err = client.AddClientRolesToUser(
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
@@ -3814,7 +3814,7 @@ func Test_GetAvailableClientRolesByUserID(t *testing.T) {
 		roleName2)
 	require.NoError(t, err)
 
-	err = client.AddClientRoleToUser(
+	err = client.AddClientRolesToUser(
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
@@ -3965,7 +3965,7 @@ func Test_GetAvailableClientRolesByGroupID(t *testing.T) {
 		roleName2)
 	require.NoError(t, err)
 
-	err = client.AddClientRoleToGroup(
+	err = client.AddClientRolesToGroup(
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
@@ -4145,7 +4145,7 @@ func Test_AddClientRoleToGroup_DeleteClientRoleFromGroup(t *testing.T) {
 	defer tearDownGroup()
 
 	roles := []gocloak.Role{*role1, *role2}
-	err = client.AddClientRoleToGroup(
+	err = client.AddClientRolesToGroup(
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
