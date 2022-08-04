@@ -318,28 +318,27 @@
                         "/*"
                     ]
                 }],
-                "policies": [
-                    // {
-                    //     "id": "e763d3b7-b2ea-4585-8bd0-06b713adc644",
-                    //     "name": "Default Policy",
-                    //     "description": "A policy that grants access only for users within this realm",
-                    //     "type": "js",
-                    //     "logic": "POSITIVE",
-                    //     "decisionStrategy": "AFFIRMATIVE",
-                    //     "config": {}
-                    // },
-                    // {
-                    //     "id": "59789c7c-0545-4e7e-8895-769183256a18",
-                    //     "name": "Default Permission",
-                    //     "description": "A permission that applies to the default resource type",
-                    //     "type": "resource",
-                    //     "logic": "POSITIVE",
-                    //     "decisionStrategy": "UNANIMOUS",
-                    //     "config": {
-                    //         "defaultResourceType": "urn:gocloak:resources:default",
-                    //         "applyPolicies": "[\"Default Policy\"]"
-                    //     }
-                    // }
+                "policies": [{
+                        "id": "e763d3b7-b2ea-4585-8bd0-06b713adc644",
+                        "name": "Default Policy",
+                        "description": "A policy that grants access only for users within this realm",
+                        "type": "js",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "AFFIRMATIVE",
+                        "config": {}
+                    },
+                    {
+                        "id": "59789c7c-0545-4e7e-8895-769183256a18",
+                        "name": "Default Permission",
+                        "description": "A permission that applies to the default resource type",
+                        "type": "resource",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "defaultResourceType": "urn:gocloak:resources:default",
+                            "applyPolicies": "[\"Default Policy\"]"
+                        }
+                    }
                 ],
                 "scopes": [],
                 "decisionStrategy": "UNANIMOUS"

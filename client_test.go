@@ -492,7 +492,7 @@ func (w *RestyLogWriter) write(format string, v ...interface{}) {
 
 func NewClientWithDebug(t testing.TB) *gocloak.GoCloak {
 	cfg := GetConfig(t)
-	client := gocloak.NewClient(cfg.HostName, gocloak.SetLegacyWildFlySupport())
+	client := gocloak.NewClient(cfg.HostName)
 	cond := func(resp *resty.Response, err error) bool {
 		if resp != nil && resp.IsError() {
 			if e, ok := resp.Error().(*gocloak.HTTPErrorResponse); ok {
@@ -2395,6 +2395,32 @@ func Test_ExecuteActionsEmail_UpdatePassword(t *testing.T) {
 	err := client.ExecuteActionsEmail(
 		context.Background(),
 		token.AccessToken,
+		cfg.GoCloak.Realm,
+		params)
+	if err != nil {
+		if err.Error() == "500 Internal Server Error: Failed to send execute actions email" {
+			return
+		}
+		require.NoError(t, err, "ExecuteActionsEmail failed")
+	}
+}
+
+func Test_SendVerifyEmail(t *testing.T) {
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	tearDown, userID := CreateUser(t, client)
+	defer tearDown()
+
+	params := gocloak.SendVerificationMailParams{
+		ClientID: &(cfg.GoCloak.ClientID),
+	}
+
+	err := client.SendVerifyEmail(
+		context.Background(),
+		token.AccessToken,
+		userID,
 		cfg.GoCloak.Realm,
 		params)
 	if err != nil {
