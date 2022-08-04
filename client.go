@@ -181,8 +181,8 @@ func NewClient(basePath string, options ...func(*GoCloak)) *GoCloak {
 	}
 
 	c.Config.CertsInvalidateTime = 10 * time.Minute
-	c.Config.authAdminRealms = makeURL("auth", "admin", "realms")
-	c.Config.authRealms = makeURL("auth", "realms")
+	c.Config.authAdminRealms = makeURL("admin", "realms")
+	c.Config.authRealms = makeURL("realms")
 	c.Config.tokenEndpoint = makeURL("protocol", "openid-connect", "token")
 	c.Config.logoutEndpoint = makeURL("protocol", "openid-connect", "logout")
 	c.Config.openIDConnect = makeURL("protocol", "openid-connect")
@@ -260,19 +260,19 @@ func SetCertCacheInvalidationTime(duration time.Duration) func(g *GoCloak) {
 }
 
 // GetServerInfo fetches the server info.
-func (g *GoCloak) GetServerInfo(ctx context.Context, accessToken string) (*ServerInfoRepresentation, error) {
+func (g *GoCloak) GetServerInfo(ctx context.Context, accessToken string) ([]*ServerInfoRepresentation, error) {
 	errMessage := "could not get server info"
-	var result ServerInfoRepresentation
+	var result []*ServerInfoRepresentation
 
 	resp, err := g.getRequestWithBearerAuth(ctx, accessToken).
 		SetResult(&result).
-		Get(makeURL(g.basePath, "auth", "admin", "serverinfo"))
+		Get(makeURL(g.basePath, "admin", "realms"))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
 		return nil, err
 	}
 
-	return &result, nil
+	return result, nil
 }
 
 // GetUserInfo calls the UserInfo endpoint
@@ -461,7 +461,6 @@ func (g *GoCloak) GetRequestingPartyToken(ctx context.Context, token, realm stri
 	var res JWT
 
 	resp, err := g.getRequestingParty(ctx, token, realm, options, &res)
-
 	if err := checkForError(resp, err, errMessage); err != nil {
 		return nil, err
 	}
@@ -478,7 +477,6 @@ func (g *GoCloak) GetRequestingPartyPermissions(ctx context.Context, token, real
 	options.ResponseMode = StringP("permissions")
 
 	resp, err := g.getRequestingParty(ctx, token, realm, options, &res)
-
 	if err := checkForError(resp, err, errMessage); err != nil {
 		return nil, err
 	}
@@ -495,7 +493,6 @@ func (g *GoCloak) GetRequestingPartyPermissionDecision(ctx context.Context, toke
 	options.ResponseMode = StringP("decision")
 
 	resp, err := g.getRequestingParty(ctx, token, realm, options, &res)
-
 	if err := checkForError(resp, err, errMessage); err != nil {
 		return nil, err
 	}
@@ -637,7 +634,7 @@ func (g *GoCloak) LogoutAllSessions(ctx context.Context, accessToken, realm, use
 	const errMessage = "could not logout"
 
 	resp, err := g.getRequestWithBearerAuth(ctx, accessToken).
-		Post(g.getAdminRealmURL(realm, "users", userID, "logout"))
+		Post(g.getRealmURL(realm, "users", userID, "logout"))
 
 	return checkForError(resp, err, errMessage)
 }
