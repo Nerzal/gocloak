@@ -393,7 +393,7 @@ func CreatePermission(t *testing.T, client *gocloak.GoCloak, idOfClient string, 
 func CreateClient(t *testing.T, client *gocloak.GoCloak, newClient *gocloak.Client) (func(), string) {
 	if newClient == nil {
 		newClient = &gocloak.Client{
-			ClientID: GetRandomNameP("CliendID"),
+			ClientID: GetRandomNameP("ClientID"),
 			Name:     GetRandomNameP("Name"),
 			BaseURL:  gocloak.StringP("http://example.com"),
 		}

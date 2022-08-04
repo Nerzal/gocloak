@@ -430,6 +430,7 @@ func (g *GoCloak) DecodeAccessTokenCustomClaims(ctx context.Context, accessToken
 	return g.decodeAccessTokenWithClaims(ctx, accessToken, realm, claims)
 }
 
+// GetToken uses TokenOptions to fetch a token.
 func (g *GoCloak) GetToken(ctx context.Context, realm string, options TokenOptions) (*JWT, error) {
 	const errMessage = "could not get token"
 
@@ -2597,7 +2598,7 @@ func (g *GoCloak) DeleteClientRoleComposite(ctx context.Context, token, realm, r
 
 // GetUserFederatedIdentities gets all user federated identities
 func (g *GoCloak) GetUserFederatedIdentities(ctx context.Context, token, realm, userID string) ([]*FederatedIdentityRepresentation, error) {
-	const errMessage = "could not get user federeated identities"
+	const errMessage = "could not get user federated identities"
 
 	var res []*FederatedIdentityRepresentation
 	resp, err := g.getRequestWithBearerAuth(ctx, token).
