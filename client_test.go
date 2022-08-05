@@ -528,9 +528,10 @@ func NewClientWithDebug(t testing.TB) gocloak.GoCloak {
 }
 
 // FailRequest fails requests and returns an error
-//   err - returned error or nil to return the default error
-//   failN - number of requests to be failed
-//   skipN = number of requests to be executed and not failed by this function
+//
+//	err - returned error or nil to return the default error
+//	failN - number of requests to be failed
+//	skipN = number of requests to be executed and not failed by this function
 func FailRequest(client gocloak.GoCloak, err error, failN, skipN int) gocloak.GoCloak {
 	client.RestyClient().OnBeforeRequest(
 		func(c *resty.Client, r *resty.Request) error {
