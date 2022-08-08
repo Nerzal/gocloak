@@ -6531,6 +6531,28 @@ FOUND_RA:
 	require.NoError(t, err, "Failed to Delete required action")
 }
 
+func TestGocloak_GetUnknownRequiredAction(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	ra, err := client.GetRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, "unkonwn_required_action")
+	require.Error(t, err, "Request should fail if no required action with the given name is there")
+	require.Nil(t, ra, "required action created must be nil if it could not be found")
+}
+
+func TestGocloak_GetEmptyAliasRequiredAction(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	ra, err := client.GetRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, "")
+	require.Error(t, err, "Request should fail if no alias is given")
+	require.Nil(t, ra, "required action created must be nil if it could not be found")
+}
+
 func TestGocloak_UpdateRequiredAction(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
