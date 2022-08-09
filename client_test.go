@@ -6537,7 +6537,7 @@ func TestGocloak_GetUnknownRequiredAction(t *testing.T) {
 	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
 
-	ra, err := client.GetRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, "unkonwn_required_action")
+	ra, err := client.GetRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, "unknown_required_action")
 	require.Error(t, err, "Request should fail if no required action with the given name is there")
 	require.Nil(t, ra, "required action created must be nil if it could not be found")
 }
