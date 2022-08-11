@@ -2196,7 +2196,7 @@ func (client *gocloak) ClearKeysCache(ctx context.Context, token, realm string) 
 	return checkForError(resp, err, errMessage)
 }
 
-//GetAuthenticationFlows get all authentication flows from a realm
+// GetAuthenticationFlows get all authentication flows from a realm
 func (client *gocloak) GetAuthenticationFlows(ctx context.Context, token, realm string) ([]*AuthenticationFlowRepresentation, error) {
 	const errMessage = "could not retrieve authentication flows"
 	var result []*AuthenticationFlowRepresentation
@@ -2210,7 +2210,7 @@ func (client *gocloak) GetAuthenticationFlows(ctx context.Context, token, realm 
 	return result, nil
 }
 
-//Create a new Authentication flow in a realm
+// Create a new Authentication flow in a realm
 func (client *gocloak) CreateAuthenticationFlow(ctx context.Context, token, realm string, flow AuthenticationFlowRepresentation) error {
 	const errMessage = "could not create authentication flows"
 	var result []*AuthenticationFlowRepresentation
@@ -2221,7 +2221,7 @@ func (client *gocloak) CreateAuthenticationFlow(ctx context.Context, token, real
 	return checkForError(resp, err, errMessage)
 }
 
-//DeleteAuthenticationFlow deletes a flow in a realm with the given ID
+// DeleteAuthenticationFlow deletes a flow in a realm with the given ID
 func (client *gocloak) DeleteAuthenticationFlow(ctx context.Context, token, realm, flowID string) error {
 	const errMessage = "could not delete authentication flows"
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
@@ -2230,7 +2230,7 @@ func (client *gocloak) DeleteAuthenticationFlow(ctx context.Context, token, real
 	return checkForError(resp, err, errMessage)
 }
 
-//GetAuthenticationExecutions retrieves all executions of a given flow
+// GetAuthenticationExecutions retrieves all executions of a given flow
 func (client *gocloak) GetAuthenticationExecutions(ctx context.Context, token, realm, flow string) ([]*ModifyAuthenticationExecutionRepresentation, error) {
 	const errMessage = "could not retrieve authentication flows"
 	var result []*ModifyAuthenticationExecutionRepresentation
@@ -2244,7 +2244,7 @@ func (client *gocloak) GetAuthenticationExecutions(ctx context.Context, token, r
 	return result, nil
 }
 
-//CreateAuthenticationExecution creates a new execution for the given flow name in the given realm
+// CreateAuthenticationExecution creates a new execution for the given flow name in the given realm
 func (client *gocloak) CreateAuthenticationExecution(ctx context.Context, token, realm, flow string, execution CreateAuthenticationExecutionRepresentation) error {
 	const errMessage = "could not create authentication execution"
 	resp, err := client.getRequestWithBearerAuth(ctx, token).SetBody(execution).
@@ -2253,7 +2253,7 @@ func (client *gocloak) CreateAuthenticationExecution(ctx context.Context, token,
 	return checkForError(resp, err, errMessage)
 }
 
-//UpdateAuthenticationExecution updates an authentication execution for the given flow in the given realm
+// UpdateAuthenticationExecution updates an authentication execution for the given flow in the given realm
 func (client *gocloak) UpdateAuthenticationExecution(ctx context.Context, token, realm, flow string, execution ModifyAuthenticationExecutionRepresentation) error {
 	const errMessage = "could not update authentication execution"
 	resp, err := client.getRequestWithBearerAuth(ctx, token).SetBody(execution).
@@ -2271,7 +2271,7 @@ func (client *gocloak) DeleteAuthenticationExecution(ctx context.Context, token,
 	return checkForError(resp, err, errMessage)
 }
 
-//CreateAuthenticationExecutionFlow creates a new execution for the given flow name in the given realm
+// CreateAuthenticationExecutionFlow creates a new execution for the given flow name in the given realm
 func (client *gocloak) CreateAuthenticationExecutionFlow(ctx context.Context, token, realm, flow string, executionFlow CreateAuthenticationExecutionFlowRepresentation) error {
 	const errMessage = "could not create authentication execution flow"
 	resp, err := client.getRequestWithBearerAuth(ctx, token).SetBody(executionFlow).
@@ -3758,6 +3758,57 @@ func (client *gocloak) CreateClientScopesScopeMappingsRealmRoles(ctx context.Con
 	return checkForError(resp, err, errMessage)
 }
 
+// CreateRequiredAction creates a required action for a given realm
+func (client *gocloak) RegisterRequiredAction(ctx context.Context, token string, realm string, requiredAction RequiredActionProviderRepresentation) error {
+	const errMessage = "could not create required action"
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetBody(requiredAction).
+		Post(client.getAdminRealmURL(realm, "authentication", "register-required-action"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return err
+	}
+
+	return err
+}
+
+// GetRequiredActions gets a list of required actions for a given realm
+func (client *gocloak) GetRequiredActions(ctx context.Context, token string, realm string) ([]*RequiredActionProviderRepresentation, error) {
+	const errMessage = "could not get required actions"
+	var result []*RequiredActionProviderRepresentation
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "authentication", "required-actions"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
+// GetRequiredAction gets a required action for a given realm
+func (client *gocloak) GetRequiredAction(ctx context.Context, token string, realm string, alias string) (*RequiredActionProviderRepresentation, error) {
+	const errMessage = "could not get required action"
+	var result RequiredActionProviderRepresentation
+
+	if alias == "" {
+		return nil, errors.New("alias is required for getting a required action")
+	}
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "authentication", "required-actions", alias))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &result, err
+}
+
 // UpdateRequiredAction updates a required action for a given realm
 func (client *gocloak) UpdateRequiredAction(ctx context.Context, token string, realm string, requiredAction RequiredActionProviderRepresentation) error {
 	const errMessage = "could not update required action"
@@ -3768,6 +3819,23 @@ func (client *gocloak) UpdateRequiredAction(ctx context.Context, token string, r
 	_, err := client.getRequestWithBearerAuth(ctx, token).
 		SetBody(requiredAction).
 		Put(client.getAdminRealmURL(realm, "authentication", "required-actions", *requiredAction.ProviderID))
+
+	return err
+}
+
+// DeleteRequiredAction updates a required action for a given realm
+func (client *gocloak) DeleteRequiredAction(ctx context.Context, token string, realm string, alias string) error {
+	const errMessage = "could not delete required action"
+
+	if alias == "" {
+		return errors.New("alias is required for deleting a required action")
+	}
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		Delete(client.getAdminRealmURL(realm, "authentication", "required-actions", alias))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return err
+	}
 
 	return err
 }

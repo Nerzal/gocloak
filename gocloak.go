@@ -523,5 +523,13 @@ type GoCloak interface {
 	// -------------------
 
 	// UpdateRequiredAction updates a required action for a given realm
+	RegisterRequiredAction(ctx context.Context, token string, realm string, requiredAction RequiredActionProviderRepresentation) error
+	// UpdateRequiredAction updates a required action for a given realm
 	UpdateRequiredAction(ctx context.Context, token string, realm string, requiredAction RequiredActionProviderRepresentation) error
+	// UpdateRequiredAction updates a required action for a given realm
+	GetRequiredAction(ctx context.Context, token string, realm string, alias string) (*RequiredActionProviderRepresentation, error)
+	// UpdateRequiredAction updates a required action for a given realm
+	GetRequiredActions(ctx context.Context, token string, realm string) ([]*RequiredActionProviderRepresentation, error)
+	// UpdateRequiredAction updates a required action for a given realm
+	DeleteRequiredAction(ctx context.Context, token string, realm string, alias string) error
 }

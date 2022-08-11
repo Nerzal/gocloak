@@ -528,9 +528,10 @@ func NewClientWithDebug(t testing.TB) gocloak.GoCloak {
 }
 
 // FailRequest fails requests and returns an error
-//   err - returned error or nil to return the default error
-//   failN - number of requests to be failed
-//   skipN = number of requests to be executed and not failed by this function
+//
+//	err - returned error or nil to return the default error
+//	failN - number of requests to be failed
+//	skipN = number of requests to be executed and not failed by this function
 func FailRequest(client gocloak.GoCloak, err error, failN, skipN int) gocloak.GoCloak {
 	client.RestyClient().OnBeforeRequest(
 		func(c *resty.Client, r *resty.Request) error {
@@ -6488,6 +6489,68 @@ func TestGocloak_CreateAuthenticationFlowsAndCreateAuthenticationExecutionAndFlo
 		}
 	}
 	require.True(t, deleted, "Failed to delete authentication flow, no flow was deleted")
+}
+
+func TestGocloak_CreateAndGetRequiredAction(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	requiredAction := gocloak.RequiredActionProviderRepresentation{
+		Alias:         gocloak.StringP("VERIFY_EMAIL_NEW"),
+		Config:        nil,
+		DefaultAction: gocloak.BoolP(false),
+		Enabled:       gocloak.BoolP(true),
+		Name:          gocloak.StringP("Verify Email new"),
+		Priority:      gocloak.Int32P(50),
+		ProviderID:    gocloak.StringP("VERIFY_EMAIL_NEW"),
+	}
+	err := client.RegisterRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, requiredAction)
+	require.NoError(t, err, "Failed to register required action")
+
+	ra, err := client.GetRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, *requiredAction.Alias)
+	require.NoError(t, err, "Failed to get required action")
+	require.NotNil(t, ra, "required action created must not be nil")
+	require.Equal(t, *ra.Alias, *requiredAction.Alias, "required action alias must be equal with template")
+	t.Logf("got required action: %+v", ra)
+
+	ras, err := client.GetRequiredActions(context.Background(), token.AccessToken, cfg.GoCloak.Realm)
+	require.NoError(t, err, "Failed to get required actions")
+
+	for _, r := range ras {
+		t.Logf("got required action: %+v", r)
+		if r.Alias != nil && *r.Alias == *ra.Alias {
+			goto FOUND_RA
+		}
+	}
+	require.Fail(t, "required action not found in list of required actions")
+
+FOUND_RA:
+
+	err = client.DeleteRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, *requiredAction.Alias)
+	require.NoError(t, err, "Failed to Delete required action")
+}
+
+func TestGocloak_GetUnknownRequiredAction(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	ra, err := client.GetRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, "unknown_required_action")
+	require.Error(t, err, "Request should fail if no required action with the given name is there")
+	require.Nil(t, ra, "required action created must be nil if it could not be found")
+}
+
+func TestGocloak_GetEmptyAliasRequiredAction(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	ra, err := client.GetRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, "")
+	require.Error(t, err, "Request should fail if no alias is given")
+	require.Nil(t, ra, "required action created must be nil if it could not be found")
 }
 
 func TestGocloak_UpdateRequiredAction(t *testing.T) {
