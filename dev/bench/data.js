@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1656337980062,
+  "lastUpdate": 1660204463881,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -4629,6 +4629,54 @@ window.BENCHMARK_DATA = {
             "value": 47167474,
             "unit": "ns/op\t   52671 B/op\t     220 allocs/op",
             "extra": "27 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "ziggo1879@gmail.com",
+            "name": "Sven Ziegler",
+            "username": "svzieg"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fe4f627eaf1bff988ee5df2fd0d0b87daac6c074",
+          "message": "feat: add functionality to register, get, list and delete required ac… (#360)\n\n* feat: add functionality to register, get, list and delete required actions\r\n\r\n* fix: golangci-lint errors by using go 1.19 binaries\r\n\r\n* chore: add some more tests\r\n\r\n* chore: rename misspelled key in test",
+          "timestamp": "2022-08-11T09:51:44+02:00",
+          "tree_id": "e312138c6a8e9906b8c7c575ff8326e588a82c3e",
+          "url": "https://github.com/Nerzal/gocloak/commit/fe4f627eaf1bff988ee5df2fd0d0b87daac6c074"
+        },
+        "date": 1660204462683,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 82452269,
+            "unit": "ns/op\t   60774 B/op\t     221 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 79047554,
+            "unit": "ns/op\t   79628 B/op\t     222 allocs/op",
+            "extra": "14 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 82729958,
+            "unit": "ns/op\t   42814 B/op\t     222 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 56870020,
+            "unit": "ns/op\t   60842 B/op\t     223 allocs/op",
+            "extra": "21 times\n2 procs"
           }
         ]
       }
