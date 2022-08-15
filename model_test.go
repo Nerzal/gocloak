@@ -167,7 +167,7 @@ func TestParseAPIErrType(t *testing.T) {
 }
 
 func TestStringer(t *testing.T) {
-	//nested structs
+	// nested structs
 	actions := []string{"someAction", "anotherAction"}
 	access := gocloak.AccessRepresentation{
 		Manage:      gocloak.BoolP(true),
