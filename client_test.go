@@ -3534,6 +3534,68 @@ func Test_CreateUpdateDeleteClientProtocolMapper(t *testing.T) {
 	)
 }
 
+func Test_CreateUpdateDeleteComponent(t *testing.T) {
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	ctx := context.Background()
+
+	pType := "org.keycloak.storage.UserStorageProvider"
+	pId := "kerberos"
+	name := "gocloak-test"
+	id := GetRandomName("")
+	componentConfig := map[string][]string{
+		"kerberosRealm":   {"realm"},
+		"serverPrincipal": {"principal"},
+		"keyTab":          {"tab"},
+	}
+	component := gocloak.Component{
+		ID:              &id,
+		ParentID:        &cfg.GoCloak.Realm,
+		Name:            &name,
+		ProviderID:      &pId,
+		ProviderType:    &pType,
+		ComponentConfig: &componentConfig,
+	}
+
+	createdID, err := client.CreateComponent(ctx, token.AccessToken, cfg.GoCloak.Realm, component)
+	require.NoError(t, err, "CreateComponent failed")
+	require.Equal(t, id, createdID)
+
+	fetchedComponent, err := client.GetComponentByID(ctx, token.AccessToken, cfg.GoCloak.Realm, id)
+	require.NoError(t, err, "GetComponentByID failed")
+	require.NotNil(t, fetchedComponent.ComponentConfig)
+	fetchedConfig := *fetchedComponent.ComponentConfig
+	for k, v := range componentConfig {
+		require.Equal(t, v, fetchedConfig[k])
+	}
+
+	componentConfig2 := map[string][]string{
+		"kerberosRealm": {"realm2"},
+	}
+	component.ComponentConfig = &componentConfig2
+
+	_, err = client.UpdateComponent(ctx, token.AccessToken, cfg.GoCloak.Realm, component)
+	require.NoError(t, err, "UpdateComponent failed")
+
+	fetchedComponent, err = client.GetComponentByID(ctx, token.AccessToken, cfg.GoCloak.Realm, id)
+	require.NoError(t, err, "GetComponentByID failed")
+	require.NotNil(t, fetchedComponent.ComponentConfig)
+	fetchedConfig = *fetchedComponent.ComponentConfig
+	for k, v := range componentConfig {
+		if k == "kerberosRealm" {
+			v = componentConfig2[k]
+		}
+		require.Equal(t, v, fetchedConfig[k])
+	}
+
+	err = client.DeleteComponent(ctx, token.AccessToken, cfg.GoCloak.Realm, id)
+	require.NoError(t, err, "DeleteComponent failed")
+
+	_, err = client.GetComponentByID(ctx, token.AccessToken, cfg.GoCloak.Realm, id)
+	require.Error(t, err)
+}
+
 func Test_GetClientOfflineSessions(t *testing.T) {
 	// t.Parallel()
 	cfg := GetConfig(t)
