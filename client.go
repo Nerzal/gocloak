@@ -1455,6 +1455,26 @@ func (client *gocloak) GetComponents(ctx context.Context, token, realm string) (
 	return result, nil
 }
 
+// GetComponentByID fetches a compoentn from the given realm with the given componentID
+func (client *gocloak) GetComponentByID(ctx context.Context, accessToken, realm, componentID string) (*Component, error) {
+	const errMessage = "could not get component by id"
+
+	if componentID == "" {
+		return nil, errors.Wrap(errors.New("componentID shall not be empty"), errMessage)
+	}
+
+	var result Component
+	resp, err := client.getRequestWithBearerAuth(ctx, accessToken).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "components", componentID))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
 // GetDefaultGroups returns a list of default groups
 func (client *gocloak) GetDefaultGroups(ctx context.Context, token, realm string) ([]*Group, error) {
 	const errMessage = "could not get default groups"
