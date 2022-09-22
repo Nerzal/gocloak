@@ -855,7 +855,7 @@ func (client *gocloak) UpdateComponent(ctx context.Context, token, realm string,
 
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
 		SetBody(updatedComponent).
-		Put(client.getAdminRealmURL(realm, "component", PString(updatedComponent.ID)))
+		Put(client.getAdminRealmURL(realm, "components", PString(updatedComponent.ID)))
 
 	return checkForError(resp, err, errMessage)
 }
