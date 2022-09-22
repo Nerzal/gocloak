@@ -326,7 +326,31 @@
                         ]
                     }
                 ],
-                "policies": [],
+                "policies": [
+                    {
+                        "id": "4abda6f1-c621-414c-a97d-d8dbd422eabd",
+                        "name": "default",
+                        "description": "",
+                        "type": "client",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "clients": "[\"gocloak\"]"
+                        }
+                    },
+                    {
+                        "id": "ddb430d2-368b-43f9-8917-edfa04a2d0d7",
+                        "name": "test",
+                        "description": "",
+                        "type": "resource",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "resources": "[\"Default Resource\"]",
+                            "applyPolicies": "[\"default\"]"
+                        }
+                    }
+                ],
                 "scopes": [],
                 "decisionStrategy": "UNANIMOUS"
             }
