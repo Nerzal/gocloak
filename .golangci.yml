@@ -9,7 +9,6 @@ linters:
     - gofmt
     - misspell
     - gosec
-    - maligned
     - unconvert
     - revive
     - gocognit
