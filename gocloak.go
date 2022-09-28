@@ -190,7 +190,7 @@ type GoCloak interface {
 	// GetGroupsByRole gets groups with specified roles assigned of given realm
 	GetGroupsByRole(ctx context.Context, accessToken, realm string, roleName string) ([]*Group, error)
 	// GetGroupsByClientRole gets groups with specified roles assigned of given client within a realm
-	GetGroupsByClientRole(ctx context.Context, accessToken, realm string, roleName string, clientId string) ([]*Group, error)
+	GetGroupsByClientRole(ctx context.Context, accessToken, realm string, roleName string, clientID string) ([]*Group, error)
 	// GetGroupsCount gets groups count of the given realm
 	GetGroupsCount(ctx context.Context, token, realm string, params GetGroupsParams) (int, error)
 	// GetGroup gets the given group
