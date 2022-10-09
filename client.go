@@ -1519,6 +1519,23 @@ func (client *gocloak) GetGroup(ctx context.Context, token, realm, groupID strin
 	return &result, nil
 }
 
+// GetGroupByPath get group with path in realm
+func (client *gocloak) GetGroupByPath(ctx context.Context, token, realm, groupPath string) (*Group, error) {
+	const errMessage = "could not get group"
+
+	var result Group
+
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "group-by-path", groupPath))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
 // GetGroups get all groups in realm
 func (client *gocloak) GetGroups(ctx context.Context, token, realm string, params GetGroupsParams) ([]*Group, error) {
 	const errMessage = "could not get groups"

@@ -193,6 +193,8 @@ type GoCloak interface {
 	GetGroupsCount(ctx context.Context, token, realm string, params GetGroupsParams) (int, error)
 	// GetGroup gets the given group
 	GetGroup(ctx context.Context, accessToken, realm, groupID string) (*Group, error)
+	// GetGroupByPath get group with path in realm
+	GetGroupByPath(ctx context.Context, token, realm, groupPath string) (*Group, error)
 	// GetGroupMembers get a list of users of group with id in realm
 	GetGroupMembers(ctx context.Context, accessToken, realm, groupID string, params GetGroupsParams) ([]*User, error)
 	// GetRoleMappingByGroupID gets the rolemapping for the given group id
