@@ -57,24 +57,29 @@ func (client *gocloak) getRequestWithBearerAuthNoCache(ctx context.Context, toke
 	return client.getRequest(ctx).
 		SetAuthToken(token).
 		SetHeader("Content-Type", "application/json").
-		SetHeader("Cache-Control", "no-cache")
+		SetHeader("Cache-Control", "no-cache").
+		SetHeader("Accept-Charset", "utf-8")
 }
 
 func (client *gocloak) getRequestWithBearerAuth(ctx context.Context, token string) *resty.Request {
 	return client.getRequest(ctx).
 		SetAuthToken(token).
-		SetHeader("Content-Type", "application/json")
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Accept-Charset", "utf-8")
 }
 
 func (client *gocloak) getRequestWithBearerAuthXMLHeader(ctx context.Context, token string) *resty.Request {
 	return client.getRequest(ctx).
 		SetAuthToken(token).
-		SetHeader("Content-Type", "application/xml;charset=UTF-8")
+		SetHeader("Content-Type", "application/xml;charset=UTF-8").
+		SetHeader("Accept-Charset", "utf-8")
 }
 
 func (client *gocloak) getRequestWithBasicAuth(ctx context.Context, clientID, clientSecret string) *resty.Request {
 	req := client.getRequest(ctx).
-		SetHeader("Content-Type", "application/x-www-form-urlencoded")
+		SetHeader("Content-Type", "application/x-www-form-urlencoded").
+		SetHeader("Accept-Charset", "utf-8")
+
 	// Public client doesn't require Basic Auth
 	if len(clientID) > 0 && len(clientSecret) > 0 {
 		httpBasicAuth := base64.StdEncoding.EncodeToString([]byte(clientID + ":" + clientSecret))
@@ -3581,6 +3586,7 @@ func (client *gocloak) UpdateCredentialUserLabel(ctx context.Context, token, rea
 
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
 		SetHeader("Content-Type", "text/plain").
+		SetHeader("Accept-Charset", "utf-8").
 		SetBody(userLabel).
 		Put(client.getAdminRealmURL(realm, "users", userID, "credentials", credentialID, "userLabel"))
 
