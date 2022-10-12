@@ -3816,11 +3816,11 @@ func (client *gocloak) UpdateRequiredAction(ctx context.Context, token string, r
 	if NilOrEmpty(requiredAction.ProviderID) {
 		return errors.New("providerId is required for updating a required action")
 	}
-	_, err := client.getRequestWithBearerAuth(ctx, token).
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
 		SetBody(requiredAction).
 		Put(client.getAdminRealmURL(realm, "authentication", "required-actions", *requiredAction.ProviderID))
 
-	return err
+	return checkForError(resp, err, errMessage)
 }
 
 // DeleteRequiredAction updates a required action for a given realm
