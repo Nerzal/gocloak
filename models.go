@@ -1057,6 +1057,23 @@ type ServerInfoRepesentation struct {
 	PasswordPolicies       []*PasswordPolicy         `json:"passwordPolicies,omitempty"`
 	ProtocolMapperTypes    *ProtocolMapperTypes      `json:"protocolMapperTypes,omitempty"`
 	BuiltinProtocolMappers *BuiltinProtocolMappers   `json:"builtinProtocolMappers,omitempty"`
+	Themes                 *Themes                   `json:"themes,omitempty"`
+}
+
+// ThemeRepresentation contains the theme name and locales
+type ThemeRepresentation struct {
+	Name    string   `json:"name,omitempty"`
+	Locales []string `json:"locales,omitempty"`
+}
+
+// Themes contains the available keycloak themes with locales
+type Themes struct {
+	Accounts []ThemeRepresentation `json:"account,omitempty"`
+	Admin    []ThemeRepresentation `json:"admin,omitempty"`
+	Common   []ThemeRepresentation `json:"common,omitempty"`
+	Email    []ThemeRepresentation `json:"email,omitempty"`
+	Login    []ThemeRepresentation `json:"login,omitempty"`
+	Welcome  []ThemeRepresentation `json:"welcome,omitempty"`
 }
 
 // FederatedIdentityRepresentation represents an user federated identity
