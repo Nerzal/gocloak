@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1665591689832,
+  "lastUpdate": 1665591696784,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -4917,6 +4917,54 @@ window.BENCHMARK_DATA = {
             "value": 40837251,
             "unit": "ns/op\t   47395 B/op\t     220 allocs/op",
             "extra": "27 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "moritz.muecke@aoe.com",
+            "name": "Moritz Mücke",
+            "username": "moritz-muecke"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e42788eda8ea7e19c85829ab5d17261f002a4075",
+          "message": "feat(roles): get groups by client role (#373)\n\n* feat(roles): get groups by client role\r\n\r\n* fix(lint): rename id parameters\r\n\r\n* test: add unit tests for GroupsByRole and GroupsByClientRole",
+          "timestamp": "2022-10-12T18:18:43+02:00",
+          "tree_id": "7b47c03145c29de73f9312558e37408dc2c542ed",
+          "url": "https://github.com/Nerzal/gocloak/commit/e42788eda8ea7e19c85829ab5d17261f002a4075"
+        },
+        "date": 1665591694908,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 84955652,
+            "unit": "ns/op\t   63095 B/op\t     222 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 87664533,
+            "unit": "ns/op\t   69095 B/op\t     225 allocs/op",
+            "extra": "13 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 86909963,
+            "unit": "ns/op\t   64421 B/op\t     223 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 47511400,
+            "unit": "ns/op\t   59382 B/op\t     222 allocs/op",
+            "extra": "22 times\n2 procs"
           }
         ]
       }
