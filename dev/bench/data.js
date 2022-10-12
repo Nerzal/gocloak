@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1660204463881,
+  "lastUpdate": 1665591464638,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -4677,6 +4677,54 @@ window.BENCHMARK_DATA = {
             "value": 56870020,
             "unit": "ns/op\t   60842 B/op\t     223 allocs/op",
             "extra": "21 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bastian.ike@aoe.com",
+            "name": "Bastian",
+            "username": "bastianccm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1137160ec90381be67ca78acafec3f7bbaa8e56d",
+          "message": "fix(realm): add webauthn config (#371)",
+          "timestamp": "2022-10-12T18:15:09+02:00",
+          "tree_id": "a93765bf1eaf3fba95e1513d34a71a4c264c05e2",
+          "url": "https://github.com/Nerzal/gocloak/commit/1137160ec90381be67ca78acafec3f7bbaa8e56d"
+        },
+        "date": 1665591463837,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 75285985,
+            "unit": "ns/op\t   55793 B/op\t     220 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 75556873,
+            "unit": "ns/op\t   55536 B/op\t     221 allocs/op",
+            "extra": "15 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 75756430,
+            "unit": "ns/op\t   54078 B/op\t     220 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 47263445,
+            "unit": "ns/op\t   60388 B/op\t     223 allocs/op",
+            "extra": "22 times\n2 procs"
           }
         ]
       }
