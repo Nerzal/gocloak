@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1665591634310,
+  "lastUpdate": 1665591689832,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -4868,6 +4868,54 @@ window.BENCHMARK_DATA = {
             "name": "BenchmarkLoginParallel",
             "value": 39929706,
             "unit": "ns/op\t   58572 B/op\t     219 allocs/op",
+            "extra": "27 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bastian.ike@aoe.com",
+            "name": "Bastian",
+            "username": "bastianccm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4f04556a7a037f207eb3ae9b4193f426d54f6551",
+          "message": "feat(gocloak): add GetCompositeRolesByRoleID (#376)",
+          "timestamp": "2022-10-12T18:19:08+02:00",
+          "tree_id": "f180c1422591172630d7bd6ab539b34f26904953",
+          "url": "https://github.com/Nerzal/gocloak/commit/4f04556a7a037f207eb3ae9b4193f426d54f6551"
+        },
+        "date": 1665591688874,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 74863393,
+            "unit": "ns/op\t   67288 B/op\t     221 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 72627169,
+            "unit": "ns/op\t   54220 B/op\t     222 allocs/op",
+            "extra": "15 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 72012527,
+            "unit": "ns/op\t   73189 B/op\t     221 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 40837251,
+            "unit": "ns/op\t   47395 B/op\t     220 allocs/op",
             "extra": "27 times\n2 procs"
           }
         ]
