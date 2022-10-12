@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1665591464638,
+  "lastUpdate": 1665591529815,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -4724,6 +4724,54 @@ window.BENCHMARK_DATA = {
             "name": "BenchmarkLoginParallel",
             "value": 47263445,
             "unit": "ns/op\t   60388 B/op\t     223 allocs/op",
+            "extra": "22 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bastian.ike@aoe.com",
+            "name": "Bastian",
+            "username": "bastianccm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2cb779b591064a777c9333313006f6ee680d457b",
+          "message": "feat(Realm): get/alter localizations (#372)\n\nCo-authored-by: Dirk Gerretz <dirk@gerretz.de>",
+          "timestamp": "2022-10-12T18:15:41+02:00",
+          "tree_id": "a0198da1ec7c2dd84229cf7989ab49d50c436fe6",
+          "url": "https://github.com/Nerzal/gocloak/commit/2cb779b591064a777c9333313006f6ee680d457b"
+        },
+        "date": 1665591528069,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 88640377,
+            "unit": "ns/op\t   60594 B/op\t     224 allocs/op",
+            "extra": "12 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 93325599,
+            "unit": "ns/op\t   63607 B/op\t     224 allocs/op",
+            "extra": "13 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 90568117,
+            "unit": "ns/op\t   55835 B/op\t     222 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 51069803,
+            "unit": "ns/op\t   61352 B/op\t     221 allocs/op",
             "extra": "22 times\n2 procs"
           }
         ]
