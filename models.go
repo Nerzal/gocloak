@@ -429,6 +429,9 @@ type ProtocolMappersConfig struct {
 	UsermodelClientRoleMappingClientID *string `json:"usermodel.clientRoleMapping.clientId,omitempty"`
 	IncludedClientAudience             *string `json:"included.client.audience,omitempty"`
 	FullPath                           *string `json:"full.path,omitempty"`
+	AttributeName                      *string `json:"attribute.name,omitempty"`
+	AttributeNameFormat                *string `json:"attribute.nameformat,omitempty"`
+	Single                             *string `json:"single,omitempty"`
 }
 
 // Client is a ClientRepresentation
