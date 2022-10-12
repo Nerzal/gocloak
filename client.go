@@ -2031,6 +2031,22 @@ func (client *gocloak) GetCompositeRealmRoles(ctx context.Context, token, realm,
 	return result, nil
 }
 
+// GetCompositeRolesByRoleID returns all realm composite roles associated with the given client role
+func (client *gocloak) GetCompositeRolesByRoleID(ctx context.Context, token, realm, roleID string) ([]*Role, error) {
+	const errMessage = "could not get composite client roles by role id"
+
+	var result []*Role
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "roles-by-id", roleID, "composites"))
+
+	if err = checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // GetCompositeRealmRolesByRoleID returns all realm composite roles associated with the given client role
 func (client *gocloak) GetCompositeRealmRolesByRoleID(ctx context.Context, token, realm, roleID string) ([]*Role, error) {
 	const errMessage = "could not get composite client roles by role id"

@@ -252,6 +252,8 @@ type GoCloak interface {
 	DeleteRealmRoleComposite(ctx context.Context, token, realm, roleName string, roles []Role) error
 	// GetCompositeRealmRoles returns all realm composite roles associated with the given realm role
 	GetCompositeRealmRoles(ctx context.Context, token, realm, roleName string) ([]*Role, error)
+	// GetCompositeRolesByRoleID returns all realm composite roles associated with the given client role
+	GetCompositeRolesByRoleID(ctx context.Context, token, realm, roleID string) ([]*Role, error)
 	// GetCompositeRealmRolesByRoleID returns all realm composite roles associated with the given client role
 	GetCompositeRealmRolesByRoleID(ctx context.Context, token, realm, roleID string) ([]*Role, error)
 	// GetCompositeRealmRolesByUserID returns all realm roles and composite roles assigned to the given user
