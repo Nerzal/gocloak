@@ -2216,6 +2216,47 @@ func Test_GetGroupsBriefRepresentation(t *testing.T) {
 	require.Fail(t, "GetGroupsBriefRepresentation failed")
 }
 
+func Test_GetGroupsByRole(t *testing.T) {
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	ctx := context.Background()
+
+	grpTearDown, groupID := CreateGroup(t, client)
+	defer grpTearDown()
+
+	roleTearDown, roleName := CreateRealmRole(t, client)
+	defer roleTearDown()
+
+	role, _ := client.GetRealmRole(ctx, token.AccessToken, cfg.GoCloak.Realm, roleName)
+	_ = client.AddRealmRoleToGroup(ctx, token.AccessToken, cfg.GoCloak.Realm, groupID, []gocloak.Role{*role})
+
+	groupsByRole, err := client.GetGroupsByRole(ctx, token.AccessToken, cfg.GoCloak.Realm, *role.Name)
+	require.NoError(t, err, "GetGroupsByRole failed")
+	require.Len(t, groupsByRole, 1)
+}
+
+func Test_GetGroupsByClientRole(t *testing.T) {
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	ctx := context.Background()
+
+	grpTearDown, groupID := CreateGroup(t, client)
+	defer grpTearDown()
+
+	clientRoleTeardown, roleName := CreateClientRole(t, client)
+	defer clientRoleTeardown()
+
+	role, _ := client.GetClientRole(ctx, token.AccessToken, cfg.GoCloak.Realm, gocloakClientID, roleName)
+
+	_ = client.AddClientRoleToGroup(ctx, token.AccessToken, cfg.GoCloak.Realm, gocloakClientID, groupID, []gocloak.Role{*role})
+
+	groupsByClientRole, err := client.GetGroupsByClientRole(ctx, token.AccessToken, cfg.GoCloak.Realm, roleName, gocloakClientID)
+	require.NoError(t, err, "GetGroupsByClientRole failed")
+	require.Len(t, groupsByClientRole, 1)
+}
+
 func Test_GetGroupFull(t *testing.T) {
 	// t.Parallel()
 	cfg := GetConfig(t)

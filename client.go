@@ -1548,7 +1548,23 @@ func (client *gocloak) GetGroupsByRole(ctx context.Context, token, realm string,
 	var result []*Group
 	resp, err := client.getRequestWithBearerAuth(ctx, token).
 		SetResult(&result).
-		Get(fmt.Sprintf("%s/%s/%s", client.getAdminRealmURL(realm, "roles"), roleName, "groups"))
+		Get(client.getAdminRealmURL(realm, "roles", roleName, "groups"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// GetGroupsByClientRole gets groups with specified roles assigned of given client within a realm
+func (client *gocloak) GetGroupsByClientRole(ctx context.Context, token, realm string, roleName string, clientID string) ([]*Group, error) {
+	const errMessage = "could not get groups"
+
+	var result []*Group
+	resp, err := client.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(client.getAdminRealmURL(realm, "clients", clientID, "roles", roleName, "groups"))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
 		return nil, err
