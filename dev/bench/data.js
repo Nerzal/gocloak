@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1665591529815,
+  "lastUpdate": 1665591545921,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -4773,6 +4773,54 @@ window.BENCHMARK_DATA = {
             "value": 51069803,
             "unit": "ns/op\t   61352 B/op\t     221 allocs/op",
             "extra": "22 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "53079496+ingoaf@users.noreply.github.com",
+            "name": "ingoaf",
+            "username": "ingoaf"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "287fa81adca19561577f38fa03d586b3ffa5a34d",
+          "message": "remove deprecated linter (#369)",
+          "timestamp": "2022-10-12T18:16:47+02:00",
+          "tree_id": "cb95003d113ba1354822ed5722f0676ddfbf497d",
+          "url": "https://github.com/Nerzal/gocloak/commit/287fa81adca19561577f38fa03d586b3ffa5a34d"
+        },
+        "date": 1665591545446,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 71561619,
+            "unit": "ns/op\t   65889 B/op\t     222 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 71388715,
+            "unit": "ns/op\t   62806 B/op\t     220 allocs/op",
+            "extra": "15 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 74997544,
+            "unit": "ns/op\t   53777 B/op\t     221 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 39520749,
+            "unit": "ns/op\t   65080 B/op\t     220 allocs/op",
+            "extra": "26 times\n2 procs"
           }
         ]
       }
