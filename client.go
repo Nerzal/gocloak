@@ -642,7 +642,7 @@ func (g *GoCloak) LogoutAllSessions(ctx context.Context, accessToken, realm, use
 	const errMessage = "could not logout"
 
 	resp, err := g.getRequestWithBearerAuth(ctx, accessToken).
-		Post(g.getRealmURL(realm, "users", userID, "logout"))
+		Post(g.getAdminRealmURL(realm, "users", userID, "logout"))
 
 	return checkForError(resp, err, errMessage)
 }
@@ -870,7 +870,7 @@ func (g *GoCloak) UpdateClientRepresentation(ctx context.Context, accessToken, r
 	resp, err := g.getRequestWithBearerAuth(ctx, accessToken).
 		SetResult(&result).
 		SetBody(updatedClient).
-		Put(g.getRealmURL(realm, "clients-registrations", "default", PString(updatedClient.ID)))
+		Put(g.getRealmURL(realm, "clients-registrations", "default", PString(updatedClient.ClientID)))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
 		return nil, err
