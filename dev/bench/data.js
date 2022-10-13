@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1665591776045,
+  "lastUpdate": 1665651624044,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -5061,6 +5061,54 @@ window.BENCHMARK_DATA = {
             "value": 57658433,
             "unit": "ns/op\t   67877 B/op\t     220 allocs/op",
             "extra": "27 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "Tolyar@users.noreply.github.com",
+            "name": "Tolyar",
+            "username": "Tolyar"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b4b5d20412546ecd710d3d211f543b201fb0fcd5",
+          "message": "GetComponentsWithParams and UpdateComponent added (#359)\n\n* GetComponentsWithParams and test for it\r\n\r\n* Possible fix for GetComponent tests\r\n\r\n* UpdateComponent and tests for it\r\n\r\n* Possible fix for UpdateComponent tests\r\n\r\n* Check component name after UpdateComponent. It should be changed.\r\n\r\n* Allow to get component by ID\r\n\r\n* Add GetComponent for fetch component by ID.\r\n\r\n* GetComponent always return only one component.\r\n\r\n* Fix GetComponents query params\r\n\r\n* Fix whitespace\r\n\r\nCo-authored-by: Vladimir Fidunin <v.fidunin@vk.team>",
+          "timestamp": "2022-10-13T10:57:57+02:00",
+          "tree_id": "a3d05fc1ce59f40c8c0fad0de00a368d5e58e21e",
+          "url": "https://github.com/Nerzal/gocloak/commit/b4b5d20412546ecd710d3d211f543b201fb0fcd5"
+        },
+        "date": 1665651623286,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 78857345,
+            "unit": "ns/op\t   54810 B/op\t     222 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 79474063,
+            "unit": "ns/op\t   70240 B/op\t     221 allocs/op",
+            "extra": "14 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 79939025,
+            "unit": "ns/op\t   65022 B/op\t     219 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 44646315,
+            "unit": "ns/op\t   59058 B/op\t     221 allocs/op",
+            "extra": "26 times\n2 procs"
           }
         ]
       }
