@@ -247,7 +247,6 @@ func TestStringer(t *testing.T) {
 	"displayName": "someRealm"
 }`
 	assert.Equal(t, expectedStr, str)
-
 }
 
 type Stringable interface {
@@ -255,7 +254,6 @@ type Stringable interface {
 }
 
 func TestStringerOmitEmpty(t *testing.T) {
-
 	customs := []Stringable{
 		&gocloak.CertResponseKey{},
 		&gocloak.CertResponse{},
@@ -333,14 +331,13 @@ func TestStringerOmitEmpty(t *testing.T) {
 		&gocloak.GetResourcePoliciesParams{},
 		&gocloak.CredentialRepresentation{},
 		&gocloak.GetUsersParams{},
+		&gocloak.GetComponentsParams{},
 		&gocloak.GetClientsParams{},
 		&gocloak.RequestingPartyTokenOptions{},
 		&gocloak.RequestingPartyPermission{},
 	}
 
 	for _, custom := range customs {
-
 		assert.Equal(t, "{}", custom.(Stringable).String())
 	}
-
 }

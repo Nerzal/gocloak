@@ -301,6 +301,13 @@ type GetUsersParams struct {
 	Username            *string `json:"username,omitempty"`
 }
 
+// GetComponentsParams represents the optional parameters for getting components
+type GetComponentsParams struct {
+	Name         *string `json:"name,omitempty"`
+	ProviderType *string `json:"provider,omitempty"`
+	ParentID     *string `json:"parent,omitempty"`
+}
+
 // ExecuteActionsEmail represents parameters for executing action emails
 type ExecuteActionsEmail struct {
 	UserID      *string   `json:"-"`
@@ -1361,7 +1368,6 @@ type RequiredActionProviderRepresentation struct {
 
 // prettyStringStruct returns struct formatted into pretty string
 func prettyStringStruct(t interface{}) string {
-
 	json, err := json.MarshalIndent(t, "", "\t")
 	if err != nil {
 		return ""
@@ -1388,6 +1394,7 @@ func (v *Attributes) String() string                                { return pre
 func (v *Access) String() string                                    { return prettyStringStruct(v) }
 func (v *UserGroup) String() string                                 { return prettyStringStruct(v) }
 func (v *GetUsersParams) String() string                            { return prettyStringStruct(v) }
+func (v *GetComponentsParams) String() string                       { return prettyStringStruct(v) }
 func (v *ExecuteActionsEmail) String() string                       { return prettyStringStruct(v) }
 func (v *Group) String() string                                     { return prettyStringStruct(v) }
 func (v *GroupsCount) String() string                               { return prettyStringStruct(v) }
