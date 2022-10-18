@@ -2229,6 +2229,47 @@ func Test_GetGroupsBriefRepresentation(t *testing.T) {
 	require.Fail(t, "GetGroupsBriefRepresentation failed")
 }
 
+func Test_GetGroupsByRole(t *testing.T) {
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	ctx := context.Background()
+
+	grpTearDown, groupID := CreateGroup(t, client)
+	defer grpTearDown()
+
+	roleTearDown, roleName := CreateRealmRole(t, client)
+	defer roleTearDown()
+
+	role, _ := client.GetRealmRole(ctx, token.AccessToken, cfg.GoCloak.Realm, roleName)
+	_ = client.AddRealmRoleToGroup(ctx, token.AccessToken, cfg.GoCloak.Realm, groupID, []gocloak.Role{*role})
+
+	groupsByRole, err := client.GetGroupsByRole(ctx, token.AccessToken, cfg.GoCloak.Realm, *role.Name)
+	require.NoError(t, err, "GetGroupsByRole failed")
+	require.Len(t, groupsByRole, 1)
+}
+
+func Test_GetGroupsByClientRole(t *testing.T) {
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	ctx := context.Background()
+
+	grpTearDown, groupID := CreateGroup(t, client)
+	defer grpTearDown()
+
+	clientRoleTeardown, roleName := CreateClientRole(t, client)
+	defer clientRoleTeardown()
+
+	role, _ := client.GetClientRole(ctx, token.AccessToken, cfg.GoCloak.Realm, gocloakClientID, roleName)
+
+	_ = client.AddClientRoleToGroup(ctx, token.AccessToken, cfg.GoCloak.Realm, gocloakClientID, groupID, []gocloak.Role{*role})
+
+	groupsByClientRole, err := client.GetGroupsByClientRole(ctx, token.AccessToken, cfg.GoCloak.Realm, roleName, gocloakClientID)
+	require.NoError(t, err, "GetGroupsByClientRole failed")
+	require.Len(t, groupsByClientRole, 1)
+}
+
 func Test_GetGroupFull(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
@@ -5323,7 +5364,6 @@ func Test_ErrorsGetAuthorizationPolicyScopes(t *testing.T) {
 				},
 			},
 		})
-
 	})
 
 	// Create SCOPE
@@ -6294,7 +6334,7 @@ func Test_ImportIdentityProviderConfig(t *testing.T) {
 }
 
 func Test_ImportIdentityProviderConfigFromFile(t *testing.T) {
-	//// t.Parallel()
+	// t.Parallel()
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
@@ -6394,10 +6434,9 @@ func TestGocloak_CreateAuthenticationFlowsAndCreateAuthenticationExecutionAndFlo
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
-	authExec :=
-		gocloak.CreateAuthenticationExecutionRepresentation{
-			Provider: gocloak.StringP("idp-auto-link"),
-		}
+	authExec := gocloak.CreateAuthenticationExecutionRepresentation{
+		Provider: gocloak.StringP("idp-auto-link"),
+	}
 	authFlow := gocloak.AuthenticationFlowRepresentation{
 		Alias:       gocloak.StringP("testauthflow2"),
 		BuiltIn:     gocloak.BoolP(false),
@@ -6521,6 +6560,68 @@ func TestGocloak_CreateAuthenticationFlowsAndCreateAuthenticationExecutionAndFlo
 	require.True(t, deleted, "Failed to delete authentication flow, no flow was deleted")
 }
 
+func TestGocloak_CreateAndGetRequiredAction(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	requiredAction := gocloak.RequiredActionProviderRepresentation{
+		Alias:         gocloak.StringP("VERIFY_EMAIL_NEW"),
+		Config:        nil,
+		DefaultAction: gocloak.BoolP(false),
+		Enabled:       gocloak.BoolP(true),
+		Name:          gocloak.StringP("Verify Email new"),
+		Priority:      gocloak.Int32P(50),
+		ProviderID:    gocloak.StringP("VERIFY_EMAIL_NEW"),
+	}
+	err := client.RegisterRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, requiredAction)
+	require.NoError(t, err, "Failed to register required action")
+
+	ra, err := client.GetRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, *requiredAction.Alias)
+	require.NoError(t, err, "Failed to get required action")
+	require.NotNil(t, ra, "required action created must not be nil")
+	require.Equal(t, *ra.Alias, *requiredAction.Alias, "required action alias must be equal with template")
+	t.Logf("got required action: %+v", ra)
+
+	ras, err := client.GetRequiredActions(context.Background(), token.AccessToken, cfg.GoCloak.Realm)
+	require.NoError(t, err, "Failed to get required actions")
+
+	for _, r := range ras {
+		t.Logf("got required action: %+v", r)
+		if r.Alias != nil && *r.Alias == *ra.Alias {
+			goto FOUND_RA
+		}
+	}
+	require.Fail(t, "required action not found in list of required actions")
+
+FOUND_RA:
+
+	err = client.DeleteRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, *requiredAction.Alias)
+	require.NoError(t, err, "Failed to Delete required action")
+}
+
+func TestGocloak_GetUnknownRequiredAction(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	ra, err := client.GetRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, "unknown_required_action")
+	require.Error(t, err, "Request should fail if no required action with the given name is there")
+	require.Nil(t, ra, "required action created must be nil if it could not be found")
+}
+
+func TestGocloak_GetEmptyAliasRequiredAction(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	ra, err := client.GetRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, "")
+	require.Error(t, err, "Request should fail if no alias is given")
+	require.Nil(t, ra, "required action created must be nil if it could not be found")
+}
+
 func TestGocloak_UpdateRequiredAction(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
@@ -6537,4 +6638,114 @@ func TestGocloak_UpdateRequiredAction(t *testing.T) {
 	}
 	err := client.UpdateRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, requiredAction)
 	require.NoError(t, err, "Failed to update required action")
+}
+
+func CreateComponent(t *testing.T, client *gocloak.GoCloak) (func(), *gocloak.Component) {
+	newComponent := &gocloak.Component{
+		Name:         GetRandomNameP("CreateComponent"),
+		ProviderID:   gocloak.StringP("rsa-generated"),
+		ProviderType: gocloak.StringP("org.keycloak.keys.KeyProvider"),
+	}
+	cfg := GetConfig(t)
+	token := GetAdminToken(t, client)
+	createdID, err := client.CreateComponent(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		*newComponent,
+	)
+	require.NoError(t, err, "CreateComponent failed")
+	tearDown := func() {
+		_ = client.DeleteComponent(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			createdID,
+		)
+	}
+	newComponent.ID = &createdID
+	return tearDown, newComponent
+}
+
+func Test_GetComponentsWithParams(t *testing.T) {
+	// t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	tearDownComponent, component := CreateComponent(t, client)
+	defer tearDownComponent()
+
+	components, err := client.GetComponentsWithParams(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloak.GetComponentsParams{
+			Name:         component.Name,
+			ProviderType: component.ProviderType,
+			ParentID:     component.ParentID,
+		},
+	)
+	require.NoError(t, err, "GetComponentsWithParams failed")
+	if len(components) != 1 {
+		require.NoError(t, fmt.Errorf("Expected 1 component, got %d", len(components)), "GetComponentsWithParams failed")
+	}
+}
+
+func Test_GetComponent(t *testing.T) {
+	// t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	tearDownComponent, component := CreateComponent(t, client)
+	defer tearDownComponent()
+
+	_, err := client.GetComponent(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		*component.ID,
+	)
+	require.NoError(t, err, "GetComponent failed")
+}
+
+func Test_UpdateComponent(t *testing.T) {
+	// t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	tearDownComponent, component := CreateComponent(t, client)
+	defer tearDownComponent()
+
+	component.Name = GetRandomNameP("UpdateComponent")
+
+	err := client.UpdateComponent(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		*component,
+	)
+	require.NoError(t, err, "UpdateComponent failed")
+
+	components, err := client.GetComponentsWithParams(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloak.GetComponentsParams{
+			Name:         component.Name,
+			ProviderType: component.ProviderType,
+			ParentID:     component.ParentID,
+		},
+	)
+	require.NoError(t, err, "GetComponentWithParams after UpdateComponent failed")
+
+	if len(components) != 1 {
+		require.NoError(t, fmt.Errorf("Expected 1 component, got %d", len(components)), "UpdateComponent failed")
+	}
+	if *components[0].Name != *component.Name {
+		require.NoError(
+			t,
+			fmt.Errorf("Expected name after update '%s', got '%s'", *component.Name, *components[0].Name),
+			"UpdateComponent failed",
+		)
+	}
 }

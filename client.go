@@ -161,7 +161,6 @@ func injectTracingHeaders(ctx context.Context, req *resty.Request) *resty.Reques
 
 	// inject tracing header into request
 	err := tracer.Inject(span.Context(), opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
-
 	if err != nil {
 		return req
 	}
@@ -194,13 +193,13 @@ func NewClient(basePath string, options ...func(*GoCloak)) *GoCloak {
 	return &c
 }
 
-// RestyClient returns the internal resty client.
-// This can be used to configure the client.
+// RestyClient returns the internal resty g.
+// This can be used to configure the g.
 func (g *GoCloak) RestyClient() *resty.Client {
 	return g.restyClient
 }
 
-// SetRestyClient overwrites the internal resty client.
+// SetRestyClient overwrites the internal resty g.
 func (g *GoCloak) SetRestyClient(restyClient *resty.Client) {
 	g.restyClient = restyClient
 }
@@ -750,7 +749,7 @@ func (g *GoCloak) CreateComponent(ctx context.Context, token, realm string, comp
 	return getID(resp), nil
 }
 
-// CreateClient creates the given client.
+// CreateClient creates the given g.
 func (g *GoCloak) CreateClient(ctx context.Context, accessToken, realm string, newClient Client) (string, error) {
 	const errMessage = "could not create client"
 
@@ -1487,6 +1486,56 @@ func (g *GoCloak) GetComponents(ctx context.Context, token, realm string) ([]*Co
 	return result, nil
 }
 
+// GetComponentsWithParams get all components in realm with query params
+func (g *GoCloak) GetComponentsWithParams(ctx context.Context, token, realm string, params GetComponentsParams) ([]*Component, error) {
+	const errMessage = "could not get components"
+	var result []*Component
+
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, errors.Wrap(err, errMessage)
+	}
+	resp, err := g.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		SetQueryParams(queryParams).
+		Get(g.getAdminRealmURL(realm, "components"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// GetComponent get exactly one component by ID
+func (g *GoCloak) GetComponent(ctx context.Context, token, realm string, componentID string) (*Component, error) {
+	const errMessage = "could not get components"
+	var result *Component
+
+	componentURL := fmt.Sprintf("components/%s", componentID)
+
+	resp, err := g.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, componentURL))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// UpdateComponent updates the given component
+func (g *GoCloak) UpdateComponent(ctx context.Context, token, realm string, component Component) error {
+	const errMessage = "could not update component"
+
+	resp, err := g.getRequestWithBearerAuth(ctx, token).
+		SetBody(component).
+		Put(g.getAdminRealmURL(realm, "components", PString(component.ID)))
+
+	return checkForError(resp, err, errMessage)
+}
+
 // GetDefaultGroups returns a list of default groups
 func (g *GoCloak) GetDefaultGroups(ctx context.Context, token, realm string) ([]*Group, error) {
 	const errMessage = "could not get default groups"
@@ -1566,6 +1615,23 @@ func (g *GoCloak) GetGroup(ctx context.Context, token, realm, groupID string) (*
 	return &result, nil
 }
 
+// GetGroupByPath get group with path in realm
+func (g *GoCloak) GetGroupByPath(ctx context.Context, token, realm, groupPath string) (*Group, error) {
+	const errMessage = "could not get group"
+
+	var result Group
+
+	resp, err := g.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, "group-by-path", groupPath))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
 // GetGroups get all groups in realm
 func (g *GoCloak) GetGroups(ctx context.Context, token, realm string, params GetGroupsParams) ([]*Group, error) {
 	const errMessage = "could not get groups"
@@ -1595,7 +1661,23 @@ func (g *GoCloak) GetGroupsByRole(ctx context.Context, token, realm string, role
 	var result []*Group
 	resp, err := g.getRequestWithBearerAuth(ctx, token).
 		SetResult(&result).
-		Get(fmt.Sprintf("%s/%s/%s", g.getAdminRealmURL(realm, "roles"), roleName, "groups"))
+		Get(g.getAdminRealmURL(realm, "roles", roleName, "groups"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// GetGroupsByClientRole gets groups with specified roles assigned of given client within a realm
+func (g *GoCloak) GetGroupsByClientRole(ctx context.Context, token, realm string, roleName string, clientID string) ([]*Group, error) {
+	const errMessage = "could not get groups"
+
+	var result []*Group
+	resp, err := g.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, "clients", clientID, "roles", roleName, "groups"))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
 		return nil, err
@@ -2056,6 +2138,22 @@ func (g *GoCloak) GetCompositeRealmRoles(ctx context.Context, token, realm, role
 	resp, err := g.getRequestWithBearerAuth(ctx, token).
 		SetResult(&result).
 		Get(g.getAdminRealmURL(realm, "roles", roleName, "composites"))
+
+	if err = checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// GetCompositeRolesByRoleID returns all realm composite roles associated with the given client role
+func (g *GoCloak) GetCompositeRolesByRoleID(ctx context.Context, token, realm, roleID string) ([]*Role, error) {
+	const errMessage = "could not get composite client roles by role id"
+
+	var result []*Role
+	resp, err := g.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, "roles-by-id", roleID, "composites"))
 
 	if err = checkForError(resp, err, errMessage); err != nil {
 		return nil, err
@@ -3832,6 +3930,57 @@ func (g *GoCloak) CreateClientScopesScopeMappingsRealmRoles(ctx context.Context,
 	return checkForError(resp, err, errMessage)
 }
 
+// CreateRequiredAction creates a required action for a given realm
+func (g *GoCloak) RegisterRequiredAction(ctx context.Context, token string, realm string, requiredAction RequiredActionProviderRepresentation) error {
+	const errMessage = "could not create required action"
+
+	resp, err := g.getRequestWithBearerAuth(ctx, token).
+		SetBody(requiredAction).
+		Post(g.getAdminRealmURL(realm, "authentication", "register-required-action"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return err
+	}
+
+	return err
+}
+
+// GetRequiredActions gets a list of required actions for a given realm
+func (g *GoCloak) GetRequiredActions(ctx context.Context, token string, realm string) ([]*RequiredActionProviderRepresentation, error) {
+	const errMessage = "could not get required actions"
+	var result []*RequiredActionProviderRepresentation
+
+	resp, err := g.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, "authentication", "required-actions"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, err
+}
+
+// GetRequiredAction gets a required action for a given realm
+func (g *GoCloak) GetRequiredAction(ctx context.Context, token string, realm string, alias string) (*RequiredActionProviderRepresentation, error) {
+	const errMessage = "could not get required action"
+	var result RequiredActionProviderRepresentation
+
+	if alias == "" {
+		return nil, errors.New("alias is required for getting a required action")
+	}
+
+	resp, err := g.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, "authentication", "required-actions", alias))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &result, err
+}
+
 // UpdateRequiredAction updates a required action for a given realm
 func (g *GoCloak) UpdateRequiredAction(ctx context.Context, token string, realm string, requiredAction RequiredActionProviderRepresentation) error {
 	const errMessage = "could not update required action"
@@ -3839,9 +3988,26 @@ func (g *GoCloak) UpdateRequiredAction(ctx context.Context, token string, realm 
 	if NilOrEmpty(requiredAction.ProviderID) {
 		return errors.New("providerId is required for updating a required action")
 	}
-	_, err := g.getRequestWithBearerAuth(ctx, token).
+	resp, err := g.getRequestWithBearerAuth(ctx, token).
 		SetBody(requiredAction).
 		Put(g.getAdminRealmURL(realm, "authentication", "required-actions", *requiredAction.ProviderID))
+
+	return checkForError(resp, err, errMessage)
+}
+
+// DeleteRequiredAction updates a required action for a given realm
+func (g *GoCloak) DeleteRequiredAction(ctx context.Context, token string, realm string, alias string) error {
+	const errMessage = "could not delete required action"
+
+	if alias == "" {
+		return errors.New("alias is required for deleting a required action")
+	}
+	resp, err := g.getRequestWithBearerAuth(ctx, token).
+		Delete(g.getAdminRealmURL(realm, "authentication", "required-actions", alias))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return err
+	}
 
 	return err
 }
