@@ -65,6 +65,35 @@
     "webAuthnPolicyCreateTimeout": 0,
     "webAuthnPolicyAvoidSameAuthenticatorRegister": false,
     "webAuthnPolicyAcceptableAaguids": [],
+    "users": [
+        {
+          "id": "6ead694f-bf59-495d-a475-a3b0b9be50ed",
+          "createdTimestamp": 1666175342321,
+          "username": "service-account-gocloak",
+          "enabled": true,
+          "totp": false,
+          "emailVerified": false,
+          "serviceAccountClientId": "gocloak",
+          "disableableCredentialTypes": [],
+          "requiredActions": [],
+          "realmRoles": [
+            "default-roles-gocloak"
+          ],
+          "clientRoles": {
+            "realm-management": [
+              "manage-clients",
+              "view-clients",
+              "query-clients",
+              "create-client"
+            ],
+            "gocloak": [
+              "uma_protection"
+            ]
+          },
+          "notBefore": 0,
+          "groups": []
+        }
+      ],
     "scopeMappings": [
         {
             "clientScope": "offline_access",
