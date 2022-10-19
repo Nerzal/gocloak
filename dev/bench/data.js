@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1665651624044,
+  "lastUpdate": 1666183014905,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -5108,6 +5108,54 @@ window.BENCHMARK_DATA = {
             "name": "BenchmarkLoginParallel",
             "value": 44646315,
             "unit": "ns/op\t   59058 B/op\t     221 allocs/op",
+            "extra": "26 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "theel.tobias@gmx.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "18f0f3d14cb8dd31a49d357ca37fab0aa8ca337f",
+          "message": "WIP: Support for Keycloak 17+ / Version 19 as target (#361)\n\n* accept interfaces, return structs\r\n\r\n* update dependencies\r\n\r\n* update go version in CI\r\n\r\n* Fix linter errors\r\n\r\n* BreakingChange: fix typo in ServerInfoRepresentation\r\n\r\n* BreakingChange: rename RetrospectTokenResult to IntrospectTokenResult\r\n\r\n* fix more linter errors\r\n\r\n* BreakingChange: Bugfix - Issue #358 CreateClientRepresentation does now require a token\r\n\r\n* upgrade for keycloak 19\r\n\r\n* update CI\r\n\r\n* jub\r\n\r\n* cleanup\r\n\r\n* add SendVerifyEmail function\r\n\r\n* test\r\n\r\n* Fix #248\r\n\r\n* Fix realm import (#367)\r\n\r\n* Fix realm import\r\n\r\n* Fix gocloak-realm\r\n\r\n* Add test permissions, policy\r\n\r\n* Change JS policies to client, remove test for uploading JS policy\r\n\r\n* Fix register client tests\r\n\r\nCo-authored-by: Pavol Ipoth <pavol.ipoth@external.t-systems.com>\r\n\r\n* fix tests (#379)\r\n\r\n* fix tests\r\n\r\n* Fix Comment go-linter\r\n\r\n* update dependencies and add nancy ignore case\r\n\r\n* Add -d to make file\r\n\r\nCo-authored-by: Jonas Heinemann <jonas.heinemann@clarilab.de>\r\n\r\n* upgrade gocloak version (#380)\r\n\r\nCo-authored-by: Tobias Theel <tt@fino.digital>\r\nCo-authored-by: p53 <pavol.ipoth@protonmail.com>\r\nCo-authored-by: Pavol Ipoth <pavol.ipoth@external.t-systems.com>\r\nCo-authored-by: Jonas <57955592+JonasHeinemann@users.noreply.github.com>\r\nCo-authored-by: Jonas Heinemann <jonas.heinemann@clarilab.de>\r\nCo-authored-by: WilliPkv <105049959+WilliPkv@users.noreply.github.com>",
+          "timestamp": "2022-10-19T14:34:15+02:00",
+          "tree_id": "57a9851ba20ccf27d578a783eea661ef45c22d45",
+          "url": "https://github.com/Nerzal/gocloak/commit/18f0f3d14cb8dd31a49d357ca37fab0aa8ca337f"
+        },
+        "date": 1666183014012,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 74286812,
+            "unit": "ns/op\t   65727 B/op\t     217 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 74941268,
+            "unit": "ns/op\t   74548 B/op\t     221 allocs/op",
+            "extra": "15 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 73772205,
+            "unit": "ns/op\t   68953 B/op\t     217 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 41933081,
+            "unit": "ns/op\t   65543 B/op\t     219 allocs/op",
             "extra": "26 times\n2 procs"
           }
         ]
