@@ -9,7 +9,7 @@ jobs:
       - name: Setup Go environment
         uses: actions/setup-go@v3.0.0
         with:
-          go-version: 1.18
+          go-version: 1.19
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Run golangci-lint
@@ -20,8 +20,7 @@ jobs:
         uses: sonatype-nexus-community/nancy-github-action@main
       - name: Run Keycloak
         run: |
-          docker pull jboss/keycloak:12.0.3
-          docker run -d -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=secret -e KEYCLOAK_IMPORT=/tmp/gocloak-realm.json -v "`pwd`/testdata/gocloak-realm.json:/tmp/gocloak-realm.json" -p 8080:8080 --name keycloak jboss/keycloak:12.0.3 -Dkeycloak.profile.feature.upload_scripts=enabled
+          make start-keycloak
           sleep 15
       - name: Unit Tests
         run: |

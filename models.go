@@ -182,8 +182,8 @@ type PermissionScope struct {
 	ScopeName *string `json:"name,omitempty"`
 }
 
-// RetrospecTokenResult is returned when a token was checked
-type RetrospecTokenResult struct {
+// IntroSpectTokenResult is returned when a token was checked
+type IntroSpectTokenResult struct {
 	Permissions *[]ResourcePermission `json:"permissions,omitempty"`
 	Exp         *int                  `json:"exp,omitempty"`
 	Nbf         *int                  `json:"nbf,omitempty"`
@@ -315,6 +315,12 @@ type ExecuteActionsEmail struct {
 	Lifespan    *int      `json:"lifespan,string,omitempty"`
 	RedirectURI *string   `json:"redirect_uri,omitempty"`
 	Actions     *[]string `json:"-"`
+}
+
+// SendVerificationMailParams is being used to send verification params
+type SendVerificationMailParams struct {
+	ClientID    *string
+	RedirectURI *string
 }
 
 // Group is a Group
@@ -1060,8 +1066,8 @@ type BuiltinProtocolMappers struct {
 	OpenIDConnect []ProtocolMapperRepresentation `json:"openid-connect,omitempty"`
 }
 
-// ServerInfoRepesentation represents a server info
-type ServerInfoRepesentation struct {
+// ServerInfoRepresentation represents a server info
+type ServerInfoRepresentation struct {
 	SystemInfo             *SystemInfoRepresentation `json:"systemInfo,omitempty"`
 	MemoryInfo             *MemoryInfoRepresentation `json:"memoryInfo,omitempty"`
 	PasswordPolicies       []*PasswordPolicy         `json:"passwordPolicies,omitempty"`
@@ -1383,7 +1389,7 @@ func (v *IssuerResponse) String() string                            { return pre
 func (v *ResourcePermission) String() string                        { return prettyStringStruct(v) }
 func (v *PermissionResource) String() string                        { return prettyStringStruct(v) }
 func (v *PermissionScope) String() string                           { return prettyStringStruct(v) }
-func (v *RetrospecTokenResult) String() string                      { return prettyStringStruct(v) }
+func (v *IntroSpectTokenResult) String() string                     { return prettyStringStruct(v) }
 func (v *User) String() string                                      { return prettyStringStruct(v) }
 func (v *SetPasswordRequest) String() string                        { return prettyStringStruct(v) }
 func (v *Component) String() string                                 { return prettyStringStruct(v) }
@@ -1436,7 +1442,7 @@ func (v *RequestingPartyPermission) String() string                 { return pre
 func (v *UserSessionRepresentation) String() string                 { return prettyStringStruct(v) }
 func (v *SystemInfoRepresentation) String() string                  { return prettyStringStruct(v) }
 func (v *MemoryInfoRepresentation) String() string                  { return prettyStringStruct(v) }
-func (v *ServerInfoRepesentation) String() string                   { return prettyStringStruct(v) }
+func (v *ServerInfoRepresentation) String() string                  { return prettyStringStruct(v) }
 func (v *FederatedIdentityRepresentation) String() string           { return prettyStringStruct(v) }
 func (v *IdentityProviderRepresentation) String() string            { return prettyStringStruct(v) }
 func (v *GetResourceParams) String() string                         { return prettyStringStruct(v) }

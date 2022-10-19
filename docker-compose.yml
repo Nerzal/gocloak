@@ -2,13 +2,16 @@ version: '3'
 
 services:
   keycloak:
-    image: jboss/keycloak:latest
-    command: -Dkeycloak.profile.feature.upload_scripts=enabled
+    build: .
+    command: -Dauto-build -Dfeatures=preview
     environment:
-      KEYCLOAK_IMPORT: /tmp/gocloak-realm.json
       KEYCLOAK_USER: admin
       KEYCLOAK_PASSWORD: secret
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: secret
     ports:
       - "8080:8080"
     volumes:
-      -  ./testdata/gocloak-realm.json:/tmp/gocloak-realm.json
+      -  ./testdata/gocloak-realm.json:/opt/keycloak/data/import/gocloak-realm.json
+    entrypoint: ["/opt/keycloak/bin/kc.sh", "start-dev --features=preview --import-realm"]
+ 

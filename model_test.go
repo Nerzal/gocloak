@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/Nerzal/gocloak/v11"
+	"github.com/Nerzal/gocloak/v12"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -261,7 +261,7 @@ func TestStringerOmitEmpty(t *testing.T) {
 		&gocloak.ResourcePermission{},
 		&gocloak.PermissionResource{},
 		&gocloak.PermissionScope{},
-		&gocloak.RetrospecTokenResult{},
+		&gocloak.IntroSpectTokenResult{},
 		&gocloak.User{},
 		&gocloak.SetPasswordRequest{},
 		&gocloak.Component{},
@@ -309,7 +309,7 @@ func TestStringerOmitEmpty(t *testing.T) {
 		&gocloak.UserSessionRepresentation{},
 		&gocloak.SystemInfoRepresentation{},
 		&gocloak.MemoryInfoRepresentation{},
-		&gocloak.ServerInfoRepesentation{},
+		&gocloak.ServerInfoRepresentation{},
 		&gocloak.FederatedIdentityRepresentation{},
 		&gocloak.IdentityProviderRepresentation{},
 		&gocloak.GetResourceParams{},
