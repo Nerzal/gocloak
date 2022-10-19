@@ -3930,7 +3930,7 @@ func (g *GoCloak) CreateClientScopesScopeMappingsRealmRoles(ctx context.Context,
 	return checkForError(resp, err, errMessage)
 }
 
-// CreateRequiredAction creates a required action for a given realm
+// RegisterRequiredAction creates a required action for a given realm
 func (g *GoCloak) RegisterRequiredAction(ctx context.Context, token string, realm string, requiredAction RequiredActionProviderRepresentation) error {
 	const errMessage = "could not create required action"
 
