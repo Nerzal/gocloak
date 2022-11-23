@@ -3055,6 +3055,83 @@ func Test_CreateUser(t *testing.T) {
 	defer tearDown()
 }
 
+func Test_GetUserBruteForceDetectionStatus(t *testing.T) {
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	realm, err := client.GetRealm(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm)
+	require.NoError(t, err, "GetRealm failed")
+
+	updatedRealm := realm
+	updatedRealm.BruteForceProtected = gocloak.BoolP(true)
+	updatedRealm.FailureFactor = gocloak.IntP(1)
+	updatedRealm.MaxFailureWaitSeconds = gocloak.IntP(2)
+	err = client.UpdateRealm(
+		context.Background(),
+		token.AccessToken,
+		*updatedRealm)
+	require.NoError(t, err, "UpdateRealm failed")
+
+	tearDownUser, userID := CreateUser(t, client)
+	defer tearDownUser()
+	err = client.SetPassword(
+		context.Background(),
+		token.AccessToken,
+		userID,
+		*realm.ID,
+		cfg.GoCloak.Password,
+		false)
+
+	fetchedUser, err := client.GetUserByID(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		userID)
+
+	_, err = client.Login(context.Background(),
+		cfg.GoCloak.ClientID,
+		cfg.GoCloak.ClientSecret,
+		*realm.ID,
+		*fetchedUser.Username,
+		"wrong password")
+	require.Error(t, err, "401 Unauthorized: invalid_grant: Invalid user credentials")
+	bruteForceStatus, err := client.GetUserBruteForceDetectionStatus(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		userID)
+	require.NoError(t, err, "Getting attack log failed")
+	require.Equal(t, 1, *bruteForceStatus.NumFailures, "Should return one failure")
+	require.Equal(t, true, *bruteForceStatus.Disabled, "The user shouldn be locked")
+
+	time.Sleep(2 * time.Second)
+	_, err = client.Login(
+		context.Background(),
+		cfg.GoCloak.ClientID,
+		cfg.GoCloak.ClientSecret,
+		*realm.ID,
+		*fetchedUser.Username,
+		cfg.GoCloak.Password)
+	bruteForceStatus, err = client.GetUserBruteForceDetectionStatus(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		userID)
+	require.NoError(t, err, "Getting attack status failed")
+	require.Equal(t, 0, *bruteForceStatus.NumFailures, "Should return zero failures")
+	require.Equal(t, false, *bruteForceStatus.Disabled, "The user shouldn't be locked")
+
+	err = client.UpdateRealm(
+		context.Background(),
+		token.AccessToken,
+		*realm)
+	require.NoError(t, err, "UpdateRealm failed")
+
+}
+
 func Test_CreateUserCustomAttributes(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
