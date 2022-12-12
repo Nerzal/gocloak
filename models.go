@@ -893,6 +893,28 @@ type MultiValuedHashMap struct {
 	Threshold  *int32   `json:"threshold,omitempty"`
 }
 
+// AuthorizationParameters represents the options to obtain get an authorization
+type AuthorizationParameters struct {
+	ResponseType *string `json:"code,omitempty"`
+	ClientID     *string `json:"client_id,omitempty"`
+	Scope        *string `json:"scope,omitempty"`
+	RedirectURI  *string `json:"redirect_uri,omitempty"`
+	State        *string `json:"state,omitempty"`
+	Nonce        *string `json:"nonce,omitempty"`
+	IDTokenHint  *string `json:"id_token_hint,omitempty"`
+}
+
+// FormData returns a map of options to be used in SetFormData function
+func (p *AuthorizationParameters) FormData() map[string]string {
+	m, _ := json.Marshal(p)
+	var res map[string]string
+	_ = json.Unmarshal(m, &res)
+	return res
+}
+
+type AuthorizationResponse struct {
+}
+
 // TokenOptions represents the options to obtain a token
 type TokenOptions struct {
 	ClientID            *string   `json:"client_id,omitempty"`

@@ -32,6 +32,7 @@ type GoCloak struct {
 		authAdminRealms     string
 		authRealms          string
 		tokenEndpoint       string
+		revokeEndpoint      string
 		logoutEndpoint      string
 		openIDConnect       string
 	}
@@ -184,6 +185,7 @@ func NewClient(basePath string, options ...func(*GoCloak)) *GoCloak {
 	c.Config.authRealms = makeURL("realms")
 	c.Config.tokenEndpoint = makeURL("protocol", "openid-connect", "token")
 	c.Config.logoutEndpoint = makeURL("protocol", "openid-connect", "logout")
+	c.Config.revokeEndpoint = makeURL("protocol", "openid-connect", "revoke")
 	c.Config.openIDConnect = makeURL("protocol", "openid-connect")
 
 	for _, option := range options {
@@ -242,6 +244,13 @@ func SetAuthAdminRealms(url string) func(g *GoCloak) {
 func SetTokenEndpoint(url string) func(g *GoCloak) {
 	return func(g *GoCloak) {
 		g.Config.tokenEndpoint = url
+	}
+}
+
+// SetRevokeEndpoint sets the revoke endpoint
+func SetRevokeEndpoint(url string) func(g *GoCloak) {
+	return func(g *GoCloak) {
+		g.Config.revokeEndpoint = url
 	}
 }
 
@@ -4072,4 +4081,23 @@ func (g *GoCloak) DeleteClientScopesScopeMappingsClientRoles(ctx context.Context
 		Delete(g.getAdminRealmURL(realm, "client-scopes", idOfClientScope, "scope-mappings", "clients", idOfClient))
 
 	return checkForError(resp, err, errMessage)
+}
+
+// RevokeToken revokes the passed token. The token can either be an access or refresh token.
+func (g *GoCloak) RevokeToken(ctx context.Context, realm, clientID, clientSecret, refreshToken string) error {
+	const errMessage = "could not revoke token"
+
+	resp, err := g.getRequestWithBasicAuth(ctx, clientID, clientSecret).
+		SetFormData(map[string]string{
+			"client_id":     clientID,
+			"client_secret": clientSecret,
+			"token":         refreshToken,
+		}).
+		Post(g.getRealmURL(realm, g.Config.revokeEndpoint))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return err
+	}
+
+	return nil
 }
