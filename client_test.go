@@ -3369,7 +3369,8 @@ func Test_GetUsersByRoleName(t *testing.T) {
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		roleName)
+		roleName,
+		gocloak.GetUsersByRoleParams{})
 	require.NoError(t, err)
 	require.NotEmpty(t, users)
 	require.Equal(t, userID, *users[0].ID)
