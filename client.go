@@ -600,6 +600,7 @@ func (g *GoCloak) Login(ctx context.Context, clientID, clientSecret, realm, user
 		GrantType:    StringP("password"),
 		Username:     &username,
 		Password:     &password,
+		Scope:        StringP("openid"),
 	})
 }
 
