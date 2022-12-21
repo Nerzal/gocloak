@@ -1360,7 +1360,7 @@ type CredentialRepresentation struct {
 	UserLabel      *string `json:"userLabel,omitempty"`
 }
 
-//BruteForceStatus is a representation of realm user regarding brute force attack
+// BruteForceStatus is a representation of realm user regarding brute force attack
 type BruteForceStatus struct {
 	NumFailures   *int    `json:"numFailures,omitempty"`
 	Disabled      *bool   `json:"disabled,omitempty"`
