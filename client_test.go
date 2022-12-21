@@ -3084,12 +3084,14 @@ func Test_GetUserBruteForceDetectionStatus(t *testing.T) {
 		*realm.ID,
 		cfg.GoCloak.Password,
 		false)
+	require.NoError(t, err, "CreateUser failed")
 
 	fetchedUser, err := client.GetUserByID(
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		userID)
+	require.NoError(t, err, "GetUserById failed")
 
 	_, err = client.Login(context.Background(),
 		cfg.GoCloak.ClientID,
@@ -3115,6 +3117,8 @@ func Test_GetUserBruteForceDetectionStatus(t *testing.T) {
 		*realm.ID,
 		*fetchedUser.Username,
 		cfg.GoCloak.Password)
+	require.NoError(t, err, "Login failed")
+
 	bruteForceStatus, err = client.GetUserBruteForceDetectionStatus(
 		context.Background(),
 		token.AccessToken,
