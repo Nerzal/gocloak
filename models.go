@@ -1360,6 +1360,14 @@ type CredentialRepresentation struct {
 	UserLabel      *string `json:"userLabel,omitempty"`
 }
 
+// BruteForceStatus is a representation of realm user regarding brute force attack
+type BruteForceStatus struct {
+	NumFailures   *int    `json:"numFailures,omitempty"`
+	Disabled      *bool   `json:"disabled,omitempty"`
+	LastIPFailure *string `json:"lastIPFailure,omitempty"`
+	LastFailure   *int    `json:"lastFailure,omitempty"`
+}
+
 // RequiredActionProviderRepresentation is a representation of required actions
 // v15: https://www.keycloak.org/docs-api/15.0/rest-api/index.html#_requiredactionproviderrepresentation
 type RequiredActionProviderRepresentation struct {
@@ -1464,3 +1472,4 @@ func (v *ResourcePolicyRepresentation) String() string              { return pre
 func (v *GetResourcePoliciesParams) String() string                 { return prettyStringStruct(v) }
 func (v *CredentialRepresentation) String() string                  { return prettyStringStruct(v) }
 func (v *RequiredActionProviderRepresentation) String() string      { return prettyStringStruct(v) }
+func (v *BruteForceStatus) String() string                          { return prettyStringStruct(v) }
