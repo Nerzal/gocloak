@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1672925832693,
+  "lastUpdate": 1673271055328,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -5205,6 +5205,54 @@ window.BENCHMARK_DATA = {
             "value": 46202054,
             "unit": "ns/op\t   69344 B/op\t     228 allocs/op",
             "extra": "25 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "amir4895@gmail.com",
+            "name": "amir4895",
+            "username": "amir4895"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "94bb9404b0989b12ec89f0ea72f5de735f6d7fa1",
+          "message": "Adding new function GetUserBruteForceDetectionStatus to retrieve the … (#388)\n\n* Adding new function GetUserBruteForceDetectionStatus to retrieve the brute force protection status per user\r\n\r\n* code convention\r\n\r\n* code convention\r\n\r\n* code convention\r\n\r\nCo-authored-by: amirlevinzon <amir.levinzon@broadcom.com>",
+          "timestamp": "2023-01-09T14:28:25+01:00",
+          "tree_id": "a87c088c8e5612cfe09f624608c3042e931c60a2",
+          "url": "https://github.com/Nerzal/gocloak/commit/94bb9404b0989b12ec89f0ea72f5de735f6d7fa1"
+        },
+        "date": 1673271054405,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 76274048,
+            "unit": "ns/op\t   73196 B/op\t     229 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 76172509,
+            "unit": "ns/op\t   55790 B/op\t     228 allocs/op",
+            "extra": "15 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 75253156,
+            "unit": "ns/op\t   77205 B/op\t     227 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 41053034,
+            "unit": "ns/op\t   70032 B/op\t     227 allocs/op",
+            "extra": "26 times\n2 procs"
           }
         ]
       }
