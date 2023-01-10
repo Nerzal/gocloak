@@ -3455,6 +3455,15 @@ func Test_GetUsersByRoleName(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, users)
 	require.Equal(t, userID, *users[0].ID)
+
+	users, err = client.GetUsersByRoleName(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		"unknown role",
+		gocloak.GetUsersByRoleParams{})
+	require.Error(t, err, "GetUsersByRoleName no error on unknown role")
+	require.Empty(t, users)
 }
 
 func Test_GetUsersByClientRoleName(t *testing.T) {
