@@ -342,7 +342,14 @@ type GoCloak interface {
  MoveCredentialBehind(ctx context.Context, token, realm, userID, credentialID, newPreviousCredentialID string) error
  MoveCredentialToFirst(ctx context.Context, token, realm, userID, credentialID string) error
 
- // *** Identity Providers ***
+// *** Authentication Flows ***
+GetAuthenticationFlows(ctx context.Context, token, realm string) ([]*AuthenticationFlowRepresentation, error)
+GetAuthenticationFlow(ctx context.Context, token, realm string, authenticationFlowID string) (*AuthenticationFlowRepresentation, error)
+CreateAuthenticationFlow(ctx context.Context, token, realm string, flow AuthenticationFlowRepresentation) error
+UpdateAuthenticationFlow(ctx context.Context, token, realm string, flow AuthenticationFlowRepresentation, authenticationFlowID string) (*AuthenticationFlowRepresentation, error)
+DeleteAuthenticationFlow(ctx context.Context, token, realm, flowID string) error
+
+// *** Identity Providers ***
 
  CreateIdentityProvider(ctx context.Context, token, realm string, providerRep IdentityProviderRepresentation) (string, error)
  GetIdentityProvider(ctx context.Context, token, realm, alias string) (*IdentityProviderRepresentation, error)

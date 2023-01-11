@@ -6524,6 +6524,7 @@ func TestGocloak_CreateAuthenticationFlowsAndCreateAuthenticationExecutionAndFlo
 		Description: gocloak.StringP("my test description"),
 		TopLevel:    gocloak.BoolP(true),
 		ProviderID:  gocloak.StringP("basic-flow"),
+		ID:          gocloak.StringP("testauthflow2id"),
 	}
 
 	authExecFlow := gocloak.CreateAuthenticationExecutionFlowRepresentation{
@@ -6622,23 +6623,34 @@ func TestGocloak_CreateAuthenticationFlowsAndCreateAuthenticationExecutionAndFlo
 	require.True(t, execDeleted, "Failed to delete authentication execution, no execution was deleted")
 	require.True(t, execFlowFound, "Failed to find authentication execution flow")
 
-	flows, err := client.GetAuthenticationFlows(context.Background(), token.AccessToken, cfg.GoCloak.Realm)
-	require.NoError(t, err, "Failed to get authentication flows")
-	deleted := false
-	for _, flow := range flows {
-		if flow.Alias != nil && *flow.Alias == "testauthflow2" {
-			err = client.DeleteAuthenticationFlow(
-				context.Background(),
-				token.AccessToken,
-				cfg.GoCloak.Realm,
-				*flow.ID,
-			)
-			require.NoError(t, err, "Failed to delete authentication flow")
-			deleted = true
-			break
-		}
-	}
-	require.True(t, deleted, "Failed to delete authentication flow, no flow was deleted")
+	authFlow.Description = gocloak.StringP("my-new-description")
+	_, err = client.UpdateAuthenticationFlow(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		authFlow,
+		*authFlow.ID,
+	)
+
+	require.NoError(t, err, "Failed to update authentication flow")
+	t.Logf("updated authentication flow: %+v", authFlow)
+
+	retrievedAuthFlow, err := client.GetAuthenticationFlow(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		*authFlow.ID,
+	)
+	require.NoError(t, err, "Failed to fetch authentication flow")
+	t.Logf("retrieved authentication flow: %+v", retrievedAuthFlow)
+	require.Equal(t, "my-new-description", gocloak.PString(retrievedAuthFlow.Description))
+	err = client.DeleteAuthenticationFlow(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		*retrievedAuthFlow.ID,
+	)
+	require.NoError(t, err, "Failed to delete authentication flow")
 }
 
 func TestGocloak_CreateAndGetRequiredAction(t *testing.T) {
