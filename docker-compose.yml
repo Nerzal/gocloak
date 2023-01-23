@@ -9,7 +9,7 @@ services:
       KEYCLOAK_PASSWORD: secret
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: secret
-      KC_HEALTH_ENABLED: true
+      KC_HEALTH_ENABLED: "true"
     ports:
       - "8080:8080"
     healthcheck:
