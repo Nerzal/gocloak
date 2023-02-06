@@ -17,6 +17,8 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/segmentio/ksuid"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 
 	"github.com/Nerzal/gocloak/v12/pkg/jwx"
 )
@@ -28,13 +30,14 @@ type GoCloak struct {
 	certsLock   sync.Mutex
 	restyClient *resty.Client
 	Config      struct {
-		CertsInvalidateTime time.Duration
-		authAdminRealms     string
-		authRealms          string
-		tokenEndpoint       string
-		logoutEndpoint      string
-		openIDConnect       string
-		attackDetection     string
+		CertsInvalidateTime  time.Duration
+		authAdminRealms      string
+		authRealms           string
+		tokenEndpoint        string
+		logoutEndpoint       string
+		openIDConnect        string
+		attackDetection      string
+		injectTracingHeaders func(ctx context.Context, req *resty.Request) *resty.Request
 	}
 }
 
@@ -49,11 +52,11 @@ func makeURL(path ...string) string {
 
 func (g *GoCloak) getRequest(ctx context.Context) *resty.Request {
 	var err HTTPErrorResponse
-	return injectTracingHeaders(
-		ctx, g.restyClient.R().
-			SetContext(ctx).
-			SetError(&err),
-	)
+	req := g.restyClient.R().SetContext(ctx).SetError(&err)
+	if g.Config.injectTracingHeaders != nil {
+		req = g.Config.injectTracingHeaders(ctx, req)
+	}
+	return req
 }
 
 func (g *GoCloak) getRequestWithBearerAuthNoCache(ctx context.Context, token string) *resty.Request {
@@ -145,28 +148,6 @@ func findUsedKey(usedKeyID string, keys []CertResponseKey) *CertResponseKey {
 	}
 
 	return nil
-}
-
-func injectTracingHeaders(ctx context.Context, req *resty.Request) *resty.Request {
-	// look for span in context, do nothing if span is not found
-	span := opentracing.SpanFromContext(ctx)
-	if span == nil {
-		return req
-	}
-
-	// look for tracer in context, use global tracer if not found
-	tracer, ok := ctx.Value(tracerContextKey).(opentracing.Tracer)
-	if !ok || tracer == nil {
-		tracer = opentracing.GlobalTracer()
-	}
-
-	// inject tracing header into request
-	err := tracer.Inject(span.Context(), opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
-	if err != nil {
-		return req
-	}
-
-	return req
 }
 
 // ===============
@@ -270,6 +251,44 @@ func SetOpenIDConnectEndpoint(url string) func(g *GoCloak) {
 func SetCertCacheInvalidationTime(duration time.Duration) func(g *GoCloak) {
 	return func(g *GoCloak) {
 		g.Config.CertsInvalidateTime = duration
+	}
+}
+
+// SetTraceContext inject a trace context into request header
+func SetTraceContext(traceProtobuf string) func(g *GoCloak) {
+	var injectFunc func(ctx context.Context, req *resty.Request) *resty.Request
+	switch traceProtobuf {
+	case "otlp":
+		injectFunc = func(ctx context.Context, req *resty.Request) *resty.Request {
+			prop := otel.GetTextMapPropagator()
+			prop.Inject(ctx, propagation.HeaderCarrier(req.Header))
+			return req
+		}
+	case "opentracing":
+		injectFunc = func(ctx context.Context, req *resty.Request) *resty.Request {
+			// look for span in context, do nothing if span is not found
+			span := opentracing.SpanFromContext(ctx)
+			if span == nil {
+				return req
+			}
+
+			// look for tracer in context, use global tracer if not found
+			tracer, ok := ctx.Value(tracerContextKey).(opentracing.Tracer)
+			if !ok || tracer == nil {
+				tracer = opentracing.GlobalTracer()
+			}
+
+			// inject tracing header into request
+			err := tracer.Inject(span.Context(), opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
+			if err != nil {
+				return req
+			}
+
+			return req
+		}
+	}
+	return func(g *GoCloak) {
+		g.Config.injectTracingHeaders = injectFunc
 	}
 }
 
