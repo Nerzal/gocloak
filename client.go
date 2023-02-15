@@ -2365,6 +2365,20 @@ func (g *GoCloak) GetAuthenticationFlows(ctx context.Context, token, realm strin
 	return result, nil
 }
 
+// GetAuthenticationFlow get an authentication flow with the given ID
+func (g *GoCloak) GetAuthenticationFlow(ctx context.Context, token, realm string, authenticationFlowID string) (*AuthenticationFlowRepresentation, error) {
+	const errMessage = "could not retrieve authentication flows"
+	var result *AuthenticationFlowRepresentation
+	resp, err := g.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, "authentication", "flows", authenticationFlowID))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 // CreateAuthenticationFlow creates a new Authentication flow in a realm
 func (g *GoCloak) CreateAuthenticationFlow(ctx context.Context, token, realm string, flow AuthenticationFlowRepresentation) error {
 	const errMessage = "could not create authentication flows"
@@ -2374,6 +2388,20 @@ func (g *GoCloak) CreateAuthenticationFlow(ctx context.Context, token, realm str
 		Post(g.getAdminRealmURL(realm, "authentication", "flows"))
 
 	return checkForError(resp, err, errMessage)
+}
+
+// UpdateAuthenticationFlow a given Authentication Flow
+func (g *GoCloak) UpdateAuthenticationFlow(ctx context.Context, token, realm string, flow AuthenticationFlowRepresentation, authenticationFlowID string) (*AuthenticationFlowRepresentation, error) {
+	const errMessage = "could not create authentication flows"
+	var result *AuthenticationFlowRepresentation
+	resp, err := g.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).SetBody(flow).
+		Put(g.getAdminRealmURL(realm, "authentication", "flows", authenticationFlowID))
+
+	if err = checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 // DeleteAuthenticationFlow deletes a flow in a realm with the given ID
