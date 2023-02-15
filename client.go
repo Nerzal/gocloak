@@ -2553,12 +2553,18 @@ func (g *GoCloak) GetUsers(ctx context.Context, token, realm string, params GetU
 }
 
 // GetUsersByRoleName returns all users have a given role
-func (g *GoCloak) GetUsersByRoleName(ctx context.Context, token, realm, roleName string) ([]*User, error) {
+func (g *GoCloak) GetUsersByRoleName(ctx context.Context, token, realm, roleName string, params GetUsersByRoleParams) ([]*User, error) {
 	const errMessage = "could not get users by role name"
 
 	var result []*User
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, errors.Wrap(err, errMessage)
+	}
+
 	resp, err := g.getRequestWithBearerAuth(ctx, token).
 		SetResult(&result).
+		SetQueryParams(queryParams).
 		Get(g.getAdminRealmURL(realm, "roles", roleName, "users"))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
