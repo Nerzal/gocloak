@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1673271055328,
+  "lastUpdate": 1676466275921,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -5253,6 +5253,54 @@ window.BENCHMARK_DATA = {
             "value": 41053034,
             "unit": "ns/op\t   70032 B/op\t     227 allocs/op",
             "extra": "26 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "5464641+upils@users.noreply.github.com",
+            "name": "Upils",
+            "username": "upils"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b2ed4a59a4cbf93f274f014375b1eebdf1216334",
+          "message": "Add params to GetUsersByRoleName (#392)\n\n* Add params to GetUsersByRoleName\r\n\r\nSigned-off-by: Paul MARS <paul.mars@intrinsec.com>\r\n\r\n* ✅ Add a test case on GetUsersByRoleName\r\n\r\nSigned-off-by: Paul MARS <paul.mars@intrinsec.com>\r\n\r\n* 📌 Pin keycloak version in test to avoid breaking test in newly release keycloak version\r\n\r\nSigned-off-by: Paul MARS <paul.mars@intrinsec.com>\r\n\r\n---------\r\n\r\nSigned-off-by: Paul MARS <paul.mars@intrinsec.com>",
+          "timestamp": "2023-02-15T14:01:56+01:00",
+          "tree_id": "457cd37974180e12a10df203736eb0cd27aeb9d1",
+          "url": "https://github.com/Nerzal/gocloak/commit/b2ed4a59a4cbf93f274f014375b1eebdf1216334"
+        },
+        "date": 1676466274761,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 77661491,
+            "unit": "ns/op\t   60274 B/op\t     227 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 78082637,
+            "unit": "ns/op\t   73639 B/op\t     229 allocs/op",
+            "extra": "14 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 77081854,
+            "unit": "ns/op\t   70384 B/op\t     229 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 42996120,
+            "unit": "ns/op\t   67836 B/op\t     227 allocs/op",
+            "extra": "25 times\n2 procs"
           }
         ]
       }
