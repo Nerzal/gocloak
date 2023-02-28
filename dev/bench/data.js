@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1677583255967,
+  "lastUpdate": 1677583314961,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -5394,6 +5394,54 @@ window.BENCHMARK_DATA = {
             "name": "BenchmarkLoginParallel",
             "value": 42486784,
             "unit": "ns/op\t   71974 B/op\t     227 allocs/op",
+            "extra": "27 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "27921c7833f07a6752ba1d555ab35950bc929167",
+          "message": "Bump golang.org/x/net from 0.0.0-20221019024206-cb67ada4b0ad to 0.7.0 (#401)\n\nBumps [golang.org/x/net](https://github.com/golang/net) from 0.0.0-20221019024206-cb67ada4b0ad to 0.7.0.\r\n- [Release notes](https://github.com/golang/net/releases)\r\n- [Commits](https://github.com/golang/net/commits/v0.7.0)\r\n\r\n---\r\nupdated-dependencies:\r\n- dependency-name: golang.org/x/net\r\n  dependency-type: indirect\r\n...\r\n\r\nSigned-off-by: dependabot[bot] <support@github.com>\r\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2023-02-28T12:19:05+01:00",
+          "tree_id": "095faa3e3b5d9afd6345fef73a9632bb79b6fa21",
+          "url": "https://github.com/Nerzal/gocloak/commit/27921c7833f07a6752ba1d555ab35950bc929167"
+        },
+        "date": 1677583313906,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 74114402,
+            "unit": "ns/op\t   67688 B/op\t     228 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 75596020,
+            "unit": "ns/op\t   62467 B/op\t     229 allocs/op",
+            "extra": "15 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 74918498,
+            "unit": "ns/op\t   63554 B/op\t     228 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 41564602,
+            "unit": "ns/op\t   72621 B/op\t     229 allocs/op",
             "extra": "27 times\n2 procs"
           }
         ]
