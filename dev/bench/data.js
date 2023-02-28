@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1677064330597,
+  "lastUpdate": 1677583255967,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -5346,6 +5346,54 @@ window.BENCHMARK_DATA = {
             "name": "BenchmarkLoginParallel",
             "value": 42967921,
             "unit": "ns/op\t   61788 B/op\t     226 allocs/op",
+            "extra": "27 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "36693488+r3st@users.noreply.github.com",
+            "name": "r3st",
+            "username": "r3st"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b703322166ecf2bdbdd4c128847f4cb6160f4622",
+          "message": "fix(model): wrong value type (#402)\n\nCo-authored-by: Rene Stolle <r.stolle@prosoz.de>",
+          "timestamp": "2023-02-28T12:18:24+01:00",
+          "tree_id": "390c7b1cbaf18793da25b954cef67ddeb22e2474",
+          "url": "https://github.com/Nerzal/gocloak/commit/b703322166ecf2bdbdd4c128847f4cb6160f4622"
+        },
+        "date": 1677583255449,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 76573257,
+            "unit": "ns/op\t   60176 B/op\t     226 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 77994998,
+            "unit": "ns/op\t   80860 B/op\t     228 allocs/op",
+            "extra": "14 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 76819466,
+            "unit": "ns/op\t   78792 B/op\t     229 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 42486784,
+            "unit": "ns/op\t   71974 B/op\t     227 allocs/op",
             "extra": "27 times\n2 procs"
           }
         ]
