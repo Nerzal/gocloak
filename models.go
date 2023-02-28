@@ -478,7 +478,7 @@ type Client struct {
 	ProtocolMappers                    *[]ProtocolMapperRepresentation `json:"protocolMappers,omitempty"`
 	PublicClient                       *bool                           `json:"publicClient,omitempty"`
 	RedirectURIs                       *[]string                       `json:"redirectUris,omitempty"`
-	RegisteredNodes                    *map[string]string              `json:"registeredNodes,omitempty"`
+	RegisteredNodes                    *map[string]int                 `json:"registeredNodes,omitempty"`
 	RegistrationAccessToken            *string                         `json:"registrationAccessToken,omitempty"`
 	RootURL                            *string                         `json:"rootUrl,omitempty"`
 	Secret                             *string                         `json:"secret,omitempty"`
