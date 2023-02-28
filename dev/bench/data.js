@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1677583314961,
+  "lastUpdate": 1677584664996,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -5442,6 +5442,54 @@ window.BENCHMARK_DATA = {
             "name": "BenchmarkLoginParallel",
             "value": 41564602,
             "unit": "ns/op\t   72621 B/op\t     229 allocs/op",
+            "extra": "27 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "theel.tobias@gmx.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "846cfda50dba49abe432cd092f70d4124c34a6ac",
+          "message": "update deps (#404)\n\nCo-authored-by: Tobias Theel <tt@fino.digital>",
+          "timestamp": "2023-02-28T12:41:43+01:00",
+          "tree_id": "1fa28819bab2c198a7b4d15da778f6b39d0376f5",
+          "url": "https://github.com/Nerzal/gocloak/commit/846cfda50dba49abe432cd092f70d4124c34a6ac"
+        },
+        "date": 1677584664524,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 78963475,
+            "unit": "ns/op\t   62100 B/op\t     225 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 80138766,
+            "unit": "ns/op\t   75806 B/op\t     231 allocs/op",
+            "extra": "14 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 79611924,
+            "unit": "ns/op\t   61514 B/op\t     225 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 44791599,
+            "unit": "ns/op\t   58525 B/op\t     225 allocs/op",
             "extra": "27 times\n2 procs"
           }
         ]
