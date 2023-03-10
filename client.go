@@ -4131,3 +4131,19 @@ func (g *GoCloak) DeleteClientScopesScopeMappingsClientRoles(ctx context.Context
 
 	return checkForError(resp, err, errMessage)
 }
+
+func (g *GoCloak) CreateOrganization(ctx context.Context, token, realm string, orgParams OrganizationParams) (*OrganizationRepresentation, error) {
+	const errMessage = "could not create organization in realm"
+
+	var result OrganizationRepresentation
+	resp, err := g.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		SetBody(orgParams).
+		Post(g.getRealmURL(realm, "orgs"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}

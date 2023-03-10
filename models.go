@@ -1380,6 +1380,26 @@ type RequiredActionProviderRepresentation struct {
 	ProviderID    *string            `json:"providerId,omitempty"`
 }
 
+type OrganizationParams struct {
+	ID          *string            `json:"id,omitempty"`
+	Name        *string            `json:"name,omitempty"`
+	DisplayName *string            `json:"displayName,omitempty"`
+	Url         *string            `json:"url,omitempty"`
+	Realm       *string            `json:"realm,omitempty"`
+	Domains     *[]string          `json:"domains,omitempty"`
+	Attributes  *map[string]string `json:"attributes,omitempty"`
+}
+
+type OrganizationRepresentation struct {
+	ID          *string            `json:"id,omitempty"`
+	Name        *string            `json:"name,omitempty"`
+	DisplayName *string            `json:"displayName,omitempty"`
+	Url         *string            `json:"url,omitempty"`
+	Realm       *string            `json:"realm,omitempty"`
+	Domains     *[]string          `json:"domains,omitempty"`
+	Attributes  *map[string]string `json:"attributes,omitempty"`
+}
+
 // prettyStringStruct returns struct formatted into pretty string
 func prettyStringStruct(t interface{}) string {
 	json, err := json.MarshalIndent(t, "", "\t")
