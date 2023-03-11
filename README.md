@@ -475,6 +475,18 @@ yields
 
 Note that empty parameters are not included, because of the use of ```omitempty``` in the type definitions.
 
+## Examples
+
+* [Add client role to user](./examples/ADD_CLIENT_ROLE_TO_USER.md)
+
+* [Create User Federation & Sync](./examples/USER_FEDERATION.md)
+
+* [Create User Federation & Sync with group ldap mapper](./examples/USER_FEDERATION_GROUP_LDAP_MAPPER.md)
+
+* [Create User Federation & Sync with role ldap mapper](./examples/USER_FEDERATION_ROLE_LDAP_MAPPER.md)
+
+* [Create User Federation & Sync with user attribute ldap mapper](./examples/USER_FEDERATION_USER_ATTRIBUTE_LDAP_MAPPER.md)
+
 ## License
 
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FNerzal%2Fgocloak.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FNerzal%2Fgocloak?ref=badge_large)
