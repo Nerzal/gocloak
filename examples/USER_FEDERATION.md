@@ -40,6 +40,7 @@ func (tkc *Tkc) newUserFederation(ctx context.Context) (userFederation gocloak.C
 	// keycloak self
 	userFederationConfig["enabled"] = []string{"true"}
 	userFederationConfig["priority"] = []string{"1"}
+	userFederationConfig["importUsers"] = []string{"true"}
 
 	// sync options
 	userFederationConfig["fullSyncPeriod"] = []string{"-1"}
