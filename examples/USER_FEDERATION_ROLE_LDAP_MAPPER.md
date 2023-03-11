@@ -28,8 +28,8 @@ func (tk *Tkc) getLdapMapperOfUserFederation(ctx context.Context, idUserFederati
 	return mappers, nil
 }
 
-// create given user ldap attribute mappers for given user federation
-func (tk *Tkc) createUserModelAttributeMapper(ctx context.Context, idUserFederation string, mappers map[string]string) (createErr error) {
+// create given role ldap mapper for given user federation
+func (tk *Tkc) createRoleMapper(ctx context.Context, idUserFederation string, role string) (createErr error) {
 	var existingMappers map[string]gocloak.Component
 	var mapper gocloak.Component
 	var idMapper string
@@ -38,39 +38,42 @@ func (tk *Tkc) createUserModelAttributeMapper(ctx context.Context, idUserFederat
 		return createErr
 	}
 
-	for userModelAttribute, ldapAttribute := range mappers {
-		mapper = prepareUserModelAttributeMapper(userModelAttribute, ldapAttribute, idUserFederation)
-		if existingMapper, exists := existingMappers[userModelAttribute]; exists {
-			mapper.ID = existingMapper.ID
-			if createErr = tk.client.UpdateComponent(ctx, tk.token.AccessToken, tk.realm, mapper); createErr != nil {
-				return createErr
-			}
-			log.Infof("user attribute ldap mapper '%s' updated (%s)", *mapper.Name, *mapper.ID)
-		} else {
-			if idMapper, createErr = tk.client.CreateComponent(ctx, tk.token.AccessToken, tk.realm, mapper); createErr != nil {
-				return createErr
-			}
-			log.Infof("user attribute ldap mapper '%s' created (%s)", *mapper.Name, idMapper)
+	mapper = prepareRoleLdapMapper(role, idUserFederation)
+	if existingMapper, exists := existingMappers[role]; exists {
+		mapper.ID = existingMapper.ID
+		if createErr = tk.client.UpdateComponent(ctx, tk.token.AccessToken, tk.realm, mapper); createErr != nil {
+			return createErr
 		}
+		log.Infof("role ldap mapper '%s' updated (%s)", *mapper.Name, *mapper.ID)
+	} else {
+		if idMapper, createErr = tk.client.CreateComponent(ctx, tk.token.AccessToken, tk.realm, mapper); createErr != nil {
+			return createErr
+		}
+		log.Infof("role ldap mapper '%s' created (%s)", *mapper.Name, idMapper)
 	}
 
 	return nil
 }
 
-
-// prepare component object of type 'org.keycloak.storage.ldap.mappers.LDAPStorageMapper' and ProviderId 'user-attribute-ldap-mapper' with config
-func prepareUserModelAttributeMapper(userModelAttribute, ldapAttribute, idUserFederation string) (mapper gocloak.Component) {
+// prepare component object of type 'org.keycloak.storage.ldap.mappers.LDAPStorageMapper' with config
+func prepareRoleLdapMapper(name, idUserFederation string) (mapper gocloak.Component) {
 	mapperConfig := make(map[string][]string)
 
-	mapperConfig["ldap.attribute"] = []string{ldapAttribute}
-	mapperConfig["user.model.attribute"] = []string{userModelAttribute}
-	mapperConfig["is.mandatory.in.ldap"] = []string{"false"}
-	mapperConfig["always.read.value.from.ldap"] = []string{"false"}
-	mapperConfig["read.only"] = []string{"true"}
+	mapperConfig["roles.dn"] = []string{"ou=roles,dc=example,dc=com"}
+	mapperConfig["role.name.ldap.attribute"] = []string{"cn"}
+	mapperConfig["role.object.classes"] = []string{"group"}
+	mapperConfig["membership.ldap.attribute"] = []string{"member"}
+	mapperConfig["membership.attribute.type"] = []string{"DN"}
+	mapperConfig["membership.user.ldap.attribute"] = []string{"cn"}
+	mapperConfig["mode"] = []string{"IMPORT"}
+	mapperConfig["user.roles.retrieve.strategy"] = []string{"LOAD_ROLES_BY_MEMBER_ATTRIBUTE"}
+	mapperConfig["memberof.ldap.attribute"] = []string{"memberOf"}
+	mapperConfig["use.realm.roles.mapping"] = []string{"true"}
+	mapperConfig["client.id"] = []string{"account"}
 
 	mapper = gocloak.Component{
-		Name:            gocloak.StringP(userModelAttribute),
-		ProviderID:      gocloak.StringP("user-attribute-ldap-mapper"),
+		Name:            gocloak.StringP(name),
+		ProviderID:      gocloak.StringP("role-ldap-mapper"),
 		ProviderType:    gocloak.StringP("org.keycloak.storage.ldap.mappers.LDAPStorageMapper"),
 		ParentID:        gocloak.StringP(idUserFederation),
 		ComponentConfig: &mapperConfig,
@@ -148,6 +151,9 @@ func (tkc *Tkc) RunCreateUserFederation() error {
 	userModelAttributeMappers["title"] = "title"
 	userModelAttributeMappers["firstName"] = "cn"
 
+	// ldap role mapper name
+	roleMapper := "role"
+
 	// get default new legacy user federation to create or update an existing one
 	if newUserFederation, runErr := tkc.newUserFederation(ctx); runErr != nil {
 		return runErr
@@ -170,8 +176,8 @@ func (tkc *Tkc) RunCreateUserFederation() error {
 			if idUserFederation, createErr := tkc.client.CreateComponent(ctx, tkc.token.AccessToken, tkc.realm, userFederation); createErr != nil {
 				return createErr
 			} else {
-				// do create federation user attribute ldap mappers
-				if createErr := tkc.createUserModelAttributeMapper(ctx, idUserFederation, userModelAttributeMappers); createErr != nil {
+				// do create federation role ldap mappers
+				if createErr := tkc.createRoleMapper(ctx, idUserFederation, roleMapper); createErr != nil {
 					return createErr
 				}
 				// do full sync after creating new one
