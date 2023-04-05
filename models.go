@@ -342,11 +342,13 @@ type GroupsCount struct {
 
 // GetGroupsParams represents the optional parameters for getting groups
 type GetGroupsParams struct {
-	First               *int    `json:"first,string,omitempty"`
-	Max                 *int    `json:"max,string,omitempty"`
-	Search              *string `json:"search,omitempty"`
-	Full                *bool   `json:"full,string,omitempty"`
 	BriefRepresentation *bool   `json:"briefRepresentation,string,omitempty"`
+	Exact               *bool   `json:"exact,string,omitempty"`
+	First               *int    `json:"first,string,omitempty"`
+	Full                *bool   `json:"full,string,omitempty"`
+	Max                 *int    `json:"max,string,omitempty"`
+	Q                   *string `json:"q,omitempty"`
+	Search              *string `json:"search,omitempty"`
 }
 
 // MarshalJSON is a custom json marshaling function to automatically set the Full and BriefRepresentation properties
