@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1679393990974,
+  "lastUpdate": 1680691377545,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -5539,6 +5539,90 @@ window.BENCHMARK_DATA = {
             "value": 44122598,
             "unit": "ns/op\t   67671 B/op\t     226 allocs/op",
             "extra": "26 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "ozman4@gmail.com",
+            "name": "Mike",
+            "username": "osmian"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a521bf02a43a487b0a3212aa3273eb5d15012862",
+          "message": "initial (#412)\n\nCo-authored-by: Mike Osmian <mikeosmian@Mikes-MacBook-Pro-2.local>",
+          "timestamp": "2023-04-05T12:39:55+02:00",
+          "tree_id": "8a5814d4b11c3bb3bb34dd4e17653b8ee04ae9b7",
+          "url": "https://github.com/Nerzal/gocloak/commit/a521bf02a43a487b0a3212aa3273eb5d15012862"
+        },
+        "date": 1680691376598,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 71605610,
+            "unit": "ns/op\t   52905 B/op\t     227 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 71496649,
+            "unit": "ns/op\t   83448 B/op\t     229 allocs/op",
+            "extra": "15 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 70225929,
+            "unit": "ns/op\t   63473 B/op\t     225 allocs/op",
+            "extra": "16 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 41413837,
+            "unit": "ns/op\t   56668 B/op\t     227 allocs/op",
+            "extra": "25 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroups",
+            "value": 2135576,
+            "unit": "ns/op\t   36107 B/op\t      97 allocs/op",
+            "extra": "549 times"
+          },
+          {
+            "name": "BenchmarkGetGroups",
+            "value": 2301093,
+            "unit": "ns/op\t   35344 B/op\t      97 allocs/op",
+            "extra": "523 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull",
+            "value": 2184702,
+            "unit": "ns/op\t   36880 B/op\t     119 allocs/op",
+            "extra": "600 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull",
+            "value": 2187924,
+            "unit": "ns/op\t   37094 B/op\t     119 allocs/op",
+            "extra": "572 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief",
+            "value": 2206436,
+            "unit": "ns/op\t   37129 B/op\t     119 allocs/op",
+            "extra": "603 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief",
+            "value": 2288313,
+            "unit": "ns/op\t   37120 B/op\t     119 allocs/op",
+            "extra": "579 times\n2 procs"
           }
         ]
       }
