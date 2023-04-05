@@ -46,3 +46,57 @@ func BenchmarkLoginParallel(b *testing.B) {
 		}
 	})
 }
+
+func BenchmarkGetGroups(b *testing.B) {
+	cfg := GetConfig(b)
+	client := gocloak.NewClient(cfg.HostName)
+	token := GetAdminToken(b, client)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := client.GetGroups(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			gocloak.GetGroupsParams{},
+		)
+		assert.NoError(b, err)
+	}
+}
+
+func BenchmarkGetGroupsFull(b *testing.B) {
+	cfg := GetConfig(b)
+	client := gocloak.NewClient(cfg.HostName)
+	token := GetAdminToken(b, client)
+	params := gocloak.GetGroupsParams{
+		Full: gocloak.BoolP(true),
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := client.GetGroups(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			params,
+		)
+		assert.NoError(b, err)
+	}
+}
+
+func BenchmarkGetGroupsBrief(b *testing.B) {
+	cfg := GetConfig(b)
+	client := gocloak.NewClient(cfg.HostName)
+	params := gocloak.GetGroupsParams{
+		BriefRepresentation: gocloak.BoolP(true),
+	}
+	token := GetAdminToken(b, client)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := client.GetGroups(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			params,
+		)
+		assert.NoError(b, err)
+	}
+}
