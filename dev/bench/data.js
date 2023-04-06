@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1680691377545,
+  "lastUpdate": 1680792864109,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -5623,6 +5623,90 @@ window.BENCHMARK_DATA = {
             "value": 2288313,
             "unit": "ns/op\t   37120 B/op\t     119 allocs/op",
             "extra": "579 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "19890779+mattkeeler@users.noreply.github.com",
+            "name": "mattkeeler",
+            "username": "mattkeeler"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "21898478be85b381d9c3aa9ebecf66ae21da02bb",
+          "message": "add missing fields to GetGroupsParams struct (#413)",
+          "timestamp": "2023-04-06T16:50:40+02:00",
+          "tree_id": "587f3813c32640e768f189327e15e34e7cd59c2d",
+          "url": "https://github.com/Nerzal/gocloak/commit/21898478be85b381d9c3aa9ebecf66ae21da02bb"
+        },
+        "date": 1680792863214,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 64658432,
+            "unit": "ns/op\t   66165 B/op\t     227 allocs/op",
+            "extra": "18 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 65802960,
+            "unit": "ns/op\t   71792 B/op\t     229 allocs/op",
+            "extra": "18 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 64655336,
+            "unit": "ns/op\t   56603 B/op\t     224 allocs/op",
+            "extra": "18 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 35182746,
+            "unit": "ns/op\t   67524 B/op\t     224 allocs/op",
+            "extra": "32 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroups",
+            "value": 1852328,
+            "unit": "ns/op\t   36268 B/op\t      97 allocs/op",
+            "extra": "564 times"
+          },
+          {
+            "name": "BenchmarkGetGroups",
+            "value": 1808766,
+            "unit": "ns/op\t   35584 B/op\t      97 allocs/op",
+            "extra": "658 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull",
+            "value": 1770875,
+            "unit": "ns/op\t   39523 B/op\t     119 allocs/op",
+            "extra": "663 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull",
+            "value": 1853824,
+            "unit": "ns/op\t   38840 B/op\t     119 allocs/op",
+            "extra": "667 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief",
+            "value": 1735783,
+            "unit": "ns/op\t   38698 B/op\t     119 allocs/op",
+            "extra": "739 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief",
+            "value": 1662970,
+            "unit": "ns/op\t   36268 B/op\t     119 allocs/op",
+            "extra": "724 times\n2 procs"
           }
         ]
       }
