@@ -100,3 +100,41 @@ func BenchmarkGetGroupsBrief(b *testing.B) {
 		assert.NoError(b, err)
 	}
 }
+
+func BenchmarkGetGroup(b *testing.B) {
+	cfg := GetConfig(b)
+	client := gocloak.NewClient(cfg.HostName)
+	teardown, groupID := CreateGroup(b, client)
+	defer teardown()
+	token := GetAdminToken(b, client)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := client.GetGroup(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			groupID,
+		)
+		assert.NoError(b, err)
+	}
+}
+
+func BenchmarkGetGroupByPath(b *testing.B) {
+	cfg := GetConfig(b)
+	client := gocloak.NewClient(cfg.HostName)
+	teardown, groupID := CreateGroup(b, client)
+	token := GetAdminToken(b, client)
+	group, err := client.GetGroup(context.Background(), token.AccessToken, cfg.GoCloak.Realm, groupID)
+	assert.NoError(b, err)
+	defer teardown()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := client.GetGroupByPath(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			*group.Path,
+		)
+		assert.NoError(b, err)
+	}
+}
