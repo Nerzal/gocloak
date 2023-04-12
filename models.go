@@ -1473,3 +1473,6 @@ func (v *GetResourcePoliciesParams) String() string                 { return pre
 func (v *CredentialRepresentation) String() string                  { return prettyStringStruct(v) }
 func (v *RequiredActionProviderRepresentation) String() string      { return prettyStringStruct(v) }
 func (v *BruteForceStatus) String() string                          { return prettyStringStruct(v) }
+func (v *OrganizationIdpParams) String() string                     { return prettyStringStruct(v) }
+func (v *OrganizationParams) String() string                        { return prettyStringStruct(v) }
+func (v *OrganizationRepresentation) String() string                { return prettyStringStruct(v) }
