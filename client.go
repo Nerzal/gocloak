@@ -4131,3 +4131,59 @@ func (g *GoCloak) DeleteClientScopesScopeMappingsClientRoles(ctx context.Context
 
 	return checkForError(resp, err, errMessage)
 }
+
+func (g *GoCloak) CreateOrganization(ctx context.Context, token, realm string, orgParams OrganizationParams) error {
+	const errMessage = "could not create organization in realm"
+
+	resp, err := g.getRequestWithBearerAuth(ctx, token).
+		SetBody(orgParams).
+		Post(g.getRealmURL(realm, "orgs"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return err
+	}
+
+	return err
+}
+
+func (g *GoCloak) GetOrganizations(ctx context.Context, token, realm string) ([]*OrganizationRepresentation, error) {
+	const errMessage = "could not get organizations in realm"
+
+	var result []*OrganizationRepresentation
+	resp, err := g.getRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(g.getRealmURL(realm, "orgs"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (g *GoCloak) AddMembership(ctx context.Context, token, realm, organizationId, userId string) error {
+	const errMessage = "could not add user to organization"
+
+	resp, err := g.getRequestWithBearerAuth(ctx, token).
+		Put(g.getRealmURL(realm, "orgs", organizationId, "members", userId))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return err
+	}
+
+	return err
+}
+
+func (g *GoCloak) ConfigureOrganizationIdp(ctx context.Context, token, realm, organizationId string, idpParams OrganizationIdpParams) error {
+	const errMessage = "could not configure IDP to organization"
+
+	resp, err := g.getRequestWithBearerAuth(ctx, token).
+		SetBody(idpParams).
+		Post(g.getAdminRealmURL(realm, "orgs", organizationId, "idps"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return err
+	}
+
+	return err
+}

@@ -1380,6 +1380,40 @@ type RequiredActionProviderRepresentation struct {
 	ProviderID    *string            `json:"providerId,omitempty"`
 }
 
+type OrganizationParams struct {
+	ID          *string            `json:"id,omitempty"`
+	Name        *string            `json:"name,omitempty"`
+	DisplayName *string            `json:"displayName,omitempty"`
+	Url         *string            `json:"url,omitempty"`
+	Realm       *string            `json:"realm,omitempty"`
+	Domains     *[]string          `json:"domains,omitempty"`
+	Attributes  *map[string]string `json:"attributes,omitempty"`
+}
+
+type OrganizationRepresentation struct {
+	ID          *string            `json:"id,omitempty"`
+	Name        *string            `json:"name,omitempty"`
+	DisplayName *string            `json:"displayName,omitempty"`
+	Url         *string            `json:"url,omitempty"`
+	Realm       *string            `json:"realm,omitempty"`
+	Domains     *[]string          `json:"domains,omitempty"`
+	Attributes  *map[string]string `json:"attributes,omitempty"`
+}
+
+type OrganizationIdpParams struct {
+	AddReadTokenRoleOnCreate  *bool              `json:"addReadTokenRoleOnCreate,omitempty"`
+	Alias                     *string            `json:"alias,omitempty"`
+	DisplayName               *string            `json:"displayName,omitempty"`
+	Config                    *map[string]string `json:"config,omitempty"`
+	Enabled                   *bool              `json:"enabled,omitempty"`
+	FirstBrokerLoginFlowAlias *string            `json:"firstBrokerLoginFlowAlias,omitempty"`
+	LinkOnly                  *bool              `json:"linkOnly,omitempty"`
+	PostBrokerLoginFlowAlias  *string            `json:"postBrokerLoginFlowAlias,omitempty"`
+	ProviderId                *string            `json:"providerId,omitempty"`
+	StoreToken                *bool              `json:"storeToken,omitempty"`
+	TrustEmail                *bool              `json:"trustEmail,omitempty"`
+}
+
 // prettyStringStruct returns struct formatted into pretty string
 func prettyStringStruct(t interface{}) string {
 	json, err := json.MarshalIndent(t, "", "\t")
