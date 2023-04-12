@@ -26,19 +26,18 @@ Benchmarks can be found [here](https://nerzal.github.io/gocloak/dev/bench/)
 
 For release notes please consult the specific releases [here](https://github.com/Nerzal/gocloak/releases)
 
-
 ## Usage
 
 ### Installation
 
 ```shell
-go get github.com/Nerzal/gocloak/v13
+go get github.com/fastly/fst-gocloak
 ```
 
 ### Importing
 
 ```go
- import "github.com/Nerzal/gocloak/v13"
+ import "github.com/fastly/fst-gocloak"
 ```
 
 ### Create New User
@@ -442,7 +441,7 @@ yields a large set of pointer values
 {<nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> 0xc00000e960 <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> 0xc000093cf0 <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> null <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil>}
 ```
 
-For convenience, the ```String()``` interface has been added so you can easily see the contents, even for nested custom types. For example,
+For convenience, the `String()` interface has been added so you can easily see the contents, even for nested custom types. For example,
 
 ```go
 fmt.Println(someRealmRepresentation.String())
@@ -452,28 +451,28 @@ yields
 
 ```json
 {
- "clients": [
-  {
-   "name": "someClient",
-   "protocolMappers": [
-    {
-     "config": {
-      "bar": "foo",
-      "ping": "pong"
-     },
-     "name": "someMapper"
-    }
-   ]
-  },
-  {
-   "name": "AnotherClient"
-  }
- ],
- "displayName": "someRealm"
+	"clients": [
+		{
+			"name": "someClient",
+			"protocolMappers": [
+				{
+					"config": {
+						"bar": "foo",
+						"ping": "pong"
+					},
+					"name": "someMapper"
+				}
+			]
+		},
+		{
+			"name": "AnotherClient"
+		}
+	],
+	"displayName": "someRealm"
 }
 ```
 
-Note that empty parameters are not included, because of the use of ```omitempty``` in the type definitions.
+Note that empty parameters are not included, because of the use of `omitempty` in the type definitions.
 
 ## License
 
