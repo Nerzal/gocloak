@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1680792864109,
+  "lastUpdate": 1681382307452,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -5707,6 +5707,114 @@ window.BENCHMARK_DATA = {
             "value": 1662970,
             "unit": "ns/op\t   36268 B/op\t     119 allocs/op",
             "extra": "724 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "ozman4@gmail.com",
+            "name": "Mike",
+            "username": "osmian"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ff2d01beda367e68a08a55722a355988bf027821",
+          "message": "get group and get group by path benchmarks (#414)\n\nCo-authored-by: Mike Osmian <mikeosmian@Mikes-MacBook-Pro-2.local>",
+          "timestamp": "2023-04-13T12:35:36+02:00",
+          "tree_id": "e46130ec31ab828d239c713d762a3f7e80939cec",
+          "url": "https://github.com/Nerzal/gocloak/commit/ff2d01beda367e68a08a55722a355988bf027821"
+        },
+        "date": 1681382306331,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 76492679,
+            "unit": "ns/op\t   70417 B/op\t     227 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 77244845,
+            "unit": "ns/op\t   74266 B/op\t     230 allocs/op",
+            "extra": "14 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 76252288,
+            "unit": "ns/op\t   78563 B/op\t     227 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 42450136,
+            "unit": "ns/op\t   67171 B/op\t     226 allocs/op",
+            "extra": "28 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroups",
+            "value": 1654961,
+            "unit": "ns/op\t   35814 B/op\t      96 allocs/op",
+            "extra": "746 times"
+          },
+          {
+            "name": "BenchmarkGetGroups",
+            "value": 1613386,
+            "unit": "ns/op\t   35066 B/op\t      97 allocs/op",
+            "extra": "686 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull",
+            "value": 1608134,
+            "unit": "ns/op\t   37441 B/op\t     119 allocs/op",
+            "extra": "718 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull",
+            "value": 1584946,
+            "unit": "ns/op\t   36629 B/op\t     119 allocs/op",
+            "extra": "756 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief",
+            "value": 1507759,
+            "unit": "ns/op\t   38182 B/op\t     119 allocs/op",
+            "extra": "784 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief",
+            "value": 1560392,
+            "unit": "ns/op\t   38369 B/op\t     119 allocs/op",
+            "extra": "766 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroup",
+            "value": 1604832,
+            "unit": "ns/op\t   35743 B/op\t     135 allocs/op",
+            "extra": "741 times"
+          },
+          {
+            "name": "BenchmarkGetGroup",
+            "value": 1589651,
+            "unit": "ns/op\t   37355 B/op\t     135 allocs/op",
+            "extra": "727 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath",
+            "value": 1373990,
+            "unit": "ns/op\t   37010 B/op\t     122 allocs/op",
+            "extra": "801 times"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath",
+            "value": 1296871,
+            "unit": "ns/op\t   37495 B/op\t     122 allocs/op",
+            "extra": "901 times\n2 procs"
           }
         ]
       }
