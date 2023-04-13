@@ -6854,3 +6854,19 @@ func Test_UpdateComponent(t *testing.T) {
 		)
 	}
 }
+
+func Test_RevokeToken(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	SetUpTestUser(t, client)
+	token := GetUserToken(t, client)
+	err := client.RevokeToken(
+		context.Background(),
+		cfg.GoCloak.Realm,
+		cfg.GoCloak.ClientID,
+		cfg.GoCloak.ClientSecret,
+		token.RefreshToken,
+	)
+	require.NoError(t, err, "Revoke failed")
+}
