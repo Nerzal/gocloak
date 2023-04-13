@@ -4150,7 +4150,7 @@ func (g *GoCloak) DeleteClientScopesScopeMappingsClientRoles(ctx context.Context
 func (g *GoCloak) RevokeToken(ctx context.Context, realm, clientID, clientSecret, refreshToken string) error {
 	const errMessage = "could not revoke token"
 
-	resp, err := g.getRequestWithBasicAuth(ctx, clientID, clientSecret).
+	resp, err := g.GetRequestWithBasicAuth(ctx, clientID, clientSecret).
 		SetFormData(map[string]string{
 			"client_id":     clientID,
 			"client_secret": clientSecret,
