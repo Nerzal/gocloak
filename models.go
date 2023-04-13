@@ -914,6 +914,7 @@ func (p *AuthorizationParameters) FormData() map[string]string {
 	return res
 }
 
+// AuthorizationResponse represents the response to an authorization request.
 type AuthorizationResponse struct {
 }
 
