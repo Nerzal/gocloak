@@ -4158,9 +4158,5 @@ func (g *GoCloak) RevokeToken(ctx context.Context, realm, clientID, clientSecret
 		}).
 		Post(g.getRealmURL(realm, g.Config.revokeEndpoint))
 
-	if err := checkForError(resp, err, errMessage); err != nil {
-		return err
-	}
-
-	return nil
+	return checkForError(resp, err, errMessage)
 }
