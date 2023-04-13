@@ -163,7 +163,7 @@ func GetClientByClientID(t *testing.T, client *gocloak.GoCloak, clientID string)
 	return nil
 }
 
-func CreateGroup(t *testing.T, client *gocloak.GoCloak) (func(), string) {
+func CreateGroup(t testing.TB, client *gocloak.GoCloak) (func(), string) {
 	cfg := GetConfig(t)
 	token := GetAdminToken(t, client)
 	group := gocloak.Group{
@@ -179,7 +179,9 @@ func CreateGroup(t *testing.T, client *gocloak.GoCloak) (func(), string) {
 		cfg.GoCloak.Realm,
 		group)
 	require.NoError(t, err, "CreateGroup failed")
-	t.Logf("Created Group ID: %s ", groupID)
+	if _, isBenchmark := t.(*testing.B); !isBenchmark {
+		t.Logf("Created Group ID: %s ", groupID)
+	}
 
 	tearDown := func() {
 		err := client.DeleteGroup(
