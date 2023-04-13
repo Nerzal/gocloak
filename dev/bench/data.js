@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1681382371001,
+  "lastUpdate": 1681385202571,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -5923,6 +5923,112 @@ window.BENCHMARK_DATA = {
             "value": 1322585,
             "unit": "ns/op\t   37500 B/op\t     122 allocs/op",
             "extra": "856 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tt@fino.digital",
+            "name": "Tobias Theel"
+          },
+          "committer": {
+            "email": "tt@fino.digital",
+            "name": "Tobias Theel"
+          },
+          "distinct": true,
+          "id": "de1cf0b4d7298bbc47da5e74edc5f815e8740e66",
+          "message": "fix lint issue",
+          "timestamp": "2023-04-13T13:23:56+02:00",
+          "tree_id": "dd843330c9e25f8b9caa1e1d62b230d4773e9a1e",
+          "url": "https://github.com/Nerzal/gocloak/commit/de1cf0b4d7298bbc47da5e74edc5f815e8740e66"
+        },
+        "date": 1681385202112,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 65856158,
+            "unit": "ns/op\t   82211 B/op\t     227 allocs/op",
+            "extra": "18 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 68576800,
+            "unit": "ns/op\t   70032 B/op\t     227 allocs/op",
+            "extra": "18 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 65068206,
+            "unit": "ns/op\t   67699 B/op\t     227 allocs/op",
+            "extra": "18 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 36172440,
+            "unit": "ns/op\t   56201 B/op\t     225 allocs/op",
+            "extra": "33 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroups",
+            "value": 2044875,
+            "unit": "ns/op\t   36781 B/op\t      97 allocs/op",
+            "extra": "663 times"
+          },
+          {
+            "name": "BenchmarkGetGroups",
+            "value": 1929172,
+            "unit": "ns/op\t   37070 B/op\t      97 allocs/op",
+            "extra": "687 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull",
+            "value": 1884471,
+            "unit": "ns/op\t   37936 B/op\t     119 allocs/op",
+            "extra": "703 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull",
+            "value": 1758944,
+            "unit": "ns/op\t   37553 B/op\t     119 allocs/op",
+            "extra": "646 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief",
+            "value": 1700164,
+            "unit": "ns/op\t   38514 B/op\t     119 allocs/op",
+            "extra": "711 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief",
+            "value": 1709772,
+            "unit": "ns/op\t   37062 B/op\t     119 allocs/op",
+            "extra": "703 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroup",
+            "value": 1836242,
+            "unit": "ns/op\t   38772 B/op\t     135 allocs/op",
+            "extra": "654 times"
+          },
+          {
+            "name": "BenchmarkGetGroup",
+            "value": 1796161,
+            "unit": "ns/op\t   39097 B/op\t     135 allocs/op",
+            "extra": "662 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath",
+            "value": 1540371,
+            "unit": "ns/op\t   36355 B/op\t     122 allocs/op",
+            "extra": "726 times"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath",
+            "value": 1712400,
+            "unit": "ns/op\t   37711 B/op\t     122 allocs/op",
+            "extra": "740 times\n2 procs"
           }
         ]
       }
