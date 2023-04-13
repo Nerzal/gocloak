@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1681382307452,
+  "lastUpdate": 1681382371001,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -5815,6 +5815,114 @@ window.BENCHMARK_DATA = {
             "value": 1296871,
             "unit": "ns/op\t   37495 B/op\t     122 allocs/op",
             "extra": "901 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "307427+mweibel@users.noreply.github.com",
+            "name": "Michael Weibel",
+            "username": "mweibel"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "781427a6df84d524cb60d9aa7d0f1c410eb130df",
+          "message": "feat: expose getRequest* methods for custom endpoints (#405)\n\nkeycloak is able to have extensions and it would be nice to not have to\r\nconstruct everything againn and just use a custom endpoint.\r\n\r\nfixes #219",
+          "timestamp": "2023-04-13T12:36:45+02:00",
+          "tree_id": "4000e46df4ef3091643ba6ac61a42d4d61f71d93",
+          "url": "https://github.com/Nerzal/gocloak/commit/781427a6df84d524cb60d9aa7d0f1c410eb130df"
+        },
+        "date": 1681382370253,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 76106122,
+            "unit": "ns/op\t   78183 B/op\t     228 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 76299014,
+            "unit": "ns/op\t   67734 B/op\t     229 allocs/op",
+            "extra": "14 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 76508863,
+            "unit": "ns/op\t   73548 B/op\t     229 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 44427758,
+            "unit": "ns/op\t   62398 B/op\t     226 allocs/op",
+            "extra": "28 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroups",
+            "value": 1741646,
+            "unit": "ns/op\t   37077 B/op\t      97 allocs/op",
+            "extra": "578 times"
+          },
+          {
+            "name": "BenchmarkGetGroups",
+            "value": 1684831,
+            "unit": "ns/op\t   37416 B/op\t      97 allocs/op",
+            "extra": "644 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull",
+            "value": 1697278,
+            "unit": "ns/op\t   38516 B/op\t     119 allocs/op",
+            "extra": "747 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull",
+            "value": 1671338,
+            "unit": "ns/op\t   36081 B/op\t     119 allocs/op",
+            "extra": "704 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief",
+            "value": 1648739,
+            "unit": "ns/op\t   36491 B/op\t     119 allocs/op",
+            "extra": "760 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief",
+            "value": 1580584,
+            "unit": "ns/op\t   41676 B/op\t     119 allocs/op",
+            "extra": "726 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroup",
+            "value": 1698369,
+            "unit": "ns/op\t   40119 B/op\t     135 allocs/op",
+            "extra": "666 times"
+          },
+          {
+            "name": "BenchmarkGetGroup",
+            "value": 1565256,
+            "unit": "ns/op\t   37827 B/op\t     135 allocs/op",
+            "extra": "776 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath",
+            "value": 1382418,
+            "unit": "ns/op\t   36915 B/op\t     122 allocs/op",
+            "extra": "844 times"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath",
+            "value": 1322585,
+            "unit": "ns/op\t   37500 B/op\t     122 allocs/op",
+            "extra": "856 times\n2 procs"
           }
         ]
       }
