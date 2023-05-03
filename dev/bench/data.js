@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1681385202571,
+  "lastUpdate": 1683115058935,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -6029,6 +6029,114 @@ window.BENCHMARK_DATA = {
             "value": 1712400,
             "unit": "ns/op\t   37711 B/op\t     122 allocs/op",
             "extra": "740 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "bastian.ike@aoe.com",
+            "name": "Bastian",
+            "username": "bastianccm"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "70f6ad9988a208b1ee57cd053af1c7ea6506bd40",
+          "message": "fix(client): correct serverinfo endpoint (#382)",
+          "timestamp": "2023-05-03T13:54:00+02:00",
+          "tree_id": "6716a7b963fcd923c1c8e4b021825fe7404d5476",
+          "url": "https://github.com/Nerzal/gocloak/commit/70f6ad9988a208b1ee57cd053af1c7ea6506bd40"
+        },
+        "date": 1683115058065,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 84420872,
+            "unit": "ns/op\t   74837 B/op\t     227 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 83510846,
+            "unit": "ns/op\t   72036 B/op\t     229 allocs/op",
+            "extra": "13 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 82095965,
+            "unit": "ns/op\t   51410 B/op\t     228 allocs/op",
+            "extra": "13 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 48752230,
+            "unit": "ns/op\t   72895 B/op\t     227 allocs/op",
+            "extra": "25 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroups",
+            "value": 2665099,
+            "unit": "ns/op\t   37812 B/op\t      97 allocs/op",
+            "extra": "448 times"
+          },
+          {
+            "name": "BenchmarkGetGroups",
+            "value": 3006411,
+            "unit": "ns/op\t   37814 B/op\t      97 allocs/op",
+            "extra": "478 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull",
+            "value": 2445401,
+            "unit": "ns/op\t   36674 B/op\t     119 allocs/op",
+            "extra": "501 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull",
+            "value": 2595469,
+            "unit": "ns/op\t   37334 B/op\t     119 allocs/op",
+            "extra": "603 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief",
+            "value": 2418232,
+            "unit": "ns/op\t   37693 B/op\t     119 allocs/op",
+            "extra": "516 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief",
+            "value": 2519735,
+            "unit": "ns/op\t   36686 B/op\t     119 allocs/op",
+            "extra": "519 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroup",
+            "value": 2367654,
+            "unit": "ns/op\t   36403 B/op\t     135 allocs/op",
+            "extra": "489 times"
+          },
+          {
+            "name": "BenchmarkGetGroup",
+            "value": 2599435,
+            "unit": "ns/op\t   38331 B/op\t     135 allocs/op",
+            "extra": "482 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath",
+            "value": 2277134,
+            "unit": "ns/op\t   35390 B/op\t     122 allocs/op",
+            "extra": "544 times"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath",
+            "value": 2231825,
+            "unit": "ns/op\t   35599 B/op\t     122 allocs/op",
+            "extra": "567 times\n2 procs"
           }
         ]
       }
