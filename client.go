@@ -3157,13 +3157,13 @@ func (g *GoCloak) GetResourcesClient(ctx context.Context, token, realm string, p
 // GetResourceServer returns resource server settings.
 // The access token must have the realm view_clients role on its service
 // account to be allowed to call this endpoint.
-func (g *GoCloak) GetResourceServer(ctx context.Context, token, realm string) (*ResourceServerRepresentation, error) {
+func (g *GoCloak) GetResourceServer(ctx context.Context, token, realm, idOfClient string) (*ResourceServerRepresentation, error) {
 	const errMessage = "could not get resource server settings"
 
 	var result *ResourceServerRepresentation
 	resp, err := g.GetRequestWithBearerAuth(ctx, token).
 		SetResult(&result).
-		Get(g.getAdminRealmURL(realm, "authz", "resource-server", "settings"))
+		Get(g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "settings"))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
 		return nil, err
