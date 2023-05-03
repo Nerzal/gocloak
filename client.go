@@ -3154,6 +3154,24 @@ func (g *GoCloak) GetResourcesClient(ctx context.Context, token, realm string, p
 	return result, nil
 }
 
+// GetResourceServer returns resource server settings.
+// The access token must have the realm view_clients role on its service
+// account to be allowed to call this endpoint.
+func (g *GoCloak) GetResourceServer(ctx context.Context, token, realm string) (*ResourceServerRepresentation, error) {
+	const errMessage = "could not get resource server settings"
+
+	var result *ResourceServerRepresentation
+	resp, err := g.GetRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, "authz", "resource-server", "settings"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // UpdateResource updates a resource associated with the client, using access token from admin
 func (g *GoCloak) UpdateResource(ctx context.Context, token, realm, idOfClient string, resource ResourceRepresentation) error {
 	const errMessage = "could not update resource"
