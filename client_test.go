@@ -4986,6 +4986,23 @@ func Test_CreateListGetUpdateDeleteResourceClient(t *testing.T) {
 	require.Equal(t, *(createdResource.Name), *(updatedResource.Name))
 }
 
+func Test_GetResourceServer(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	rs, err := client.GetResourceServer(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+	)
+	require.NoError(t, err, "GetResourceServer failed")
+	require.NotNil(t, rs)
+	t.Logf("Resource server settings: %+v", rs)
+}
+
 func Test_CreateListGetUpdateDeleteResource(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
