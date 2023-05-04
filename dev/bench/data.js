@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1683115058935,
+  "lastUpdate": 1683201041653,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -6137,6 +6137,114 @@ window.BENCHMARK_DATA = {
             "value": 2231825,
             "unit": "ns/op\t   35599 B/op\t     122 allocs/op",
             "extra": "567 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "brendan@glaulabs.com",
+            "name": "Brendan Le Glaunec",
+            "username": "Ullaakut"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "640934dd78692930603e556a389a4a6f660d4ac9",
+          "message": "feat: add support for resource server settings endpoint (#421)\n\n* feat: add support for resource server settings endpoint\r\n\r\n* fix: endpoint URL\r\n\r\n* test: add unit test",
+          "timestamp": "2023-05-04T13:47:47+02:00",
+          "tree_id": "76fe866e7dd8d2a1c476db8fa81a7cb30693610b",
+          "url": "https://github.com/Nerzal/gocloak/commit/640934dd78692930603e556a389a4a6f660d4ac9"
+        },
+        "date": 1683201040532,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 76248611,
+            "unit": "ns/op\t   74022 B/op\t     228 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 77325327,
+            "unit": "ns/op\t   72413 B/op\t     229 allocs/op",
+            "extra": "14 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 77116871,
+            "unit": "ns/op\t   75586 B/op\t     229 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 42243073,
+            "unit": "ns/op\t   77293 B/op\t     227 allocs/op",
+            "extra": "26 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroups",
+            "value": 1643343,
+            "unit": "ns/op\t   36730 B/op\t      97 allocs/op",
+            "extra": "807 times"
+          },
+          {
+            "name": "BenchmarkGetGroups",
+            "value": 1529090,
+            "unit": "ns/op\t   37629 B/op\t      97 allocs/op",
+            "extra": "716 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull",
+            "value": 1527224,
+            "unit": "ns/op\t   37972 B/op\t     119 allocs/op",
+            "extra": "793 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull",
+            "value": 1509692,
+            "unit": "ns/op\t   37253 B/op\t     119 allocs/op",
+            "extra": "788 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief",
+            "value": 1485096,
+            "unit": "ns/op\t   37260 B/op\t     119 allocs/op",
+            "extra": "703 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief",
+            "value": 1533235,
+            "unit": "ns/op\t   36521 B/op\t     119 allocs/op",
+            "extra": "830 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroup",
+            "value": 1563716,
+            "unit": "ns/op\t   39127 B/op\t     135 allocs/op",
+            "extra": "703 times"
+          },
+          {
+            "name": "BenchmarkGetGroup",
+            "value": 1543812,
+            "unit": "ns/op\t   36559 B/op\t     135 allocs/op",
+            "extra": "657 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath",
+            "value": 1362603,
+            "unit": "ns/op\t   36992 B/op\t     122 allocs/op",
+            "extra": "885 times"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath",
+            "value": 1331493,
+            "unit": "ns/op\t   38007 B/op\t     122 allocs/op",
+            "extra": "878 times\n2 procs"
           }
         ]
       }
