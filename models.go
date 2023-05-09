@@ -447,6 +447,7 @@ type ProtocolMappersConfig struct {
 	AttributeName                      *string `json:"attribute.name,omitempty"`
 	AttributeNameFormat                *string `json:"attribute.nameformat,omitempty"`
 	Single                             *string `json:"single,omitempty"`
+	Script                             *string `json:"script,omitempty"`
 }
 
 // Client is a ClientRepresentation
