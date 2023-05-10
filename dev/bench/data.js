@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1683201041653,
+  "lastUpdate": 1683719021770,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -6245,6 +6245,114 @@ window.BENCHMARK_DATA = {
             "value": 1331493,
             "unit": "ns/op\t   38007 B/op\t     122 allocs/op",
             "extra": "878 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "pat@kavatech.de",
+            "name": "Patrick Kavajin",
+            "username": "pkavajin"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f054fd2bdd84045482369ee2abc9d9890f525c61",
+          "message": "Allow scripts to be setup for script protocol mappers (#423)",
+          "timestamp": "2023-05-10T13:40:58+02:00",
+          "tree_id": "5281ea19c915396ecb6f2f8fb546ead9d148aab7",
+          "url": "https://github.com/Nerzal/gocloak/commit/f054fd2bdd84045482369ee2abc9d9890f525c61"
+        },
+        "date": 1683719021290,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 76975143,
+            "unit": "ns/op\t   62753 B/op\t     226 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 77019079,
+            "unit": "ns/op\t   78973 B/op\t     230 allocs/op",
+            "extra": "14 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 77025067,
+            "unit": "ns/op\t   69648 B/op\t     228 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 41749346,
+            "unit": "ns/op\t   66092 B/op\t     226 allocs/op",
+            "extra": "25 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroups",
+            "value": 1815397,
+            "unit": "ns/op\t   36576 B/op\t      97 allocs/op",
+            "extra": "640 times"
+          },
+          {
+            "name": "BenchmarkGetGroups",
+            "value": 1735307,
+            "unit": "ns/op\t   38352 B/op\t      97 allocs/op",
+            "extra": "608 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull",
+            "value": 1704148,
+            "unit": "ns/op\t   37495 B/op\t     119 allocs/op",
+            "extra": "668 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull",
+            "value": 1682748,
+            "unit": "ns/op\t   37218 B/op\t     119 allocs/op",
+            "extra": "710 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief",
+            "value": 1539798,
+            "unit": "ns/op\t   37045 B/op\t     119 allocs/op",
+            "extra": "775 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief",
+            "value": 1653407,
+            "unit": "ns/op\t   38465 B/op\t     119 allocs/op",
+            "extra": "782 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroup",
+            "value": 1714027,
+            "unit": "ns/op\t   34211 B/op\t     134 allocs/op",
+            "extra": "709 times"
+          },
+          {
+            "name": "BenchmarkGetGroup",
+            "value": 1611795,
+            "unit": "ns/op\t   39109 B/op\t     135 allocs/op",
+            "extra": "711 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath",
+            "value": 1349249,
+            "unit": "ns/op\t   36001 B/op\t     122 allocs/op",
+            "extra": "853 times"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath",
+            "value": 1440588,
+            "unit": "ns/op\t   36990 B/op\t     122 allocs/op",
+            "extra": "847 times\n2 procs"
           }
         ]
       }
