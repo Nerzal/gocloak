@@ -550,12 +550,18 @@ func (g *GoCloak) LoginAdmin(ctx context.Context, username, password, realm stri
 }
 
 // LoginClient performs a login with client credentials
-func (g *GoCloak) LoginClient(ctx context.Context, clientID, clientSecret, realm string) (*JWT, error) {
-	return g.GetToken(ctx, realm, TokenOptions{
+func (g *GoCloak) LoginClient(ctx context.Context, clientID, clientSecret, realm string, scopes ...string) (*JWT, error) {
+	opts := TokenOptions{
 		ClientID:     &clientID,
 		ClientSecret: &clientSecret,
 		GrantType:    StringP("client_credentials"),
-	})
+	}
+
+	if len(scopes) > 0 {
+		opts.Scope = &scopes[0]
+	}
+
+	return g.GetToken(ctx, realm, opts)
 }
 
 // LoginClientTokenExchange will exchange the presented token for a user's token
