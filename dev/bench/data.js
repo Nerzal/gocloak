@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1684935357043,
+  "lastUpdate": 1684935614700,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -6461,6 +6461,114 @@ window.BENCHMARK_DATA = {
             "value": 1418548,
             "unit": "ns/op\t   36516 B/op\t     122 allocs/op",
             "extra": "855 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "mviniciusgc@hotmail.com",
+            "name": "Marcos Vinicius Gonçalves Cunha",
+            "username": "mviniciusgc"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "166f4421c779f1ff62256fcbbc0f6cea2c4a169b",
+          "message": "fix: fix RealmRepresentation (#422)",
+          "timestamp": "2023-05-24T15:36:58+02:00",
+          "tree_id": "2676540dec37d27d4c2f604bbf06e22a5c6f1532",
+          "url": "https://github.com/Nerzal/gocloak/commit/166f4421c779f1ff62256fcbbc0f6cea2c4a169b"
+        },
+        "date": 1684935613614,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 77006958,
+            "unit": "ns/op\t   54446 B/op\t     227 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 76727364,
+            "unit": "ns/op\t   70912 B/op\t     228 allocs/op",
+            "extra": "14 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 74025186,
+            "unit": "ns/op\t   70965 B/op\t     230 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 42937044,
+            "unit": "ns/op\t   69733 B/op\t     227 allocs/op",
+            "extra": "28 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroups",
+            "value": 2204188,
+            "unit": "ns/op\t   36214 B/op\t      97 allocs/op",
+            "extra": "519 times"
+          },
+          {
+            "name": "BenchmarkGetGroups",
+            "value": 2255011,
+            "unit": "ns/op\t   36671 B/op\t      97 allocs/op",
+            "extra": "562 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull",
+            "value": 1971098,
+            "unit": "ns/op\t   37515 B/op\t     119 allocs/op",
+            "extra": "558 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull",
+            "value": 2112257,
+            "unit": "ns/op\t   37865 B/op\t     119 allocs/op",
+            "extra": "589 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief",
+            "value": 1987367,
+            "unit": "ns/op\t   40253 B/op\t     119 allocs/op",
+            "extra": "595 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief",
+            "value": 1929044,
+            "unit": "ns/op\t   34862 B/op\t     118 allocs/op",
+            "extra": "630 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroup",
+            "value": 2024973,
+            "unit": "ns/op\t   37305 B/op\t     135 allocs/op",
+            "extra": "531 times"
+          },
+          {
+            "name": "BenchmarkGetGroup",
+            "value": 2091169,
+            "unit": "ns/op\t   35140 B/op\t     135 allocs/op",
+            "extra": "579 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath",
+            "value": 1703199,
+            "unit": "ns/op\t   38452 B/op\t     122 allocs/op",
+            "extra": "646 times"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath",
+            "value": 1825420,
+            "unit": "ns/op\t   37582 B/op\t     122 allocs/op",
+            "extra": "568 times\n2 procs"
           }
         ]
       }
