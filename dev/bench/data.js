@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1683719021770,
+  "lastUpdate": 1684935357043,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -6353,6 +6353,114 @@ window.BENCHMARK_DATA = {
             "value": 1440588,
             "unit": "ns/op\t   36990 B/op\t     122 allocs/op",
             "extra": "847 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tobias.theel@noobygames.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7b1503f561fde71a03183a7ef761ecb0f8bc9d9c",
+          "message": "Add optional scope(s) to LoginClient function (#424)\n\nCo-authored-by: Tobias Theel <tt@fino.digital>",
+          "timestamp": "2023-05-24T15:32:51+02:00",
+          "tree_id": "047d812239a6b28ef7381e783861bd6acb0e7b1e",
+          "url": "https://github.com/Nerzal/gocloak/commit/7b1503f561fde71a03183a7ef761ecb0f8bc9d9c"
+        },
+        "date": 1684935355892,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 75791443,
+            "unit": "ns/op\t   54423 B/op\t     225 allocs/op",
+            "extra": "15 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 75834721,
+            "unit": "ns/op\t   69989 B/op\t     231 allocs/op",
+            "extra": "14 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 75656345,
+            "unit": "ns/op\t   73306 B/op\t     227 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLoginParallel",
+            "value": 47014014,
+            "unit": "ns/op\t   62466 B/op\t     226 allocs/op",
+            "extra": "27 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroups",
+            "value": 1875536,
+            "unit": "ns/op\t   36934 B/op\t      97 allocs/op",
+            "extra": "624 times"
+          },
+          {
+            "name": "BenchmarkGetGroups",
+            "value": 1723799,
+            "unit": "ns/op\t   37166 B/op\t      97 allocs/op",
+            "extra": "715 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull",
+            "value": 1638492,
+            "unit": "ns/op\t   38127 B/op\t     119 allocs/op",
+            "extra": "753 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull",
+            "value": 1685111,
+            "unit": "ns/op\t   37619 B/op\t     119 allocs/op",
+            "extra": "753 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief",
+            "value": 1638201,
+            "unit": "ns/op\t   36848 B/op\t     119 allocs/op",
+            "extra": "837 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief",
+            "value": 1598758,
+            "unit": "ns/op\t   38710 B/op\t     119 allocs/op",
+            "extra": "752 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroup",
+            "value": 1679646,
+            "unit": "ns/op\t   36297 B/op\t     135 allocs/op",
+            "extra": "679 times"
+          },
+          {
+            "name": "BenchmarkGetGroup",
+            "value": 1630374,
+            "unit": "ns/op\t   35434 B/op\t     135 allocs/op",
+            "extra": "733 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath",
+            "value": 1410624,
+            "unit": "ns/op\t   37042 B/op\t     122 allocs/op",
+            "extra": "744 times"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath",
+            "value": 1418548,
+            "unit": "ns/op\t   36516 B/op\t     122 allocs/op",
+            "extra": "855 times\n2 procs"
           }
         ]
       }
