@@ -561,6 +561,7 @@ func (client *gocloak) LoginSocialTokenExchange(ctx context.Context, clientID, t
 		SubjectIssuer:      &issuer,
 		SubjectTokenType:   StringP("urn:ietf:params:oauth:token-type:access_token"),
 		RequestedTokenType: StringP("urn:ietf:params:oauth:token-type:refresh_token"),
+		Scope:              StringP("openid"),
 	})
 }
 
