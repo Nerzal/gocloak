@@ -3411,11 +3411,7 @@ func (g *GoCloak) UpdatePermissionScope(ctx context.Context, token, realm, idOfC
 		SetBody(policy).
 		Put(g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "permission", "scope", idOfScope))
 
-	if err := checkForError(resp, err, errMessage); err != nil {
-		return err
-	}
-
-	return nil
+	return checkForError(resp, err, errMessage)
 }
 
 // UpdateScope updates a scope associated with the client
