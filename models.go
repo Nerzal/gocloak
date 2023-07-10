@@ -1408,6 +1408,14 @@ type RequiredActionProviderRepresentation struct {
 	ProviderID    *string            `json:"providerId,omitempty"`
 }
 
+// ManagementPermissionRepresentation is a representation of management permissions
+// v18: https://www.keycloak.org/docs-api/18.0/rest-api/#_managementpermissionreference
+type ManagementPermissionRepresentation struct {
+	Enabled          *bool              `json:"enabled,omitempty"`
+	Resource         *string            `json:"resource,omitempty"`
+	ScopePermissions *map[string]string `json:"scopePermissions,omitempty"`
+}
+
 // prettyStringStruct returns struct formatted into pretty string
 func prettyStringStruct(t interface{}) string {
 	json, err := json.MarshalIndent(t, "", "\t")

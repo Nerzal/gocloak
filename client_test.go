@@ -1196,6 +1196,103 @@ func Test_CreateListGetUpdateDeleteGetChildGroup(t *testing.T) {
 	require.NoError(t, err, "GetGroup failed")
 }
 
+func Test_GroupPermissions(t *testing.T) {
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	// Create
+	tearDown, groupID := CreateGroup(t, client)
+	// Delete
+	defer tearDown()
+
+	groupPermission, err := client.GetGroupManagementPermissions(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		groupID,
+	)
+	require.NoError(t, err, "GetGroupManagementPermissions failed")
+	require.Equal(t, false, *groupPermission.Enabled)
+
+	groupPermission.Enabled = gocloak.BoolP(true)
+	updatedGroupPermission, err := client.UpdateGroupManagementPermissions(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		groupID,
+		*groupPermission,
+	)
+	require.NoError(t, err, "UpdateGroupManagementPermissions failed")
+	require.Equal(t, true, *updatedGroupPermission.Enabled)
+
+	clients, err := client.GetClients(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloak.GetClientsParams{
+			ClientID: gocloak.StringP("realm-management"),
+		},
+	)
+	require.NoError(t, err, "GetClients failed")
+	require.Equal(t, 1, len(clients))
+	realManagementClient := clients[0]
+
+	_, policyID := CreatePolicy(t, client, gocloakClientID, gocloak.PolicyRepresentation{
+		Name:        GetRandomNameP("PolicyName"),
+		Description: gocloak.StringP("Policy Description"),
+		Type:        gocloak.StringP("client"),
+		Logic:       gocloak.POSITIVE,
+		ClientPolicyRepresentation: gocloak.ClientPolicyRepresentation{
+			Clients: &[]string{
+				gocloakClientID,
+			},
+		},
+	})
+
+	for _, scopeID := range *updatedGroupPermission.ScopePermissions {
+		permissionScope, err := client.GetPermissionScope(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			*realManagementClient.ID,
+			scopeID)
+		require.NoError(t, err, "GetPermissionScope failed for %s", scopeID)
+
+		scopePolicies, err := client.GetAuthorizationPolicyScopes(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			*realManagementClient.ID,
+			scopeID)
+		require.NoError(t, err, "GetAuthorizationPolicyScopes failed for %s", scopeID)
+		require.Equal(t, 1, len(scopePolicies), "GetAuthorizationPolicyScopes found more than 1 policies")
+		scopePolicy := scopePolicies[0]
+
+		policyResources, err := client.GetAuthorizationPolicyResources(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			*realManagementClient.ID,
+			scopeID)
+		require.NoError(t, err, "GetAuthorizationPolicyResources failed for %s", scopeID)
+		require.Equal(t, 1, len(policyResources), "GetAuthorizationPolicyResources found more than 1 policies")
+		policyResource := policyResources[0]
+
+		permissionScope.Policies = &[]string{policyID}
+		permissionScope.Resources = &[]string{*policyResource.ID}
+		permissionScope.Scopes = &[]string{*scopePolicy.ID}
+		err = client.UpdatePermissionScope(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			*realManagementClient.ID,
+			scopeID,
+			*permissionScope)
+		require.NoError(t, err, "UpdatePermissionScope failed for %s", scopeID)
+	}
+}
+
 func CreateClientRole(t *testing.T, client *gocloak.GoCloak) (func(), string) {
 	cfg := GetConfig(t)
 	token := GetAdminToken(t, client)
@@ -1224,6 +1321,42 @@ func CreateClientRole(t *testing.T, client *gocloak.GoCloak) (func(), string) {
 		require.NoError(t, err, "DeleteClientRole failed")
 	}
 	return tearDown, roleName
+}
+
+func Test_ClientPermissions(t *testing.T) {
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	t.Logf("Checking Client Permission")
+	testClient := gocloak.Client{
+		ClientID:         GetRandomNameP("ClientID"),
+		BaseURL:          gocloak.StringP("https://example.com"),
+		FullScopeAllowed: gocloak.BoolP(false),
+	}
+	// Creating client
+	tearDownClient, idOfClient := CreateClient(t, client, &testClient)
+	defer tearDownClient()
+
+	clientPermissions, err := client.GetClientManagementPermissions(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		idOfClient,
+	)
+	require.NoError(t, err, "GetClientManagementPermissions failed")
+	require.Equal(t, false, *clientPermissions.Enabled)
+
+	clientPermissions.Enabled = gocloak.BoolP(true)
+	updatedClientPermissions, err := client.UpdateClientManagementPermissions(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		idOfClient,
+		*clientPermissions,
+	)
+	require.NoError(t, err, "UpdateClientManagementPermissions failed")
+	require.Equal(t, true, *updatedClientPermissions.Enabled)
 }
 
 func Test_CreateClientRole(t *testing.T) {
