@@ -3719,14 +3719,41 @@ func Test_GetClientUserSessions(t *testing.T) {
 	)
 	require.NoError(t, err, "Login failed")
 	token := GetAdminToken(t, client)
+	allSessions, err := client.GetClientUserSessions(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		gocloak.GetClientUserSessionsParams{},
+	)
+	require.NoError(t, err, "GetClientUserSessions failed")
+	require.NotEmpty(t, allSessions, "GetClientUserSessions returned an empty list")
+
 	sessions, err := client.GetClientUserSessions(
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		gocloakClientID,
+		gocloak.GetClientUserSessionsParams{
+			Max: gocloak.IntP(1),
+		},
 	)
 	require.NoError(t, err, "GetClientUserSessions failed")
-	require.NotEmpty(t, sessions, "GetClientUserSessions returned an empty list")
+	require.Len(t, sessions, 1)
+
+	sessions, err = client.GetClientUserSessions(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+		gocloak.GetClientUserSessionsParams{
+			Max:   gocloak.IntP(1),
+			First: gocloak.IntP(1),
+		},
+	)
+	require.NoError(t, err, "GetClientUserSessions failed")
+	require.Len(t, sessions, 1)
+	require.Equal(t, *allSessions[1].ID, *sessions[0].ID)
 }
 
 func findProtocolMapperByID(t *testing.T, client *gocloak.Client, id string) *gocloak.ProtocolMapperRepresentation {
@@ -3865,6 +3892,7 @@ func Test_GetClientOfflineSessions(t *testing.T) {
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		gocloakClientID,
+		gocloak.GetClientUserSessionsParams{},
 	)
 	require.NoError(t, err, "GetClientOfflineSessions failed")
 	require.NotEmpty(t, sessions, "GetClientOfflineSessions returned an empty list")

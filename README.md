@@ -280,8 +280,8 @@ type GoCloak interface {
  ClearUserCache(ctx context.Context, token, realm string) error
  ClearKeysCache(ctx context.Context, token, realm string) error
 
- GetClientUserSessions(ctx context.Context, token, realm, idOfClient string) ([]*UserSessionRepresentation, error)
- GetClientOfflineSessions(ctx context.Context, token, realm, idOfClient string) ([]*UserSessionRepresentation, error)
+GetClientUserSessions(ctx context.Context, token, realm, idOfClient string, params GetClientUserSessionsParams) ([]*UserSessionRepresentation, error)
+GetClientOfflineSessions(ctx context.Context, token, realm, idOfClient string, params GetClientUserSessionsParams) ([]*UserSessionRepresentation, error)
  GetUserSessions(ctx context.Context, token, realm, userID string) ([]*UserSessionRepresentation, error)
  GetUserOfflineSessionsForClient(ctx context.Context, token, realm, userID, idOfClient string) ([]*UserSessionRepresentation, error)
 

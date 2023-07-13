@@ -1416,6 +1416,12 @@ type ManagementPermissionRepresentation struct {
 	ScopePermissions *map[string]string `json:"scopePermissions,omitempty"`
 }
 
+// GetClientUserSessionsParams represents the optional parameters for getting user sessions associated with the client
+type GetClientUserSessionsParams struct {
+	First *int `json:"first,string,omitempty"`
+	Max   *int `json:"max,string,omitempty"`
+}
+
 // prettyStringStruct returns struct formatted into pretty string
 func prettyStringStruct(t interface{}) string {
 	json, err := json.MarshalIndent(t, "", "\t")
@@ -1509,3 +1515,4 @@ func (v *GetResourcePoliciesParams) String() string                 { return pre
 func (v *CredentialRepresentation) String() string                  { return prettyStringStruct(v) }
 func (v *RequiredActionProviderRepresentation) String() string      { return prettyStringStruct(v) }
 func (v *BruteForceStatus) String() string                          { return prettyStringStruct(v) }
+func (v *GetClientUserSessionsParams) String() string               { return prettyStringStruct(v) }
