@@ -3719,6 +3719,15 @@ func Test_GetClientUserSessions(t *testing.T) {
 	)
 	require.NoError(t, err, "Login failed")
 	token := GetAdminToken(t, client)
+	allSessionsWithoutParams, err := client.GetClientUserSessions(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+	)
+	require.NoError(t, err, "GetClientUserSessions failed")
+	require.NotEmpty(t, allSessionsWithoutParams, "GetClientUserSessions returned an empty list")
+
 	allSessions, err := client.GetClientUserSessions(
 		context.Background(),
 		token.AccessToken,
@@ -3728,6 +3737,8 @@ func Test_GetClientUserSessions(t *testing.T) {
 	)
 	require.NoError(t, err, "GetClientUserSessions failed")
 	require.NotEmpty(t, allSessions, "GetClientUserSessions returned an empty list")
+	require.Equal(t, allSessionsWithoutParams, allSessions,
+		"GetClientUserSessions with and without params are not the same")
 
 	sessions, err := client.GetClientUserSessions(
 		context.Background(),
@@ -3896,6 +3907,17 @@ func Test_GetClientOfflineSessions(t *testing.T) {
 	)
 	require.NoError(t, err, "GetClientOfflineSessions failed")
 	require.NotEmpty(t, sessions, "GetClientOfflineSessions returned an empty list")
+
+	sessionsWithoutParams, err := client.GetClientOfflineSessions(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloakClientID,
+	)
+	require.NoError(t, err, "GetClientOfflineSessions failed")
+	require.NotEmpty(t, sessions, "GetClientOfflineSessions returned an empty list")
+	require.Equal(t, sessions, sessionsWithoutParams,
+		"GetClientOfflineSessions with and without params are not the same")
 }
 
 func Test_ClientSecret(t *testing.T) {

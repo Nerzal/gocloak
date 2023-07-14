@@ -1451,13 +1451,18 @@ func (g *GoCloak) RegenerateClientSecret(ctx context.Context, token, realm, idOf
 }
 
 // GetClientOfflineSessions returns offline sessions associated with the client
-func (g *GoCloak) GetClientOfflineSessions(ctx context.Context, token, realm, idOfClient string, params GetClientUserSessionsParams) ([]*UserSessionRepresentation, error) {
+func (g *GoCloak) GetClientOfflineSessions(ctx context.Context, token, realm, idOfClient string, params ...GetClientUserSessionsParams) ([]*UserSessionRepresentation, error) {
 	const errMessage = "could not get client offline sessions"
 	var res []*UserSessionRepresentation
 
-	queryParams, err := GetQueryParams(params)
-	if err != nil {
-		return nil, errors.Wrap(err, errMessage)
+	queryParams := map[string]string{}
+	if params != nil && len(params) > 0 {
+		var err error
+
+		queryParams, err = GetQueryParams(params[0])
+		if err != nil {
+			return nil, errors.Wrap(err, errMessage)
+		}
 	}
 
 	resp, err := g.GetRequestWithBearerAuth(ctx, token).
@@ -1473,13 +1478,18 @@ func (g *GoCloak) GetClientOfflineSessions(ctx context.Context, token, realm, id
 }
 
 // GetClientUserSessions returns user sessions associated with the client
-func (g *GoCloak) GetClientUserSessions(ctx context.Context, token, realm, idOfClient string, params GetClientUserSessionsParams) ([]*UserSessionRepresentation, error) {
+func (g *GoCloak) GetClientUserSessions(ctx context.Context, token, realm, idOfClient string, params ...GetClientUserSessionsParams) ([]*UserSessionRepresentation, error) {
 	const errMessage = "could not get client user sessions"
 	var res []*UserSessionRepresentation
 
-	queryParams, err := GetQueryParams(params)
-	if err != nil {
-		return nil, errors.Wrap(err, errMessage)
+	queryParams := map[string]string{}
+	if params != nil && len(params) > 0 {
+		var err error
+
+		queryParams, err = GetQueryParams(params[0])
+		if err != nil {
+			return nil, errors.Wrap(err, errMessage)
+		}
 	}
 
 	resp, err := g.GetRequestWithBearerAuth(ctx, token).
