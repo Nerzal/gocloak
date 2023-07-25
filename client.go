@@ -1451,12 +1451,23 @@ func (g *GoCloak) RegenerateClientSecret(ctx context.Context, token, realm, idOf
 }
 
 // GetClientOfflineSessions returns offline sessions associated with the client
-func (g *GoCloak) GetClientOfflineSessions(ctx context.Context, token, realm, idOfClient string) ([]*UserSessionRepresentation, error) {
+func (g *GoCloak) GetClientOfflineSessions(ctx context.Context, token, realm, idOfClient string, params ...GetClientUserSessionsParams) ([]*UserSessionRepresentation, error) {
 	const errMessage = "could not get client offline sessions"
-
 	var res []*UserSessionRepresentation
+
+	queryParams := map[string]string{}
+	if params != nil && len(params) > 0 {
+		var err error
+
+		queryParams, err = GetQueryParams(params[0])
+		if err != nil {
+			return nil, errors.Wrap(err, errMessage)
+		}
+	}
+
 	resp, err := g.GetRequestWithBearerAuth(ctx, token).
 		SetResult(&res).
+		SetQueryParams(queryParams).
 		Get(g.getAdminRealmURL(realm, "clients", idOfClient, "offline-sessions"))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
@@ -1467,12 +1478,23 @@ func (g *GoCloak) GetClientOfflineSessions(ctx context.Context, token, realm, id
 }
 
 // GetClientUserSessions returns user sessions associated with the client
-func (g *GoCloak) GetClientUserSessions(ctx context.Context, token, realm, idOfClient string) ([]*UserSessionRepresentation, error) {
+func (g *GoCloak) GetClientUserSessions(ctx context.Context, token, realm, idOfClient string, params ...GetClientUserSessionsParams) ([]*UserSessionRepresentation, error) {
 	const errMessage = "could not get client user sessions"
-
 	var res []*UserSessionRepresentation
+
+	queryParams := map[string]string{}
+	if params != nil && len(params) > 0 {
+		var err error
+
+		queryParams, err = GetQueryParams(params[0])
+		if err != nil {
+			return nil, errors.Wrap(err, errMessage)
+		}
+	}
+
 	resp, err := g.GetRequestWithBearerAuth(ctx, token).
 		SetResult(&res).
+		SetQueryParams(queryParams).
 		Get(g.getAdminRealmURL(realm, "clients", idOfClient, "user-sessions"))
 
 	if err := checkForError(resp, err, errMessage); err != nil {
