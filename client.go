@@ -1456,7 +1456,7 @@ func (g *GoCloak) GetClientOfflineSessions(ctx context.Context, token, realm, id
 	var res []*UserSessionRepresentation
 
 	queryParams := map[string]string{}
-	if params != nil && len(params) > 0 {
+	if len(params) > 0 {
 		var err error
 
 		queryParams, err = GetQueryParams(params[0])
@@ -1483,7 +1483,7 @@ func (g *GoCloak) GetClientUserSessions(ctx context.Context, token, realm, idOfC
 	var res []*UserSessionRepresentation
 
 	queryParams := map[string]string{}
-	if params != nil && len(params) > 0 {
+	if len(params) > 0 {
 		var err error
 
 		queryParams, err = GetQueryParams(params[0])
