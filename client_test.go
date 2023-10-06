@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/pkcs12"
 
@@ -6258,7 +6258,7 @@ func Test_CreatePermissionTicket(t *testing.T) {
 	})
 
 	// we're expecting validity error because we didn't supply secret
-	require.Equal(t, "signature is invalid", err.Error())
+	require.ErrorIs(t, err, jwt.ErrTokenSignatureInvalid)
 
 	claims, ok := pt.Claims.(*gocloak.PermissionTicketRepresentation) // ticketClaims)
 	require.Equal(t, true, ok)
