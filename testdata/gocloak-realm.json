@@ -764,9 +764,7 @@
                         "description": "A policy that grants access only for users within this realm",
                         "type": "role",
                         "logic": "POSITIVE",
-                        "decisionStrategy": "AFFIRMATIVE",
-                        "config": {
-                        }
+                        "decisionStrategy": "AFFIRMATIVE"
                       },
                     {
                         "id": "30cfeba8-79c4-493b-97c7-9e8c6e7c62c9",
