@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // GetQueryParams converts the struct to map[string]string
@@ -1258,7 +1258,7 @@ type PermissionTicketRepresentation struct {
 	AZP         *string                                     `json:"azp,omitempty"`
 	Claims      *map[string][]string                        `json:"claims,omitempty"`
 	Permissions *[]PermissionTicketPermissionRepresentation `json:"permissions,omitempty"`
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 }
 
 // PermissionTicketPermissionRepresentation represents the individual permissions in a permission ticket
