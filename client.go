@@ -86,7 +86,7 @@ func (g *GoCloak) GetRequestWithBearerAuthXMLHeader(ctx context.Context, token s
 // GetRequestWithBasicAuth returns a form data base request configured with basic auth.
 func (g *GoCloak) GetRequestWithBasicAuth(ctx context.Context, clientID, clientSecret string) *resty.Request {
 	req := g.GetRequest(ctx).
-		SetHeader("Content-Type", "application/x-www-form-urlencoded")
+		SetHeader("Content-Type", "application/x-www-form-urlencoded").
 		SetHeader("Accept-Charset", "utf-8")
 
 	// Public client doesn't require Basic Auth
@@ -588,7 +588,7 @@ func (g *GoCloak) LoginClientTokenExchange(ctx context.Context, clientID, token,
 
 // LoginSocialTokenExchange will exchange the presented token for a user's token
 // Requires Token-Exchange is enabled: https://www.keycloak.org/docs/latest/securing_apps/index.html#external-token-to-internal-token-exchange
-func (client *gocloak) LoginSocialTokenExchange(ctx context.Context, clientID, token, clientSecret, realm, issuer string) (*JWT, error) {
+func (client *GoCloak) LoginSocialTokenExchange(ctx context.Context, clientID, token, clientSecret, realm, issuer string) (*JWT, error) {
 	return client.GetToken(ctx, realm, TokenOptions{
 		ClientID:           &clientID,
 		ClientSecret:       &clientSecret,
