@@ -766,7 +766,6 @@
                         "logic": "POSITIVE",
                         "decisionStrategy": "AFFIRMATIVE",
                         "config": {
-                          "roles": "[{\"id\":\"default-roles-main\",\"required\":false}]"
                         }
                       },
                     {
