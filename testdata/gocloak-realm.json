@@ -741,50 +741,7 @@
                 "phone",
                 "offline_access",
                 "microprofile-jwt"
-            ],
-            "authorizationSettings": {
-                "allowRemoteResourceManagement": true,
-                "policyEnforcementMode": "ENFORCING",
-                "resources": [
-                    {
-                        "name": "Default Resource",
-                        "type": "urn:gocloak:resources:default",
-                        "ownerManagedAccess": false,
-                        "attributes": {},
-                        "_id": "067438bb-1d4a-4c4d-b84f-a57344ef2b2b",
-                        "uris": [
-                            "/*"
-                        ]
-                    }
-                ],
-                "policies": [
-                    {
-                        "id": "16fdc33a-7384-4735-8b7e-5d15b8e8bdaf",
-                        "name": "Default Policy",
-                        "description": "A policy that grants access only for users within this realm",
-                        "type": "js",
-                        "logic": "POSITIVE",
-                        "decisionStrategy": "AFFIRMATIVE",
-                        "config": {
-                            "code": "// by default, grants any permission associated with this policy\n$evaluation.grant();\n"
-                        }
-                    },
-                    {
-                        "id": "30cfeba8-79c4-493b-97c7-9e8c6e7c62c9",
-                        "name": "Default Permission",
-                        "description": "A permission that applies to the default resource type",
-                        "type": "resource",
-                        "logic": "POSITIVE",
-                        "decisionStrategy": "UNANIMOUS",
-                        "config": {
-                            "defaultResourceType": "urn:gocloak:resources:default",
-                            "applyPolicies": "[\"Default Policy\"]"
-                        }
-                    }
-                ],
-                "scopes": [],
-                "decisionStrategy": "UNANIMOUS"
-            }
+            ]            
         },
         {
             "id": "db4d47d3-31cd-49c7-a1c7-351e13da7907",
