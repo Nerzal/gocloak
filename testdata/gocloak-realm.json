@@ -759,13 +759,16 @@
                 ],
                 "policies": [
                     {
-                        "id": "16fdc33a-7384-4735-8b7e-5d15b8e8bdaf",
+                        "id": "98bb844e-5524-4c42-914b-cc5121d3124d",
                         "name": "Default Policy",
                         "description": "A policy that grants access only for users within this realm",
-                        "type": "js",
+                        "type": "role",
                         "logic": "POSITIVE",
-                        "decisionStrategy": "AFFIRMATIVE"                        
-                    },
+                        "decisionStrategy": "AFFIRMATIVE",
+                        "config": {
+                          "roles": "[{\"id\":\"default-roles-main\",\"required\":false}]"
+                        }
+                      },
                     {
                         "id": "30cfeba8-79c4-493b-97c7-9e8c6e7c62c9",
                         "name": "Default Permission",

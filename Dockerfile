@@ -1,4 +1,4 @@
-FROM quay.io/keycloak/keycloak:19.0
+FROM quay.io/keycloak/keycloak:22.0.4
 COPY testdata data/import
 WORKDIR /opt/keycloak
 ENV KC_HOSTNAME=localhost
