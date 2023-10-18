@@ -24,119 +24,21 @@ Benchmarks can be found [here](https://nerzal.github.io/gocloak/dev/bench/)
 
 ## Changelog
 
-### V10
+For release notes please consult the specific releases [here](https://github.com/Nerzal/gocloak/releases)
 
-#### V10.0.1
-
-We introduced 2 breaking changes.
-
-We switched the internal used JWT library, because the old one was no longer supported.
-
-Instead of passing the expected audience into the DecodeToken functions, we can validate the expected audience with a call to VerifyAudience: https://pkg.go.dev/github.com/golang-jwt/jwt#MapClaims.VerifyAudience
-
-When using custom claims, you'd have to implement the audience check for yourself for now.
-I'm open for better ideas regarding the audience validation.
-
-The second breaking change is we switched the type of enum PolicyEnforcementMode from int to string.
-
-* Feature: #315 change type of enum PolicyEnforcementMode from int to string
-* Feature: #307 switch jwt lib
-* Feature: #310 type are added to the path of update policy and update permission fix #308
-* Feature: #315 change type of enum PolicyEnforcementMode from int to string
-* Feature: #318 Auth flows and executions
-* Feature: #319 defaults for P* utils
-* Feature: #320 add password policies to server info
-
-### V9
-
-#### V9.0.4
-
-* Feature: #314 Add query parameter search to model GetClientsParams
-* Feature: #313 Added ExactName param to GetSourceParams
-* Feature: #312 Add support for client registration API
-* Feature: #311 Add defaultRole to RealmRepresentation
-
-
-#### V9.0.2
-
-Bugfix: #305 Fix function signature of LoginClientTokenExchange function
-
-
-#### V9.0.1
-
-Breaking changes were introduced in #285
-See: https://github.com/Nerzal/gocloak/pull/285/files
-
-New Features:
-- #301 adding APIs handler to fetch policy resources 
-- #299 GroupList Retrieval by RoleName
-- #296 Fixed incorrect json representation of ResourceType in PermissionRepresentation
-- #294 Remove duplicate quotes in README.md
-- #293 add IDPAlias IDPUserID query parameter to GetUsersParams
-- #290 Consent revocation endpoint
-- #288 Add support for token exchange login method
-
-Bugifxes:
-- #287 bugfix: clear up id of client and client_id confusion
-
-### v8
-
-Features:
-
-- Add DeleteIdentityProviderMapper and GetIdentityProviderMappers #273
-- Adding search by attributes client param #272
-- Add CreateIdentityProviderMapper call #268
-- Add ImportIdentityProviderConfig method #267
-- Added endpoint to support exporting public broker config info #266
-
-Fixes:
-
-- adding "DecisionStrategy" to "ResourceServerRepresentation" #264
-
-### v7
-
-Breaking Change
-
-- Added support for array values in aud claim
-- When decoding an access Token, it is now needed to provide the audience to check
-- Add member "MatchingURI" to GetResourceParams
-- Add resource policy functions (thanks to timdrysdale)
-- Add type field to APIError
-- Most of the protection API should now be implemented (thanks to timdrysdale)
-
-### v6
-
-There are several backward incompatible changes
-
-- all client functions now take `context.Context` as first argument.
-- `UserAttributeContains` was moved from client method to package function.
-- all structures now use pointers for the array types ([]string -> *[]string)
-
-### v5
-
-There is only one change, but it's backward incompatible:
-
-- Wrap Errors and use APIError struct to also provide the httpstatus code. ([#146](https://github.com/Nerzal/gocloak/pull/146))
-
-### v4
-
-There are a lot of backward incompatible changes:
-
-- all functions what create an object now return an ID of the created object. The return statement of those functions has been changed from (error) to (string, error)
-- All structures now use pointers instead of general types (bool -> *bool, string ->*string). It has been done to properly use omitempty tag, otherwise it was impossible to set a false value for any of the bool propertires.
 
 ## Usage
 
 ### Installation
 
 ```shell
-go get github.com/Nerzal/gocloak/v10
+go get github.com/Nerzal/gocloak/v13
 ```
 
 ### Importing
 
 ```go
- import "github.com/Nerzal/gocloak/v10"
+ import "github.com/Nerzal/gocloak/v13"
 ```
 
 ### Create New User
@@ -178,7 +80,7 @@ go get github.com/Nerzal/gocloak/v10
   panic("Inspection failed:"+ err.Error())
  }
 
- if !rptResult.Active {
+ if !*rptResult.Active {
   panic("Token is not active")
  }
 
@@ -258,6 +160,7 @@ type GoCloak interface {
  CreateClientScopeMappingsRealmRoles(ctx context.Context, token, realm, idOfClient string, roles []Role) error
  CreateClientScopeMappingsClientRoles(ctx context.Context, token, realm, idOfClient, idOfSelectedClient string, roles []Role) error
  CreateClientScopesScopeMappingsRealmRoles(ctx context.Context, token, realm, idOfCLientScope string, roles []Role) error
+ CreateClientScopesScopeMappingsClientRoles(ctx context.Context, token, realm, idOfClientScope, idOfClient string, roles []Role) error
 
  UpdateUser(ctx context.Context, accessToken, realm string, user User) error
  UpdateGroup(ctx context.Context, accessToken, realm string, updatedGroup Group) error
@@ -275,6 +178,7 @@ type GoCloak interface {
  DeleteClientScopeMappingsRealmRoles(ctx context.Context, token, realm, idOfClient string, roles []Role) error
  DeleteClientScopeMappingsClientRoles(ctx context.Context, token, realm, idOfClient, idOfSelectedClient string, roles []Role) error
  DeleteClientScopesScopeMappingsRealmRoles(ctx context.Context, token, realm, idOfCLientScope string, roles []Role) error
+ DeleteClientScopesScopeMappingsClientRoles(ctx context.Context, token, realm, idOfClientScope, ifOfClient string, roles []Role) error
 
  GetClient(ctx context.Context, accessToken, realm, idOfClient string) (*Client, error)
  GetClientsDefaultScopes(ctx context.Context, token, realm, idOfClient string) ([]*ClientScope, error)
@@ -291,8 +195,10 @@ type GoCloak interface {
  GetClientScopeMappingsRealmRoles(ctx context.Context, token, realm, idOfClient string) ([]*Role, error)
  GetClientScopeMappingsRealmRolesAvailable(ctx context.Context, token, realm, idOfClient string) ([]*Role, error)
  GetClientScopesScopeMappingsRealmRolesAvailable(ctx context.Context, token, realm, idOfClientScope string) ([]*Role, error)
+ GetClientScopesScopeMappingsClientRolesAvailable(ctx context.Context, token, realm, idOfClientScope, idOfClient string) ([]*Role, error)
  GetClientScopeMappingsClientRoles(ctx context.Context, token, realm, idOfClient, idOfSelectedClient string) ([]*Role, error)
  GetClientScopesScopeMappingsRealmRoles(ctx context.Context, token, realm, idOfClientScope string) ([]*Role, error)
+ GetClientScopesScopeMappingsClientRoles(ctx context.Context, token, realm, idOfClientScope, idOfClient string) ([]*Role, error)
  GetClientScopeMappingsClientRolesAvailable(ctx context.Context, token, realm, idOfClient, idOfSelectedClient string) ([]*Role, error)
  GetClientSecret(ctx context.Context, token, realm, idOfClient string) (*CredentialRepresentation, error)
  GetClientServiceAccount(ctx context.Context, token, realm, idOfClient string) (*User, error)
@@ -374,8 +280,8 @@ type GoCloak interface {
  ClearUserCache(ctx context.Context, token, realm string) error
  ClearKeysCache(ctx context.Context, token, realm string) error
 
- GetClientUserSessions(ctx context.Context, token, realm, idOfClient string) ([]*UserSessionRepresentation, error)
- GetClientOfflineSessions(ctx context.Context, token, realm, idOfClient string) ([]*UserSessionRepresentation, error)
+GetClientUserSessions(ctx context.Context, token, realm, idOfClient string, params ...GetClientUserSessionsParams) ([]*UserSessionRepresentation, error)
+GetClientOfflineSessions(ctx context.Context, token, realm, idOfClient string, params ...GetClientUserSessionsParams) ([]*UserSessionRepresentation, error)
  GetUserSessions(ctx context.Context, token, realm, userID string) ([]*UserSessionRepresentation, error)
  GetUserOfflineSessionsForClient(ctx context.Context, token, realm, userID, idOfClient string) ([]*UserSessionRepresentation, error)
 
@@ -436,7 +342,14 @@ type GoCloak interface {
  MoveCredentialBehind(ctx context.Context, token, realm, userID, credentialID, newPreviousCredentialID string) error
  MoveCredentialToFirst(ctx context.Context, token, realm, userID, credentialID string) error
 
- // *** Identity Providers ***
+// *** Authentication Flows ***
+GetAuthenticationFlows(ctx context.Context, token, realm string) ([]*AuthenticationFlowRepresentation, error)
+GetAuthenticationFlow(ctx context.Context, token, realm string, authenticationFlowID string) (*AuthenticationFlowRepresentation, error)
+CreateAuthenticationFlow(ctx context.Context, token, realm string, flow AuthenticationFlowRepresentation) error
+UpdateAuthenticationFlow(ctx context.Context, token, realm string, flow AuthenticationFlowRepresentation, authenticationFlowID string) (*AuthenticationFlowRepresentation, error)
+DeleteAuthenticationFlow(ctx context.Context, token, realm, flowID string) error
+
+// *** Identity Providers ***
 
  CreateIdentityProvider(ctx context.Context, token, realm string, providerRep IdentityProviderRepresentation) (string, error)
  GetIdentityProvider(ctx context.Context, token, realm, alias string) (*IdentityProviderRepresentation, error)
@@ -561,6 +474,18 @@ yields
 ```
 
 Note that empty parameters are not included, because of the use of ```omitempty``` in the type definitions.
+
+## Examples
+
+* [Add client role to user](./examples/ADD_CLIENT_ROLE_TO_USER.md)
+
+* [Create User Federation & Sync](./examples/USER_FEDERATION.md)
+
+* [Create User Federation & Sync with group ldap mapper](./examples/USER_FEDERATION_GROUP_LDAP_MAPPER.md)
+
+* [Create User Federation & Sync with role ldap mapper](./examples/USER_FEDERATION_ROLE_LDAP_MAPPER.md)
+
+* [Create User Federation & Sync with user attribute ldap mapper](./examples/USER_FEDERATION_USER_ATTRIBUTE_LDAP_MAPPER.md)
 
 ## License
 

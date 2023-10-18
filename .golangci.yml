@@ -9,9 +9,8 @@ linters:
     - gofmt
     - misspell
     - gosec
-    - maligned
     - unconvert
-    - golint
+    - revive
     - gocognit
     - gocyclo
   fast: true
@@ -40,5 +39,6 @@ issues:
         - gocyclo
         - dupl
         - gosec
+        - gocognit
   exclude:
     - should have a package comment

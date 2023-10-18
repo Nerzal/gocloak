@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/Nerzal/gocloak/v10"
+	"github.com/Nerzal/gocloak/v13"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -36,8 +36,53 @@ func TestStringOrArray_Marshal(t *testing.T) {
 
 	dataArray := gocloak.StringOrArray{"1", "2", "3"}
 	jsonArray, err := json.Marshal(&dataArray)
-	assert.NoError(t, err, "Marshaling failed for array of strings: %s", dataString)
+	assert.NoError(t, err, "Marshaling failed for array of strings: %s", dataArray)
 	assert.Equal(t, "[\"1\",\"2\",\"3\"]", string(jsonArray))
+}
+
+func TestEnforcedString_UnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	type testData struct {
+		In  []byte
+		Out gocloak.EnforcedString
+	}
+
+	data := []testData{{
+		In:  []byte(`"string value"`),
+		Out: "string value",
+	}, {
+		In:  []byte(`"\"quoted string value\""`),
+		Out: `"quoted string value"`,
+	}, {
+		In:  []byte(`true`),
+		Out: "true",
+	}, {
+		In:  []byte(`42`),
+		Out: "42",
+	}, {
+		In:  []byte(`{"foo": "bar"}`),
+		Out: `{"foo": "bar"}`,
+	}, {
+		In:  []byte(`["foo"]`),
+		Out: `["foo"]`,
+	}}
+
+	for _, d := range data {
+		var val gocloak.EnforcedString
+		err := json.Unmarshal(d.In, &val)
+		assert.NoErrorf(t, err, "Unmarshalling failed with data: %v", d.In)
+		assert.Equal(t, d.Out, val)
+	}
+}
+
+func TestEnforcedString_MarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	data := gocloak.EnforcedString("foo")
+	jsonString, err := json.Marshal(&data)
+	assert.NoErrorf(t, err, "Unmarshalling failed with data: %v", data)
+	assert.Equal(t, `"foo"`, string(jsonString))
 }
 
 func TestGetQueryParams(t *testing.T) {
@@ -122,7 +167,7 @@ func TestParseAPIErrType(t *testing.T) {
 }
 
 func TestStringer(t *testing.T) {
-	//nested structs
+	// nested structs
 	actions := []string{"someAction", "anotherAction"}
 	access := gocloak.AccessRepresentation{
 		Manage:      gocloak.BoolP(true),
@@ -202,7 +247,6 @@ func TestStringer(t *testing.T) {
 	"displayName": "someRealm"
 }`
 	assert.Equal(t, expectedStr, str)
-
 }
 
 type Stringable interface {
@@ -210,7 +254,6 @@ type Stringable interface {
 }
 
 func TestStringerOmitEmpty(t *testing.T) {
-
 	customs := []Stringable{
 		&gocloak.CertResponseKey{},
 		&gocloak.CertResponse{},
@@ -218,11 +261,10 @@ func TestStringerOmitEmpty(t *testing.T) {
 		&gocloak.ResourcePermission{},
 		&gocloak.PermissionResource{},
 		&gocloak.PermissionScope{},
-		&gocloak.RetrospecTokenResult{},
+		&gocloak.IntroSpectTokenResult{},
 		&gocloak.User{},
 		&gocloak.SetPasswordRequest{},
 		&gocloak.Component{},
-		&gocloak.ComponentConfig{},
 		&gocloak.KeyStoreConfig{},
 		&gocloak.ActiveKeys{},
 		&gocloak.Key{},
@@ -267,7 +309,7 @@ func TestStringerOmitEmpty(t *testing.T) {
 		&gocloak.UserSessionRepresentation{},
 		&gocloak.SystemInfoRepresentation{},
 		&gocloak.MemoryInfoRepresentation{},
-		&gocloak.ServerInfoRepesentation{},
+		&gocloak.ServerInfoRepresentation{},
 		&gocloak.FederatedIdentityRepresentation{},
 		&gocloak.IdentityProviderRepresentation{},
 		&gocloak.GetResourceParams{},
@@ -289,14 +331,14 @@ func TestStringerOmitEmpty(t *testing.T) {
 		&gocloak.GetResourcePoliciesParams{},
 		&gocloak.CredentialRepresentation{},
 		&gocloak.GetUsersParams{},
+		&gocloak.GetComponentsParams{},
 		&gocloak.GetClientsParams{},
 		&gocloak.RequestingPartyTokenOptions{},
 		&gocloak.RequestingPartyPermission{},
+		&gocloak.GetClientUserSessionsParams{},
 	}
 
 	for _, custom := range customs {
-
 		assert.Equal(t, "{}", custom.(Stringable).String())
 	}
-
 }
