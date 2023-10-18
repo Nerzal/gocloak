@@ -2216,11 +2216,13 @@ func Test_CreateListGetUpdateDeleteClient(t *testing.T) {
 
 func Test_CreateListGetUpdateDeleteClientRepresentation(t *testing.T) {
 	t.Parallel()
+
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	token := GetClientToken(t, client)
 	testClient := gocloak.Client{
-		ClientID: GetRandomNameP("gocloak-client-secret-client-id-"),
+		ClientID:            GetRandomNameP("gocloak-client-secret-client-id-"),
+		DefaultClientScopes: &[]string{},
 	}
 
 	ctx := context.Background()
