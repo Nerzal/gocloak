@@ -11,6 +11,8 @@
     "password": "test",
     "realm": "gocloak",
     "client_id": "gocloak",
-    "client_secret": "gocloak-secret"
+    "client_secret": "gocloak-secret",
+    "token": "ya29.A0ARrdaM-M-0Hzf_rLH7OaZRiLM7ab14qihA6Gf7BytLGt_R0uacRurnFmYolDSAqeZRECc044aM0MgJQsdMjoHd2mStbccZe_o8N--Wq3wQSIVRDMJC0tGZHC9P1Wb9VkLMF2b8cDcrmj7gpfxjwqjWXZFD_M2w",
+    "issuer": "google"
   }
 }

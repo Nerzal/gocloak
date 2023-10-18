@@ -3,11 +3,12 @@ version: '3'
 services:
   keycloak:
     build: .
-    command: -Dauto-build -Dfeatures=preview
+    command: -Dauto-build -Dfeatures=preview -Dkeycloak.profile.feature.upload_scripts=enabled
     environment:
       KEYCLOAK_USER: admin
       KEYCLOAK_PASSWORD: secret
       KEYCLOAK_ADMIN: admin
+      JAVA_OPTS_APPEND: "-Dkeycloak.profile=preview -Dkeycloak.profile.feature.admin_fine_grained_authz=enabled -Dkeycloak.profile.feature.token_exchange=enabled -Dkeycloak.profile.feature.upload_scripts=enabled"
       KEYCLOAK_ADMIN_PASSWORD: secret
       KC_HEALTH_ENABLED: "true"
     ports:
@@ -19,5 +20,5 @@ services:
       retries: 5
     volumes:
       -  ./testdata/gocloak-realm.json:/opt/keycloak/data/import/gocloak-realm.json
-    entrypoint: ["/opt/keycloak/bin/kc.sh", "start-dev --features=preview --import-realm"]
+    entrypoint: ["/opt/keycloak/bin/kc.sh", "start-dev --features=preview --features=scripts --features=client-policies --features=admin-fine-grained-authz --features=token-exchange --import-realm"]
  

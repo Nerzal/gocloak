@@ -63,27 +63,32 @@ func (g *GoCloak) GetRequestWithBearerAuthNoCache(ctx context.Context, token str
 	return g.GetRequest(ctx).
 		SetAuthToken(token).
 		SetHeader("Content-Type", "application/json").
-		SetHeader("Cache-Control", "no-cache")
+		SetHeader("Cache-Control", "no-cache").
+		SetHeader("Accept-Charset", "utf-8")
 }
 
 // GetRequestWithBearerAuth returns a JSON base request configured with an auth token.
 func (g *GoCloak) GetRequestWithBearerAuth(ctx context.Context, token string) *resty.Request {
 	return g.GetRequest(ctx).
 		SetAuthToken(token).
-		SetHeader("Content-Type", "application/json")
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Accept-Charset", "utf-8")
 }
 
 // GetRequestWithBearerAuthXMLHeader returns an XML base request configured with an auth token.
 func (g *GoCloak) GetRequestWithBearerAuthXMLHeader(ctx context.Context, token string) *resty.Request {
 	return g.GetRequest(ctx).
 		SetAuthToken(token).
-		SetHeader("Content-Type", "application/xml;charset=UTF-8")
+		SetHeader("Content-Type", "application/xml;charset=UTF-8").
+		SetHeader("Accept-Charset", "utf-8")
 }
 
 // GetRequestWithBasicAuth returns a form data base request configured with basic auth.
 func (g *GoCloak) GetRequestWithBasicAuth(ctx context.Context, clientID, clientSecret string) *resty.Request {
 	req := g.GetRequest(ctx).
-		SetHeader("Content-Type", "application/x-www-form-urlencoded")
+		SetHeader("Content-Type", "application/x-www-form-urlencoded").
+		SetHeader("Accept-Charset", "utf-8")
+
 	// Public client doesn't require Basic Auth
 	if len(clientID) > 0 && len(clientSecret) > 0 {
 		httpBasicAuth := base64.StdEncoding.EncodeToString([]byte(clientID + ":" + clientSecret))
@@ -579,6 +584,21 @@ func (g *GoCloak) LoginClientTokenExchange(ctx context.Context, clientID, token,
 		tokenOptions.RequestedSubject = &userID
 	}
 	return g.GetToken(ctx, realm, tokenOptions)
+}
+
+// LoginSocialTokenExchange will exchange the presented token for a user's token
+// Requires Token-Exchange is enabled: https://www.keycloak.org/docs/latest/securing_apps/index.html#external-token-to-internal-token-exchange
+func (g *GoCloak) LoginSocialTokenExchange(ctx context.Context, clientID, token, clientSecret, realm, issuer string) (*JWT, error) {
+	return g.GetToken(ctx, realm, TokenOptions{
+		ClientID:           &clientID,
+		ClientSecret:       &clientSecret,
+		GrantType:          StringP("urn:ietf:params:oauth:grant-type:token-exchange"),
+		SubjectToken:       &token,
+		SubjectIssuer:      &issuer,
+		SubjectTokenType:   StringP("urn:ietf:params:oauth:token-type:access_token"),
+		RequestedTokenType: StringP("urn:ietf:params:oauth:token-type:refresh_token"),
+		Scope:              StringP("openid"),
+	})
 }
 
 // LoginClientSignedJWT performs a login with client credentials and signed jwt claims
@@ -4031,6 +4051,7 @@ func (g *GoCloak) UpdateCredentialUserLabel(ctx context.Context, token, realm, u
 
 	resp, err := g.GetRequestWithBearerAuth(ctx, token).
 		SetHeader("Content-Type", "text/plain").
+		SetHeader("Accept-Charset", "utf-8").
 		SetBody(userLabel).
 		Put(g.getAdminRealmURL(realm, "users", userID, "credentials", credentialID, "userLabel"))
 
