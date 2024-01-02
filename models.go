@@ -441,6 +441,7 @@ type ProtocolMappersConfig struct {
 	ClaimValue                         *string `json:"claim.value,omitempty"`
 	JSONTypeLabel                      *string `json:"jsonType.label,omitempty"`
 	Multivalued                        *string `json:"multivalued,omitempty"`
+	AggregateAttrs                     *string `json:"aggregate.attrs,omitempty"`
 	UsermodelClientRoleMappingClientID *string `json:"usermodel.clientRoleMapping.clientId,omitempty"`
 	IncludedClientAudience             *string `json:"included.client.audience,omitempty"`
 	FullPath                           *string `json:"full.path,omitempty"`
