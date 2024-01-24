@@ -2458,6 +2458,39 @@ func Test_GetGroupMembers(t *testing.T) {
 	require.Len(t, users, 1)
 }
 
+func Test_GetChildGroups(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	tearDown, parentGroupID := CreateGroup(t, client)
+	defer tearDown()
+
+	childGroupIDs := make([]string, 0)
+	for i := 0; i < 2; i++ {
+		id, err := client.CreateChildGroup(
+			context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			parentGroupID,
+			gocloak.Group{
+				Name: GetRandomNameP("GroupName"),
+			},
+		)
+		require.NoError(t, err, "CreateChildGroup failed")
+		childGroupIDs = append(childGroupIDs, id)
+	}
+
+	res, err := client.GetChildGroups(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		parentGroupID)
+	require.NoError(t, err, "GetChildGroups failed")
+	require.Len(t, res, len(childGroupIDs))
+}
+
 func Test_ListAddRemoveDefaultGroups(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
