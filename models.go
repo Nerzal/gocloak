@@ -965,18 +965,20 @@ func (t *TokenOptions) FormData() map[string]string {
 
 // RequestingPartyTokenOptions represents the options to obtain a requesting party token
 type RequestingPartyTokenOptions struct {
-	GrantType                   *string   `json:"grant_type,omitempty"`
-	Ticket                      *string   `json:"ticket,omitempty"`
-	ClaimToken                  *string   `json:"claim_token,omitempty"`
-	ClaimTokenFormat            *string   `json:"claim_token_format,omitempty"`
-	RPT                         *string   `json:"rpt,omitempty"`
-	Permissions                 *[]string `json:"-"`
-	Audience                    *string   `json:"audience,omitempty"`
-	ResponseIncludeResourceName *bool     `json:"response_include_resource_name,string,omitempty"`
-	ResponsePermissionsLimit    *uint32   `json:"response_permissions_limit,omitempty"`
-	SubmitRequest               *bool     `json:"submit_request,string,omitempty"`
-	ResponseMode                *string   `json:"response_mode,omitempty"`
-	SubjectToken                *string   `json:"subject_token,omitempty"`
+	GrantType                     *string   `json:"grant_type,omitempty"`
+	Ticket                        *string   `json:"ticket,omitempty"`
+	ClaimToken                    *string   `json:"claim_token,omitempty"`
+	ClaimTokenFormat              *string   `json:"claim_token_format,omitempty"`
+	RPT                           *string   `json:"rpt,omitempty"`
+	Permissions                   *[]string `json:"-"`
+	PermissionResourceFormat      *string   `json:"permission_resource_format,omitempty"`
+	PermissionResourceMatchingURI *bool     `json:"permission_resource_matching_uri,string,omitempty"`
+	Audience                      *string   `json:"audience,omitempty"`
+	ResponseIncludeResourceName   *bool     `json:"response_include_resource_name,string,omitempty"`
+	ResponsePermissionsLimit      *uint32   `json:"response_permissions_limit,omitempty"`
+	SubmitRequest                 *bool     `json:"submit_request,string,omitempty"`
+	ResponseMode                  *string   `json:"response_mode,omitempty"`
+	SubjectToken                  *string   `json:"subject_token,omitempty"`
 }
 
 // FormData returns a map of options to be used in SetFormData function
