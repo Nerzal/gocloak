@@ -1739,6 +1739,23 @@ func (g *GoCloak) GetGroups(ctx context.Context, token, realm string, params Get
 	return result, nil
 }
 
+// GetChildGroups get child groups of group with id in realm
+func (g *GoCloak) GetChildGroups(ctx context.Context, token, realm, groupID string) ([]*Group, error) {
+	const errMessage = "could not get child groups"
+
+	var result []*Group
+
+	resp, err := g.GetRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, "groups", groupID, "children"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // GetGroupManagementPermissions returns whether group Authorization permissions have been initialized or not and a reference
 // to the managed permissions
 func (g *GoCloak) GetGroupManagementPermissions(ctx context.Context, token, realm string, idOfGroup string) (*ManagementPermissionRepresentation, error) {
