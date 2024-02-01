@@ -972,7 +972,7 @@ type RequestingPartyTokenOptions struct {
 	RPT                           *string   `json:"rpt,omitempty"`
 	Permissions                   *[]string `json:"-"`
 	PermissionResourceFormat      *string   `json:"permission_resource_format,omitempty"`
-	PermissionResourceMatchingUri *bool     `json:"permission_resource_matching_uri,string,omitempty"`
+	PermissionResourceMatchingURI *bool     `json:"permission_resource_matching_uri,string,omitempty"`
 	Audience                      *string   `json:"audience,omitempty"`
 	ResponseIncludeResourceName   *bool     `json:"response_include_resource_name,string,omitempty"`
 	ResponsePermissionsLimit      *uint32   `json:"response_permissions_limit,omitempty"`
