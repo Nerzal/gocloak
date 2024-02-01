@@ -508,7 +508,6 @@ func (g *GoCloak) GetRequestingPartyPermissions(ctx context.Context, token, real
 	if err := checkForError(resp, err, errMessage); err != nil {
 		return nil, err
 	}
-
 	return &res, nil
 }
 
@@ -4303,4 +4302,39 @@ func (g *GoCloak) RevokeToken(ctx context.Context, realm, clientID, clientSecret
 		Post(g.getRealmURL(realm, g.Config.revokeEndpoint))
 
 	return checkForError(resp, err, errMessage)
+}
+
+// UpdateUsersManagementPermissions updates the management permissions for users
+func (g *GoCloak) UpdateUsersManagementPermissions(ctx context.Context, accessToken, realm string, managementPermissions ManagementPermissionRepresentation) (*ManagementPermissionRepresentation, error) {
+	const errMessage = "could not update users management permissions"
+
+	var result ManagementPermissionRepresentation
+
+	resp, err := g.GetRequestWithBearerAuth(ctx, accessToken).
+		SetResult(&result).
+		SetBody(managementPermissions).
+		Put(g.getAdminRealmURL(realm, "users-management-permissions"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// GetUsersManagementPermissions returns the management permissions for users
+func (g *GoCloak) GetUsersManagementPermissions(ctx context.Context, accessToken, realm string) (*ManagementPermissionRepresentation, error) {
+	const errMessage = "could not get users management permissions"
+
+	var result ManagementPermissionRepresentation
+
+	resp, err := g.GetRequestWithBearerAuth(ctx, accessToken).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, "users-management-permissions"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }
