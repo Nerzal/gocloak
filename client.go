@@ -580,7 +580,7 @@ func (g *GoCloak) LoginClientTokenExchange(ctx context.Context, clientID, token,
 	return g.GetToken(ctx, realm, tokenOptions)
 }
 
-// Performs "Direct Naked Impersonation"
+// DirectNakedImpersonationTokenExchange performs "Direct Naked Impersonation"
 // See: https://www.keycloak.org/docs/latest/securing_apps/index.html#direct-naked-impersonation
 func (g *GoCloak) DirectNakedImpersonationTokenExchange(ctx context.Context, clientID, clientSecret, realm, userID string) (*JWT, error) {
 	tokenOptions := TokenOptions{
