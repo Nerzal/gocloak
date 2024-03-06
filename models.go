@@ -408,6 +408,7 @@ type MappingsRepresentation struct {
 type ClientScope struct {
 	ID                    *string                `json:"id,omitempty"`
 	Name                  *string                `json:"name,omitempty"`
+	Type                  *string                `json:"type,omitempty"`
 	Description           *string                `json:"description,omitempty"`
 	Protocol              *string                `json:"protocol,omitempty"`
 	ClientScopeAttributes *ClientScopeAttributes `json:"attributes,omitempty"`
