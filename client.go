@@ -2368,7 +2368,9 @@ func (g *GoCloak) GetAvailableRealmRolesByGroupID(ctx context.Context, token, re
 // GetRealm returns top-level representation of the realm
 func (g *GoCloak) GetRealm(ctx context.Context, token, realm string) (*RealmRepresentation, error) {
 	const errMessage = "could not get realm"
-
+	if realm == "" {
+		return nil, errors.New("realm is empty")
+	}
 	var result RealmRepresentation
 	resp, err := g.GetRequestWithBearerAuth(ctx, token).
 		SetResult(&result).
