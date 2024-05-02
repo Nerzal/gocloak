@@ -713,6 +713,53 @@ type UserInfo struct {
 	UpdatedAt           *int             `json:"updated_at,omitempty"`
 }
 
+type UserProfileAttribute struct {
+	Name        *string                          `json:"name,omitempty"`
+	DisplayName *string                          `json:"displayName,omitempty"`
+	Validations map[string]interface{}           `json:"validations,omitempty"`
+	Annotations map[string]interface{}           `json:"annotations,omitempty"`
+	Required    *UserProfileAttributeRequired    `json:"required,omitempty"`
+	Permissions *UserProfileAttributePermissions `json:"permissions,omitempty"`
+	Selector    *UserProfileAttributeSelector    `json:"selector,omitempty"`
+	Group       *string                          `json:"group,omitempty"`
+	MultiValued *bool                            `json:"multivalued,omitempty"`
+}
+
+type UserProfileAttributePermissions struct {
+	View []string `json:"view,omitempty"`
+	Edit []string `json:"edit,omitempty"`
+}
+
+type UserProfileAttributeRequired struct {
+	Roles  []string `json:"roles,omitempty"`
+	Scopes []string `json:"scopes,omitempty"`
+}
+
+type UserProfileAttributeSelector struct {
+	Scopes []string `json:"scopes,omitempty"`
+}
+
+type UserProfileConfig struct {
+	Attributes               []UserProfileAttribute    `json:"attributes,omitempty"`
+	Groups                   []UserProfileGroup        `json:"groups,omitempty"`
+	UnmanagedAttributePolicy *UnmanagedAttributePolicy `json:"unmanagedAttributePolicy,omitempty"`
+}
+
+type UserProfileGroup struct {
+	Name               *string                `json:"name,omitempty"`
+	DisplayHeader      *string                `json:"displayHeader,omitempty"`
+	DisplayDescription *string                `json:"displayDescription,omitempty"`
+	Annotations        map[string]interface{} `json:"annotations,omitempty"`
+}
+
+type UnmanagedAttributePolicy string
+
+const (
+	UnmanagedAttributePolicyEnabled   UnmanagedAttributePolicy = "ENABLED"
+	UnmanagedAttributePolicyAdminView UnmanagedAttributePolicy = "ADMIN_VIEW"
+	UnmanagedAttributePolicyAdminEdit UnmanagedAttributePolicy = "ADMIN_EDIT"
+)
+
 // RolesRepresentation represents the roles of a realm
 type RolesRepresentation struct {
 	Client *map[string][]Role `json:"client,omitempty"`

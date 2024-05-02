@@ -2669,6 +2669,22 @@ func (g *GoCloak) GetUserGroups(ctx context.Context, token, realm, userID string
 	return result, nil
 }
 
+// GetUserProfileConfig retrieves the user profile configuration for a realm
+func (g *GoCloak) GetUserProfileConfig(ctx context.Context, token, realm string) (*UserProfileConfig, error) {
+	const errMessage = "could not get user profile configuration"
+
+	var result UserProfileConfig
+	resp, err := g.GetRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, "users", "profile"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
 // GetUsers get all users in realm
 func (g *GoCloak) GetUsers(ctx context.Context, token, realm string, params GetUsersParams) ([]*User, error) {
 	const errMessage = "could not get users"
@@ -3856,6 +3872,17 @@ func checkPermissionUpdateParams(permission PermissionGrantParams) error {
 		return errors.New("granted required to update user permission")
 	}
 	return nil
+}
+
+// UpdateUserProfileConfig updates the user profile configuration for a realm
+func (g *GoCloak) UpdateUserProfileConfig(ctx context.Context, token, realm string, config UserProfileConfig) error {
+	const errMessage = "could not update user profile configuration"
+
+	resp, err := g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(config).
+		Put(g.getAdminRealmURL(realm, "users", "profile"))
+
+	return checkForError(resp, err, errMessage)
 }
 
 // UpdateUserPermission updates user permissions.
