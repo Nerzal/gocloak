@@ -138,6 +138,7 @@ type GoCloak interface {
  LoginClient(ctx context.Context, clientID, clientSecret, realm string) (*JWT, error)
  LoginClientSignedJWT(ctx context.Context, clientID, realm string, key interface{}, signedMethod jwt.SigningMethod, expiresAt *jwt.Time) (*JWT, error)
  LoginAdmin(ctx context.Context, username, password, realm string) (*JWT, error)
+ LoginAdminOtp(ctx context.Context, username, password, totp, realm string) (*JWT, error)
  RefreshToken(ctx context.Context, refreshToken, clientID, clientSecret, realm string) (*JWT, error)
  DecodeAccessToken(ctx context.Context, accessToken, realm, expectedAudience string) (*jwt.Token, *jwt.MapClaims, error)
  DecodeAccessTokenCustomClaims(ctx context.Context, accessToken, realm, expectedAudience string, claims jwt.Claims) (*jwt.Token, error)
