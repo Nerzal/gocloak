@@ -495,7 +495,7 @@ func (w *RestyLogWriter) write(format string, v ...interface{}) {
 func NewClientWithDebug(t testing.TB) *gocloak.GoCloak {
 	cfg := GetConfig(t)
 	client := gocloak.NewClient(cfg.HostName)
-	cond := func(resp *resty.Response, err error) bool {
+	cond := func(resp *resty.Response, _ error) bool {
 		if resp != nil && resp.IsError() {
 			if e, ok := resp.Error().(*gocloak.HTTPErrorResponse); ok {
 				msg := e.String()
@@ -536,7 +536,7 @@ func NewClientWithDebug(t testing.TB) *gocloak.GoCloak {
 //	skipN = number of requests to be executed and not failed by this function
 func FailRequest(client *gocloak.GoCloak, err error, failN, skipN int) *gocloak.GoCloak {
 	client.RestyClient().OnBeforeRequest(
-		func(c *resty.Client, r *resty.Request) error {
+		func(_ *resty.Client, r *resty.Request) error {
 			if skipN > 0 {
 				skipN--
 				return nil
@@ -6253,7 +6253,7 @@ func Test_CreatePermissionTicket(t *testing.T) {
 	require.NoError(t, err, "CreatePermissionTicket failed")
 	t.Logf("Created PermissionTicket: %+v", *(ticket.Ticket))
 
-	pt, err := jwt.ParseWithClaims(*(ticket.Ticket), &gocloak.PermissionTicketRepresentation{}, func(token *jwt.Token) (interface{}, error) {
+	pt, err := jwt.ParseWithClaims(*(ticket.Ticket), &gocloak.PermissionTicketRepresentation{}, func(_ *jwt.Token) (interface{}, error) {
 		return []byte(""), nil
 	})
 
