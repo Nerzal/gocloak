@@ -74,7 +74,7 @@ func GetConfig(t testing.TB) *Config {
 			err := configFile.Close()
 			require.NoError(t, err, "cannot close config file")
 		}()
-		data, err := ioutil.ReadAll(configFile)
+		data, err := io.ReadAll(configFile)
 		require.NoError(t, err, "cannot read config.json")
 		config = &Config{}
 		err = json.Unmarshal(data, config)
