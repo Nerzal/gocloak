@@ -1701,13 +1701,18 @@ func (g *GoCloak) GetGroup(ctx context.Context, token, realm, groupID string) (*
 }
 
 // GetChildGroups get child groups of group with id in realm
-func (g *GoCloak) GetChildGroups(ctx context.Context, token, realm, groupID string) ([]*Group, error) {
+func (g *GoCloak) GetChildGroups(ctx context.Context, token, realm, groupID string, params GetChildGroupsParams) ([]*Group, error) {
 	const errMessage = "could not get child groups"
 
 	var result []*Group
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, errors.Wrap(err, errMessage)
+	}
 
 	resp, err := g.GetRequestWithBearerAuth(ctx, token).
 		SetResult(&result).
+		SetQueryParams(queryParams).
 		Get(g.getAdminRealmURL(realm, "groups", groupID, "children"))
 
 	if err := checkForError(resp, err, errMessage); err != nil {

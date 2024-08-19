@@ -2437,25 +2437,29 @@ func Test_GetChildGroups(t *testing.T) {
 	tearDown, groupID := CreateGroup(t, client)
 	defer tearDown()
 
-	childGroupID, err := client.CreateChildGroup(context.Background(),
-		token.AccessToken,
-		cfg.GoCloak.Realm,
-		groupID,
-		gocloak.Group{
-			Name: GetRandomNameP("Group"),
-		},
-	)
-	require.NoError(t, err, "CreateChildGroup failed")
+	childGroupIDs := []string{}
+	for i := 0; i < 3; i++ {
+		childGroupID, err := client.CreateChildGroup(context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			groupID,
+			gocloak.Group{
+				Name: GetRandomNameP("Group"),
+			},
+		)
+		require.NoError(t, err, "CreateChildGroup failed")
+		childGroupIDs = append(childGroupIDs, childGroupID)
+	}
 
 	childGroups, err := client.GetChildGroups(
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		groupID,
+		gocloak.GetChildGroupsParams{},
 	)
-	require.NoError(t, err, "GetChildGroup failed")
-	require.Len(t, childGroups, 1)
-	require.Equal(t, childGroupID, *childGroups[0].ID)
+	require.NoError(t, err, "GetChildGroups failed")
+	require.Len(t, childGroups, len(childGroupIDs))
 }
 
 func Test_GetGroupMembers(t *testing.T) {
