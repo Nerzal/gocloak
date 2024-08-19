@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 services:
   keycloak:
@@ -12,8 +12,9 @@ services:
       KC_HEALTH_ENABLED: "true"
     ports:
       - "8080:8080"
+      - "9000:9000"
     healthcheck:
-      test: curl --fail --silent http://localhost:8080/health/ready 2>&1 || exit 1
+      test: curl --fail --silent http://localhost:9000/health/ready 2>&1 || exit 1
       interval: 10s
       timeout: 10s
       retries: 5
