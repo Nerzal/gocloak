@@ -2427,6 +2427,36 @@ func Test_GetGroupFull(t *testing.T) {
 	require.True(t, ok, "UserAttributeContains")
 }
 
+func Test_GetChildGroups(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	tearDown, groupID := CreateGroup(t, client)
+	defer tearDown()
+
+	childGroupID, err := client.CreateChildGroup(context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		groupID,
+		gocloak.Group{
+			Name: GetRandomNameP("Group"),
+		},
+	)
+	require.NoError(t, err, "CreateChildGroup failed")
+
+	childGroups, err := client.GetChildGroups(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		groupID,
+	)
+	require.NoError(t, err, "GetChildGroup failed")
+	require.Len(t, childGroups, 1)
+	require.Equal(t, childGroupID, *childGroups[0].ID)
+}
+
 func Test_GetGroupMembers(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)

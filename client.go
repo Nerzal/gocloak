@@ -1700,6 +1700,23 @@ func (g *GoCloak) GetGroup(ctx context.Context, token, realm, groupID string) (*
 	return &result, nil
 }
 
+// GetChildGroups get child groups of group with id in realm
+func (g *GoCloak) GetChildGroups(ctx context.Context, token, realm, groupID string) ([]*Group, error) {
+	const errMessage = "could not get child groups"
+
+	var result []*Group
+
+	resp, err := g.GetRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, "groups", groupID, "children"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // GetGroupByPath get group with path in realm
 func (g *GoCloak) GetGroupByPath(ctx context.Context, token, realm, groupPath string) (*Group, error) {
 	const errMessage = "could not get group"
