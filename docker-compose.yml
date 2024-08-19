@@ -20,4 +20,4 @@ services:
       retries: 5
     volumes:
       - ./testdata/gocloak-realm.json:/opt/keycloak/data/import/gocloak-realm.json
-    entrypoint: ["/opt/keycloak/bin/kc.sh", "start-dev"]
+    entrypoint: ["/opt/keycloak/bin/kc.sh", "start-dev", "--features=preview", "--import-realm"]
