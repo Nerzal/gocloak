@@ -1411,6 +1411,11 @@ type RequiredActionProviderRepresentation struct {
 	ProviderID    *string            `json:"providerId,omitempty"`
 }
 
+type UnregisteredRequiredActionProviderRepresentation struct {
+	Name       *string `json:"name,omitempty"`
+	ProviderID *string `json:"providerId,omitempty"`
+}
+
 // ManagementPermissionRepresentation is a representation of management permissions
 // v18: https://www.keycloak.org/docs-api/18.0/rest-api/#_managementpermissionreference
 type ManagementPermissionRepresentation struct {
