@@ -214,7 +214,7 @@ type GoCloak interface {
  GetGroups(ctx context.Context, accessToken, realm string, params GetGroupsParams) ([]*Group, error)
  GetGroupsCount(ctx context.Context, token, realm string, params GetGroupsParams) (int, error)
  GetGroup(ctx context.Context, accessToken, realm, groupID string) (*Group, error)
- GetChildGroups(ctx context.Context, token, realm, groupID string) ([]*Group, error)
+ GetChildGroups(ctx context.Context, token, realm, groupID string, params GetChildGroupsParams) ([]*Group, error)
  GetDefaultGroups(ctx context.Context, accessToken, realm string) ([]*Group, error)
  AddDefaultGroup(ctx context.Context, accessToken, realm, groupID string) error
  RemoveDefaultGroup(ctx context.Context, accessToken, realm, groupID string) error
