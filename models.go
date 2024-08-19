@@ -3,6 +3,8 @@ package gocloak
 import (
 	"bytes"
 	"encoding/json"
+	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -989,10 +991,38 @@ func (t *RequestingPartyTokenOptions) FormData() map[string]string {
 	if t.ResponseIncludeResourceName == nil { // defaults to true if no value set
 		t.ResponseIncludeResourceName = BoolP(true)
 	}
+	res := make(map[string]string)
+	v := reflect.ValueOf(t).Elem()
+	typeOf := v.Type()
 
-	m, _ := json.Marshal(t)
-	var res map[string]string
-	_ = json.Unmarshal(m, &res)
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		fieldType := typeOf.Field(i)
+		jsonTag := fieldType.Tag.Get("json")
+		if jsonTag == "-" {
+			continue
+		}
+
+		jsonName := strings.Split(jsonTag, ",")[0]
+		if jsonName == "" {
+			jsonName = fieldType.Name
+		}
+
+		switch field.Kind() {
+		case reflect.Ptr:
+			if !field.IsNil() {
+				switch field.Elem().Kind() {
+				case reflect.String:
+					res[jsonName] = field.Elem().String()
+				case reflect.Bool:
+					res[jsonName] = strconv.FormatBool(field.Elem().Bool())
+				case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+					res[jsonName] = strconv.FormatUint(field.Elem().Uint(), 10)
+				}
+			}
+		}
+
+	}
 	return res
 }
 
