@@ -820,7 +820,7 @@ func Test_LoginClient_UnknownRealm(t *testing.T) {
 		cfg.GoCloak.ClientSecret,
 		"ThisRealmDoesNotExist")
 	require.Error(t, err, "Login shouldn't be successful")
-	require.EqualError(t, err, "404 Not Found: Realm does not exist")
+	require.EqualError(t, err, "404 Not Found: Realm does not exist: For more on this error consult the server log at the debug level.")
 }
 
 func Test_GetIssuer(t *testing.T) {
@@ -1410,8 +1410,9 @@ func CreateClientScope(t *testing.T, client *gocloak.GoCloak, scope *gocloak.Cli
 
 	if scope == nil {
 		scope = &gocloak.ClientScope{
-			ID:   GetRandomNameP("client-scope-id-"),
-			Name: GetRandomNameP("client-scope-name-"),
+			ID:       GetRandomNameP("client-scope-id-"),
+			Name:     GetRandomNameP("client-scope-name-"),
+			Protocol: gocloak.StringP("openid-connect"),
 		}
 	}
 
@@ -1422,10 +1423,10 @@ func CreateClientScope(t *testing.T, client *gocloak.GoCloak, scope *gocloak.Cli
 		cfg.GoCloak.Realm,
 		*scope,
 	)
+	require.NoError(t, err, "CreateClientScope failed")
 	if !gocloak.NilOrEmpty(scope.ID) {
 		require.Equal(t, clientScopeID, *scope.ID)
 	}
-	require.NoError(t, err, "CreateClientScope failed")
 	tearDown := func() {
 		err := client.DeleteClientScope(
 			context.Background(),
@@ -2634,10 +2635,10 @@ func Test_SendVerifyEmail(t *testing.T) {
 		cfg.GoCloak.Realm,
 		params)
 	if err != nil {
-		if err.Error() == "500 Internal Server Error: Failed to send execute actions email" {
+		if err.Error() == "500 Internal Server Error: Failed to send verify email" {
 			return
 		}
-		require.NoError(t, err, "ExecuteActionsEmail failed")
+		require.NoError(t, err, "SendVerifyEmail failed")
 	}
 }
 
@@ -4859,7 +4860,7 @@ func Test_CreateDeleteClientScopeWithMappers(t *testing.T) {
 		cfg.GoCloak.Realm,
 		id,
 	)
-	require.EqualError(t, err, "404 Not Found: Could not find client scope")
+	require.EqualError(t, err, "404 Not Found: Could not find client scope: For more on this error consult the server log at the debug level.")
 	require.Nil(t, clientScopeActual, "client scope has not been deleted")
 }
 
@@ -5778,8 +5779,8 @@ func Test_GetAuthorizationPolicyScopes(t *testing.T) {
 	require.Equal(t, *scopes[0].ID, scopeID)
 
 	defer func() {
-		scope()
 		policy()
+		scope()
 	}()
 }
 
@@ -6450,7 +6451,7 @@ func Test_CheckError(t *testing.T) {
 
 	expectedError := &gocloak.APIError{
 		Code:    http.StatusNotFound,
-		Message: "404 Not Found: Could not find client",
+		Message: "404 Not Found: Could not find client: For more on this error consult the server log at the debug level.",
 		Type:    gocloak.APIErrTypeUnknown,
 	}
 
@@ -6635,13 +6636,14 @@ func Test_ImportIdentityProviderConfig(t *testing.T) {
 	require.NoError(t, err, "ImportIdentityProviderConfig failed")
 
 	expected := map[string]string{
-		"userInfoUrl":       "https://openidconnect.googleapis.com/v1/userinfo",
-		"validateSignature": "true",
-		"tokenUrl":          "https://oauth2.googleapis.com/token",
-		"authorizationUrl":  "https://accounts.google.com/o/oauth2/v2/auth",
-		"jwksUrl":           "https://www.googleapis.com/oauth2/v3/certs",
-		"issuer":            "https://accounts.google.com",
-		"useJwksUrl":        "true",
+		"userInfoUrl":           "https://openidconnect.googleapis.com/v1/userinfo",
+		"validateSignature":     "true",
+		"tokenUrl":              "https://oauth2.googleapis.com/token",
+		"authorizationUrl":      "https://accounts.google.com/o/oauth2/v2/auth",
+		"jwksUrl":               "https://www.googleapis.com/oauth2/v3/certs",
+		"issuer":                "https://accounts.google.com",
+		"useJwksUrl":            "true",
+		"metadataDescriptorUrl": "https://accounts.google.com/.well-known/openid-configuration",
 	}
 
 	require.Len(
@@ -6716,6 +6718,7 @@ E8go1LcvbfHNyknHu2sptnRq55fHZSHr18vVsQRfDYMG</ds:X509Certificate>
 		"loginHint":                       "false",
 		"enabledFromMetadata":             "true",
 		"idpEntityId":                     "https://accounts.google.com/o/saml2?idpid=C01unc9st",
+		"syncMode":                        "LEGACY",
 	}
 
 	require.Len(
