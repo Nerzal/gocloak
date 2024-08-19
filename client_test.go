@@ -6903,16 +6903,22 @@ func TestGocloak_CreateAndGetRequiredAction(t *testing.T) {
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
+
+	// need to get unregistered required actions first
+	// refer to test suit of Keycloak for more details
+	// https://github.com/keycloak/keycloak/blob/main/testsuite/integration-arquillian/tests/base/src/test/java/org/keycloak/testsuite/admin/authentication/RequiredActionsTest.java#L93
+	unregisteredRequiredActions, err := client.GetUnregisteredRequiredActions(context.Background(), token.AccessToken, cfg.GoCloak.Realm)
+	require.NoError(t, err, "Failed to get required actions")
+	require.NotEmpty(t, unregisteredRequiredActions, "Required actions must not be empty")
+	require.NotNil(t, unregisteredRequiredActions[0].Name, "Required action name must not be nil")
+	require.NotNil(t, unregisteredRequiredActions[0].ProviderID, "Required action alias must not be nil")
+
 	requiredAction := gocloak.RequiredActionProviderRepresentation{
-		Alias:         gocloak.StringP("VERIFY_EMAIL_NEW"),
-		Config:        nil,
-		DefaultAction: gocloak.BoolP(false),
-		Enabled:       gocloak.BoolP(true),
-		Name:          gocloak.StringP("Verify Email new"),
-		Priority:      gocloak.Int32P(50),
-		ProviderID:    gocloak.StringP("VERIFY_EMAIL_NEW"),
+		Alias:      unregisteredRequiredActions[0].ProviderID,
+		Name:       unregisteredRequiredActions[0].Name,
+		ProviderID: unregisteredRequiredActions[0].ProviderID,
 	}
-	err := client.RegisterRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, requiredAction)
+	err = client.RegisterRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, requiredAction)
 	require.NoError(t, err, "Failed to register required action")
 
 	ra, err := client.GetRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, *requiredAction.Alias)
