@@ -3737,8 +3737,9 @@ func Test_GetClientUserSessions(t *testing.T) {
 	)
 	require.NoError(t, err, "GetClientUserSessions failed")
 	require.NotEmpty(t, allSessions, "GetClientUserSessions returned an empty list")
+
 	require.Equal(t, allSessionsWithoutParams, allSessions,
-		"GetClientUserSessions with and without params are not the same")
+		"GetClientUserSessions with and without params are the same")
 
 	sessions, err := client.GetClientUserSessions(
 		context.Background(),
@@ -3917,7 +3918,7 @@ func Test_GetClientOfflineSessions(t *testing.T) {
 	require.NoError(t, err, "GetClientOfflineSessions failed")
 	require.NotEmpty(t, sessions, "GetClientOfflineSessions returned an empty list")
 	require.Equal(t, sessions, sessionsWithoutParams,
-		"GetClientOfflineSessions with and without params are not the same")
+		"GetClientOfflineSessions with and without params are the same")
 }
 
 func Test_ClientSecret(t *testing.T) {
