@@ -1288,6 +1288,22 @@ func (g *GoCloak) GetClientScopeMappings(ctx context.Context, token, realm, idOf
 	return result, nil
 }
 
+// GetRealmRoleGroups returns groups associated with the realm role
+func (g *GoCloak) GetRealmRoleGroups(ctx context.Context, token, roleName, realm string) ([]*Group, error) {
+	const errMessage = "could not get groups by realm roleName"
+
+	var result []*Group
+	resp, err := g.GetRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, "roles", roleName, "groups"))
+
+	if err = checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // GetClientScopeMappingsRealmRoles returns realm-level roles associated with the client’s scope
 func (g *GoCloak) GetClientScopeMappingsRealmRoles(ctx context.Context, token, realm, idOfClient string) ([]*Role, error) {
 	const errMessage = "could not get realm-level roles with the client’s scope"
