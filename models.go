@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"strings"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // GetQueryParams converts the struct to map[string]string
