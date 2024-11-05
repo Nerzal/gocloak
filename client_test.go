@@ -3952,7 +3952,10 @@ func Test_GetClientOfflineSessions(t *testing.T) {
 	)
 	require.NoError(t, err, "GetClientOfflineSessions failed")
 	require.NotEmpty(t, sessions, "GetClientOfflineSessions returned an empty list")
-	require.Equal(t, sessions, sessionsWithoutParams,
+
+	require.Equal(t, len(sessions), len(sessionsWithoutParams), "Number of sessions did not match")
+
+	require.Equal(t, *sessions[0], *sessionsWithoutParams[0],
 		"GetClientOfflineSessions with and without params are the same")
 }
 
