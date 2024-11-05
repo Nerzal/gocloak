@@ -74,7 +74,7 @@ func GetConfig(t testing.TB) *Config {
 			err := configFile.Close()
 			require.NoError(t, err, "cannot close config file")
 		}()
-		data, err := ioutil.ReadAll(configFile)
+		data, err := io.ReadAll(configFile)
 		require.NoError(t, err, "cannot read config.json")
 		config = &Config{}
 		err = json.Unmarshal(data, config)
@@ -92,7 +92,7 @@ func GetConfig(t testing.TB) *Config {
 	return config
 }
 
-func GetClientToken(t *testing.T, client *gocloak.GoCloak) *gocloak.JWT {
+func GetClientToken(t *testing.T, client gocloak.GoCloakIface) *gocloak.JWT {
 	cfg := GetConfig(t)
 	token, err := client.LoginClient(
 		context.Background(),
@@ -103,7 +103,7 @@ func GetClientToken(t *testing.T, client *gocloak.GoCloak) *gocloak.JWT {
 	return token
 }
 
-func GetUserToken(t *testing.T, client *gocloak.GoCloak) *gocloak.JWT {
+func GetUserToken(t *testing.T, client gocloak.GoCloakIface) *gocloak.JWT {
 	SetUpTestUser(t, client)
 	cfg := GetConfig(t)
 	token, err := client.Login(
@@ -117,7 +117,7 @@ func GetUserToken(t *testing.T, client *gocloak.GoCloak) *gocloak.JWT {
 	return token
 }
 
-func GetAdminToken(t testing.TB, client *gocloak.GoCloak) *gocloak.JWT {
+func GetAdminToken(t testing.TB, client gocloak.GoCloakIface) *gocloak.JWT {
 	cfg := GetConfig(t)
 	token, err := client.LoginAdmin(
 		context.Background(),
@@ -140,7 +140,7 @@ func GetRandomNameP(name string) *string {
 	return &r
 }
 
-func GetClientByClientID(t *testing.T, client *gocloak.GoCloak, clientID string) *gocloak.Client {
+func GetClientByClientID(t *testing.T, client gocloak.GoCloakIface, clientID string) *gocloak.Client {
 	cfg := GetConfig(t)
 	token := GetAdminToken(t, client)
 	clients, err := client.GetClients(
@@ -163,7 +163,7 @@ func GetClientByClientID(t *testing.T, client *gocloak.GoCloak, clientID string)
 	return nil
 }
 
-func CreateGroup(t testing.TB, client *gocloak.GoCloak) (func(), string) {
+func CreateGroup(t testing.TB, client gocloak.GoCloakIface) (func(), string) {
 	cfg := GetConfig(t)
 	token := GetAdminToken(t, client)
 	group := gocloak.Group{
@@ -194,7 +194,7 @@ func CreateGroup(t testing.TB, client *gocloak.GoCloak) (func(), string) {
 	return tearDown, groupID
 }
 
-func CreateResource(t *testing.T, client *gocloak.GoCloak, idOfClient string) (func(), string) {
+func CreateResource(t *testing.T, client gocloak.GoCloakIface, idOfClient string) (func(), string) {
 	cfg := GetConfig(t)
 	token := GetAdminToken(t, client)
 	resource := gocloak.ResourceRepresentation{
@@ -233,7 +233,7 @@ func CreateResource(t *testing.T, client *gocloak.GoCloak, idOfClient string) (f
 	return tearDown, *createdResource.ID
 }
 
-func CreateResourceClientWithScopes(t *testing.T, client *gocloak.GoCloak) (func(), string) {
+func CreateResourceClientWithScopes(t *testing.T, client gocloak.GoCloakIface) (func(), string) {
 	cfg := GetConfig(t)
 	token := GetClientToken(t, client)
 	resource := gocloak.ResourceRepresentation{
@@ -277,7 +277,7 @@ func CreateResourceClientWithScopes(t *testing.T, client *gocloak.GoCloak) (func
 	return tearDown, *createdResource.ID
 }
 
-func CreateResourceClient(t *testing.T, client *gocloak.GoCloak) (func(), string) {
+func CreateResourceClient(t *testing.T, client gocloak.GoCloakIface) (func(), string) {
 	cfg := GetConfig(t)
 	token := GetClientToken(t, client)
 	resource := gocloak.ResourceRepresentation{
@@ -314,7 +314,7 @@ func CreateResourceClient(t *testing.T, client *gocloak.GoCloak) (func(), string
 	return tearDown, *createdResource.ID
 }
 
-func CreateScope(t *testing.T, client *gocloak.GoCloak, idOfClient string) (func(), string) {
+func CreateScope(t *testing.T, client gocloak.GoCloakIface, idOfClient string) (func(), string) {
 	cfg := GetConfig(t)
 	token := GetAdminToken(t, client)
 	scope := gocloak.ScopeRepresentation{
@@ -343,7 +343,7 @@ func CreateScope(t *testing.T, client *gocloak.GoCloak, idOfClient string) (func
 	return tearDown, *createdScope.ID
 }
 
-func CreatePolicy(t *testing.T, client *gocloak.GoCloak, idOfClient string, policy gocloak.PolicyRepresentation) (func(), string) {
+func CreatePolicy(t *testing.T, client gocloak.GoCloakIface, idOfClient string, policy gocloak.PolicyRepresentation) (func(), string) {
 	cfg := GetConfig(t)
 	token := GetAdminToken(t, client)
 	createdPolicy, err := client.CreatePolicy(
@@ -368,7 +368,7 @@ func CreatePolicy(t *testing.T, client *gocloak.GoCloak, idOfClient string, poli
 	return tearDown, *createdPolicy.ID
 }
 
-func CreatePermission(t *testing.T, client *gocloak.GoCloak, idOfClient string, permission gocloak.PermissionRepresentation) (func(), string) {
+func CreatePermission(t *testing.T, client gocloak.GoCloakIface, idOfClient string, permission gocloak.PermissionRepresentation) (func(), string) {
 	cfg := GetConfig(t)
 	token := GetAdminToken(t, client)
 	createdPermission, err := client.CreatePermission(
@@ -392,7 +392,7 @@ func CreatePermission(t *testing.T, client *gocloak.GoCloak, idOfClient string, 
 	return tearDown, *createdPermission.ID
 }
 
-func CreateClient(t *testing.T, client *gocloak.GoCloak, newClient *gocloak.Client) (func(), string) {
+func CreateClient(t *testing.T, client gocloak.GoCloakIface, newClient *gocloak.Client) (func(), string) {
 	if newClient == nil {
 		newClient = &gocloak.Client{
 			ClientID: GetRandomNameP("ClientID"),
@@ -420,7 +420,7 @@ func CreateClient(t *testing.T, client *gocloak.GoCloak, newClient *gocloak.Clie
 	return tearDown, createdID
 }
 
-func SetUpTestUser(t testing.TB, client *gocloak.GoCloak) {
+func SetUpTestUser(t testing.TB, client gocloak.GoCloakIface) {
 	setupOnce.Do(func() {
 		cfg := GetConfig(t)
 		token := GetAdminToken(t, client)
@@ -495,7 +495,7 @@ func (w *RestyLogWriter) write(format string, v ...interface{}) {
 func NewClientWithDebug(t testing.TB) *gocloak.GoCloak {
 	cfg := GetConfig(t)
 	client := gocloak.NewClient(cfg.HostName)
-	cond := func(resp *resty.Response, err error) bool {
+	cond := func(resp *resty.Response, _ error) bool {
 		if resp != nil && resp.IsError() {
 			if e, ok := resp.Error().(*gocloak.HTTPErrorResponse); ok {
 				msg := e.String()
@@ -536,7 +536,7 @@ func NewClientWithDebug(t testing.TB) *gocloak.GoCloak {
 //	skipN = number of requests to be executed and not failed by this function
 func FailRequest(client *gocloak.GoCloak, err error, failN, skipN int) *gocloak.GoCloak {
 	client.RestyClient().OnBeforeRequest(
-		func(c *resty.Client, r *resty.Request) error {
+		func(_ *resty.Client, r *resty.Request) error {
 			if skipN > 0 {
 				skipN--
 				return nil
@@ -554,7 +554,7 @@ func FailRequest(client *gocloak.GoCloak, err error, failN, skipN int) *gocloak.
 	return client
 }
 
-func ClearRealmCache(t testing.TB, client *gocloak.GoCloak, realm ...string) {
+func ClearRealmCache(t testing.TB, client gocloak.GoCloakIface, realm ...string) {
 	cfg := GetConfig(t)
 	token := GetAdminToken(t, client)
 	if len(realm) == 0 {
@@ -1293,7 +1293,7 @@ func Test_GroupPermissions(t *testing.T) {
 	}
 }
 
-func CreateClientRole(t *testing.T, client *gocloak.GoCloak) (func(), string) {
+func CreateClientRole(t *testing.T, client gocloak.GoCloakIface) (func(), string) {
 	cfg := GetConfig(t)
 	token := GetAdminToken(t, client)
 
@@ -1404,7 +1404,7 @@ func Test_GetClientRole(t *testing.T) {
 	require.Nil(t, role)
 }
 
-func CreateClientScope(t *testing.T, client *gocloak.GoCloak, scope *gocloak.ClientScope) (func(), string) {
+func CreateClientScope(t *testing.T, client gocloak.GoCloakIface, scope *gocloak.ClientScope) (func(), string) {
 	cfg := GetConfig(t)
 	token := GetAdminToken(t, client)
 
@@ -1445,7 +1445,7 @@ func Test_CreateClientScope_DeleteClientScope(t *testing.T) {
 	tearDown()
 }
 
-func CreateUpdateClientScopeProtocolMapper(t *testing.T, client *gocloak.GoCloak, scopeID string, protocolMapper *gocloak.ProtocolMappers) (func(), string) {
+func CreateUpdateClientScopeProtocolMapper(t *testing.T, client gocloak.GoCloakIface, scopeID string, protocolMapper *gocloak.ProtocolMappers) (func(), string) {
 	cfg := GetConfig(t)
 	token := GetAdminToken(t, client)
 
@@ -1738,7 +1738,7 @@ func Test_GetClientScopeProtocolMappers(t *testing.T) {
 	require.NotNil(t, protocolMappers)
 }
 
-func CreateClientScopeMappingsRealmRoles(t *testing.T, client *gocloak.GoCloak, idOfClient string, roles []gocloak.Role) func() {
+func CreateClientScopeMappingsRealmRoles(t *testing.T, client gocloak.GoCloakIface, idOfClient string, roles []gocloak.Role) func() {
 	token := GetAdminToken(t, client)
 	cfg := GetConfig(t)
 
@@ -1765,7 +1765,7 @@ func CreateClientScopeMappingsRealmRoles(t *testing.T, client *gocloak.GoCloak, 
 	return tearDown
 }
 
-func CreateClientScopeMappingsClientRoles(t *testing.T, client *gocloak.GoCloak, idOfClient, clients string, roles []gocloak.Role) func() {
+func CreateClientScopeMappingsClientRoles(t *testing.T, client gocloak.GoCloakIface, idOfClient, clients string, roles []gocloak.Role) func() {
 	token := GetAdminToken(t, client)
 	cfg := GetConfig(t)
 
@@ -1948,7 +1948,7 @@ func Test_ClientScopeMappingsRealmRoles(t *testing.T) {
 }
 
 func CreateClientScopesMappingsClientRoles(
-	t *testing.T, client *gocloak.GoCloak, scopeID, idOfClient string, roles []gocloak.Role,
+	t *testing.T, client gocloak.GoCloakIface, scopeID, idOfClient string, roles []gocloak.Role,
 ) func() {
 	token := GetAdminToken(t, client)
 	cfg := GetConfig(t)
@@ -2723,7 +2723,7 @@ func Test_GetRealms(t *testing.T) {
 // Realm
 // -----------
 
-func CreateRealm(t *testing.T, client *gocloak.GoCloak) (func(), string) {
+func CreateRealm(t *testing.T, client gocloak.GoCloakIface) (func(), string) {
 	token := GetAdminToken(t, client)
 
 	realmName := GetRandomName("Realm")
@@ -2800,7 +2800,7 @@ func Test_ClearRealmCache(t *testing.T) {
 // Realm Roles
 // -----------
 
-func CreateRealmRole(t *testing.T, client *gocloak.GoCloak) (func(), string) {
+func CreateRealmRole(t *testing.T, client gocloak.GoCloakIface) (func(), string) {
 	cfg := GetConfig(t)
 	token := GetAdminToken(t, client)
 
@@ -3146,7 +3146,7 @@ func Test_AddRealmRoleComposite_DeleteRealmRoleComposite(t *testing.T) {
 // Users
 // -----
 
-func CreateUser(t *testing.T, client *gocloak.GoCloak) (func(), string) {
+func CreateUser(t *testing.T, client gocloak.GoCloakIface) (func(), string) {
 	cfg := GetConfig(t)
 	token := GetAdminToken(t, client)
 
@@ -3737,8 +3737,9 @@ func Test_GetClientUserSessions(t *testing.T) {
 	)
 	require.NoError(t, err, "GetClientUserSessions failed")
 	require.NotEmpty(t, allSessions, "GetClientUserSessions returned an empty list")
+
 	require.Equal(t, allSessionsWithoutParams, allSessions,
-		"GetClientUserSessions with and without params are not the same")
+		"GetClientUserSessions with and without params are the same")
 
 	sessions, err := client.GetClientUserSessions(
 		context.Background(),
@@ -3917,7 +3918,7 @@ func Test_GetClientOfflineSessions(t *testing.T) {
 	require.NoError(t, err, "GetClientOfflineSessions failed")
 	require.NotEmpty(t, sessions, "GetClientOfflineSessions returned an empty list")
 	require.Equal(t, sessions, sessionsWithoutParams,
-		"GetClientOfflineSessions with and without params are not the same")
+		"GetClientOfflineSessions with and without params are the same")
 }
 
 func Test_ClientSecret(t *testing.T) {
@@ -6253,7 +6254,7 @@ func Test_CreatePermissionTicket(t *testing.T) {
 	require.NoError(t, err, "CreatePermissionTicket failed")
 	t.Logf("Created PermissionTicket: %+v", *(ticket.Ticket))
 
-	pt, err := jwt.ParseWithClaims(*(ticket.Ticket), &gocloak.PermissionTicketRepresentation{}, func(token *jwt.Token) (interface{}, error) {
+	pt, err := jwt.ParseWithClaims(*(ticket.Ticket), &gocloak.PermissionTicketRepresentation{}, func(_ *jwt.Token) (interface{}, error) {
 		return []byte(""), nil
 	})
 
@@ -6945,7 +6946,7 @@ func TestGocloak_UpdateRequiredAction(t *testing.T) {
 	require.NoError(t, err, "Failed to update required action")
 }
 
-func CreateComponent(t *testing.T, client *gocloak.GoCloak) (func(), *gocloak.Component) {
+func CreateComponent(t *testing.T, client gocloak.GoCloakIface) (func(), *gocloak.Component) {
 	newComponent := &gocloak.Component{
 		Name:         GetRandomNameP("CreateComponent"),
 		ProviderID:   gocloak.StringP("rsa-generated"),

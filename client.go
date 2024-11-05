@@ -39,6 +39,9 @@ type GoCloak struct {
 	}
 }
 
+// Verify struct implements interface
+var _ GoCloakIface = &GoCloak{}
+
 const (
 	adminClientID string = "admin-cli"
 	urlSeparator  string = "/"

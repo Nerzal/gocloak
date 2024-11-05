@@ -339,6 +339,6 @@ func TestStringerOmitEmpty(t *testing.T) {
 	}
 
 	for _, custom := range customs {
-		assert.Equal(t, "{}", custom.(Stringable).String())
+		assert.Equal(t, "{}", custom.String())
 	}
 }
