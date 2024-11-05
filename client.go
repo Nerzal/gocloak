@@ -583,6 +583,19 @@ func (g *GoCloak) LoginClientTokenExchange(ctx context.Context, clientID, token,
 	return g.GetToken(ctx, realm, tokenOptions)
 }
 
+// DirectNakedImpersonationTokenExchange performs "Direct Naked Impersonation"
+// See: https://www.keycloak.org/docs/latest/securing_apps/index.html#direct-naked-impersonation
+func (g *GoCloak) DirectNakedImpersonationTokenExchange(ctx context.Context, clientID, clientSecret, realm, userID string) (*JWT, error) {
+	tokenOptions := TokenOptions{
+		ClientID:           &clientID,
+		ClientSecret:       &clientSecret,
+		GrantType:          StringP("urn:ietf:params:oauth:grant-type:token-exchange"),
+		RequestedTokenType: StringP("urn:ietf:params:oauth:token-type:refresh_token"),
+		RequestedSubject:   StringP(userID),
+	}
+	return g.GetToken(ctx, realm, tokenOptions)
+}
+
 // LoginClientSignedJWT performs a login with client credentials and signed jwt claims
 func (g *GoCloak) LoginClientSignedJWT(
 	ctx context.Context,
