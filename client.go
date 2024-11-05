@@ -53,7 +53,7 @@ func makeURL(path ...string) string {
 	return strings.Join(path, urlSeparator)
 }
 
-// Compares the provided version against the current version of the Keycloak server.
+// compareVersions compares the provided version against the current version of the Keycloak server.
 // Current version is fetched from the serverinfo if not already set.
 //
 // Returns:
@@ -70,6 +70,7 @@ func (g *GoCloak) compareVersions(ctx context.Context, v, token string) (int, er
 		if err != nil {
 			return 0, err
 		}
+
 	}
 
 	curVersion = "v" + g.Config.version
