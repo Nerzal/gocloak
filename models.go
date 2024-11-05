@@ -193,7 +193,7 @@ type IntroSpectTokenResult struct {
 	AuthTime    *int                  `json:"auth_time,omitempty"`
 	Jti         *string               `json:"jti,omitempty"`
 	Type        *string               `json:"typ,omitempty"`
-	Azp 		*string 			  `json:"azp,omitempty"`
+	Azp         *string               `json:"azp,omitempty"`
 }
 
 // User represents the Keycloak User Structure
