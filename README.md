@@ -118,6 +118,7 @@ To get the `clientId` from `id`, use `GetClients` method with `GetClientsParams{
 
 [GoCloakIface](gocloak_iface.go) holds all methods a client should fulfil.
 
+
 ## Configure gocloak to skip TLS Insecure Verification
 
 ```go

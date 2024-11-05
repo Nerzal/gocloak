@@ -820,7 +820,7 @@ func Test_LoginClient_UnknownRealm(t *testing.T) {
 		cfg.GoCloak.ClientSecret,
 		"ThisRealmDoesNotExist")
 	require.Error(t, err, "Login shouldn't be successful")
-	require.EqualError(t, err, "404 Not Found: Realm does not exist")
+	require.EqualError(t, err, "404 Not Found: Realm does not exist: For more on this error consult the server log at the debug level.")
 }
 
 func Test_GetIssuer(t *testing.T) {
@@ -1410,8 +1410,9 @@ func CreateClientScope(t *testing.T, client gocloak.GoCloakIface, scope *gocloak
 
 	if scope == nil {
 		scope = &gocloak.ClientScope{
-			ID:   GetRandomNameP("client-scope-id-"),
-			Name: GetRandomNameP("client-scope-name-"),
+			ID:       GetRandomNameP("client-scope-id-"),
+			Name:     GetRandomNameP("client-scope-name-"),
+			Protocol: gocloak.StringP("openid-connect"),
 		}
 	}
 
@@ -1422,10 +1423,10 @@ func CreateClientScope(t *testing.T, client gocloak.GoCloakIface, scope *gocloak
 		cfg.GoCloak.Realm,
 		*scope,
 	)
+	require.NoError(t, err, "CreateClientScope failed")
 	if !gocloak.NilOrEmpty(scope.ID) {
 		require.Equal(t, clientScopeID, *scope.ID)
 	}
-	require.NoError(t, err, "CreateClientScope failed")
 	tearDown := func() {
 		err := client.DeleteClientScope(
 			context.Background(),
@@ -2427,6 +2428,40 @@ func Test_GetGroupFull(t *testing.T) {
 	require.True(t, ok, "UserAttributeContains")
 }
 
+func Test_GetChildGroups(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	tearDown, groupID := CreateGroup(t, client)
+	defer tearDown()
+
+	childGroupIDs := []string{}
+	for i := 0; i < 3; i++ {
+		childGroupID, err := client.CreateChildGroup(context.Background(),
+			token.AccessToken,
+			cfg.GoCloak.Realm,
+			groupID,
+			gocloak.Group{
+				Name: GetRandomNameP("Group"),
+			},
+		)
+		require.NoError(t, err, "CreateChildGroup failed")
+		childGroupIDs = append(childGroupIDs, childGroupID)
+	}
+
+	childGroups, err := client.GetChildGroups(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		groupID,
+		gocloak.GetChildGroupsParams{},
+	)
+	require.NoError(t, err, "GetChildGroups failed")
+	require.Len(t, childGroups, len(childGroupIDs))
+}
+
 func Test_GetGroupMembers(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
@@ -2604,10 +2639,10 @@ func Test_SendVerifyEmail(t *testing.T) {
 		cfg.GoCloak.Realm,
 		params)
 	if err != nil {
-		if err.Error() == "500 Internal Server Error: Failed to send execute actions email" {
+		if err.Error() == "500 Internal Server Error: Failed to send verify email" {
 			return
 		}
-		require.NoError(t, err, "ExecuteActionsEmail failed")
+		require.NoError(t, err, "SendVerifyEmail failed")
 	}
 }
 
@@ -4830,7 +4865,7 @@ func Test_CreateDeleteClientScopeWithMappers(t *testing.T) {
 		cfg.GoCloak.Realm,
 		id,
 	)
-	require.EqualError(t, err, "404 Not Found: Could not find client scope")
+	require.EqualError(t, err, "404 Not Found: Could not find client scope: For more on this error consult the server log at the debug level.")
 	require.Nil(t, clientScopeActual, "client scope has not been deleted")
 }
 
@@ -5749,8 +5784,8 @@ func Test_GetAuthorizationPolicyScopes(t *testing.T) {
 	require.Equal(t, *scopes[0].ID, scopeID)
 
 	defer func() {
-		scope()
 		policy()
+		scope()
 	}()
 }
 
@@ -6421,7 +6456,7 @@ func Test_CheckError(t *testing.T) {
 
 	expectedError := &gocloak.APIError{
 		Code:    http.StatusNotFound,
-		Message: "404 Not Found: Could not find client",
+		Message: "404 Not Found: Could not find client: For more on this error consult the server log at the debug level.",
 		Type:    gocloak.APIErrTypeUnknown,
 	}
 
@@ -6606,13 +6641,14 @@ func Test_ImportIdentityProviderConfig(t *testing.T) {
 	require.NoError(t, err, "ImportIdentityProviderConfig failed")
 
 	expected := map[string]string{
-		"userInfoUrl":       "https://openidconnect.googleapis.com/v1/userinfo",
-		"validateSignature": "true",
-		"tokenUrl":          "https://oauth2.googleapis.com/token",
-		"authorizationUrl":  "https://accounts.google.com/o/oauth2/v2/auth",
-		"jwksUrl":           "https://www.googleapis.com/oauth2/v3/certs",
-		"issuer":            "https://accounts.google.com",
-		"useJwksUrl":        "true",
+		"userInfoUrl":           "https://openidconnect.googleapis.com/v1/userinfo",
+		"validateSignature":     "true",
+		"tokenUrl":              "https://oauth2.googleapis.com/token",
+		"authorizationUrl":      "https://accounts.google.com/o/oauth2/v2/auth",
+		"jwksUrl":               "https://www.googleapis.com/oauth2/v3/certs",
+		"issuer":                "https://accounts.google.com",
+		"useJwksUrl":            "true",
+		"metadataDescriptorUrl": "https://accounts.google.com/.well-known/openid-configuration",
 	}
 
 	require.Len(
@@ -6687,6 +6723,7 @@ E8go1LcvbfHNyknHu2sptnRq55fHZSHr18vVsQRfDYMG</ds:X509Certificate>
 		"loginHint":                       "false",
 		"enabledFromMetadata":             "true",
 		"idpEntityId":                     "https://accounts.google.com/o/saml2?idpid=C01unc9st",
+		"syncMode":                        "LEGACY",
 	}
 
 	require.Len(
@@ -6871,16 +6908,22 @@ func TestGocloak_CreateAndGetRequiredAction(t *testing.T) {
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
+
+	// need to get unregistered required actions first
+	// refer to test suit of Keycloak for more details
+	// https://github.com/keycloak/keycloak/blob/main/testsuite/integration-arquillian/tests/base/src/test/java/org/keycloak/testsuite/admin/authentication/RequiredActionsTest.java#L93
+	unregisteredRequiredActions, err := client.GetUnregisteredRequiredActions(context.Background(), token.AccessToken, cfg.GoCloak.Realm)
+	require.NoError(t, err, "Failed to get required actions")
+	require.NotEmpty(t, unregisteredRequiredActions, "Required actions must not be empty")
+	require.NotNil(t, unregisteredRequiredActions[0].Name, "Required action name must not be nil")
+	require.NotNil(t, unregisteredRequiredActions[0].ProviderID, "Required action alias must not be nil")
+
 	requiredAction := gocloak.RequiredActionProviderRepresentation{
-		Alias:         gocloak.StringP("VERIFY_EMAIL_NEW"),
-		Config:        nil,
-		DefaultAction: gocloak.BoolP(false),
-		Enabled:       gocloak.BoolP(true),
-		Name:          gocloak.StringP("Verify Email new"),
-		Priority:      gocloak.Int32P(50),
-		ProviderID:    gocloak.StringP("VERIFY_EMAIL_NEW"),
+		Alias:      unregisteredRequiredActions[0].ProviderID,
+		Name:       unregisteredRequiredActions[0].Name,
+		ProviderID: unregisteredRequiredActions[0].ProviderID,
 	}
-	err := client.RegisterRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, requiredAction)
+	err = client.RegisterRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, requiredAction)
 	require.NoError(t, err, "Failed to register required action")
 
 	ra, err := client.GetRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, *requiredAction.Alias)

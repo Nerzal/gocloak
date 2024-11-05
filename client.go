@@ -1719,6 +1719,28 @@ func (g *GoCloak) GetGroup(ctx context.Context, token, realm, groupID string) (*
 	return &result, nil
 }
 
+// GetChildGroups get child groups of group with id in realm
+func (g *GoCloak) GetChildGroups(ctx context.Context, token, realm, groupID string, params GetChildGroupsParams) ([]*Group, error) {
+	const errMessage = "could not get child groups"
+
+	var result []*Group
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, errors.Wrap(err, errMessage)
+	}
+
+	resp, err := g.GetRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		SetQueryParams(queryParams).
+		Get(g.getAdminRealmURL(realm, "groups", groupID, "children"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // GetGroupByPath get group with path in realm
 func (g *GoCloak) GetGroupByPath(ctx context.Context, token, realm, groupPath string) (*Group, error) {
 	const errMessage = "could not get group"
@@ -4192,6 +4214,23 @@ func (g *GoCloak) RegisterRequiredAction(ctx context.Context, token string, real
 	}
 
 	return err
+}
+
+// GetUnregisteredRequiredActions gets a list of unregistered required actions for a given realm
+func (g *GoCloak) GetUnregisteredRequiredActions(ctx context.Context, token string, realm string) ([]*UnregisteredRequiredActionProviderRepresentation, error) {
+	const errMessage = "could not get unregistered required actions"
+
+	var result []*UnregisteredRequiredActionProviderRepresentation
+
+	resp, err := g.GetRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, "authentication", "unregistered-required-actions"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 // GetRequiredActions gets a list of required actions for a given realm

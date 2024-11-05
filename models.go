@@ -352,6 +352,15 @@ type GetGroupsParams struct {
 	Search              *string `json:"search,omitempty"`
 }
 
+// GetChildGroupsParams represents the optional parameters for getting child groups
+type GetChildGroupsParams struct {
+	BriefRepresentation *bool   `json:"briefRepresentation,string,omitempty"`
+	Exact               *bool   `json:"exact,string,omitempty"`
+	First               *int    `json:"first,string,omitempty"`
+	Max                 *int    `json:"max,string,omitempty"`
+	Search              *string `json:"search,omitempty"`
+}
+
 // MarshalJSON is a custom json marshaling function to automatically set the Full and BriefRepresentation properties
 // for backward compatibility
 func (obj GetGroupsParams) MarshalJSON() ([]byte, error) {
@@ -1414,6 +1423,11 @@ type RequiredActionProviderRepresentation struct {
 	Name          *string            `json:"name,omitempty"`
 	Priority      *int32             `json:"priority,omitempty"`
 	ProviderID    *string            `json:"providerId,omitempty"`
+}
+
+type UnregisteredRequiredActionProviderRepresentation struct {
+	Name       *string `json:"name,omitempty"`
+	ProviderID *string `json:"providerId,omitempty"`
 }
 
 // ManagementPermissionRepresentation is a representation of management permissions
