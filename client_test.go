@@ -820,7 +820,7 @@ func Test_LoginClient_UnknownRealm(t *testing.T) {
 		cfg.GoCloak.ClientSecret,
 		"ThisRealmDoesNotExist")
 	require.Error(t, err, "Login shouldn't be successful")
-	require.EqualError(t, err, "404 Not Found: Realm does not exist: For more on this error consult the server log at the debug level.")
+	require.EqualError(t, err, "404 Not Found: Realm does not exist")
 }
 
 func Test_GetIssuer(t *testing.T) {
@@ -4865,7 +4865,7 @@ func Test_CreateDeleteClientScopeWithMappers(t *testing.T) {
 		cfg.GoCloak.Realm,
 		id,
 	)
-	require.EqualError(t, err, "404 Not Found: Could not find client scope: For more on this error consult the server log at the debug level.")
+	require.EqualError(t, err, "404 Not Found: Could not find client scope")
 	require.Nil(t, clientScopeActual, "client scope has not been deleted")
 }
 
@@ -6456,7 +6456,7 @@ func Test_CheckError(t *testing.T) {
 
 	expectedError := &gocloak.APIError{
 		Code:    http.StatusNotFound,
-		Message: "404 Not Found: Could not find client: For more on this error consult the server log at the debug level.",
+		Message: "404 Not Found: Could not find client",
 		Type:    gocloak.APIErrTypeUnknown,
 	}
 
