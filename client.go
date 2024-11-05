@@ -3740,6 +3740,21 @@ func (g *GoCloak) GetPermissionResources(ctx context.Context, token, realm, idOf
 	return result, nil
 }
 
+// GetScopePermissions returns permissions associated with the client scope
+func (g *GoCloak) GetScopePermissions(ctx context.Context, token, realm, idOfClient, idOfScope string) ([]*PolicyRepresentation, error) {
+	const errMessage = "could not get scope permissions"
+
+	var result []*PolicyRepresentation
+	resp, err := g.GetRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "scope", idOfScope, "permissions"))
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // GetPermissionScopes returns a client's scopes configured for the given permission id
 func (g *GoCloak) GetPermissionScopes(ctx context.Context, token, realm, idOfClient, permissionID string) ([]*PermissionScope, error) {
 	const errMessage = "could not get permission scopes"
