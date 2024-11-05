@@ -7,13 +7,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Setup Go environment
-        uses: actions/setup-go@v3.0.0
+        uses: actions/setup-go@v5.0.2
         with:
-          go-version: 1.19
+          go-version: 1.23
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4.1.7
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v3.1.0
+        uses: golangci/golangci-lint-action@v6.1.0
       - name: WriteGoList
         run: go list -json -m all > go.list
       - name: nancy
@@ -33,14 +33,14 @@ jobs:
           docker ps
           docker logs keycloak
       - name: CodeCov
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v4.5.0
         with:
           file: ./coverage.txt
 
       # Publish benchmarks for the main branch only
       - name: Store Benchmark Result
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: rhysd/github-action-benchmark@v1
+        uses: rhysd/github-action-benchmark@v1.20.3
         with:
           # What benchmark tool the output.txt came from
           tool: "go"

@@ -41,6 +41,9 @@ type GoCloak struct {
 	}
 }
 
+// Verify struct implements interface
+var _ GoCloakIface = &GoCloak{}
+
 const (
 	adminClientID string = "admin-cli"
 	urlSeparator  string = "/"
@@ -625,6 +628,19 @@ func (g *GoCloak) LoginClientTokenExchange(ctx context.Context, clientID, token,
 	}
 	if userID != "" {
 		tokenOptions.RequestedSubject = &userID
+	}
+	return g.GetToken(ctx, realm, tokenOptions)
+}
+
+// DirectNakedImpersonationTokenExchange performs "Direct Naked Impersonation"
+// See: https://www.keycloak.org/docs/latest/securing_apps/index.html#direct-naked-impersonation
+func (g *GoCloak) DirectNakedImpersonationTokenExchange(ctx context.Context, clientID, clientSecret, realm, userID string) (*JWT, error) {
+	tokenOptions := TokenOptions{
+		ClientID:           &clientID,
+		ClientSecret:       &clientSecret,
+		GrantType:          StringP("urn:ietf:params:oauth:grant-type:token-exchange"),
+		RequestedTokenType: StringP("urn:ietf:params:oauth:token-type:refresh_token"),
+		RequestedSubject:   StringP(userID),
 	}
 	return g.GetToken(ctx, realm, tokenOptions)
 }
@@ -1337,6 +1353,22 @@ func (g *GoCloak) GetClientScopeMappings(ctx context.Context, token, realm, idOf
 	return result, nil
 }
 
+// GetRealmRoleGroups returns groups associated with the realm role
+func (g *GoCloak) GetRealmRoleGroups(ctx context.Context, token, roleName, realm string) ([]*Group, error) {
+	const errMessage = "could not get groups by realm roleName"
+
+	var result []*Group
+	resp, err := g.GetRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, "roles", roleName, "groups"))
+
+	if err = checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // GetClientScopeMappingsRealmRoles returns realm-level roles associated with the client’s scope
 func (g *GoCloak) GetClientScopeMappingsRealmRoles(ctx context.Context, token, realm, idOfClient string) ([]*Role, error) {
 	const errMessage = "could not get realm-level roles with the client’s scope"
@@ -1747,6 +1779,28 @@ func (g *GoCloak) GetGroup(ctx context.Context, token, realm, groupID string) (*
 	}
 
 	return &result, nil
+}
+
+// GetChildGroups get child groups of group with id in realm
+func (g *GoCloak) GetChildGroups(ctx context.Context, token, realm, groupID string, params GetChildGroupsParams) ([]*Group, error) {
+	const errMessage = "could not get child groups"
+
+	var result []*Group
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, errors.Wrap(err, errMessage)
+	}
+
+	resp, err := g.GetRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		SetQueryParams(queryParams).
+		Get(g.getAdminRealmURL(realm, "groups", groupID, "children"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 // GetGroupByPath get group with path in realm
@@ -3802,6 +3856,21 @@ func (g *GoCloak) GetPermissionResources(ctx context.Context, token, realm, idOf
 	return result, nil
 }
 
+// GetScopePermissions returns permissions associated with the client scope
+func (g *GoCloak) GetScopePermissions(ctx context.Context, token, realm, idOfClient, idOfScope string) ([]*PolicyRepresentation, error) {
+	const errMessage = "could not get scope permissions"
+
+	var result []*PolicyRepresentation
+	resp, err := g.GetRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "scope", idOfScope, "permissions"))
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // GetPermissionScopes returns a client's scopes configured for the given permission id
 func (g *GoCloak) GetPermissionScopes(ctx context.Context, token, realm, idOfClient, permissionID string) ([]*PermissionScope, error) {
 	const errMessage = "could not get permission scopes"
@@ -4239,6 +4308,23 @@ func (g *GoCloak) RegisterRequiredAction(ctx context.Context, token string, real
 	}
 
 	return err
+}
+
+// GetUnregisteredRequiredActions gets a list of unregistered required actions for a given realm
+func (g *GoCloak) GetUnregisteredRequiredActions(ctx context.Context, token string, realm string) ([]*UnregisteredRequiredActionProviderRepresentation, error) {
+	const errMessage = "could not get unregistered required actions"
+
+	var result []*UnregisteredRequiredActionProviderRepresentation
+
+	resp, err := g.GetRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, "authentication", "unregistered-required-actions"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 // GetRequiredActions gets a list of required actions for a given realm

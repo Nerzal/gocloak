@@ -1,5 +1,4 @@
-version: '3'
-
+version: "3"
 services:
   keycloak:
     build: .
@@ -12,12 +11,12 @@ services:
       KC_HEALTH_ENABLED: "true"
     ports:
       - "8080:8080"
+      - "9000:9000"
     healthcheck:
-      test: curl --fail --silent http://localhost:8080/health/ready 2>&1 || exit 1
+      test: curl --fail --silent http://localhost:9000/health/ready 2>&1 || exit 1
       interval: 10s
       timeout: 10s
       retries: 5
     volumes:
-      -  ./testdata/gocloak-realm.json:/opt/keycloak/data/import/gocloak-realm.json
-    entrypoint: ["/opt/keycloak/bin/kc.sh", "start-dev --features=preview --import-realm"]
- 
+      - ./testdata/gocloak-realm.json:/opt/keycloak/data/import/gocloak-realm.json
+    entrypoint: ["/opt/keycloak/bin/kc.sh", "start-dev", "--features=preview", "--import-realm"]
