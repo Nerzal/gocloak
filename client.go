@@ -53,7 +53,7 @@ func makeURL(path ...string) string {
 	return strings.Join(path, urlSeparator)
 }
 
-// Compares the provided version against the current version of the Keycloak server.
+// compareVersions compares the provided version against the current version of the Keycloak server.
 // Current version is fetched from the serverinfo if not already set.
 //
 // Returns:
@@ -63,7 +63,7 @@ func makeURL(path ...string) string {
 // 0 if the provided version is equal to the server version
 //
 // 1 if the provided version is higher than the server version
-func (g *GoCloak) compareVersions(v, token string, ctx context.Context) (int, error) {
+func (g *GoCloak) compareVersions(ctx context.Context, v, token string) (int, error) {
 	curVersion := g.Config.version
 	if curVersion == "" {
 		curV, err := g.getServerVersion(ctx, token)
@@ -71,7 +71,7 @@ func (g *GoCloak) compareVersions(v, token string, ctx context.Context) (int, er
 			return 0, err
 		}
 
-		curVersion = curV
+		curVersion = curV //nolint
 	}
 
 	curVersion = "v" + g.Config.version
@@ -3590,7 +3590,7 @@ func (g *GoCloak) GetPolicies(ctx context.Context, token, realm, idOfClient stri
 		return nil, errors.Wrap(err, errMessage)
 	}
 
-	compResult, err := g.compareVersions("20.0.0", token, ctx)
+	compResult, err := g.compareVersions(ctx, "20.0.0", token)
 	if err != nil {
 		return nil, err
 	}
@@ -3622,7 +3622,7 @@ func (g *GoCloak) CreatePolicy(ctx context.Context, token, realm, idOfClient str
 		return nil, errors.New("type of a policy required")
 	}
 
-	compResult, err := g.compareVersions("20.0.0", token, ctx)
+	compResult, err := g.compareVersions(ctx, "20.0.0", token)
 	if err != nil {
 		return nil, err
 	}
@@ -3655,7 +3655,7 @@ func (g *GoCloak) UpdatePolicy(ctx context.Context, token, realm, idOfClient str
 		return errors.New("ID of a policy required")
 	}
 
-	compResult, err := g.compareVersions("20.0.0", token, ctx)
+	compResult, err := g.compareVersions(ctx, "20.0.0", token)
 	if err != nil {
 		return err
 	}
