@@ -61,6 +61,9 @@ type GoCloakIface interface {
 	// LoginClientTokenExchange will exchange the presented token for a user's token
 	// Requires Token-Exchange is enabled: https://www.keycloak.org/docs/latest/securing_apps/index.html#_token-exchange
 	LoginClientTokenExchange(ctx context.Context, clientID, token, clientSecret, realm, targetClient, userID string) (*JWT, error)
+	// DirectNakedImpersonationTokenExchange performs "Direct Naked Impersonation"
+	// See: https://www.keycloak.org/docs/latest/securing_apps/index.html#direct-naked-impersonation
+	DirectNakedImpersonationTokenExchange(ctx context.Context, clientID, clientSecret, realm, userID string) (*JWT, error)
 	// LoginClientSignedJWT performs a login with client credentials and signed jwt claims
 	LoginClientSignedJWT(ctx context.Context, clientID, realm string, key interface{}, signedMethod jwt.SigningMethod, expiresAt *jwt.NumericDate) (*JWT, error)
 	// Login performs a login with user credentials and a client
@@ -159,6 +162,8 @@ type GoCloakIface interface {
 	GetClientScopeProtocolMapper(ctx context.Context, token, realm, scopeID, protocolMapperID string) (*ProtocolMappers, error)
 	// GetClientScopeMappings returns all scope mappings for the client
 	GetClientScopeMappings(ctx context.Context, token, realm, idOfClient string) (*MappingsRepresentation, error)
+	// GetRealmRoleGroups returns groups associated with the realm role
+	GetRealmRoleGroups(ctx context.Context, token, roleName, realm string) ([]*Group, error)
 	// GetClientScopeMappingsRealmRoles returns realm-level roles associated with the client’s scope
 	GetClientScopeMappingsRealmRoles(ctx context.Context, token, realm, idOfClient string) ([]*Role, error)
 	// GetClientScopeMappingsRealmRolesAvailable returns realm-level roles that are available to attach to this client’s scope
@@ -213,6 +218,8 @@ type GoCloakIface interface {
 	GetRoleMappingByUserID(ctx context.Context, token, realm, userID string) (*MappingsRepresentation, error)
 	// GetGroup get group with id in realm
 	GetGroup(ctx context.Context, token, realm, groupID string) (*Group, error)
+	// GetChildGroups get child groups of group with id in realm
+	GetChildGroups(ctx context.Context, token, realm, groupID string, params GetChildGroupsParams) ([]*Group, error)
 	// GetGroupByPath get group with path in realm
 	GetGroupByPath(ctx context.Context, token, realm, groupPath string) (*Group, error)
 	// GetGroups get all groups in realm
@@ -493,6 +500,8 @@ type GoCloakIface interface {
 	GetDependentPermissions(ctx context.Context, token, realm, idOfClient, policyID string) ([]*PermissionRepresentation, error)
 	// GetPermissionResources returns a client's resource attached for the given permission id
 	GetPermissionResources(ctx context.Context, token, realm, idOfClient, permissionID string) ([]*PermissionResource, error)
+	// GetScopePermissions returns permissions associated with the client scope
+	GetScopePermissions(ctx context.Context, token, realm, idOfClient, idOfScope string) ([]*PolicyRepresentation, error)
 	// GetPermissionScopes returns a client's scopes configured for the given permission id
 	GetPermissionScopes(ctx context.Context, token, realm, idOfClient, permissionID string) ([]*PermissionScope, error)
 	// GetPermissions returns permissions associated with the client
@@ -541,6 +550,8 @@ type GoCloakIface interface {
 	CreateClientScopesScopeMappingsRealmRoles(ctx context.Context, token, realm, clientScopeID string, roles []Role) error
 	// RegisterRequiredAction creates a required action for a given realm
 	RegisterRequiredAction(ctx context.Context, token string, realm string, requiredAction RequiredActionProviderRepresentation) error
+	// GetUnregisteredRequiredActions gets a list of unregistered required actions for a given realm
+	GetUnregisteredRequiredActions(ctx context.Context, token string, realm string) ([]*UnregisteredRequiredActionProviderRepresentation, error)
 	// GetRequiredActions gets a list of required actions for a given realm
 	GetRequiredActions(ctx context.Context, token string, realm string) ([]*RequiredActionProviderRepresentation, error)
 	// GetRequiredAction gets a required action for a given realm

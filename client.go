@@ -66,7 +66,7 @@ func makeURL(path ...string) string {
 func (g *GoCloak) compareVersions(v, token string, ctx context.Context) (int, error) {
 	curVersion := g.Config.version
 	if curVersion == "" {
-		curV, err := g.getServerVersion(ctx, token);
+		curV, err := g.getServerVersion(ctx, token)
 		if err != nil {
 			return 0, err
 		}
@@ -75,7 +75,7 @@ func (g *GoCloak) compareVersions(v, token string, ctx context.Context) (int, er
 	}
 
 	curVersion = "v" + g.Config.version
-	if (v[0] != 'v') {
+	if v[0] != 'v' {
 		v = "v" + v
 	}
 
@@ -777,7 +777,7 @@ func (g *GoCloak) ExecuteActionsEmail(ctx context.Context, token, realm string, 
 
 // SendVerifyEmail sends a verification e-mail to a user.
 func (g *GoCloak) SendVerifyEmail(ctx context.Context, token, userID, realm string, params ...SendVerificationMailParams) error {
-	const errMessage = "could not execute actions email"
+	const errMessage = "failed to send verify email"
 
 	queryParams := map[string]string{}
 	if params != nil {

@@ -2639,7 +2639,7 @@ func Test_SendVerifyEmail(t *testing.T) {
 		cfg.GoCloak.Realm,
 		params)
 	if err != nil {
-		if err.Error() == "500 Internal Server Error: Failed to send verify email" {
+		if err.Error() == "500 Internal Server Error: Failed to send execute actions email" {
 			return
 		}
 		require.NoError(t, err, "SendVerifyEmail failed")
@@ -6641,14 +6641,13 @@ func Test_ImportIdentityProviderConfig(t *testing.T) {
 	require.NoError(t, err, "ImportIdentityProviderConfig failed")
 
 	expected := map[string]string{
-		"userInfoUrl":           "https://openidconnect.googleapis.com/v1/userinfo",
-		"validateSignature":     "true",
-		"tokenUrl":              "https://oauth2.googleapis.com/token",
-		"authorizationUrl":      "https://accounts.google.com/o/oauth2/v2/auth",
-		"jwksUrl":               "https://www.googleapis.com/oauth2/v3/certs",
-		"issuer":                "https://accounts.google.com",
-		"useJwksUrl":            "true",
-		"metadataDescriptorUrl": "https://accounts.google.com/.well-known/openid-configuration",
+		"userInfoUrl":       "https://openidconnect.googleapis.com/v1/userinfo",
+		"validateSignature": "true",
+		"tokenUrl":          "https://oauth2.googleapis.com/token",
+		"authorizationUrl":  "https://accounts.google.com/o/oauth2/v2/auth",
+		"jwksUrl":           "https://www.googleapis.com/oauth2/v3/certs",
+		"issuer":            "https://accounts.google.com",
+		"useJwksUrl":        "true",
 	}
 
 	require.Len(
@@ -6723,7 +6722,6 @@ E8go1LcvbfHNyknHu2sptnRq55fHZSHr18vVsQRfDYMG</ds:X509Certificate>
 		"loginHint":                       "false",
 		"enabledFromMetadata":             "true",
 		"idpEntityId":                     "https://accounts.google.com/o/saml2?idpid=C01unc9st",
-		"syncMode":                        "LEGACY",
 	}
 
 	require.Len(

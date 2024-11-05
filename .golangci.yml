@@ -13,10 +13,6 @@ linters:
 linters-settings:
   misspell:
     locale: US
-  golint:
-    min-confidence: 0
-  govet:
-    check-shadowing: false
   goimports:
     local-prefixes: github.com/Nerzal/gocloak
   gocognit:
