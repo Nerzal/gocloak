@@ -464,6 +464,7 @@ type Client struct {
 	BearerOnly                         *bool                           `json:"bearerOnly,omitempty"`
 	ClientAuthenticatorType            *string                         `json:"clientAuthenticatorType,omitempty"`
 	ClientID                           *string                         `json:"clientId,omitempty"`
+	ClientTemplate                     *string                         `json:"clientTemplate,omitempty"`
 	ConsentRequired                    *bool                           `json:"consentRequired,omitempty"`
 	DefaultClientScopes                *[]string                       `json:"defaultClientScopes,omitempty"`
 	DefaultRoles                       *[]string                       `json:"defaultRoles,omitempty"`
@@ -490,6 +491,9 @@ type Client struct {
 	ServiceAccountsEnabled             *bool                           `json:"serviceAccountsEnabled,omitempty"`
 	StandardFlowEnabled                *bool                           `json:"standardFlowEnabled,omitempty"`
 	SurrogateAuthRequired              *bool                           `json:"surrogateAuthRequired,omitempty"`
+	UseTemplateConfig                  *bool                           `json:"useTemplateConfig,omitempty"`
+	UseTemplateMappers                 *bool                           `json:"useTemplateMappers,omitempty"`
+	UseTemplateScope                   *bool                           `json:"useTemplateScope,omitempty"`
 	WebOrigins                         *[]string                       `json:"webOrigins,omitempty"`
 }
 
