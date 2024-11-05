@@ -1,7 +1,7 @@
 #!/bin/sh
 
-docker-compose down
-docker-compose up -d
+docker compose down
+docker compose up -d
 
 keycloakServer=http://localhost
 url="${keycloakServer}:9000/health"
@@ -23,4 +23,4 @@ fi
 
 go test -failfast -race -cover -coverprofile=coverage.out -covermode=atomic -p 10 -cpu 1,2 -bench . -benchmem ${ARGS[@]}
 
-docker-compose down
+docker compose down
