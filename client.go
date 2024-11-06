@@ -4241,6 +4241,28 @@ func (g *GoCloak) GetEvents(ctx context.Context, token string, realm string, par
 	return result, nil
 }
 
+// GetAdminEvents returns admin events
+func (g *GoCloak) GetAdminEvents(ctx context.Context, token string, realm string, params GetAdminEventsParams) ([]*AdminEventRepresentation, error) {
+	const errMessage = "could not get admin events"
+
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, errors.Wrap(err, errMessage)
+	}
+
+	var result []*AdminEventRepresentation
+	resp, err := g.GetRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		SetQueryParams(queryParams).
+		Get(g.getAdminRealmURL(realm, "admin-events"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // GetClientScopesScopeMappingsRealmRolesAvailable returns realm-level roles that are available to attach to this client scope
 func (g *GoCloak) GetClientScopesScopeMappingsRealmRolesAvailable(ctx context.Context, token, realm, clientScopeID string) ([]*Role, error) {
 	const errMessage = "could not get available realm-level roles with the client-scope"
