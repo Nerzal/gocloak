@@ -1453,7 +1453,6 @@ type OrganizationRepresentation struct {
 	Enabled     *bool                               `json:"enabled,omitempty"`
 	Description *string                             `json:"description,omitempty"`
 	RedirectUrl *string                             `json:"redirectUrl,omitempty"`
-	Attributes  *map[string]string                  `json:"attributes,omitempty"`
 	Domains     *[]OrganizationDomainRepresentation `json:"domains,omitempty"`
 }
 
