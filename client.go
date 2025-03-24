@@ -19,7 +19,7 @@ import (
 	"github.com/segmentio/ksuid"
 	"golang.org/x/mod/semver"
 
-	"github.com/Nerzal/gocloak/v13/pkg/jwx"
+	"github.com/launch-lab-public/gocloak/pkg/jwx"
 )
 
 // GoCloak provides functionalities to talk to Keycloak.

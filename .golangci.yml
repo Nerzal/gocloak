@@ -14,7 +14,7 @@ linters-settings:
   misspell:
     locale: US
   goimports:
-    local-prefixes: github.com/Nerzal/gocloak
+    local-prefixes: github.com/launch-lab-public/gocloak
   gocognit:
     min-complexity: 15
   gocyclo:
