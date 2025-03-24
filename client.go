@@ -4507,3 +4507,23 @@ func (g *GoCloak) GetUsersManagementPermissions(ctx context.Context, accessToken
 
 	return &result, nil
 }
+
+// GetUserByID fetches a user from the given realm with the given userID
+func (g *GoCloak) GetOrganizationById(ctx context.Context, accessToken, realm, organizationID string) (*OrganizationRepresentation, error) {
+	const errMessage = "could not get organization by id"
+
+	if organizationID == "" {
+		return nil, errors.Wrap(errors.New("organizationID shall not be empty"), errMessage)
+	}
+
+	var result OrganizationRepresentation
+	resp, err := g.GetRequestWithBearerAuth(ctx, accessToken).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, "organizations", organizationID))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}

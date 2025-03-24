@@ -1445,6 +1445,44 @@ type GetClientUserSessionsParams struct {
 	Max   *int `json:"max,string,omitempty"`
 }
 
+// https://www.keycloak.org/docs-api/latest/rest-api/index.html#OrganizationRepresentation
+type OrganizationRepresentation struct {
+	ID          *string                             `json:"id,omitempty"`
+	Name        *string                             `json:"name,omitempty"`
+	Alias       *string                             `json:"alias,omitempty"`
+	Enabled     *bool                               `json:"enabled,omitempty"`
+	Description *string                             `json:"description,omitempty"`
+	RedirectUrl *string                             `json:"redirectUrl,omitempty"`
+	Attributes  *map[string]string                  `json:"attributes,omitempty"`
+	Domains     *[]OrganizationDomainRepresentation `json:"domains,omitempty"`
+}
+
+type OrganizationDomainRepresentation struct {
+	Name     *string `json:"name,omitempty"`
+	Verified *bool   `json:"verified,omitempty"`
+}
+
+/*
+{
+    "id": "5bd75bd9-9499-42c3-9765-5ae5daeaec01",
+    "name": "Launch Lab Test",
+    "alias": "launchlab.test",
+    "enabled": true,
+    "description": "",
+    "attributes": {
+        "something": [
+            "else"
+        ]
+    },
+    "domains": [
+        {
+            "name": "launchlab.test",
+            "verified": false
+        }
+    ]
+}
+*/
+
 // prettyStringStruct returns struct formatted into pretty string
 func prettyStringStruct(t interface{}) string {
 	json, err := json.MarshalIndent(t, "", "\t")
@@ -1539,3 +1577,5 @@ func (v *CredentialRepresentation) String() string                  { return pre
 func (v *RequiredActionProviderRepresentation) String() string      { return prettyStringStruct(v) }
 func (v *BruteForceStatus) String() string                          { return prettyStringStruct(v) }
 func (v *GetClientUserSessionsParams) String() string               { return prettyStringStruct(v) }
+func (v *OrganizationRepresentation) String() string                { return prettyStringStruct(v) }
+func (v *OrganizationDomainRepresentation) String() string          { return prettyStringStruct(v) }
