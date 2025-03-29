@@ -4527,3 +4527,22 @@ func (g *GoCloak) GetOrganizationById(ctx context.Context, accessToken, realm, o
 
 	return &result, nil
 }
+
+func (g *GoCloak) GetOrganizationMembers(ctx context.Context, accessToken, realm, organizationID string) ([]*MemberRepresentation, error) {
+	const errMessage = "could not get organization members"
+
+	if organizationID == "" {
+		return nil, errors.Wrap(errors.New("organizationID shall not be empty"), errMessage)
+	}
+
+	var result []*MemberRepresentation
+	resp, err := g.GetRequestWithBearerAuth(ctx, accessToken).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, "organizations", organizationID, "members"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}

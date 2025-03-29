@@ -1461,26 +1461,15 @@ type OrganizationDomainRepresentation struct {
 	Verified *bool   `json:"verified,omitempty"`
 }
 
-/*
-{
-    "id": "5bd75bd9-9499-42c3-9765-5ae5daeaec01",
-    "name": "Launch Lab Test",
-    "alias": "launchlab.test",
-    "enabled": true,
-    "description": "",
-    "attributes": {
-        "something": [
-            "else"
-        ]
-    },
-    "domains": [
-        {
-            "name": "launchlab.test",
-            "verified": false
-        }
-    ]
+type MemberRepresentation struct {
+	ID             *string `json:"id,omitempty"`
+	Username       *string `json:"username,omitempty"`
+	FirstName      *string `json:"firstName,omitempty"`
+	LastName       *string `json:"lastName,omitempty"`
+	Email          *string `json:"email,omitempty"`
+	EmailVerified  *bool   `json:"emailVerified,omitempty"`
+	MembershipType *string `json:"membershipType,omitempty"`
 }
-*/
 
 // prettyStringStruct returns struct formatted into pretty string
 func prettyStringStruct(t interface{}) string {
@@ -1578,3 +1567,4 @@ func (v *BruteForceStatus) String() string                          { return pre
 func (v *GetClientUserSessionsParams) String() string               { return prettyStringStruct(v) }
 func (v *OrganizationRepresentation) String() string                { return prettyStringStruct(v) }
 func (v *OrganizationDomainRepresentation) String() string          { return prettyStringStruct(v) }
+func (v *MemberRepresentation) String() string                      { return prettyStringStruct(v) }
