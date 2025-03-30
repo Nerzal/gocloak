@@ -4595,3 +4595,26 @@ func (g *GoCloak) AddOrganizationMember(ctx context.Context, token, realm string
 
 	return nil
 }
+
+func (g *GoCloak) GetOrganizationMemberOrganizations(ctx context.Context, accessToken, realm, organizationID, userID string) ([]*OrganizationRepresentation, error) {
+	const errMessage = "could not get organization member organizations"
+
+	if organizationID == "" {
+		return nil, errors.Wrap(errors.New("organizationID shall not be empty"), errMessage)
+	}
+
+	if userID == "" {
+		return nil, errors.Wrap(errors.New("userID shall not be empty"), errMessage)
+	}
+
+	var result []*OrganizationRepresentation
+	resp, err := g.GetRequestWithBearerAuth(ctx, accessToken).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, "organizations", organizationID, "members", userID, "organizations"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
