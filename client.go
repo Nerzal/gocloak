@@ -4573,3 +4573,25 @@ func checkOrganizationInviteUserParams(invitation OrganizationInviteUserParams) 
 
 	return nil
 }
+
+func (g *GoCloak) AddOrganizationMember(ctx context.Context, token, realm string, organizationID string, userID string) error {
+	const errMessage = "could not add organization member"
+
+	if organizationID == "" {
+		return errors.Wrap(errors.New("organizationID shall not be empty"), errMessage)
+	}
+
+	if userID == "" {
+		return errors.Wrap(errors.New("userID shall not be empty"), errMessage)
+	}
+
+	resp, err := g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(userID).
+		Post(g.getAdminRealmURL(realm, "organizations", organizationID, "members"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return err
+	}
+
+	return nil
+}
