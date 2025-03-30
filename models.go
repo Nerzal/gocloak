@@ -1471,6 +1471,19 @@ type MemberRepresentation struct {
 	MembershipType *string `json:"membershipType,omitempty"`
 }
 
+type OrganizationInviteUserParams struct {
+	Email     *string `json:"email,omitempty"`
+	FirstName *string `json:"firstName,omitempty"`
+	LastName  *string `json:"lastName,omitempty"`
+}
+
+func (p *OrganizationInviteUserParams) FormData() map[string]string {
+	m, _ := json.Marshal(p)
+	var res map[string]string
+	_ = json.Unmarshal(m, &res)
+	return res
+}
+
 // prettyStringStruct returns struct formatted into pretty string
 func prettyStringStruct(t interface{}) string {
 	json, err := json.MarshalIndent(t, "", "\t")
