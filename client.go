@@ -4574,6 +4574,33 @@ func checkOrganizationInviteUserParams(invitation OrganizationInviteUserParams) 
 	return nil
 }
 
+func (g *GoCloak) InviteOrganizationExistingUser(ctx context.Context, token, realm string, organizationID string, user OrganizationInviteExistingUserParams) error {
+	const errMessage = "could not invite existing organization user"
+
+	err := checkOrganizationInviteExistingUserParams(user)
+	if err != nil {
+		return err
+	}
+
+	resp, err := g.GetRequestWithBearerAuth(ctx, token).
+		SetFormData(user.FormData()).
+		Post(g.getAdminRealmURL(realm, "organizations", organizationID, "members", "invite-existing-user"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func checkOrganizationInviteExistingUserParams(invitation OrganizationInviteExistingUserParams) error {
+	if NilOrEmpty(invitation.ID) {
+		return errors.New("id required to invite existing organization user")
+	}
+
+	return nil
+}
+
 func (g *GoCloak) AddOrganizationMember(ctx context.Context, token, realm string, organizationID string, userID string) error {
 	const errMessage = "could not add organization member"
 

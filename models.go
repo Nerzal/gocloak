@@ -1484,6 +1484,17 @@ func (p *OrganizationInviteUserParams) FormData() map[string]string {
 	return res
 }
 
+type OrganizationInviteExistingUserParams struct {
+	ID *string `json:"id,omitempty"`
+}
+
+func (p *OrganizationInviteExistingUserParams) FormData() map[string]string {
+	m, _ := json.Marshal(p)
+	var res map[string]string
+	_ = json.Unmarshal(m, &res)
+	return res
+}
+
 // prettyStringStruct returns struct formatted into pretty string
 func prettyStringStruct(t interface{}) string {
 	json, err := json.MarshalIndent(t, "", "\t")
