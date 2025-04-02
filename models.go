@@ -1471,6 +1471,14 @@ type MemberRepresentation struct {
 	MembershipType *string `json:"membershipType,omitempty"`
 }
 
+type GetOrganizationMembersParams struct {
+	Exact          *bool   `json:"exact,string,omitempty"`
+	First          *int    `json:"first,string,omitempty"`
+	Max            *int    `json:"max,string,omitempty"`
+	MembershipType *string `json:"membershipType,omitempty"`
+	Search         *string `json:"search,omitempty"`
+}
+
 type OrganizationInviteUserParams struct {
 	Email     *string `json:"email,omitempty"`
 	FirstName *string `json:"firstName,omitempty"`
