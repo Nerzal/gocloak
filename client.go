@@ -4553,6 +4553,27 @@ func (g *GoCloak) GetOrganizationMembers(ctx context.Context, accessToken, realm
 	return result, nil
 }
 
+func (g *GoCloak) GetOrganizations(ctx context.Context, accessToken, realm string, params GetOrganizationsParams) ([]*OrganizationRepresentation, error) {
+	const errMessage = "could not get organizations"
+
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, errors.Wrap(err, errMessage)
+	}
+
+	var result []*OrganizationRepresentation
+	resp, err := g.GetRequestWithBearerAuth(ctx, accessToken).
+		SetQueryParams(queryParams).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, "organizations"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 func (g *GoCloak) InviteOrganizationUser(ctx context.Context, token, realm string, organizationID string, user OrganizationInviteUserParams) error {
 	const errMessage = "could not invite organization user"
 

@@ -1479,6 +1479,15 @@ type GetOrganizationMembersParams struct {
 	Search         *string `json:"search,omitempty"`
 }
 
+type GetOrganizationsParams struct {
+	BriefRepresentation *bool   `json:"briefRepresentation,string,omitempty"`
+	Exact               *bool   `json:"exact,string,omitempty"`
+	First               *int    `json:"first,string,omitempty"`
+	Max                 *int    `json:"max,string,omitempty"`
+	Q                   *string `json:"q,omitempty"`
+	Search              *string `json:"search,omitempty"`
+}
+
 type OrganizationInviteUserParams struct {
 	Email     *string `json:"email,omitempty"`
 	FirstName *string `json:"firstName,omitempty"`
