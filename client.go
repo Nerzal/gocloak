@@ -4507,3 +4507,174 @@ func (g *GoCloak) GetUsersManagementPermissions(ctx context.Context, accessToken
 
 	return &result, nil
 }
+
+// GetOrganizationByID returns an organization for a given realm and organizationID
+func (g *GoCloak) GetOrganizationByID(ctx context.Context, accessToken, realm, organizationID string) (*OrganizationRepresentation, error) {
+	const errMessage = "could not get organization by id"
+
+	if organizationID == "" {
+		return nil, errors.Wrap(errors.New("organizationID shall not be empty"), errMessage)
+	}
+
+	var result OrganizationRepresentation
+	resp, err := g.GetRequestWithBearerAuth(ctx, accessToken).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, "organizations", organizationID))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// GetOrganizationMembers returns members for a given realm and organization
+func (g *GoCloak) GetOrganizationMembers(ctx context.Context, accessToken, realm, organizationID string, params GetOrganizationMembersParams) ([]*MemberRepresentation, error) {
+	const errMessage = "could not get organization members"
+
+	if organizationID == "" {
+		return nil, errors.Wrap(errors.New("organizationID shall not be empty"), errMessage)
+	}
+
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, errors.Wrap(err, errMessage)
+	}
+
+	var result []*MemberRepresentation
+	resp, err := g.GetRequestWithBearerAuth(ctx, accessToken).
+		SetQueryParams(queryParams).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, "organizations", organizationID, "members"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// GetOrganizations returns organizations for a given realm that match the provided params
+func (g *GoCloak) GetOrganizations(ctx context.Context, accessToken, realm string, params GetOrganizationsParams) ([]*OrganizationRepresentation, error) {
+	const errMessage = "could not get organizations"
+
+	queryParams, err := GetQueryParams(params)
+	if err != nil {
+		return nil, errors.Wrap(err, errMessage)
+	}
+
+	var result []*OrganizationRepresentation
+	resp, err := g.GetRequestWithBearerAuth(ctx, accessToken).
+		SetQueryParams(queryParams).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, "organizations"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// InviteOrganizationUser invites a new user for a given organization
+func (g *GoCloak) InviteOrganizationUser(ctx context.Context, token, realm string, organizationID string, user OrganizationInviteUserParams) error {
+	const errMessage = "could not invite organization user"
+
+	err := checkOrganizationInviteUserParams(user)
+	if err != nil {
+		return err
+	}
+
+	resp, err := g.GetRequestWithBearerAuth(ctx, token).
+		SetFormData(user.FormData()).
+		Post(g.getAdminRealmURL(realm, "organizations", organizationID, "members", "invite-user"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func checkOrganizationInviteUserParams(invitation OrganizationInviteUserParams) error {
+	if NilOrEmpty(invitation.Email) {
+		return errors.New("email required to invite organization user")
+	}
+
+	return nil
+}
+
+// InviteOrganizationExistingUser invites an existing user for a given organization
+func (g *GoCloak) InviteOrganizationExistingUser(ctx context.Context, token, realm string, organizationID string, user OrganizationInviteExistingUserParams) error {
+	const errMessage = "could not invite existing organization user"
+
+	err := checkOrganizationInviteExistingUserParams(user)
+	if err != nil {
+		return err
+	}
+
+	resp, err := g.GetRequestWithBearerAuth(ctx, token).
+		SetFormData(user.FormData()).
+		Post(g.getAdminRealmURL(realm, "organizations", organizationID, "members", "invite-existing-user"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func checkOrganizationInviteExistingUserParams(invitation OrganizationInviteExistingUserParams) error {
+	if NilOrEmpty(invitation.ID) {
+		return errors.New("id required to invite existing organization user")
+	}
+
+	return nil
+}
+
+// AddOrganizationMember adds a user for a given organization
+func (g *GoCloak) AddOrganizationMember(ctx context.Context, token, realm string, organizationID string, userID string) error {
+	const errMessage = "could not add organization member"
+
+	if organizationID == "" {
+		return errors.Wrap(errors.New("organizationID shall not be empty"), errMessage)
+	}
+
+	if userID == "" {
+		return errors.Wrap(errors.New("userID shall not be empty"), errMessage)
+	}
+
+	resp, err := g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(userID).
+		Post(g.getAdminRealmURL(realm, "organizations", organizationID, "members"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GetOrganizationMemberOrganizations returns organizations for a given user in a given organization
+func (g *GoCloak) GetOrganizationMemberOrganizations(ctx context.Context, accessToken, realm, organizationID, userID string) ([]*OrganizationRepresentation, error) {
+	const errMessage = "could not get organization member organizations"
+
+	if organizationID == "" {
+		return nil, errors.Wrap(errors.New("organizationID shall not be empty"), errMessage)
+	}
+
+	if userID == "" {
+		return nil, errors.Wrap(errors.New("userID shall not be empty"), errMessage)
+	}
+
+	var result []*OrganizationRepresentation
+	resp, err := g.GetRequestWithBearerAuth(ctx, accessToken).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, "organizations", organizationID, "members", userID, "organizations"))
+
+	if err := checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}

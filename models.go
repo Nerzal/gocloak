@@ -1445,6 +1445,82 @@ type GetClientUserSessionsParams struct {
 	Max   *int `json:"max,string,omitempty"`
 }
 
+// OrganizationRepresentation is a representation of an organization
+// https://www.keycloak.org/docs-api/latest/rest-api/index.html#OrganizationRepresentation
+type OrganizationRepresentation struct {
+	ID          *string                             `json:"id,omitempty"`
+	Name        *string                             `json:"name,omitempty"`
+	Alias       *string                             `json:"alias,omitempty"`
+	Enabled     *bool                               `json:"enabled,omitempty"`
+	Description *string                             `json:"description,omitempty"`
+	RedirectURL *string                             `json:"redirectUrl,omitempty"`
+	Domains     *[]OrganizationDomainRepresentation `json:"domains,omitempty"`
+}
+
+// OrganizationDomainRepresentation is a representation of an organization domain
+type OrganizationDomainRepresentation struct {
+	Name     *string `json:"name,omitempty"`
+	Verified *bool   `json:"verified,omitempty"`
+}
+
+// MemberRepresentation is a representation of an organization member
+type MemberRepresentation struct {
+	ID             *string `json:"id,omitempty"`
+	Username       *string `json:"username,omitempty"`
+	FirstName      *string `json:"firstName,omitempty"`
+	LastName       *string `json:"lastName,omitempty"`
+	Email          *string `json:"email,omitempty"`
+	EmailVerified  *bool   `json:"emailVerified,omitempty"`
+	MembershipType *string `json:"membershipType,omitempty"`
+}
+
+// GetOrganizationMembersParams represents the optional parameters for getting organization members
+type GetOrganizationMembersParams struct {
+	Exact          *bool   `json:"exact,string,omitempty"`
+	First          *int    `json:"first,string,omitempty"`
+	Max            *int    `json:"max,string,omitempty"`
+	MembershipType *string `json:"membershipType,omitempty"`
+	Search         *string `json:"search,omitempty"`
+}
+
+// GetOrganizationsParams represents the optional parameters for getting organizations
+type GetOrganizationsParams struct {
+	BriefRepresentation *bool   `json:"briefRepresentation,string,omitempty"`
+	Exact               *bool   `json:"exact,string,omitempty"`
+	First               *int    `json:"first,string,omitempty"`
+	Max                 *int    `json:"max,string,omitempty"`
+	Q                   *string `json:"q,omitempty"`
+	Search              *string `json:"search,omitempty"`
+}
+
+// OrganizationInviteUserParams represents the parameters for inviting a new user to an organization
+type OrganizationInviteUserParams struct {
+	Email     *string `json:"email,omitempty"`
+	FirstName *string `json:"firstName,omitempty"`
+	LastName  *string `json:"lastName,omitempty"`
+}
+
+// FormData returns form data for a given OrganizationInviteUserParams
+func (p *OrganizationInviteUserParams) FormData() map[string]string {
+	m, _ := json.Marshal(p)
+	var res map[string]string
+	_ = json.Unmarshal(m, &res)
+	return res
+}
+
+// OrganizationInviteExistingUserParams represents the parameters for inviting an existing user to an organization
+type OrganizationInviteExistingUserParams struct {
+	ID *string `json:"id,omitempty"`
+}
+
+// FormData returns form data for a given OrganizationInviteExistingUserParams
+func (p *OrganizationInviteExistingUserParams) FormData() map[string]string {
+	m, _ := json.Marshal(p)
+	var res map[string]string
+	_ = json.Unmarshal(m, &res)
+	return res
+}
+
 // prettyStringStruct returns struct formatted into pretty string
 func prettyStringStruct(t interface{}) string {
 	json, err := json.MarshalIndent(t, "", "\t")
@@ -1539,3 +1615,6 @@ func (v *CredentialRepresentation) String() string                  { return pre
 func (v *RequiredActionProviderRepresentation) String() string      { return prettyStringStruct(v) }
 func (v *BruteForceStatus) String() string                          { return prettyStringStruct(v) }
 func (v *GetClientUserSessionsParams) String() string               { return prettyStringStruct(v) }
+func (v *OrganizationRepresentation) String() string                { return prettyStringStruct(v) }
+func (v *OrganizationDomainRepresentation) String() string          { return prettyStringStruct(v) }
+func (v *MemberRepresentation) String() string                      { return prettyStringStruct(v) }
