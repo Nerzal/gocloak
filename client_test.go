@@ -26,7 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/pkcs12"
 
-	"github.com/launch-lab-public/gocloak"
+	"github.com/code-trust/gocloak"
 )
 
 type configAdmin struct {

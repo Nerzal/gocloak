@@ -1,4 +1,4 @@
-module github.com/launch-lab-public/gocloak
+module github.com/code-trust/gocloak
 
 go 1.23
 

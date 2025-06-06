@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/launch-lab-public/gocloak"
+	"github.com/code-trust/gocloak"
 
 	"github.com/stretchr/testify/assert"
 )
