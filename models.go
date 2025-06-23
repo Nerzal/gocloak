@@ -444,6 +444,7 @@ type ProtocolMappers struct {
 
 // ProtocolMappersConfig is a config of a protocol mapper
 type ProtocolMappersConfig struct {
+	IntrospectionTokenClaim            *string `json:"introspection.token.claim,omitempty"`
 	UserinfoTokenClaim                 *string `json:"userinfo.token.claim,omitempty"`
 	UserAttribute                      *string `json:"user.attribute,omitempty"`
 	IDTokenClaim                       *string `json:"id.token.claim,omitempty"`
