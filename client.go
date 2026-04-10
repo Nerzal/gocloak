@@ -138,7 +138,7 @@ func (g *GoCloak) GetRequestWithBasicAuth(ctx context.Context, clientID, clientS
 		SetHeader("Content-Type", "application/x-www-form-urlencoded")
 	// Public client doesn't require Basic Auth
 	if len(clientID) > 0 && len(clientSecret) > 0 {
-		httpBasicAuth := base64.StdEncoding.EncodeToString([]byte(clientID + ":" + clientSecret))
+		httpBasicAuth := base64.StdEncoding.EncodeToString([]byte(url.QueryEscape(clientID) + ":" + url.QueryEscape(clientSecret)))
 		req.SetHeader("Authorization", "Basic "+httpBasicAuth)
 	}
 
