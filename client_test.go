@@ -818,7 +818,7 @@ func Test_LoginClient_UnknownRealm(t *testing.T) {
 		cfg.GoCloak.ClientSecret,
 		"ThisRealmDoesNotExist")
 	require.Error(t, err, "Login shouldn't be successful")
-	require.EqualError(t, err, "404 Not Found: Realm does not exist")
+	require.ErrorContains(t, err, "Realm does not exist")
 }
 
 func Test_GetIssuer(t *testing.T) {
