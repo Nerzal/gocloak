@@ -16,6 +16,8 @@ jobs:
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
 
       - name: Run govulncheck
         uses: golang/govulncheck-action@v1

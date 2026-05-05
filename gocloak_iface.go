@@ -611,7 +611,7 @@ type GoCloakIface interface {
 	GetMemberAssociatedOrganizations(ctx context.Context, token, realm, idOfUser string) ([]*OrganizationRepresentation, error)
 	// RemoveUserFromOrganization removes the user with the specified id from the organization
 	RemoveUserFromOrganization(ctx context.Context, token, realm, idOfOrganization, idOfUser string) error
-	// Adds the identity provider with the specified id to the organization
+	// AddIdentityProviderToOrganization adds the identity provider with the specified id to the organization
 	// POST /admin/realms/{realm}/organizations/{id}/identity-providers
 	AddIdentityProviderToOrganization(ctx context.Context, token, realm string, idOfOrganization, identityProviderAlias string) error
 }

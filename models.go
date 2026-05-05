@@ -465,7 +465,7 @@ type ProtocolMappersConfig struct {
 	Script                             *string `json:"script,omitempty"`
 	UserSessionNote                    *string `json:"user.session.note,omitempty"`
 	AddOrganizationAttributes          *string `json:"addOrganizationAttributes,omitempty"`
-	AddOrganizationId                  *string `json:"addOrganizationId,omitempty"`
+	AddOrganizationID                  *string `json:"addOrganizationId,omitempty"`
 }
 
 // Client is a ClientRepresentation
@@ -855,7 +855,7 @@ type RealmRepresentation struct {
 	WebAuthnPolicyExtraOrigins                                *[]string                         `json:"webAuthnPolicyExtraOrigins,omitempty"`
 	WebAuthnPolicyRequireResidentKey                          *string                           `json:"webAuthnPolicyRequireResidentKey,omitempty"`
 	WebAuthnPolicyRpEntityName                                *string                           `json:"webAuthnPolicyRpEntityName,omitempty"`
-	WebAuthnPolicyRpId                                        *string                           `json:"webAuthnPolicyRpId,omitempty"`
+	WebAuthnPolicyRpID                                        *string                           `json:"webAuthnPolicyRpId,omitempty"`
 	WebAuthnPolicySignatureAlgorithms                         *[]string                         `json:"webAuthnPolicySignatureAlgorithms,omitempty"`
 	WebAuthnPolicyUserVerificationRequirement                 *string                           `json:"webAuthnPolicyUserVerificationRequirement,omitempty"`
 	WebAuthnPolicyPasswordlessAcceptableAaguids               *[]string                         `json:"webAuthnPolicyPasswordlessAcceptableAaguids,omitempty"`
@@ -1015,13 +1015,15 @@ type RequestingPartyTokenOptions struct {
 }
 
 // FormData returns a map of options to be used in SetFormData function
-func (t *RequestingPartyTokenOptions) FormData() map[string]string {
+func (t *RequestingPartyTokenOptions) FormData() map[string]string { //nolint:gocognit // can be fixed later
 	if NilOrEmpty(t.GrantType) { // required grant type for RPT
 		t.GrantType = StringP("urn:ietf:params:oauth:grant-type:uma-ticket")
 	}
+
 	if t.ResponseIncludeResourceName == nil { // defaults to true if no value set
 		t.ResponseIncludeResourceName = BoolP(true)
 	}
+
 	res := make(map[string]string)
 	v := reflect.ValueOf(t).Elem()
 	typeOf := v.Type()
@@ -1427,7 +1429,7 @@ type EventRepresentation struct {
 // GetAdminEventsParams represents the optional parameters for getting events
 type GetAdminEventsParams struct {
 	AuthClient     *string  `json:"authClient,omitempty"`
-	AuthIpAddress  *string  `json:"authIpAddress,omitempty"`
+	AuthIPAddress  *string  `json:"authIpAddress,omitempty"`
 	AuthRealm      *string  `json:"authRealm,omitempty"`
 	AuthUser       *string  `json:"authUser,omitempty"`
 	DateFrom       *string  `json:"dateFrom,omitempty"`
@@ -1535,8 +1537,8 @@ type OrganizationInviteUserParams struct {
 }
 
 // FormData returns form data for a given OrganizationInviteUserParams
-func (p *OrganizationInviteUserParams) FormData() map[string]string {
-	m, _ := json.Marshal(p)
+func (v *OrganizationInviteUserParams) FormData() map[string]string {
+	m, _ := json.Marshal(v)
 	var res map[string]string
 	_ = json.Unmarshal(m, &res)
 	return res
