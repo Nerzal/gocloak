@@ -6,11 +6,9 @@ jobs:
   tests:
     runs-on: ubuntu-latest
     steps:
-      # 1. Erst den Code auschecken
       - name: Checkout code
         uses: actions/checkout@v4
       
-      # 2. Dann Go aufsetzen
       - name: Setup Go environment
         uses: actions/setup-go@v5
         with:
@@ -19,7 +17,6 @@ jobs:
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6
 
-      # 3. Neues, offizielles Tool für Vulnerability Checks (ersetzt Nancy)
       - name: Run govulncheck
         uses: golang/govulncheck-action@v1
         with:
@@ -42,14 +39,12 @@ jobs:
           docker ps
           docker logs keycloak
 
-      # 4. Codecov aktualisiert (Token wird ab v4 dringend benötigt)
       - name: CodeCov
         uses: codecov/codecov-action@v4
         with:
           file: ./coverage.txt
           token: ${{ secrets.CODECOV_TOKEN }} 
 
-      # Publish benchmarks for the main branch only
       - name: Store Benchmark Result
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: rhysd/github-action-benchmark@v1
@@ -59,7 +54,6 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: true
 
-      # Updating go report card for main branch only
       - name: GoReportCard
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: curl --fail --request POST "https://goreportcard.com/checks" --data "repo=github.com/Nerzal/gocloak"
