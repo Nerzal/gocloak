@@ -7535,4 +7535,3 @@ func Test_GetMemberAssociatedOrganizations(t *testing.T) {
 
 	require.GreaterOrEqual(t, len(organizations), 1)
 }
-

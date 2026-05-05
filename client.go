@@ -606,7 +606,7 @@ func (g *GoCloak) LoginAdminOtp(ctx context.Context, username, password, totp, r
 		GrantType: StringP("password"),
 		Username:  &username,
 		Password:  &password,
-		Totp:	   &totp,
+		Totp:      &totp,
 	})
 }
 
