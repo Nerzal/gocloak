@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778171427947,
+  "lastUpdate": 1778171631665,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -11763,6 +11763,318 @@ window.BENCHMARK_DATA = {
             "value": 122,
             "unit": "allocs/op",
             "extra": "835 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tobias.theel@noobygames.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "committer": {
+            "email": "tobias.theel@noobygames.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "distinct": true,
+          "id": "df7b0c4a0446acfef40eef341592bb6e1340b27d",
+          "message": "yep",
+          "timestamp": "2026-05-07T18:30:44+02:00",
+          "tree_id": "c8ee6ce7c930f5bdc0445887bd5f0340fd0b49c7",
+          "url": "https://github.com/Nerzal/gocloak/commit/df7b0c4a0446acfef40eef341592bb6e1340b27d"
+        },
+        "date": 1778171630983,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 78363634,
+            "unit": "ns/op\t   67898 B/op\t     186 allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLogin - ns/op",
+            "value": 78363634,
+            "unit": "ns/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLogin - B/op",
+            "value": 67898,
+            "unit": "B/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLogin - allocs/op",
+            "value": 186,
+            "unit": "allocs/op",
+            "extra": "14 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 78346064,
+            "unit": "ns/op\t   79529 B/op\t     184 allocs/op",
+            "extra": "14 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLogin - ns/op",
+            "value": 78346064,
+            "unit": "ns/op",
+            "extra": "14 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLogin - B/op",
+            "value": 79529,
+            "unit": "B/op",
+            "extra": "14 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLogin - allocs/op",
+            "value": 184,
+            "unit": "allocs/op",
+            "extra": "14 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroups",
+            "value": 1847660,
+            "unit": "ns/op\t   35156 B/op\t     103 allocs/op",
+            "extra": "561 times"
+          },
+          {
+            "name": "BenchmarkGetGroups - ns/op",
+            "value": 1847660,
+            "unit": "ns/op",
+            "extra": "561 times"
+          },
+          {
+            "name": "BenchmarkGetGroups - B/op",
+            "value": 35156,
+            "unit": "B/op",
+            "extra": "561 times"
+          },
+          {
+            "name": "BenchmarkGetGroups - allocs/op",
+            "value": 103,
+            "unit": "allocs/op",
+            "extra": "561 times"
+          },
+          {
+            "name": "BenchmarkGetGroups",
+            "value": 1845848,
+            "unit": "ns/op\t   37526 B/op\t     104 allocs/op",
+            "extra": "678 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroups - ns/op",
+            "value": 1845848,
+            "unit": "ns/op",
+            "extra": "678 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroups - B/op",
+            "value": 37526,
+            "unit": "B/op",
+            "extra": "678 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroups - allocs/op",
+            "value": 104,
+            "unit": "allocs/op",
+            "extra": "678 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull",
+            "value": 1611626,
+            "unit": "ns/op\t   37587 B/op\t     118 allocs/op",
+            "extra": "705 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull - ns/op",
+            "value": 1611626,
+            "unit": "ns/op",
+            "extra": "705 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull - B/op",
+            "value": 37587,
+            "unit": "B/op",
+            "extra": "705 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "705 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull",
+            "value": 1653896,
+            "unit": "ns/op\t   37179 B/op\t     118 allocs/op",
+            "extra": "760 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull - ns/op",
+            "value": 1653896,
+            "unit": "ns/op",
+            "extra": "760 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull - B/op",
+            "value": 37179,
+            "unit": "B/op",
+            "extra": "760 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "760 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief",
+            "value": 1434285,
+            "unit": "ns/op\t   39182 B/op\t     118 allocs/op",
+            "extra": "786 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief - ns/op",
+            "value": 1434285,
+            "unit": "ns/op",
+            "extra": "786 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief - B/op",
+            "value": 39182,
+            "unit": "B/op",
+            "extra": "786 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "786 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief",
+            "value": 1508865,
+            "unit": "ns/op\t   38992 B/op\t     118 allocs/op",
+            "extra": "712 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief - ns/op",
+            "value": 1508865,
+            "unit": "ns/op",
+            "extra": "712 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief - B/op",
+            "value": 38992,
+            "unit": "B/op",
+            "extra": "712 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "712 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroup",
+            "value": 1564999,
+            "unit": "ns/op\t   36395 B/op\t     135 allocs/op",
+            "extra": "676 times"
+          },
+          {
+            "name": "BenchmarkGetGroup - ns/op",
+            "value": 1564999,
+            "unit": "ns/op",
+            "extra": "676 times"
+          },
+          {
+            "name": "BenchmarkGetGroup - B/op",
+            "value": 36395,
+            "unit": "B/op",
+            "extra": "676 times"
+          },
+          {
+            "name": "BenchmarkGetGroup - allocs/op",
+            "value": 135,
+            "unit": "allocs/op",
+            "extra": "676 times"
+          },
+          {
+            "name": "BenchmarkGetGroup",
+            "value": 1370479,
+            "unit": "ns/op\t   36639 B/op\t     135 allocs/op",
+            "extra": "830 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroup - ns/op",
+            "value": 1370479,
+            "unit": "ns/op",
+            "extra": "830 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroup - B/op",
+            "value": 36639,
+            "unit": "B/op",
+            "extra": "830 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroup - allocs/op",
+            "value": 135,
+            "unit": "allocs/op",
+            "extra": "830 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath",
+            "value": 1171047,
+            "unit": "ns/op\t   39529 B/op\t     122 allocs/op",
+            "extra": "958 times"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath - ns/op",
+            "value": 1171047,
+            "unit": "ns/op",
+            "extra": "958 times"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath - B/op",
+            "value": 39529,
+            "unit": "B/op",
+            "extra": "958 times"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath - allocs/op",
+            "value": 122,
+            "unit": "allocs/op",
+            "extra": "958 times"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath",
+            "value": 1207499,
+            "unit": "ns/op\t   36793 B/op\t     122 allocs/op",
+            "extra": "903 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath - ns/op",
+            "value": 1207499,
+            "unit": "ns/op",
+            "extra": "903 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath - B/op",
+            "value": 36793,
+            "unit": "B/op",
+            "extra": "903 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath - allocs/op",
+            "value": 122,
+            "unit": "allocs/op",
+            "extra": "903 times\n2 procs"
           }
         ]
       }
