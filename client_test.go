@@ -607,6 +607,45 @@ func Test_SetRestyClient(t *testing.T) {
 	require.Equal(t, newRestyClient, restyClient)
 }
 
+func Test_SetServerVersion(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	t.Run("returns configured version without serverinfo call", func(t *testing.T) {
+		t.Parallel()
+
+		client := gocloak.NewClient("http://example.com", gocloak.SetServerVersion("25.0.0"))
+		var serverInfoRequests int32
+		client.RestyClient().OnBeforeRequest(func(_ *resty.Client, r *resty.Request) error {
+			if strings.Contains(r.URL, "serverinfo") {
+				atomic.AddInt32(&serverInfoRequests, 1)
+			}
+			return nil
+		})
+
+		version, err := client.GetServerVersion(ctx, "token")
+		require.NoError(t, err)
+		require.Equal(t, "25.0.0", version)
+		require.Equal(t, int32(0), serverInfoRequests)
+	})
+
+	t.Run("returns configured version", func(t *testing.T) {
+		t.Parallel()
+
+		for _, version := range []string{"19.0.0", "25.0.0"} {
+			t.Run(version, func(t *testing.T) {
+				t.Parallel()
+
+				client := gocloak.NewClient("http://example.com", gocloak.SetServerVersion(version))
+				got, err := client.GetServerVersion(ctx, "token")
+				require.NoError(t, err)
+				require.Equal(t, version, got)
+			})
+		}
+	})
+
+}
+
 func Test_checkForError(t *testing.T) {
 	t.Parallel()
 	client := NewClientWithDebug(t)
