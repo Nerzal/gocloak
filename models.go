@@ -883,6 +883,34 @@ type AuthenticationFlowRepresentation struct {
 	TopLevel                 *bool                                   `json:"topLevel,omitempty"`
 }
 
+// ConfigPropertyRepresentation represents a configuration property
+type ConfigPropertyRepresentation struct {
+	Name         *string  `json:"name,omitempty"`
+	Label        *string  `json:"label,omitempty"`
+	HelpText     *string  `json:"helpText,omitempty"`
+	Type         *string  `json:"type,omitempty"`
+	DefaultValue any      `json:"defaultValue,omitempty"`
+	Options      []string `json:"options,omitempty"`
+	Secret       *bool    `json:"secret,omitempty"`
+	Required     *bool    `json:"required,omitempty"`
+	ReadOnly     *bool    `json:"readOnly,omitempty"`
+}
+
+// AuthenticatorConfigInfoRepresentation represents an authenticator config description
+type AuthenticatorConfigInfoRepresentation struct {
+	Name       *string                        `json:"name,omitempty"`
+	ProviderID *string                        `json:"providerId,omitempty"`
+	HelpText   *string                        `json:"helpText,omitempty"`
+	Properties []ConfigPropertyRepresentation `json:"properties,omitempty"`
+}
+
+// AuthenticatorConfigRepresentation represents an authenticator config of a realm
+type AuthenticatorConfigRepresentation struct {
+	ID     *string           `json:"id,omitempty"`
+	Alias  *string           `json:"alias,omitempty"`
+	Config map[string]string `json:"config,omitempty"`
+}
+
 // AuthenticationExecutionRepresentation represents the authentication execution of an AuthenticationFlowRepresentation
 type AuthenticationExecutionRepresentation struct {
 	Authenticator           *string `json:"authenticator,omitempty"`

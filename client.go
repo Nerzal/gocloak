@@ -2642,6 +2642,61 @@ func (g *GoCloak) DeleteAuthenticationFlow(ctx context.Context, token, realm, fl
 	return checkForError(resp, err, errMessage)
 }
 
+// CreateAuthenticationConfig creates a new authenticator configuration
+func (g *GoCloak) CreateAuthenticationConfig(ctx context.Context, token, realm string, config AuthenticatorConfigRepresentation) error {
+	const errMessage = "could not create authentication config"
+	resp, err := g.GetRequestWithBearerAuth(ctx, token).SetBody(config).
+		Post(g.getAdminRealmURL(realm, "authentication", "config"))
+
+	return checkForError(resp, err, errMessage)
+}
+
+// GetAuthenticatorConfigDescription gets the configuration description for an authenticator provider
+func (g *GoCloak) GetAuthenticatorConfigDescription(ctx context.Context, token, realm, providerID string) (*AuthenticatorConfigInfoRepresentation, error) {
+	const errMessage = "could not retrieve authenticator config description"
+	var result *AuthenticatorConfigInfoRepresentation
+	resp, err := g.GetRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, "authentication", "config-description", providerID))
+
+	if err = checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// GetAuthenticationConfig gets an authenticator configuration by ID
+func (g *GoCloak) GetAuthenticationConfig(ctx context.Context, token, realm, configID string) (*AuthenticatorConfigRepresentation, error) {
+	const errMessage = "could not retrieve authentication config"
+	var result *AuthenticatorConfigRepresentation
+	resp, err := g.GetRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, "authentication", "config", configID))
+
+	if err = checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// UpdateAuthenticationConfig updates an authenticator configuration by ID
+func (g *GoCloak) UpdateAuthenticationConfig(ctx context.Context, token, realm string, config AuthenticatorConfigRepresentation, configID string) error {
+	const errMessage = "could not update authentication config"
+	resp, err := g.GetRequestWithBearerAuth(ctx, token).SetBody(config).
+		Put(g.getAdminRealmURL(realm, "authentication", "config", configID))
+
+	return checkForError(resp, err, errMessage)
+}
+
+// DeleteAuthenticationConfig deletes an authenticator configuration by ID
+func (g *GoCloak) DeleteAuthenticationConfig(ctx context.Context, token, realm, configID string) error {
+	const errMessage = "could not delete authentication config"
+	resp, err := g.GetRequestWithBearerAuth(ctx, token).
+		Delete(g.getAdminRealmURL(realm, "authentication", "config", configID))
+
+	return checkForError(resp, err, errMessage)
+}
+
 // GetAuthenticationExecutions retrieves all executions of a given flow
 func (g *GoCloak) GetAuthenticationExecutions(ctx context.Context, token, realm, flow string) ([]*ModifyAuthenticationExecutionRepresentation, error) {
 	const errMessage = "could not retrieve authentication flows"
@@ -2681,6 +2736,29 @@ func (g *GoCloak) DeleteAuthenticationExecution(ctx context.Context, token, real
 		Delete(g.getAdminRealmURL(realm, "authentication", "executions", executionID))
 
 	return checkForError(resp, err, errMessage)
+}
+
+// CreateAuthenticationExecutionConfig creates a new configuration for an authentication execution
+func (g *GoCloak) CreateAuthenticationExecutionConfig(ctx context.Context, token, realm, executionID string, config AuthenticatorConfigRepresentation) error {
+	const errMessage = "could not create authentication execution config"
+	resp, err := g.GetRequestWithBearerAuth(ctx, token).SetBody(config).
+		Post(g.getAdminRealmURL(realm, "authentication", "executions", executionID, "config"))
+
+	return checkForError(resp, err, errMessage)
+}
+
+// GetAuthenticationExecutionConfig gets the configuration for an authentication execution
+func (g *GoCloak) GetAuthenticationExecutionConfig(ctx context.Context, token, realm, executionID, configID string) (*AuthenticatorConfigRepresentation, error) {
+	const errMessage = "could not retrieve authentication execution config"
+	var result *AuthenticatorConfigRepresentation
+	resp, err := g.GetRequestWithBearerAuth(ctx, token).
+		SetResult(&result).
+		Get(g.getAdminRealmURL(realm, "authentication", "executions", executionID, "config", configID))
+
+	if err = checkForError(resp, err, errMessage); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 // CreateAuthenticationExecutionFlow creates a new execution for the given flow name in the given realm

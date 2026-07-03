@@ -332,6 +332,16 @@ type GoCloakIface interface {
 	UpdateAuthenticationFlow(ctx context.Context, token, realm string, flow AuthenticationFlowRepresentation, authenticationFlowID string) (*AuthenticationFlowRepresentation, error)
 	// DeleteAuthenticationFlow deletes a flow in a realm with the given ID
 	DeleteAuthenticationFlow(ctx context.Context, token, realm, flowID string) error
+	// CreateAuthenticationConfig creates a new authenticator configuration in a realm
+	CreateAuthenticationConfig(ctx context.Context, token, realm string, config AuthenticatorConfigRepresentation) error
+	// GetAuthenticatorConfigDescription gets the configuration description for an authenticator provider
+	GetAuthenticatorConfigDescription(ctx context.Context, token, realm, providerID string) (*AuthenticatorConfigInfoRepresentation, error)
+	// GetAuthenticationConfig gets an authenticator configuration by ID
+	GetAuthenticationConfig(ctx context.Context, token, realm, configID string) (*AuthenticatorConfigRepresentation, error)
+	// UpdateAuthenticationConfig updates an authenticator configuration by ID
+	UpdateAuthenticationConfig(ctx context.Context, token, realm string, config AuthenticatorConfigRepresentation, configID string) error
+	// DeleteAuthenticationConfig deletes an authenticator configuration by ID
+	DeleteAuthenticationConfig(ctx context.Context, token, realm, configID string) error
 	// GetAuthenticationExecutions retrieves all executions of a given flow
 	GetAuthenticationExecutions(ctx context.Context, token, realm, flow string) ([]*ModifyAuthenticationExecutionRepresentation, error)
 	// CreateAuthenticationExecution creates a new execution for the given flow name in the given realm
@@ -340,6 +350,10 @@ type GoCloakIface interface {
 	UpdateAuthenticationExecution(ctx context.Context, token, realm, flow string, execution ModifyAuthenticationExecutionRepresentation) error
 	// DeleteAuthenticationExecution delete a single execution with the given ID
 	DeleteAuthenticationExecution(ctx context.Context, token, realm, executionID string) error
+	// CreateAuthenticationExecutionConfig creates a new configuration for an authentication execution
+	CreateAuthenticationExecutionConfig(ctx context.Context, token, realm, executionID string, config AuthenticatorConfigRepresentation) error
+	// GetAuthenticationExecutionConfig gets the configuration for an authentication execution
+	GetAuthenticationExecutionConfig(ctx context.Context, token, realm, executionID, configID string) (*AuthenticatorConfigRepresentation, error)
 	// CreateAuthenticationExecutionFlow creates a new execution for the given flow name in the given realm
 	CreateAuthenticationExecutionFlow(ctx context.Context, token, realm, flow string, executionFlow CreateAuthenticationExecutionFlowRepresentation) error
 	// CreateUser creates the given user in the given realm and returns it's userID
