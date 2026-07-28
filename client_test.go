@@ -888,13 +888,23 @@ func Test_GetRequestingPartyPermissionDecision(t *testing.T) {
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	SetUpTestUser(t, client)
-	token, err := client.Login(
-		context.Background(),
-		cfg.GoCloak.ClientID,
-		cfg.GoCloak.ClientSecret,
-		cfg.GoCloak.Realm,
-		cfg.GoCloak.UserName,
-		cfg.GoCloak.Password)
+
+	// Under the heavy concurrent test load this suite generates, Keycloak can
+	// occasionally answer a valid direct-grant login with a spurious
+	// "invalid_grant: Invalid user credentials" for a single request. Retry
+	// briefly rather than fail the test on that transient blip.
+	var token *gocloak.JWT
+	var err error
+	require.Eventually(t, func() bool {
+		token, err = client.Login(
+			context.Background(),
+			cfg.GoCloak.ClientID,
+			cfg.GoCloak.ClientSecret,
+			cfg.GoCloak.Realm,
+			cfg.GoCloak.UserName,
+			cfg.GoCloak.Password)
+		return err == nil
+	}, 5*time.Second, 250*time.Millisecond, "login failed")
 	require.NoError(t, err, "login failed")
 
 	dec, err := client.GetRequestingPartyPermissionDecision(
