@@ -484,6 +484,20 @@ func SetUpTestUser(t testing.TB, client gocloak.GoCloakIface) {
 			cfg.GoCloak.Password,
 			false)
 		require.NoError(t, err, "SetPassword failed")
+
+		// Keycloak can take a moment to propagate a credential update before it is
+		// usable for a direct-grant login, so confirm the new password is active
+		// before letting any parallel test try to log in with it.
+		require.Eventually(t, func() bool {
+			_, loginErr := client.Login(
+				context.Background(),
+				cfg.GoCloak.ClientID,
+				cfg.GoCloak.ClientSecret,
+				cfg.GoCloak.Realm,
+				cfg.GoCloak.UserName,
+				cfg.GoCloak.Password)
+			return loginErr == nil
+		}, 5*time.Second, 100*time.Millisecond, "test user password did not become active in time")
 	})
 }
 
