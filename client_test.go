@@ -6976,6 +6976,165 @@ func TestGocloak_CreateAuthenticationFlowsAndCreateAuthenticationExecutionAndFlo
 	require.NoError(t, err, "Failed to delete authentication flow")
 }
 
+func TestGocloak_AuthenticatorConfigCRUD(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	configDescription, err := client.GetAuthenticatorConfigDescription(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		"identity-provider-redirector",
+	)
+	require.NoError(t, err, "Failed to get authenticator config description")
+	require.NotNil(t, configDescription)
+	require.Equal(t, "identity-provider-redirector", gocloak.PString(configDescription.ProviderID))
+	require.NotEmpty(t, configDescription.Properties)
+
+	configID, err := client.CreateAuthenticatorConfig(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		gocloak.AuthenticatorConfigRepresentation{
+			Alias:  gocloak.StringP("testauthenticatorconfig"),
+			Config: map[string]string{"defaultProvider": "someidp"},
+		},
+	)
+	require.NoError(t, err, "Failed to create authenticator config")
+	require.NotEmpty(t, configID)
+
+	fetchedConfig, err := client.GetAuthenticatorConfig(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		configID,
+	)
+	require.NoError(t, err, "Failed to get authenticator config")
+	require.Equal(t, "testauthenticatorconfig", gocloak.PString(fetchedConfig.Alias))
+	require.Equal(t, "someidp", fetchedConfig.Config["defaultProvider"])
+
+	fetchedConfig.Config["defaultProvider"] = "anotheridp"
+	err = client.UpdateAuthenticatorConfig(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		*fetchedConfig,
+		configID,
+	)
+	require.NoError(t, err, "Failed to update authenticator config")
+
+	updatedConfig, err := client.GetAuthenticatorConfig(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		configID,
+	)
+	require.NoError(t, err, "Failed to get updated authenticator config")
+	require.Equal(t, "anotheridp", updatedConfig.Config["defaultProvider"])
+
+	err = client.DeleteAuthenticatorConfig(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		configID,
+	)
+	require.NoError(t, err, "Failed to delete authenticator config")
+
+	_, err = client.GetAuthenticatorConfig(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		configID,
+	)
+	require.Error(t, err, "GetAuthenticatorConfig should fail after deletion")
+}
+
+func TestGocloak_AuthenticationExecutionConfigCRUD(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+
+	authFlow := gocloak.AuthenticationFlowRepresentation{
+		Alias:      gocloak.StringP("testexecconfigflow"),
+		BuiltIn:    gocloak.BoolP(false),
+		TopLevel:   gocloak.BoolP(true),
+		ProviderID: gocloak.StringP("basic-flow"),
+	}
+	err := client.CreateAuthenticationFlow(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		authFlow,
+	)
+	require.NoError(t, err, "Failed to create authentication flow")
+	defer func() {
+		flows, ferr := client.GetAuthenticationFlows(context.Background(), token.AccessToken, cfg.GoCloak.Realm)
+		require.NoError(t, ferr, "Failed to fetch authentication flows for cleanup")
+		for _, flow := range flows {
+			if gocloak.PString(flow.Alias) == *authFlow.Alias {
+				err = client.DeleteAuthenticationFlow(context.Background(), token.AccessToken, cfg.GoCloak.Realm, *flow.ID)
+				require.NoError(t, err, "Failed to delete authentication flow")
+				break
+			}
+		}
+	}()
+
+	err = client.CreateAuthenticationExecution(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		*authFlow.Alias,
+		gocloak.CreateAuthenticationExecutionRepresentation{
+			Provider: gocloak.StringP("identity-provider-redirector"),
+		},
+	)
+	require.NoError(t, err, "Failed to create authentication execution")
+
+	executions, err := client.GetAuthenticationExecutions(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		*authFlow.Alias,
+	)
+	require.NoError(t, err, "Failed to get authentication executions")
+
+	var executionID string
+	for _, execution := range executions {
+		if execution.ProviderID != nil && *execution.ProviderID == "identity-provider-redirector" {
+			executionID = *execution.ID
+			break
+		}
+	}
+	require.NotEmpty(t, executionID, "Failed to find created execution")
+
+	configID, err := client.CreateAuthenticationExecutionConfig(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		executionID,
+		gocloak.AuthenticatorConfigRepresentation{
+			Alias:  gocloak.StringP("testexecconfig"),
+			Config: map[string]string{"defaultProvider": "someidp"},
+		},
+	)
+	require.NoError(t, err, "Failed to create authentication execution config")
+	require.NotEmpty(t, configID)
+
+	fetchedConfig, err := client.GetAuthenticationExecutionConfig(
+		context.Background(),
+		token.AccessToken,
+		cfg.GoCloak.Realm,
+		executionID,
+		configID,
+	)
+	require.NoError(t, err, "Failed to get authentication execution config")
+	require.Equal(t, "testexecconfig", gocloak.PString(fetchedConfig.Alias))
+	require.Equal(t, "someidp", fetchedConfig.Config["defaultProvider"])
+}
+
 func TestGocloak_CreateAndGetRequiredAction(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
