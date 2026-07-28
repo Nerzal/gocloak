@@ -12,6 +12,10 @@ import (
 
 // GoCloakIface ...
 type GoCloakIface interface {
+	// GetServerVersion returns the server version from the serverinfo endpoint.
+	// If the version is already set, it will return the cached version.
+	// Otherwise, it will fetch the version from the serverinfo endpoint and cache it.
+	GetServerVersion(ctx context.Context, token string) (string, error)
 	// GetRequest returns a request for calling endpoints.
 	GetRequest(ctx context.Context) *resty.Request
 	// GetRequestWithBearerAuthNoCache returns a JSON base request configured with an auth token and no-cache header.
@@ -354,7 +358,10 @@ type GoCloakIface interface {
 	GetUserCount(ctx context.Context, token string, realm string, params GetUsersParams) (int, error)
 	// GetUserGroups get all groups for user
 	GetUserGroups(ctx context.Context, token, realm, userID string, params GetGroupsParams) ([]*Group, error)
+	// GetUserProfileConfig retrieves the user profile configuration for a realm
+	GetUserProfileConfig(ctx context.Context, token, realm string) (*UserProfileConfig, error)
 	// GetUsers get all users in realm
+	// Default number of results per page is 100, use GetUsersParams to specify it explicitly or to set offset for pagination
 	GetUsers(ctx context.Context, token, realm string, params GetUsersParams) ([]*User, error)
 	// GetUsersByRoleName returns all users have a given role
 	GetUsersByRoleName(ctx context.Context, token, realm, roleName string, params GetUsersByRoleParams) ([]*User, error)
@@ -364,6 +371,8 @@ type GoCloakIface interface {
 	SetPassword(ctx context.Context, token, userID, realm, password string, temporary bool) error
 	// UpdateUser updates a given user
 	UpdateUser(ctx context.Context, token, realm string, user User) error
+	// UpdateUserProfileConfig updates the user profile configuration for a realm
+	UpdateUserProfileConfig(ctx context.Context, token, realm string, config UserProfileConfig) error
 	// AddUserToGroup puts given user to given group
 	AddUserToGroup(ctx context.Context, token, realm, userID, groupID string) error
 	// DeleteUserFromGroup deletes given user from given group
