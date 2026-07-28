@@ -12,6 +12,10 @@ import (
 
 // GoCloakIface ...
 type GoCloakIface interface {
+	// GetServerVersion returns the server version from the serverinfo endpoint.
+	// If the version is already set, it will return the cached version.
+	// Otherwise, it will fetch the version from the serverinfo endpoint and cache it.
+	GetServerVersion(ctx context.Context, token string) (string, error)
 	// GetRequest returns a request for calling endpoints.
 	GetRequest(ctx context.Context) *resty.Request
 	// GetRequestWithBearerAuthNoCache returns a JSON base request configured with an auth token and no-cache header.

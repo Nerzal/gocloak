@@ -68,7 +68,7 @@ func makeURL(path ...string) string {
 func (g *GoCloak) compareVersions(ctx context.Context, v, token string) (int, error) {
 	curVersion := g.Config.version
 	if curVersion == "" {
-		_, err := g.getServerVersion(ctx, token)
+		_, err := g.GetServerVersion(ctx, token)
 		if err != nil {
 			return 0, err
 		}
@@ -83,10 +83,10 @@ func (g *GoCloak) compareVersions(ctx context.Context, v, token string) (int, er
 	return semver.Compare(curVersion, v), nil
 }
 
-// Get the server version from the serverinfo endpoint.
+// GetServerVersion returns the server version from the serverinfo endpoint.
 // If the version is already set, it will return the cached version.
 // Otherwise, it will fetch the version from the serverinfo endpoint and cache it.
-func (g *GoCloak) getServerVersion(ctx context.Context, token string) (string, error) {
+func (g *GoCloak) GetServerVersion(ctx context.Context, token string) (string, error) {
 	if g.Config.version != "" {
 		return g.Config.version, nil
 	}
@@ -282,6 +282,13 @@ func (g *GoCloak) getAttackDetectionURL(realm string, user string, path ...strin
 }
 
 // ==== Functional Options ===
+
+// SetServerVersion sets the server version to bypass the server info call.
+func SetServerVersion(version string) func(g *GoCloak) {
+	return func(g *GoCloak) {
+		g.Config.version = version
+	}
+}
 
 // SetLegacyWildFlySupport maintain legacy WildFly support.
 func SetLegacyWildFlySupport() func(g *GoCloak) {
