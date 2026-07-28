@@ -332,6 +332,16 @@ type GoCloakIface interface {
 	UpdateAuthenticationFlow(ctx context.Context, token, realm string, flow AuthenticationFlowRepresentation, authenticationFlowID string) (*AuthenticationFlowRepresentation, error)
 	// DeleteAuthenticationFlow deletes a flow in a realm with the given ID
 	DeleteAuthenticationFlow(ctx context.Context, token, realm, flowID string) error
+	// CreateAuthenticatorConfig creates a new authenticator configuration and returns its ID
+	CreateAuthenticatorConfig(ctx context.Context, token, realm string, config AuthenticatorConfigRepresentation) (string, error)
+	// GetAuthenticatorConfigDescription gets the configuration description for an authenticator provider
+	GetAuthenticatorConfigDescription(ctx context.Context, token, realm, providerID string) (*AuthenticatorConfigInfoRepresentation, error)
+	// GetAuthenticatorConfig gets an authenticator configuration by ID
+	GetAuthenticatorConfig(ctx context.Context, token, realm, configID string) (*AuthenticatorConfigRepresentation, error)
+	// UpdateAuthenticatorConfig updates an authenticator configuration by ID
+	UpdateAuthenticatorConfig(ctx context.Context, token, realm string, config AuthenticatorConfigRepresentation, configID string) error
+	// DeleteAuthenticatorConfig deletes an authenticator configuration by ID
+	DeleteAuthenticatorConfig(ctx context.Context, token, realm, configID string) error
 	// GetAuthenticationExecutions retrieves all executions of a given flow
 	GetAuthenticationExecutions(ctx context.Context, token, realm, flow string) ([]*ModifyAuthenticationExecutionRepresentation, error)
 	// CreateAuthenticationExecution creates a new execution for the given flow name in the given realm
@@ -340,6 +350,10 @@ type GoCloakIface interface {
 	UpdateAuthenticationExecution(ctx context.Context, token, realm, flow string, execution ModifyAuthenticationExecutionRepresentation) error
 	// DeleteAuthenticationExecution delete a single execution with the given ID
 	DeleteAuthenticationExecution(ctx context.Context, token, realm, executionID string) error
+	// CreateAuthenticationExecutionConfig creates a new configuration for an authentication execution and returns its ID
+	CreateAuthenticationExecutionConfig(ctx context.Context, token, realm, executionID string, config AuthenticatorConfigRepresentation) (string, error)
+	// GetAuthenticationExecutionConfig gets the configuration for an authentication execution
+	GetAuthenticationExecutionConfig(ctx context.Context, token, realm, executionID, configID string) (*AuthenticatorConfigRepresentation, error)
 	// CreateAuthenticationExecutionFlow creates a new execution for the given flow name in the given realm
 	CreateAuthenticationExecutionFlow(ctx context.Context, token, realm, flow string, executionFlow CreateAuthenticationExecutionFlowRepresentation) error
 	// CreateUser creates the given user in the given realm and returns it's userID
@@ -354,7 +368,10 @@ type GoCloakIface interface {
 	GetUserCount(ctx context.Context, token string, realm string, params GetUsersParams) (int, error)
 	// GetUserGroups get all groups for user
 	GetUserGroups(ctx context.Context, token, realm, userID string, params GetGroupsParams) ([]*Group, error)
+	// GetUserProfileConfig retrieves the user profile configuration for a realm
+	GetUserProfileConfig(ctx context.Context, token, realm string) (*UserProfileConfig, error)
 	// GetUsers get all users in realm
+	// Default number of results per page is 100, use GetUsersParams to specify it explicitly or to set offset for pagination
 	GetUsers(ctx context.Context, token, realm string, params GetUsersParams) ([]*User, error)
 	// GetUsersByRoleName returns all users have a given role
 	GetUsersByRoleName(ctx context.Context, token, realm, roleName string, params GetUsersByRoleParams) ([]*User, error)
@@ -364,6 +381,8 @@ type GoCloakIface interface {
 	SetPassword(ctx context.Context, token, userID, realm, password string, temporary bool) error
 	// UpdateUser updates a given user
 	UpdateUser(ctx context.Context, token, realm string, user User) error
+	// UpdateUserProfileConfig updates the user profile configuration for a realm
+	UpdateUserProfileConfig(ctx context.Context, token, realm string, config UserProfileConfig) error
 	// AddUserToGroup puts given user to given group
 	AddUserToGroup(ctx context.Context, token, realm, userID, groupID string) error
 	// DeleteUserFromGroup deletes given user from given group
