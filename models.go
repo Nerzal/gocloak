@@ -824,6 +824,7 @@ type RealmRepresentation struct {
 	ProtocolMappers                                           []any                            `json:"protocolMappers,omitempty"`
 	QuickLoginCheckMilliSeconds                               *int                             `json:"quickLoginCheckMilliSeconds,omitempty"`
 	Realm                                                     *string                          `json:"realm,omitempty"`
+	RevokeRefreshToken                                        *bool                            `json:"revokeRefreshToken,omitempty"`
 	RefreshTokenMaxReuse                                      *int                             `json:"refreshTokenMaxReuse,omitempty"`
 	RegistrationAllowed                                       *bool                            `json:"registrationAllowed,omitempty"`
 	RegistrationEmailAsUsername                               *bool                            `json:"registrationEmailAsUsername,omitempty"`
