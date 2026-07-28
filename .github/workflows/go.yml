@@ -59,4 +59,5 @@ jobs:
 
       - name: GoReportCard
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        continue-on-error: true
         run: curl --fail --request POST "https://goreportcard.com/checks" --data "repo=github.com/Nerzal/gocloak"
