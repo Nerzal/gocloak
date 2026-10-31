@@ -3,12 +3,12 @@ package gocloak
 import (
 	"context"
 
-	"github.com/opentracing/opentracing-go"
+	"go.opentelemetry.io/otel/propagation"
 )
 
 type contextKey string
 
-var tracerContextKey = contextKey("tracer")
+var propagatorContextKey = contextKey("propagator")
 
 // Ptr returns a pointer to the given value of any type.
 func Ptr[T any](v T) *T {
@@ -132,7 +132,9 @@ func NilOrEmptySlice(value []string) bool {
 	return len(value) == 0
 }
 
-// WithTracer generates a context that has a tracer attached
-func WithTracer(ctx context.Context, tracer opentracing.Tracer) context.Context {
-	return context.WithValue(ctx, tracerContextKey, tracer)
+// WithPropagator generates a context that has an OpenTelemetry propagator attached.
+// The propagator is used to inject the span from the context into the request headers.
+// If no propagator is attached, the global propagator (otel.GetTextMapPropagator) is used.
+func WithPropagator(ctx context.Context, propagator propagation.TextMapPropagator) context.Context {
+	return context.WithValue(ctx, propagatorContextKey, propagator)
 }

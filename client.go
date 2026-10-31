@@ -17,8 +17,9 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/opentracing/opentracing-go"
 	"github.com/segmentio/ksuid"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 	"golang.org/x/mod/semver"
 
 	"github.com/Nerzal/gocloak/v14/pkg/jwx"
@@ -207,23 +208,14 @@ func findUsedKey(usedKeyID string, keys []CertResponseKey) *CertResponseKey {
 }
 
 func injectTracingHeaders(ctx context.Context, req *resty.Request) *resty.Request {
-	// look for span in context, do nothing if span is not found
-	span := opentracing.SpanFromContext(ctx)
-	if span == nil {
-		return req
+	// look for propagator in context, use the global propagator if not found
+	propagator, ok := ctx.Value(propagatorContextKey).(propagation.TextMapPropagator)
+	if !ok || propagator == nil {
+		propagator = otel.GetTextMapPropagator()
 	}
 
-	// look for tracer in context, use global tracer if not found
-	tracer, ok := ctx.Value(tracerContextKey).(opentracing.Tracer)
-	if !ok || tracer == nil {
-		tracer = opentracing.GlobalTracer()
-	}
-
-	// inject tracing header into request
-	err := tracer.Inject(span.Context(), opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
-	if err != nil {
-		return req
-	}
+	// inject tracing headers into request; this is a no-op when ctx carries no span
+	propagator.Inject(ctx, propagation.HeaderCarrier(req.Header))
 
 	return req
 }
