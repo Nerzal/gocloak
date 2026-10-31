@@ -403,3 +403,25 @@ func TestStringerOmitEmpty(t *testing.T) {
 func ptr[T any](v T) *T {
 	return &v
 }
+
+func TestProtocolMappersConfig_IncludedCustomAudience(t *testing.T) {
+	t.Parallel()
+	data := []byte(`{
+		"protocolMapper": "oidc-audience-mapper",
+		"config": {
+			"included.custom.audience": "https://example.com/api",
+			"access.token.claim": "true",
+			"id.token.claim": "false"
+		}
+	}`)
+
+	var mapper gocloak.ProtocolMappers
+	err := json.Unmarshal(data, &mapper)
+	assert.NoError(t, err)
+	assert.NotNil(t, mapper.ProtocolMappersConfig)
+	assert.Equal(t, "https://example.com/api", gocloak.PString(mapper.ProtocolMappersConfig.IncludedCustomAudience))
+
+	out, err := json.Marshal(mapper.ProtocolMappersConfig)
+	assert.NoError(t, err)
+	assert.Contains(t, string(out), `"included.custom.audience":"https://example.com/api"`)
+}
