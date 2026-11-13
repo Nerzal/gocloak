@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/Nerzal/gocloak/v14"
 )
@@ -94,4 +95,52 @@ func TestNilOrEmptyArray(t *testing.T) {
 	assert.False(t, a)
 	assert.True(t, b)
 	assert.True(t, c)
+}
+
+func TestUtil_NilOrEmpty(t *testing.T) {
+	t.Parallel()
+	assert.True(t, gocloak.NilOrEmpty(nil))
+	assert.True(t, gocloak.NilOrEmpty(new("")))
+	assert.False(t, gocloak.NilOrEmpty(new("x")))
+}
+
+func TestUtil_NilOrEmptySlice(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name     string
+		in       []string
+		expected bool
+	}{
+		{"nil", nil, true},
+		{"empty", []string{}, true},
+		{"empty string element", []string{""}, false},
+		{"values", []string{"a"}, false},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tc.expected, gocloak.NilOrEmptySlice(tc.in))
+		})
+	}
+}
+
+func TestUtil_PStringSlice(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name     string
+		in       []string
+		expected []string
+	}{
+		{"nil becomes empty", nil, []string{}},
+		{"empty", []string{}, []string{}},
+		{"values", []string{"a", "b"}, []string{"a", "b"}},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			out := gocloak.PStringSlice(tc.in)
+			require.NotNil(t, out)
+			assert.Equal(t, tc.expected, out)
+		})
+	}
 }

@@ -52,26 +52,27 @@ func (s *StringOrArray) UnmarshalJSON(data []byte) error {
 }
 
 // MarshalJSON converts the array of strings to a JSON array or JSON string if there is only one item in the array
-func (s *StringOrArray) MarshalJSON() ([]byte, error) {
-	if len(*s) == 1 {
-		return json.Marshal([]string(*s)[0])
+// Value receiver, so non-addressable values (e.g. json.Marshal(StringOrArray{"x"})) use it too.
+func (s StringOrArray) MarshalJSON() ([]byte, error) {
+	if len(s) == 1 {
+		return json.Marshal(s[0])
 	}
-	return json.Marshal([]string(*s))
+	return json.Marshal([]string(s))
 }
 
 // EnforcedString can be used when the expected value is string but Keycloak in some cases gives you mixed types
 type EnforcedString string
 
-// UnmarshalJSON modify data as string before json unmarshal
+// UnmarshalJSON keeps a JSON string as its value and any other JSON value (number, bool, object, array)
+// as its raw JSON text; null leaves the value unchanged.
+// Input: data [[]byte] JSON value. Output: [error] if a JSON string is malformed.
 func (s *EnforcedString) UnmarshalJSON(data []byte) error {
+	if bytes.Equal(data, []byte("null")) {
+		return nil
+	}
 	if data[0] != '"' {
-		// Escape unescaped quotes
-		data = bytes.ReplaceAll(data, []byte(`"`), []byte(`\"`))
-		data = bytes.ReplaceAll(data, []byte(`\\"`), []byte(`\"`))
-
-		// Wrap data in quotes
-		data = append([]byte(`"`), data...)
-		data = append(data, []byte(`"`)...)
+		*s = EnforcedString(data)
+		return nil
 	}
 
 	var val string
@@ -960,7 +961,7 @@ type MultiValuedHashMap struct {
 
 // AuthorizationParameters represents the options to obtain get an authorization
 type AuthorizationParameters struct {
-	ResponseType *string `json:"code,omitempty"`
+	ResponseType *string `json:"response_type,omitempty"`
 	ClientID     *string `json:"client_id,omitempty"`
 	Scope        *string `json:"scope,omitempty"`
 	RedirectURI  *string `json:"redirect_uri,omitempty"`

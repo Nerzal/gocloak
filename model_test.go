@@ -3,7 +3,6 @@ package gocloak_test
 import (
 	"encoding/json"
 	"errors"
-	"reflect"
 	"testing"
 
 	"github.com/Nerzal/gocloak/v14"
@@ -18,28 +17,40 @@ func TestStringOrArray_Unmarshal(t *testing.T) {
 	var dataString gocloak.StringOrArray
 	err := json.Unmarshal(jsonString, &dataString)
 	require.NoErrorf(t, err, "Unmarshalling failed for json string: %s", jsonString)
-	assert.Len(t, dataString, 1)
+	require.Len(t, dataString, 1)
 	assert.Equal(t, "123", dataString[0])
 
 	jsonArray := []byte("[\"1\",\"2\",\"3\"]")
 	var dataArray gocloak.StringOrArray
 	err = json.Unmarshal(jsonArray, &dataArray)
 	require.NoError(t, err, "Unmarshalling failed for json array of strings: %s", jsonArray)
-	assert.Len(t, dataArray, 3)
-	assert.EqualValues(t, []string{"1", "2", "3"}, dataArray)
+	assert.Equal(t, gocloak.StringOrArray{"1", "2", "3"}, dataArray)
 }
 
 func TestStringOrArray_Marshal(t *testing.T) {
 	t.Parallel()
-	dataString := gocloak.StringOrArray{"123"}
-	jsonString, err := json.Marshal(&dataString)
-	require.NoErrorf(t, err, "Marshaling failed for one string: %s", dataString)
-	assert.JSONEq(t, "\"123\"", string(jsonString))
-
-	dataArray := gocloak.StringOrArray{"1", "2", "3"}
-	jsonArray, err := json.Marshal(&dataArray)
-	require.NoError(t, err, "Marshaling failed for array of strings: %s", dataArray)
-	assert.JSONEq(t, "[\"1\",\"2\",\"3\"]", string(jsonArray))
+	one := gocloak.StringOrArray{"123"}
+	many := gocloak.StringOrArray{"1", "2", "3"}
+	tests := []struct {
+		name     string
+		in       any
+		expected string
+	}{
+		{"one string by pointer", &one, `"123"`},
+		{"one string by value", one, `"123"`},
+		{"array by pointer", &many, `["1","2","3"]`},
+		{"array by value", many, `["1","2","3"]`},
+		{"single value in struct", struct{ Aud gocloak.StringOrArray }{one}, `{"Aud":"123"}`},
+		{"nil", gocloak.StringOrArray(nil), `null`},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			out, err := json.Marshal(tc.in)
+			require.NoError(t, err)
+			assert.JSONEq(t, tc.expected, string(out))
+		})
+	}
 }
 
 func TestEnforcedString_UnmarshalJSON(t *testing.T) {
@@ -51,6 +62,12 @@ func TestEnforcedString_UnmarshalJSON(t *testing.T) {
 	}
 
 	data := []testData{{
+		In:  []byte(`null`),
+		Out: "",
+	}, {
+		In:  []byte(`{"foo": "b\"a\\r\n"}`),
+		Out: `{"foo": "b\"a\\r\n"}`,
+	}, {
 		In:  []byte(`"string value"`),
 		Out: "string value",
 	}, {
@@ -71,10 +88,13 @@ func TestEnforcedString_UnmarshalJSON(t *testing.T) {
 	}}
 
 	for _, d := range data {
-		var val gocloak.EnforcedString
-		err := json.Unmarshal(d.In, &val)
-		require.NoErrorf(t, err, "Unmarshalling failed with data: %v", d.In)
-		assert.Equal(t, d.Out, val)
+		t.Run(string(d.In), func(t *testing.T) {
+			t.Parallel()
+			var val gocloak.EnforcedString
+			err := json.Unmarshal(d.In, &val)
+			require.NoErrorf(t, err, "Unmarshalling failed with data: %s", d.In)
+			assert.Equal(t, d.Out, val)
+		})
 	}
 }
 
@@ -83,7 +103,7 @@ func TestEnforcedString_MarshalJSON(t *testing.T) {
 
 	data := gocloak.EnforcedString("foo")
 	jsonString, err := json.Marshal(&data)
-	require.NoErrorf(t, err, "Unmarshalling failed with data: %v", data)
+	require.NoErrorf(t, err, "Marshaling failed with data: %v", data)
 	assert.JSONEq(t, `"foo"`, string(jsonString))
 }
 
@@ -160,10 +180,7 @@ func TestParseAPIErrType(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			result := gocloak.ParseAPIErrType(testCase.Error)
-			if result != testCase.Expected {
-				t.Fatalf("expected %s but received %s", testCase.Expected, result)
-			}
+			assert.Equal(t, testCase.Expected, gocloak.ParseAPIErrType(testCase.Error))
 		})
 	}
 }
@@ -212,10 +229,7 @@ func TestRequestingPartyTokenOptionsFormData(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := tt.input.FormData()
-			if !reflect.DeepEqual(result, tt.expected) {
-				t.Errorf("FormData() = %v, want %v", result, tt.expected)
-			}
+			assert.Equal(t, tt.expected, tt.input.FormData())
 		})
 	}
 }
@@ -414,10 +428,109 @@ func TestProtocolMappersConfig_IncludedCustomAudience(t *testing.T) {
 	var mapper gocloak.ProtocolMappers
 	err := json.Unmarshal(data, &mapper)
 	require.NoError(t, err)
-	assert.NotNil(t, mapper.ProtocolMappersConfig)
+	require.NotNil(t, mapper.ProtocolMappersConfig)
 	assert.Equal(t, "https://example.com/api", gocloak.PString(mapper.ProtocolMappersConfig.IncludedCustomAudience))
 
 	out, err := json.Marshal(mapper.ProtocolMappersConfig)
 	require.NoError(t, err)
 	assert.Contains(t, string(out), `"included.custom.audience":"https://example.com/api"`)
+}
+
+func TestModel_GetGroupsParamsMarshal(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name     string
+		in       gocloak.GetGroupsParams
+		expected map[string]string
+	}{
+		{"neither", gocloak.GetGroupsParams{}, map[string]string{}},
+		{"brief only", gocloak.GetGroupsParams{BriefRepresentation: new(true)}, map[string]string{"briefRepresentation": "true", "full": "false"}},
+		{"full only", gocloak.GetGroupsParams{Full: new(true)}, map[string]string{"briefRepresentation": "false", "full": "true"}},
+		{"both, brief wins", gocloak.GetGroupsParams{BriefRepresentation: new(false), Full: new(false)}, map[string]string{"briefRepresentation": "false", "full": "true"}},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			params, err := gocloak.GetQueryParams(tc.in)
+			require.NoError(t, err)
+			assert.Equal(t, tc.expected, params)
+		})
+	}
+}
+
+func TestModel_TokenOptionsFormData(t *testing.T) {
+	t.Parallel()
+	opts := gocloak.TokenOptions{
+		ClientID:      new("client"),
+		ClientSecret:  new("secret"),
+		GrantType:     new("password"),
+		Scopes:        []string{"openid", "profile"},
+		ResponseTypes: []string{"code", "id_token"},
+	}
+	assert.Equal(t, map[string]string{
+		"client_id":     "client",
+		"grant_type":    "password",
+		"scope":         "openid profile",
+		"response_type": "code id_token",
+	}, opts.FormData())
+	// FormData writes the joined values back into the receiver
+	assert.Equal(t, "openid profile", gocloak.PString(opts.Scope))
+	assert.Equal(t, "code id_token", gocloak.PString(opts.ResponseType))
+
+	empty := gocloak.TokenOptions{}
+	assert.Equal(t, map[string]string{"response_type": "token"}, empty.FormData())
+}
+
+func TestModel_AuthorizationParametersFormData(t *testing.T) {
+	t.Parallel()
+	params := gocloak.AuthorizationParameters{
+		ResponseType: new("code"),
+		ClientID:     new("client"),
+		Scope:        new("openid"),
+		RedirectURI:  new("https://example.com/cb"),
+		State:        new("state"),
+	}
+	assert.Equal(t, map[string]string{
+		"response_type": "code",
+		"client_id":     "client",
+		"scope":         "openid",
+		"redirect_uri":  "https://example.com/cb",
+		"state":         "state",
+	}, params.FormData())
+}
+
+func TestModel_OrganizationInviteUserParamsFormData(t *testing.T) {
+	t.Parallel()
+	params := gocloak.OrganizationInviteUserParams{Email: new("a@b.c"), FirstName: new("A")}
+	assert.Equal(t, map[string]string{"email": "a@b.c", "firstName": "A"}, params.FormData())
+	assert.Empty(t, (&gocloak.OrganizationInviteUserParams{}).FormData())
+}
+
+func TestModel_HTTPErrorResponse(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name     string
+		in       gocloak.HTTPErrorResponse
+		expected string
+	}{
+		{"empty", gocloak.HTTPErrorResponse{}, ""},
+		{"error only", gocloak.HTTPErrorResponse{Error: "invalid_grant"}, "invalid_grant"},
+		{"message only", gocloak.HTTPErrorResponse{Message: "msg"}, "msg"},
+		{"description only", gocloak.HTTPErrorResponse{Description: "desc"}, "desc"},
+		{"all", gocloak.HTTPErrorResponse{Error: "e", Message: "m", Description: "d"}, "e: m: d"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tc.expected, tc.in.String())
+			assert.Equal(t, tc.expected != "", tc.in.NotEmpty())
+		})
+	}
+}
+
+func TestModel_APIErrorError(t *testing.T) {
+	t.Parallel()
+	var err error = &gocloak.APIError{Code: 404, Message: "404 Not Found"}
+	require.EqualError(t, err, "404 Not Found")
+	require.EqualError(t, gocloak.APIError{Message: "by value"}, "by value")
 }

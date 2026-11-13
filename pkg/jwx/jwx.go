@@ -21,12 +21,13 @@ func SignClaims(claims jwt.Claims, key any, method jwt.SigningMethod) (string, e
 	return token.SignedString(key)
 }
 
-// DecodeAccessTokenHeader decodes the header of the accessToken
+// DecodeAccessTokenHeader decodes the base64url-encoded (RFC 7515) header of the accessToken.
+// Input: token [string] JWT, optionally prefixed with "Bearer ". Output: [*DecodedAccessTokenHeader], [error] if decoding fails.
 func DecodeAccessTokenHeader(token string) (*DecodedAccessTokenHeader, error) {
 	const errMessage = "could not decode access token header"
 	token = strings.Replace(token, "Bearer ", "", 1)
 	headerString := strings.Split(token, ".")
-	decodedData, err := base64.RawStdEncoding.DecodeString(headerString[0])
+	decodedData, err := base64.RawURLEncoding.DecodeString(headerString[0])
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
@@ -63,6 +64,9 @@ var curves = map[string]elliptic.Curve{
 // Output: [*ecdsa.PublicKey], [error] if decoding fails or the point is invalid.
 func decodeECDSAPublicKey(x, y, crv *string) (*ecdsa.PublicKey, error) {
 	const errMessage = "could not decode public key"
+	if x == nil || y == nil || crv == nil {
+		return nil, fmt.Errorf("%s: missing x, y or crv", errMessage)
+	}
 
 	c, ok := curves[*crv]
 	if !ok {
@@ -90,8 +94,13 @@ func decodeECDSAPublicKey(x, y, crv *string) (*ecdsa.PublicKey, error) {
 	return key, nil
 }
 
+// decodeRSAPublicKey builds an RSA public key from the base64url JWK exponent and modulus.
+// Input: e [*string] exponent, n [*string] modulus. Output: [*rsa.PublicKey], [error] if a value is missing or invalid.
 func decodeRSAPublicKey(e, n *string) (*rsa.PublicKey, error) {
 	const errMessage = "could not decode public key"
+	if e == nil || n == nil {
+		return nil, fmt.Errorf("%s: missing e or n", errMessage)
+	}
 
 	nInt, err := toBigInt(*n)
 	if err != nil {

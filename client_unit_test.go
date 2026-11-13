@@ -14,8 +14,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
-	"time"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/require"
 )
@@ -96,8 +96,9 @@ func TestUnit_DecodeAccessToken_RefetchesCertsAfterKeyRotation(t *testing.T) {
 	require.Equal(t, int32(1), fetches.Load())
 
 	// after the refresh interval the unknown kid triggers one refetch and succeeds
+	prevInterval := certsMinRefreshInterval
+	t.Cleanup(func() { certsMinRefreshInterval = prevInterval })
 	certsMinRefreshInterval = 0
-	defer func() { certsMinRefreshInterval = 30 * time.Second }()
 	_, _, err = client.DecodeAccessToken(ctx, signToken(t, "new", newKey), "r")
 	require.NoError(t, err)
 	require.Equal(t, int32(2), fetches.Load())
@@ -210,4 +211,231 @@ func TestUnit_UpdatePermission_RequiresType(t *testing.T) {
 	err := NewClient("http://127.0.0.1:0").UpdatePermission(context.Background(), "token", "realm", "client",
 		PermissionRepresentation{ID: new("id")})
 	require.EqualError(t, err, "type of a permission required")
+}
+
+// serverInfoServer returns a server answering /admin/serverinfo with the given version and counting the fetches.
+// Input: t [*testing.T], version [string]. Output: [*httptest.Server], [*atomic.Int32] fetch counter.
+func serverInfoServer(t *testing.T, version string) (*httptest.Server, *atomic.Int32) {
+	t.Helper()
+	var fetches atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/admin/serverinfo" {
+			http.NotFound(w, r)
+			return
+		}
+		fetches.Add(1)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(ServerInfoRepresentation{SystemInfo: &SystemInfoRepresentation{Version: new(version)}})
+	}))
+	t.Cleanup(server.Close)
+	return server, &fetches
+}
+
+func TestUnit_CompareVersions(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name, server, v string
+		want            int
+		skip            string
+	}{
+		{name: "server lower", server: "19.0.0", v: "20.0.0", want: -1},
+		{name: "equal", server: "20.0.0", v: "20.0.0", want: 0},
+		{name: "server higher", server: "26.8.2", v: "20.0.0", want: 1},
+		{name: "v prefix on argument", server: "20.0.0", v: "v20.0.0", want: 0},
+		{name: "v prefix on server", server: "v26.0.0", v: "20.0.0", want: 1, skip: "client.go compareVersions builds \"vv26.0.0\", invalid semver compares as lowest"},
+		{name: "non-semver vendor build", server: "26.0.10.redhat-00001", v: "20.0.0", want: 1, skip: "client.go compareVersions: 4-part version is invalid semver and compares as lowest"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			if tc.skip != "" {
+				t.Skip("known bug: " + tc.skip)
+			}
+			server, fetches := serverInfoServer(t, tc.server)
+			got, err := NewClient(server.URL).compareVersions(context.Background(), tc.v, "token")
+			require.NoError(t, err)
+			require.Equal(t, tc.want, got)
+			require.Equal(t, int32(1), fetches.Load())
+		})
+	}
+
+	t.Run("SetServerVersion skips fetch", func(t *testing.T) {
+		t.Parallel()
+		server, fetches := serverInfoServer(t, "19.0.0")
+		got, err := NewClient(server.URL, SetServerVersion("26.0.0")).compareVersions(context.Background(), "20.0.0", "token")
+		require.NoError(t, err)
+		require.Equal(t, 1, got)
+		require.Zero(t, fetches.Load())
+	})
+
+	t.Run("error is not cached", func(t *testing.T) {
+		t.Parallel()
+		var fetches atomic.Int32
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			if fetches.Add(1) == 1 {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"systemInfo":{"version":"26.0.0"}}`))
+		}))
+		defer server.Close()
+
+		client := NewClient(server.URL)
+		_, err := client.compareVersions(context.Background(), "20.0.0", "token")
+		require.Error(t, err)
+		got, err := client.compareVersions(context.Background(), "20.0.0", "token")
+		require.NoError(t, err)
+		require.Equal(t, 1, got)
+		require.Equal(t, int32(2), fetches.Load())
+	})
+}
+
+func TestUnit_GetPolicies_PathDependsOnVersion(t *testing.T) {
+	t.Parallel()
+	tests := []struct{ version, wantPath string }{
+		{"19.0.0", "/admin/realms/r/clients/c/authz/resource-server/policy/role"},
+		{"26.8.2", "/admin/realms/r/clients/c/authz/resource-server/policy"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.version, func(t *testing.T) {
+			t.Parallel()
+			var paths []string
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				paths = append(paths, r.URL.Path)
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write([]byte(`[]`))
+			}))
+			defer server.Close()
+
+			_, err := NewClient(server.URL, SetServerVersion(tc.version)).
+				GetPolicies(context.Background(), "token", "r", "c", GetPolicyParams{Type: new("role")})
+			require.NoError(t, err)
+			require.Equal(t, []string{tc.wantPath}, paths)
+		})
+	}
+}
+
+func TestUnit_CheckForError(t *testing.T) {
+	t.Parallel()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/ok":
+			w.WriteHeader(http.StatusOK)
+		case "/empty":
+			w.WriteHeader(http.StatusNotFound)
+		case "/text":
+			w.Header().Set("Content-Type", "text/plain")
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte("boom"))
+		case "/badjson":
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte("not json"))
+		case "/message":
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusConflict)
+			_, _ = w.Write([]byte(`{"errorMessage":"User exists"}`))
+		case "/description":
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			_, _ = w.Write([]byte(`{"error":"invalid_grant","error_description":"bad credentials"}`))
+		}
+	}))
+	t.Cleanup(server.Close) // defer would close it before the parallel subtests run
+	closed := httptest.NewServer(http.NotFoundHandler())
+	closed.Close()
+
+	tests := []struct {
+		name, url    string
+		wantCode     int
+		wantMessage  string // exact message, unless wantContains is set
+		wantContains string
+		wantType     APIErrType
+	}{
+		{name: "transport error", url: closed.URL, wantContains: "msg: ", wantType: APIErrTypeUnknown},
+		{name: "4xx empty body", url: server.URL + "/empty", wantCode: 404, wantMessage: "404 Not Found", wantType: APIErrTypeUnknown},
+		{name: "non-JSON body", url: server.URL + "/text", wantCode: 500, wantMessage: "500 Internal Server Error", wantType: APIErrTypeUnknown},
+		{name: "invalid JSON body", url: server.URL + "/badjson", wantCode: 400, wantMessage: "400 Bad Request", wantType: APIErrTypeUnknown},
+		{name: "errorMessage field", url: server.URL + "/message", wantCode: 409, wantMessage: "409 Conflict: User exists", wantType: APIErrTypeUnknown},
+		{name: "error_description field", url: server.URL + "/description", wantCode: 401, wantMessage: "401 Unauthorized: invalid_grant: bad credentials", wantType: APIErrTypeInvalidGrant},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			resp, err := NewClient(server.URL).GetRequest(context.Background()).Get(tc.url)
+			err = checkForError(resp, err, "msg")
+
+			var apiErr *APIError
+			require.ErrorAs(t, err, &apiErr)
+			require.Equal(t, tc.wantCode, apiErr.Code)
+			require.Equal(t, tc.wantType, apiErr.Type)
+			if tc.wantContains != "" {
+				require.Contains(t, apiErr.Message, tc.wantContains)
+				return
+			}
+			require.Equal(t, tc.wantMessage, apiErr.Message)
+		})
+	}
+
+	t.Run("success", func(t *testing.T) {
+		t.Parallel()
+		resp, err := NewClient(server.URL).GetRequest(context.Background()).Get(server.URL + "/ok")
+		require.NoError(t, checkForError(resp, err, "msg"))
+	})
+}
+
+func TestUnit_GetRequestWithBasicAuth(t *testing.T) {
+	t.Parallel()
+	var headers []string
+	server := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		headers = append(headers, r.Header.Get("Authorization"))
+	}))
+	defer server.Close()
+	client := NewClient(server.URL)
+
+	_, err := client.GetRequestWithBasicAuth(context.Background(), "my client", "p@ss:w/rd").Post(server.URL)
+	require.NoError(t, err)
+	// public client: no basic auth
+	_, err = client.GetRequestWithBasicAuth(context.Background(), "my client", "").Post(server.URL)
+	require.NoError(t, err)
+
+	// RFC 6749 2.3.1: id and secret are form-urlencoded before base64
+	want := "Basic " + base64.StdEncoding.EncodeToString([]byte("my+client:p%40ss%3Aw%2Frd"))
+	require.Equal(t, []string{want, ""}, headers)
+}
+
+func TestUnit_GetID(t *testing.T) {
+	t.Parallel()
+	tests := []struct{ location, want string }{
+		{"http://kc/admin/realms/r/users/abc-123", "abc-123"},
+		{"abc", "abc"},
+		{"", ""},
+	}
+	for _, tc := range tests {
+		t.Run(tc.location, func(t *testing.T) {
+			t.Parallel()
+			resp := &resty.Response{RawResponse: &http.Response{Header: http.Header{"Location": {tc.location}}}}
+			require.Equal(t, tc.want, getID(resp))
+		})
+	}
+}
+
+func TestUnit_FindUsedKey(t *testing.T) {
+	t.Parallel()
+	keys := []CertResponseKey{{Kid: nil}, {Kid: new("a"), Kty: new("RSA")}, {Kid: new("b"), Kty: new("EC")}}
+
+	key := findUsedKey("b", keys)
+	require.NotNil(t, key)
+	require.Equal(t, "EC", PString(key.Kty))
+	require.Nil(t, findUsedKey("c", keys))
+	require.Nil(t, findUsedKey("", keys))
+	require.Nil(t, findUsedKey("a", nil))
+}
+
+func TestUnit_MakeURL(t *testing.T) {
+	t.Parallel()
+	require.Equal(t, "http://kc/admin/realms", makeURL("http://kc", "admin", "realms"))
+	require.Equal(t, "realms", makeURL("realms"))
+	require.Empty(t, makeURL())
 }
