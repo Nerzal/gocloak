@@ -527,8 +527,8 @@ func SetUpTestUser(t testing.TB, client gocloak.GoCloakIface) {
 		err = client.SetPassword(
 			context.Background(),
 			token.AccessToken,
-			testUserID,
 			cfg.GoCloak.Realm,
+			testUserID,
 			cfg.GoCloak.Password,
 			false)
 		require.NoError(t, err, "SetPassword failed")
@@ -1318,8 +1318,8 @@ func Test_SetPassword(t *testing.T) {
 	err := client.SetPassword(
 		context.Background(),
 		token.AccessToken,
-		userID,
 		cfg.GoCloak.Realm,
+		userID,
 		"passwort1234!",
 		false)
 	require.NoError(t, err, "Failed to set password")
@@ -2815,8 +2815,8 @@ func Test_SendVerifyEmail(t *testing.T) {
 	err := client.SendVerifyEmail(
 		context.Background(),
 		token.AccessToken,
-		userID,
 		cfg.GoCloak.Realm,
+		userID,
 		params)
 	require.NoError(t, err, "sending mail failed, is mailhog running?")
 }
@@ -2853,7 +2853,7 @@ func Test_LogoutAllSessions(t *testing.T) {
 	defer tearDown()
 	user, err := client.GetUserByID(context.Background(), token.AccessToken, cfg.GoCloak.Realm, userID)
 	require.NoError(t, err, "GetUserByID failed")
-	err = client.SetPassword(context.Background(), token.AccessToken, userID, cfg.GoCloak.Realm, cfg.GoCloak.Password, false)
+	err = client.SetPassword(context.Background(), token.AccessToken, cfg.GoCloak.Realm, userID, cfg.GoCloak.Password, false)
 	require.NoError(t, err, "SetPassword failed")
 	require.Eventually(t, func() bool {
 		_, loginErr := client.Login(context.Background(), cfg.GoCloak.ClientID, cfg.GoCloak.ClientSecret,
@@ -3491,8 +3491,8 @@ func Test_GetUserBruteForceDetectionStatus(t *testing.T) {
 	err = client.SetPassword(
 		context.Background(),
 		token.AccessToken,
-		userID,
 		*realm.ID,
+		userID,
 		cfg.GoCloak.Password,
 		false)
 	require.NoError(t, err, "CreateUser failed")
@@ -3789,7 +3789,7 @@ func Test_UpdateUserSetEmptyRequiredActions(t *testing.T) {
 		cfg.GoCloak.Realm,
 		userID)
 	require.NoError(t, err, "GetUserByID failed")
-	require.False(t, gocloak.NilOrEmptySlice(user.RequiredActions))
+	require.NotEmpty(t, user.RequiredActions)
 	require.Contains(t, user.RequiredActions, "VERIFY_EMAIL")
 
 	user.RequiredActions = []string{""}
@@ -3806,7 +3806,7 @@ func Test_UpdateUserSetEmptyRequiredActions(t *testing.T) {
 		cfg.GoCloak.Realm,
 		userID)
 	require.NoError(t, err, "GetUserByID failed")
-	require.True(t, gocloak.NilOrEmptySlice(user.RequiredActions))
+	require.Empty(t, user.RequiredActions)
 }
 
 func Test_UpdateUserSetEmptyEmail(t *testing.T) {
@@ -6746,8 +6746,8 @@ func Test_GetUpdateLableDeleteCredentials(t *testing.T) {
 	err := client.SetPassword(
 		context.Background(),
 		token.AccessToken,
-		userID,
 		cfg.GoCloak.Realm,
+		userID,
 		"fake-password",
 		false,
 	)
@@ -6817,8 +6817,8 @@ func Test_DisableAllCredentialsByType(t *testing.T) {
 	err := client.SetPassword(
 		context.Background(),
 		token.AccessToken,
-		userID,
 		cfg.GoCloak.Realm,
+		userID,
 		"fake-password",
 		false,
 	)

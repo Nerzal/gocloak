@@ -531,3 +531,21 @@ func Test_ErrorPaths(t *testing.T) {
 		require.Empty(t, identities)
 	})
 }
+
+// Test_EventFilters checks that Keycloak accepts the list and paging filters of GetEvents and GetAdminEvents.
+func Test_EventFilters(t *testing.T) {
+	t.Parallel()
+	client, cfg, token := coverageSetup(t)
+	ctx := context.Background()
+
+	_, err := client.GetEvents(ctx, token, cfg.GoCloak.Realm, gocloak.GetEventsParams{
+		Type: []string{"LOGIN", "LOGOUT"}, First: new(int32(0)), Max: new(int32(5)),
+	})
+	require.NoError(t, err, "GetEvents failed")
+
+	adminEvents, err := client.GetAdminEvents(ctx, token, cfg.GoCloak.Realm, gocloak.GetAdminEventsParams{
+		OperationTypes: []string{"CREATE", "DELETE"}, ResourceTypes: []string{"USER"}, First: new(int32(0)), Max: new(int32(5)),
+	})
+	require.NoError(t, err, "GetAdminEvents failed")
+	require.LessOrEqual(t, len(adminEvents), 5)
+}

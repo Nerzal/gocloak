@@ -20,7 +20,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
-	"golang.org/x/mod/semver"
 
 	"github.com/Nerzal/gocloak/v14/pkg/jwx"
 )
@@ -57,36 +56,6 @@ func makeURL(path ...string) string {
 	return strings.Join(path, urlSeparator)
 }
 
-// compareVersions compares the provided version against the current version of the Keycloak server.
-// Current version is fetched from the serverinfo if not already set.
-//
-// Input: ctx [context.Context], v [string] version to compare (with or without "v" prefix), token [string] admin token.
-// Output: [int] result, [error] if the server version cannot be determined.
-//
-// Returns:
-//
-// -1 if the server version is lower than the provided version
-//
-// 0 if the server version is equal to the provided version
-//
-// 1 if the server version is higher than the provided version
-func (g *GoCloak) compareVersions(ctx context.Context, v, token string) (int, error) {
-	curVersion, err := g.GetServerVersion(ctx, token)
-	if err != nil {
-		return 0, err
-	}
-
-	return semver.Compare(normalizeVersion(curVersion), normalizeVersion(v)), nil
-}
-
-// normalizeVersion turns a Keycloak version into a semver string: optional "v" prefix is unified and
-// vendor builds with a fourth part (e.g. "26.0.10.redhat-00001") are cut to major.minor.patch.
-// Input: v [string] version. Output: [string] semver version with "v" prefix.
-func normalizeVersion(v string) string {
-	parts := strings.SplitN(strings.TrimPrefix(v, "v"), ".", 4)
-	return "v" + strings.Join(parts[:min(len(parts), 3)], ".")
-}
-
 // GetServerVersion returns the server version from the serverinfo endpoint.
 // If the version is already set, it will return the cached version.
 // Otherwise, it will fetch the version from the serverinfo endpoint and cache it.
@@ -101,6 +70,9 @@ func (g *GoCloak) GetServerVersion(ctx context.Context, token string) (string, e
 	if g.Config.version != "" {
 		return g.Config.version, nil
 	}
+
+	ctx, cancel := context.WithTimeout(ctx, lockedFetchTimeout)
+	defer cancel()
 
 	serverInfo, err := g.GetServerInfo(ctx, token)
 	if err != nil {
@@ -439,6 +411,10 @@ type certsCacheEntry struct {
 	fetchedAt time.Time
 }
 
+// lockedFetchTimeout bounds requests made while holding certsLock or versionLock, so a hanging Keycloak cannot
+// block every waiting caller, whatever deadline their own context has.
+const lockedFetchTimeout = 10 * time.Second
+
 // certsMinRefreshInterval limits refetches caused by unknown key ids, so tokens with random kids cannot flood Keycloak.
 var certsMinRefreshInterval = 30 * time.Second
 
@@ -474,8 +450,18 @@ func (g *GoCloak) getCachedCerts(ctx context.Context, realm string, maxAge time.
 		return cert, nil
 	}
 
+	ctx, cancel := context.WithTimeout(ctx, lockedFetchTimeout)
+	defer cancel()
+
 	cert, err := g.getNewCerts(ctx, realm)
 	if err != nil {
+		// Keycloak unreachable: keep validating with the known keys and retry after the next interval
+		if old, ok := g.certsCache.Load(realm); ok {
+			if entry, ok := old.(certsCacheEntry); ok {
+				g.certsCache.Store(realm, certsCacheEntry{certs: entry.certs, fetchedAt: time.Now()})
+				return entry.certs, nil
+			}
+		}
 		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 
@@ -503,20 +489,12 @@ func (g *GoCloak) GetIssuer(ctx context.Context, realm string) (*IssuerResponse,
 func (g *GoCloak) RetrospectToken(ctx context.Context, accessToken, clientID, clientSecret, realm string) (*IntroSpectTokenResult, error) {
 	const errMessage = "could not introspect requesting party token"
 
-	var result IntroSpectTokenResult
-	resp, err := g.GetRequestWithBasicAuth(ctx, clientID, clientSecret).
+	return doRequestPtr[IntroSpectTokenResult](g.GetRequestWithBasicAuth(ctx, clientID, clientSecret).
 		SetFormData(map[string]string{
 			"token_type_hint": "requesting_party_token",
 			"token":           accessToken,
-		}).
-		SetResult(&result).
-		Post(g.getOIDCURL(realm, g.Config.tokenEndpoint, "introspect"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return &result, nil
+		}),
+		http.MethodPost, g.getOIDCURL(realm, g.Config.tokenEndpoint, "introspect"), errMessage)
 }
 
 func (g *GoCloak) decodeAccessTokenWithClaims(ctx context.Context, accessToken, realm string, claims jwt.Claims) (*jwt.Token, error) {
@@ -579,6 +557,9 @@ func (g *GoCloak) GetToken(ctx context.Context, realm string, options TokenOptio
 	var req *resty.Request
 
 	if !NilOrEmpty(options.ClientSecret) {
+		if NilOrEmpty(options.ClientID) {
+			return nil, errors.New("client id required when a client secret is set")
+		}
 		req = g.GetRequestWithBasicAuth(ctx, *options.ClientID, *options.ClientSecret)
 	} else {
 		req = g.GetRequest(ctx)
@@ -841,6 +822,10 @@ func (g *GoCloak) LogoutUserSession(ctx context.Context, accessToken, realm, ses
 func (g *GoCloak) ExecuteActionsEmail(ctx context.Context, token, realm string, params ExecuteActionsEmail) error {
 	const errMessage = "could not execute actions email"
 
+	if NilOrEmpty(params.UserID) {
+		return errors.New("user id required")
+	}
+
 	queryParams, err := GetQueryParams(params)
 	if err != nil {
 		return fmt.Errorf("%s: %w", errMessage, err)
@@ -855,11 +840,13 @@ func (g *GoCloak) ExecuteActionsEmail(ctx context.Context, token, realm string, 
 }
 
 // SendVerifyEmail sends a verification e-mail to a user.
-func (g *GoCloak) SendVerifyEmail(ctx context.Context, token, userID, realm string, params ...SendVerificationMailParams) error {
+// Input: ctx [context.Context], token [string], realm [string], userID [string],
+// params [...SendVerificationMailParams] optional, only the first is used. Output: [error].
+func (g *GoCloak) SendVerifyEmail(ctx context.Context, token, realm, userID string, params ...SendVerificationMailParams) error {
 	const errMessage = "failed to send verify email"
 
 	queryParams := map[string]string{}
-	if params != nil {
+	if len(params) > 0 {
 		if params[0].ClientID != nil {
 			queryParams["client_id"] = *params[0].ClientID
 		}
@@ -1379,7 +1366,6 @@ func (g *GoCloak) RegenerateClientSecret(ctx context.Context, token, realm, idOf
 // GetClientOfflineSessions returns offline sessions associated with the client
 func (g *GoCloak) GetClientOfflineSessions(ctx context.Context, token, realm, idOfClient string, params ...GetClientUserSessionsParams) ([]*UserSessionRepresentation, error) {
 	const errMessage = "could not get client offline sessions"
-	var res []*UserSessionRepresentation
 
 	queryParams := map[string]string{}
 	if len(params) > 0 {
@@ -1391,22 +1377,14 @@ func (g *GoCloak) GetClientOfflineSessions(ctx context.Context, token, realm, id
 		}
 	}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&res).
-		SetQueryParams(queryParams).
-		Get(g.getAdminRealmURL(realm, "clients", idOfClient, "offline-sessions"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return res, nil
+	return doRequest[[]*UserSessionRepresentation](g.GetRequestWithBearerAuth(ctx, token).
+		SetQueryParams(queryParams),
+		http.MethodGet, g.getAdminRealmURL(realm, "clients", idOfClient, "offline-sessions"), errMessage)
 }
 
 // GetClientUserSessions returns user sessions associated with the client
 func (g *GoCloak) GetClientUserSessions(ctx context.Context, token, realm, idOfClient string, params ...GetClientUserSessionsParams) ([]*UserSessionRepresentation, error) {
 	const errMessage = "could not get client user sessions"
-	var res []*UserSessionRepresentation
 
 	queryParams := map[string]string{}
 	if len(params) > 0 {
@@ -1418,16 +1396,9 @@ func (g *GoCloak) GetClientUserSessions(ctx context.Context, token, realm, idOfC
 		}
 	}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&res).
-		SetQueryParams(queryParams).
-		Get(g.getAdminRealmURL(realm, "clients", idOfClient, "user-sessions"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return res, nil
+	return doRequest[[]*UserSessionRepresentation](g.GetRequestWithBearerAuth(ctx, token).
+		SetQueryParams(queryParams),
+		http.MethodGet, g.getAdminRealmURL(realm, "clients", idOfClient, "user-sessions"), errMessage)
 }
 
 // CreateClientProtocolMapper creates a protocol mapper in client scope
@@ -1483,38 +1454,21 @@ func (g *GoCloak) GetComponents(ctx context.Context, token, realm string) ([]*Co
 // GetComponentsWithParams get all components in realm with query params
 func (g *GoCloak) GetComponentsWithParams(ctx context.Context, token, realm string, params GetComponentsParams) ([]*Component, error) {
 	const errMessage = "could not get components"
-	var result []*Component
 
 	queryParams, err := GetQueryParams(params)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
-		SetQueryParams(queryParams).
-		Get(g.getAdminRealmURL(realm, "components"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return doRequest[[]*Component](g.GetRequestWithBearerAuth(ctx, token).
+		SetQueryParams(queryParams),
+		http.MethodGet, g.getAdminRealmURL(realm, "components"), errMessage)
 }
 
 // GetComponent get exactly one component by ID
 func (g *GoCloak) GetComponent(ctx context.Context, token, realm string, componentID string) (*Component, error) {
 	const errMessage = "could not get components"
-	var result *Component
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
-		Get(g.getAdminRealmURL(realm, "components", componentID))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return doRequest[*Component](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "components", componentID), errMessage)
 }
 
 // UpdateComponent updates the given component
@@ -1582,65 +1536,39 @@ func (g *GoCloak) GetGroup(ctx context.Context, token, realm, groupID string) (*
 func (g *GoCloak) GetChildGroups(ctx context.Context, token, realm, groupID string, params GetChildGroupsParams) ([]*Group, error) {
 	const errMessage = "could not get child groups"
 
-	var result []*Group
 	queryParams, err := GetQueryParams(params)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
-		SetQueryParams(queryParams).
-		Get(g.getAdminRealmURL(realm, "groups", groupID, "children"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return doRequest[[]*Group](g.GetRequestWithBearerAuth(ctx, token).
+		SetQueryParams(queryParams),
+		http.MethodGet, g.getAdminRealmURL(realm, "groups", groupID, "children"), errMessage)
 }
 
 // GetGroupByPath get group with path in realm
 func (g *GoCloak) GetGroupByPath(ctx context.Context, token, realm, groupPath string) (*Group, error) {
 	const errMessage = "could not get group"
 
-	var result Group
-
 	// nested groups use "/" as separator, so only the single group names get escaped
 	groupNames := strings.Split(strings.TrimLeft(groupPath, urlSeparator), urlSeparator)
 	groupURL := makeURL(g.getAdminRealmURL(realm, "group-by-path"), makeURL(escapeSegments(groupNames...)...))
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
-		Get(groupURL)
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return &result, nil
+	return doRequestPtr[Group](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, groupURL, errMessage)
 }
 
 // GetGroups get all groups in realm
 func (g *GoCloak) GetGroups(ctx context.Context, token, realm string, params GetGroupsParams) ([]*Group, error) {
 	const errMessage = "could not get groups"
 
-	var result []*Group
 	queryParams, err := GetQueryParams(params)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
-		SetQueryParams(queryParams).
-		Get(g.getAdminRealmURL(realm, "groups"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return doRequest[[]*Group](g.GetRequestWithBearerAuth(ctx, token).
+		SetQueryParams(queryParams),
+		http.MethodGet, g.getAdminRealmURL(realm, "groups"), errMessage)
 }
 
 // GetGroupManagementPermissions returns whether group Authorization permissions have been initialized or not and a reference
@@ -1669,65 +1597,44 @@ func (g *GoCloak) GetGroupsByClientRole(ctx context.Context, token, realm string
 func (g *GoCloak) GetGroupsCount(ctx context.Context, token, realm string, params GetGroupsParams) (int, error) {
 	const errMessage = "could not get groups count"
 
-	var result GroupsCount
 	queryParams, err := GetQueryParams(params)
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", errMessage, err)
 	}
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
-		SetQueryParams(queryParams).
-		Get(g.getAdminRealmURL(realm, "groups", "count"))
 
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return -1, fmt.Errorf("%s: %w", errMessage, err)
-	}
+	result, err := doRequest[GroupsCount](g.GetRequestWithBearerAuth(ctx, token).
+		SetQueryParams(queryParams),
+		http.MethodGet, g.getAdminRealmURL(realm, "groups", "count"), errMessage)
 
-	return result.Count, nil
+	return result.Count, err
 }
 
 // GetGroupMembers get a list of users of group with id in realm
 func (g *GoCloak) GetGroupMembers(ctx context.Context, token, realm, groupID string, params GetGroupsParams) ([]*User, error) {
 	const errMessage = "could not get group members"
 
-	var result []*User
 	queryParams, err := GetQueryParams(params)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
-		SetQueryParams(queryParams).
-		Get(g.getAdminRealmURL(realm, "groups", groupID, "members"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return doRequest[[]*User](g.GetRequestWithBearerAuth(ctx, token).
+		SetQueryParams(queryParams),
+		http.MethodGet, g.getAdminRealmURL(realm, "groups", groupID, "members"), errMessage)
 }
 
 // GetClientRoles get all roles for the given client in realm
 func (g *GoCloak) GetClientRoles(ctx context.Context, token, realm, idOfClient string, params GetRoleParams) ([]*Role, error) {
 	const errMessage = "could not get client roles"
 
-	var result []*Role
 	queryParams, err := GetQueryParams(params)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
-		SetQueryParams(queryParams).
-		Get(g.getAdminRealmURL(realm, "clients", idOfClient, "roles"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return doRequest[[]*Role](g.GetRequestWithBearerAuth(ctx, token).
+		SetQueryParams(queryParams),
+		http.MethodGet, g.getAdminRealmURL(realm, "clients", idOfClient, "roles"), errMessage)
 }
 
 // GetClientRoleByID gets role for the given client in realm using role ID
@@ -1797,21 +1704,13 @@ func (g *GoCloak) GetClientRole(ctx context.Context, token, realm, idOfClient, r
 func (g *GoCloak) GetClients(ctx context.Context, token, realm string, params GetClientsParams) ([]*Client, error) {
 	const errMessage = "could not get clients"
 
-	var result []*Client
 	queryParams, err := GetQueryParams(params)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
-		SetQueryParams(queryParams).
-		Get(g.getAdminRealmURL(realm, "clients"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return doRequest[[]*Client](g.GetRequestWithBearerAuth(ctx, token).
+		SetQueryParams(queryParams),
+		http.MethodGet, g.getAdminRealmURL(realm, "clients"), errMessage)
 }
 
 // GetClientManagementPermissions returns whether client Authorization permissions have been initialized or not and a reference
@@ -1864,22 +1763,14 @@ func (g *GoCloak) GetRealmRoleByID(ctx context.Context, token, realm, roleID str
 func (g *GoCloak) GetRealmRoles(ctx context.Context, token, realm string, params GetRoleParams) ([]*Role, error) {
 	const errMessage = "could not get realm roles"
 
-	var result []*Role
 	queryParams, err := GetQueryParams(params)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
-		SetQueryParams(queryParams).
-		Get(g.getAdminRealmURL(realm, "roles"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return doRequest[[]*Role](g.GetRequestWithBearerAuth(ctx, token).
+		SetQueryParams(queryParams),
+		http.MethodGet, g.getAdminRealmURL(realm, "roles"), errMessage)
 }
 
 // GetRealmRolesByUserID returns all roles assigned to the given user
@@ -2143,9 +2034,8 @@ func (g *GoCloak) GetAuthenticationFlow(ctx context.Context, token, realm string
 // CreateAuthenticationFlow creates a new Authentication flow in a realm
 func (g *GoCloak) CreateAuthenticationFlow(ctx context.Context, token, realm string, flow AuthenticationFlowRepresentation) error {
 	const errMessage = "could not create authentication flows"
-	var result []*AuthenticationFlowRepresentation
 	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).SetBody(flow).
+		SetBody(flow).
 		Post(g.getAdminRealmURL(realm, "authentication", "flows"))
 
 	return checkForError(resp, err, errMessage)
@@ -2153,16 +2043,11 @@ func (g *GoCloak) CreateAuthenticationFlow(ctx context.Context, token, realm str
 
 // UpdateAuthenticationFlow a given Authentication Flow
 func (g *GoCloak) UpdateAuthenticationFlow(ctx context.Context, token, realm string, flow AuthenticationFlowRepresentation, authenticationFlowID string) (*AuthenticationFlowRepresentation, error) {
-	const errMessage = "could not create authentication flows"
-	var result *AuthenticationFlowRepresentation
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).SetBody(flow).
-		Put(g.getAdminRealmURL(realm, "authentication", "flows", authenticationFlowID))
+	const errMessage = "could not update authentication flow"
 
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-	return result, nil
+	return doRequest[*AuthenticationFlowRepresentation](g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(flow),
+		http.MethodPut, g.getAdminRealmURL(realm, "authentication", "flows", authenticationFlowID), errMessage)
 }
 
 // DeleteAuthenticationFlow deletes a flow in a realm with the given ID
@@ -2322,60 +2207,35 @@ func (g *GoCloak) GetUserByID(ctx context.Context, accessToken, realm, userID st
 func (g *GoCloak) GetUserCount(ctx context.Context, token string, realm string, params GetUsersParams) (int, error) {
 	const errMessage = "could not get user count"
 
-	var result int
 	queryParams, err := GetQueryParams(params)
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", errMessage, err)
 	}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
-		SetQueryParams(queryParams).
-		Get(g.getAdminRealmURL(realm, "users", "count"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return -1, fmt.Errorf("%s: %w", errMessage, err)
-	}
-
-	return result, nil
+	return doRequest[int](g.GetRequestWithBearerAuth(ctx, token).
+		SetQueryParams(queryParams),
+		http.MethodGet, g.getAdminRealmURL(realm, "users", "count"), errMessage)
 }
 
 // GetUserGroups get all groups for user
 func (g *GoCloak) GetUserGroups(ctx context.Context, token, realm, userID string, params GetGroupsParams) ([]*Group, error) {
 	const errMessage = "could not get user groups"
 
-	var result []*Group
 	queryParams, err := GetQueryParams(params)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
-		SetQueryParams(queryParams).
-		Get(g.getAdminRealmURL(realm, "users", userID, "groups"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return doRequest[[]*Group](g.GetRequestWithBearerAuth(ctx, token).
+		SetQueryParams(queryParams),
+		http.MethodGet, g.getAdminRealmURL(realm, "users", userID, "groups"), errMessage)
 }
 
 // GetUserProfileConfig retrieves the user profile configuration for a realm
 func (g *GoCloak) GetUserProfileConfig(ctx context.Context, token, realm string) (*UserProfileConfig, error) {
 	const errMessage = "could not get user profile configuration"
 
-	var result UserProfileConfig
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
-		Get(g.getAdminRealmURL(realm, "users", "profile"))
-
-	if err := checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return &result, nil
+	return doRequestPtr[UserProfileConfig](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "users", "profile"), errMessage)
 }
 
 // GetUsers get all users in realm
@@ -2383,70 +2243,48 @@ func (g *GoCloak) GetUserProfileConfig(ctx context.Context, token, realm string)
 func (g *GoCloak) GetUsers(ctx context.Context, token, realm string, params GetUsersParams) ([]*User, error) {
 	const errMessage = "could not get users"
 
-	var result []*User
 	queryParams, err := GetQueryParams(params)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
-		SetQueryParams(queryParams).
-		Get(g.getAdminRealmURL(realm, "users"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return doRequest[[]*User](g.GetRequestWithBearerAuth(ctx, token).
+		SetQueryParams(queryParams),
+		http.MethodGet, g.getAdminRealmURL(realm, "users"), errMessage)
 }
 
 // GetUsersByRoleName returns all users have a given role
 func (g *GoCloak) GetUsersByRoleName(ctx context.Context, token, realm, roleName string, params GetUsersByRoleParams) ([]*User, error) {
 	const errMessage = "could not get users by role name"
 
-	var result []*User
 	queryParams, err := GetQueryParams(params)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
-		SetQueryParams(queryParams).
-		Get(g.getAdminRealmURL(realm, "roles", roleName, "users"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return doRequest[[]*User](g.GetRequestWithBearerAuth(ctx, token).
+		SetQueryParams(queryParams),
+		http.MethodGet, g.getAdminRealmURL(realm, "roles", roleName, "users"), errMessage)
 }
 
 // GetUsersByClientRoleName returns all users have a given client role
 func (g *GoCloak) GetUsersByClientRoleName(ctx context.Context, token, realm, idOfClient, roleName string, params GetUsersByRoleParams) ([]*User, error) {
 	const errMessage = "could not get users by client role name"
 
-	var result []*User
 	queryParams, err := GetQueryParams(params)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
-		SetQueryParams(queryParams).
-		Get(g.getAdminRealmURL(realm, "clients", idOfClient, "roles", roleName, "users"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return doRequest[[]*User](g.GetRequestWithBearerAuth(ctx, token).
+		SetQueryParams(queryParams),
+		http.MethodGet, g.getAdminRealmURL(realm, "clients", idOfClient, "roles", roleName, "users"), errMessage)
 }
 
-// SetPassword sets a new password for the user with the given id. Needs elevated privileges
-func (g *GoCloak) SetPassword(ctx context.Context, token, userID, realm, password string, temporary bool) error {
+// SetPassword sets a new password for the user with the given id. Needs elevated privileges.
+// Input: ctx [context.Context], token [string], realm [string], userID [string], password [string],
+// temporary [bool] user must change it on next login. Output: [error].
+func (g *GoCloak) SetPassword(ctx context.Context, token, realm, userID, password string, temporary bool) error {
 	const errMessage = "could not set password"
 
 	requestBody := SetPasswordRequest{Password: &password, Temporary: &temporary, Type: new("password")}
@@ -2686,40 +2524,24 @@ func (g *GoCloak) ExportIDPPublicBrokerConfig(ctx context.Context, token, realm,
 func (g *GoCloak) ImportIdentityProviderConfig(ctx context.Context, token, realm, fromURL, providerID string) (map[string]string, error) {
 	const errMessage = "could not import config"
 
-	result := make(map[string]string)
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
+	return doRequest[map[string]string](g.GetRequestWithBearerAuth(ctx, token).
 		SetBody(map[string]string{
 			"fromUrl":    fromURL,
 			"providerId": providerID,
-		}).
-		Post(g.getAdminRealmURL(realm, "identity-provider", "import-config"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+		}),
+		http.MethodPost, g.getAdminRealmURL(realm, "identity-provider", "import-config"), errMessage)
 }
 
 // ImportIdentityProviderConfigFromFile parses and returns the identity provider config from a given file
 func (g *GoCloak) ImportIdentityProviderConfigFromFile(ctx context.Context, token, realm, providerID, fileName string, fileBody io.Reader) (map[string]string, error) {
 	const errMessage = "could not import config"
 
-	result := make(map[string]string)
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
+	return doRequest[map[string]string](g.GetRequestWithBearerAuth(ctx, token).
 		SetFileReader("file", fileName, fileBody).
 		SetFormData(map[string]string{
 			"providerId": providerID,
-		}).
-		Post(g.getAdminRealmURL(realm, "identity-provider", "import-config"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+		}),
+		http.MethodPost, g.getAdminRealmURL(realm, "identity-provider", "import-config"), errMessage)
 }
 
 // CreateIdentityProviderMapper creates an instance of an identity provider mapper associated with the given alias
@@ -2789,18 +2611,7 @@ func (g *GoCloak) GetResource(ctx context.Context, token, realm, idOfClient, res
 func (g *GoCloak) GetResourceClient(ctx context.Context, token, realm, resourceID string) (*ResourceRepresentation, error) {
 	const errMessage = "could not get resource"
 
-	var result ResourceRepresentation
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
-		Get(g.getRealmURL(realm, "authz", "protection", "resource_set", resourceID))
-
-	// http://${host}:${port}/auth/realms/${realm_name}/authz/protection/resource_set/{resource_id}
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return &result, nil
+	return doRequestPtr[ResourceRepresentation](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getRealmURL(realm, "authz", "protection", "resource_set", resourceID), errMessage)
 }
 
 // GetResources returns resources associated with the client, using access token from admin
@@ -3013,20 +2824,9 @@ func (g *GoCloak) GetPolicies(ctx context.Context, token, realm, idOfClient stri
 		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 
-	compResult, err := g.compareVersions(ctx, "20.0.0", token)
-	if err != nil {
-		return nil, err
-	}
-	shouldAddType := compResult != 1
-
-	path := []string{"clients", idOfClient, "authz", "resource-server", "policy"}
-	if !NilOrEmpty(params.Type) && shouldAddType {
-		path = append(path, *params.Type)
-	}
-
 	return doRequest[[]*PolicyRepresentation](g.GetRequestWithBearerAuth(ctx, token).
 		SetQueryParams(queryParams),
-		http.MethodGet, g.getAdminRealmURL(realm, path...), errMessage)
+		http.MethodGet, g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "policy"), errMessage)
 }
 
 // CreatePolicy creates a policy associated with the client
@@ -3459,7 +3259,8 @@ func (g *GoCloak) GetEvents(ctx context.Context, token string, realm string, par
 	}
 
 	return doRequest[[]*EventRepresentation](g.GetRequestWithBearerAuth(ctx, token).
-		SetQueryParams(queryParams),
+		SetQueryParams(queryParams).
+		SetQueryParamsFromValues(url.Values{"type": params.Type}),
 		http.MethodGet, g.getAdminRealmURL(realm, "events"), errMessage)
 }
 
@@ -3473,7 +3274,8 @@ func (g *GoCloak) GetAdminEvents(ctx context.Context, token string, realm string
 	}
 
 	return doRequest[[]*AdminEventRepresentation](g.GetRequestWithBearerAuth(ctx, token).
-		SetQueryParams(queryParams),
+		SetQueryParams(queryParams).
+		SetQueryParamsFromValues(url.Values{"operationTypes": params.OperationTypes, "resourceTypes": params.ResourceTypes}),
 		http.MethodGet, g.getAdminRealmURL(realm, "admin-events"), errMessage)
 }
 
@@ -3544,21 +3346,12 @@ func (g *GoCloak) GetRequiredActions(ctx context.Context, token string, realm st
 // GetRequiredAction gets a required action for a given realm
 func (g *GoCloak) GetRequiredAction(ctx context.Context, token string, realm string, alias string) (*RequiredActionProviderRepresentation, error) {
 	const errMessage = "could not get required action"
-	var result RequiredActionProviderRepresentation
 
 	if alias == "" {
 		return nil, errors.New("alias is required for getting a required action")
 	}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
-		Get(g.getAdminRealmURL(realm, "authentication", "required-actions", alias))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return &result, err
+	return doRequestPtr[RequiredActionProviderRepresentation](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "authentication", "required-actions", alias), errMessage)
 }
 
 // UpdateRequiredAction updates a required action for a given realm
@@ -3785,39 +3578,22 @@ func (g *GoCloak) AddUserToOrganization(ctx context.Context, token, realm, idOfO
 // GetOrganizationMemberCount returns number of members in the organization.
 func (g *GoCloak) GetOrganizationMemberCount(ctx context.Context, token, realm, idOfOrganization string) (int, error) {
 	const errMessage = "could not get organization members count"
-	var result int
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
-		Get(g.getAdminRealmURL(realm, "organizations", idOfOrganization, "members", "count"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return -1, fmt.Errorf("%s: %w", errMessage, err)
-	}
-
-	return result, nil
+	return doRequest[int](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "organizations", idOfOrganization, "members", "count"), errMessage)
 }
 
 // GetOrganizationMembers returns a paginated list of organization members filtered according to the specified parameters
 func (g *GoCloak) GetOrganizationMembers(ctx context.Context, token, realm, idOfOrganization string, params GetMembersParams) ([]*MemberRepresentation, error) {
 	const errMessage = "could not get organization members"
 
-	var result []*MemberRepresentation
 	queryParams, err := GetQueryParams(params)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
-		SetQueryParams(queryParams).
-		Get(g.getAdminRealmURL(realm, "organizations", idOfOrganization, "members"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return doRequest[[]*MemberRepresentation](g.GetRequestWithBearerAuth(ctx, token).
+		SetQueryParams(queryParams),
+		http.MethodGet, g.getAdminRealmURL(realm, "organizations", idOfOrganization, "members"), errMessage)
 }
 
 // GetOrganizationMemberByID returns the member of the organization with the specified id
@@ -3902,23 +3678,15 @@ func (g *GoCloak) RemoveIdentityProviderFromOrganization(ctx context.Context, to
 // GET /admin/realms/{realm}/organizations/count
 func (g *GoCloak) GetOrganizationCount(ctx context.Context, token, realm string, params GetOrganizationCountParams) (int64, error) {
 	const errMessage = "could not get organization count"
-	var result int64
 
 	queryParams, err := GetQueryParams(params)
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", errMessage, err)
 	}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
-		SetQueryParams(queryParams).
-		Get(g.getAdminRealmURL(realm, "organizations", "count"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return 0, err
-	}
-
-	return result, nil
+	return doRequest[int64](g.GetRequestWithBearerAuth(ctx, token).
+		SetQueryParams(queryParams),
+		http.MethodGet, g.getAdminRealmURL(realm, "organizations", "count"), errMessage)
 }
 
 // GetOrganizationMemberGroups returns the groups the member with the specified id belongs to within the organization
@@ -3934,23 +3702,15 @@ func (g *GoCloak) GetOrganizationMemberGroups(ctx context.Context, token, realm,
 // GET /admin/realms/{realm}/organizations/{id}/invitations
 func (g *GoCloak) GetOrganizationInvitations(ctx context.Context, token, realm, idOfOrganization string, params GetOrganizationInvitationsParams) ([]*OrganizationInvitationRepresentation, error) {
 	const errMessage = "could not get organization invitations"
-	var result []*OrganizationInvitationRepresentation
 
 	queryParams, err := GetQueryParams(params)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
-		SetQueryParams(queryParams).
-		Get(g.getAdminRealmURL(realm, "organizations", idOfOrganization, "invitations"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return doRequest[[]*OrganizationInvitationRepresentation](g.GetRequestWithBearerAuth(ctx, token).
+		SetQueryParams(queryParams),
+		http.MethodGet, g.getAdminRealmURL(realm, "organizations", idOfOrganization, "invitations"), errMessage)
 }
 
 // GetOrganizationInvitationByID returns the invitation with the specified id for the organization
@@ -4004,23 +3764,15 @@ func (g *GoCloak) AddOrganizationGroup(ctx context.Context, token, realm, idOfOr
 // GET /admin/realms/{realm}/organizations/{id}/groups
 func (g *GoCloak) GetOrganizationGroups(ctx context.Context, token, realm, idOfOrganization string, params GetOrganizationGroupsParams) ([]*Group, error) {
 	const errMessage = "could not get organization groups"
-	var result []*Group
 
 	queryParams, err := GetQueryParams(params)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
-		SetQueryParams(queryParams).
-		Get(g.getAdminRealmURL(realm, "organizations", idOfOrganization, "groups"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return doRequest[[]*Group](g.GetRequestWithBearerAuth(ctx, token).
+		SetQueryParams(queryParams),
+		http.MethodGet, g.getAdminRealmURL(realm, "organizations", idOfOrganization, "groups"), errMessage)
 }
 
 // GetOrganizationGroupByPath returns the organization group matching the given path
@@ -4070,23 +3822,15 @@ func (g *GoCloak) DeleteOrganizationGroup(ctx context.Context, token, realm, idO
 // GET /admin/realms/{realm}/organizations/{id}/groups/{group-id}/children
 func (g *GoCloak) GetOrganizationGroupSubgroups(ctx context.Context, token, realm, idOfOrganization, idOfGroup string, params GetOrganizationGroupSubgroupsParams) ([]*Group, error) {
 	const errMessage = "could not get organization group subgroups"
-	var result []*Group
 
 	queryParams, err := GetQueryParams(params)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
-		SetQueryParams(queryParams).
-		Get(g.getAdminRealmURL(realm, "organizations", idOfOrganization, "groups", idOfGroup, "children"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return doRequest[[]*Group](g.GetRequestWithBearerAuth(ctx, token).
+		SetQueryParams(queryParams),
+		http.MethodGet, g.getAdminRealmURL(realm, "organizations", idOfOrganization, "groups", idOfGroup, "children"), errMessage)
 }
 
 // AddOrganizationSubgroup adds a subgroup to the specified organization group
@@ -4109,23 +3853,15 @@ func (g *GoCloak) AddOrganizationSubgroup(ctx context.Context, token, realm, idO
 // GET /admin/realms/{realm}/organizations/{id}/groups/{group-id}/members
 func (g *GoCloak) GetOrganizationGroupMembers(ctx context.Context, token, realm, idOfOrganization, idOfGroup string, params GetOrganizationMembersParams) ([]*MemberRepresentation, error) {
 	const errMessage = "could not get organization group members"
-	var result []*MemberRepresentation
 
 	queryParams, err := GetQueryParams(params)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
-		SetQueryParams(queryParams).
-		Get(g.getAdminRealmURL(realm, "organizations", idOfOrganization, "groups", idOfGroup, "members"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return doRequest[[]*MemberRepresentation](g.GetRequestWithBearerAuth(ctx, token).
+		SetQueryParams(queryParams),
+		http.MethodGet, g.getAdminRealmURL(realm, "organizations", idOfOrganization, "groups", idOfGroup, "members"), errMessage)
 }
 
 // AddMemberToOrganizationGroup adds the user with the specified id to the organization group

@@ -79,19 +79,6 @@ func NilOrEmptyArray(value []string) bool {
 	return value[0] == ""
 }
 
-// PStringSlice returns the slice as-is, or an empty slice if nil.
-func PStringSlice(value []string) []string {
-	if value == nil {
-		return []string{}
-	}
-	return value
-}
-
-// NilOrEmptySlice returns true if the slice is nil or empty.
-func NilOrEmptySlice(value []string) bool {
-	return len(value) == 0
-}
-
 // WithPropagator generates a context that has an OpenTelemetry propagator attached.
 // The propagator is used to inject the span from the context into the request headers.
 // If no propagator is attached, the global propagator (otel.GetTextMapPropagator) is used.

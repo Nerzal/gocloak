@@ -102,7 +102,9 @@ type GoCloakIface interface {
 	// ExecuteActionsEmail executes an actions email
 	ExecuteActionsEmail(ctx context.Context, token, realm string, params ExecuteActionsEmail) error
 	// SendVerifyEmail sends a verification e-mail to a user.
-	SendVerifyEmail(ctx context.Context, token, userID, realm string, params ...SendVerificationMailParams) error
+	// Input: ctx [context.Context], token [string], realm [string], userID [string],
+	// params [...SendVerificationMailParams] optional, only the first is used. Output: [error].
+	SendVerifyEmail(ctx context.Context, token, realm, userID string, params ...SendVerificationMailParams) error
 	// CreateGroup creates a new group.
 	CreateGroup(ctx context.Context, token, realm string, group Group) (string, error)
 	// CreateChildGroup creates a new child group
@@ -394,8 +396,10 @@ type GoCloakIface interface {
 	GetUsersByRoleName(ctx context.Context, token, realm, roleName string, params GetUsersByRoleParams) ([]*User, error)
 	// GetUsersByClientRoleName returns all users have a given client role
 	GetUsersByClientRoleName(ctx context.Context, token, realm, idOfClient, roleName string, params GetUsersByRoleParams) ([]*User, error)
-	// SetPassword sets a new password for the user with the given id. Needs elevated privileges
-	SetPassword(ctx context.Context, token, userID, realm, password string, temporary bool) error
+	// SetPassword sets a new password for the user with the given id. Needs elevated privileges.
+	// Input: ctx [context.Context], token [string], realm [string], userID [string], password [string],
+	// temporary [bool] user must change it on next login. Output: [error].
+	SetPassword(ctx context.Context, token, realm, userID, password string, temporary bool) error
 	// UpdateUser updates a given user
 	UpdateUser(ctx context.Context, token, realm string, user User) error
 	// UpdateUserProfileConfig updates the user profile configuration for a realm
@@ -450,7 +454,9 @@ type GoCloakIface interface {
 	DeleteIdentityProviderMapper(ctx context.Context, token, realm, alias, mapperID string) error
 	// GetIdentityProviderMappers returns list of mappers associated with an identity provider
 	GetIdentityProviderMappers(ctx context.Context, token, realm, alias string) ([]*IdentityProviderMapper, error)
-	// GetIdentityProviderMapperByID gets the mapper of an identity provider
+	// GetIdentityProviderMapperByID gets the mapper of an identity provider.
+	// Input: ctx [context.Context], token [string], realm [string], alias [string] identity provider alias,
+	// mapperID [string]. Output: [*IdentityProviderMapper], [error].
 	GetIdentityProviderMapperByID(ctx context.Context, token, realm, alias, mapperID string) (*IdentityProviderMapper, error)
 	// UpdateIdentityProviderMapper updates mapper of an identity provider
 	UpdateIdentityProviderMapper(ctx context.Context, token, realm, alias string, mapper IdentityProviderMapper) error

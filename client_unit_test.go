@@ -11,9 +11,11 @@ import (
 	"math/big"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/golang-jwt/jwt/v5"
@@ -173,9 +175,9 @@ func TestUnit_GetServerVersion(t *testing.T) {
 		for range 10 {
 			wg.Go(func() {
 				// t.Errorf, not require: FailNow must not be called outside the test goroutine
-				result, err := client.compareVersions(context.Background(), "20.0.0", "token")
-				if err != nil || result != 1 {
-					t.Errorf("compareVersions = %d, %v; want 1, nil", result, err)
+				version, err := client.GetServerVersion(context.Background(), "token")
+				if err != nil || version != "26.0.0" {
+					t.Errorf("GetServerVersion = %q, %v; want 26.0.0, nil", version, err)
 				}
 			})
 		}
@@ -231,36 +233,15 @@ func serverInfoServer(t *testing.T, version string) (*httptest.Server, *atomic.I
 	return server, &fetches
 }
 
-func TestUnit_CompareVersions(t *testing.T) {
+func TestUnit_GetServerVersion_Caching(t *testing.T) {
 	t.Parallel()
-	tests := []struct {
-		name, server, v string
-		want            int
-	}{
-		{name: "server lower", server: "19.0.0", v: "20.0.0", want: -1},
-		{name: "equal", server: "20.0.0", v: "20.0.0", want: 0},
-		{name: "server higher", server: "26.8.2", v: "20.0.0", want: 1},
-		{name: "v prefix on argument", server: "20.0.0", v: "v20.0.0", want: 0},
-		{name: "v prefix on server", server: "v26.0.0", v: "20.0.0", want: 1},
-		{name: "non-semver vendor build", server: "26.0.10.redhat-00001", v: "20.0.0", want: 1},
-	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			server, fetches := serverInfoServer(t, tc.server)
-			got, err := NewClient(server.URL).compareVersions(context.Background(), tc.v, "token")
-			require.NoError(t, err)
-			require.Equal(t, tc.want, got)
-			require.Equal(t, int32(1), fetches.Load())
-		})
-	}
 
 	t.Run("SetServerVersion skips fetch", func(t *testing.T) {
 		t.Parallel()
 		server, fetches := serverInfoServer(t, "19.0.0")
-		got, err := NewClient(server.URL, SetServerVersion("26.0.0")).compareVersions(context.Background(), "20.0.0", "token")
+		version, err := NewClient(server.URL, SetServerVersion("26.0.0")).GetServerVersion(context.Background(), "token")
 		require.NoError(t, err)
-		require.Equal(t, 1, got)
+		require.Equal(t, "26.0.0", version)
 		require.Zero(t, fetches.Load())
 	})
 
@@ -278,37 +259,136 @@ func TestUnit_CompareVersions(t *testing.T) {
 		defer server.Close()
 
 		client := NewClient(server.URL)
-		_, err := client.compareVersions(context.Background(), "20.0.0", "token")
+		_, err := client.GetServerVersion(context.Background(), "token")
 		require.Error(t, err)
-		got, err := client.compareVersions(context.Background(), "20.0.0", "token")
+		version, err := client.GetServerVersion(context.Background(), "token")
 		require.NoError(t, err)
-		require.Equal(t, 1, got)
+		require.Equal(t, "26.0.0", version)
 		require.Equal(t, int32(2), fetches.Load())
 	})
 }
 
-func TestUnit_GetPolicies_PathDependsOnVersion(t *testing.T) {
+// TestUnit_GetPolicies_SendsTypeAsQuery checks that the policy type is a query parameter and that no
+// serverinfo call is needed, so admins of non-master realms can list policies.
+// Input: t [*testing.T]. Output: none.
+func TestUnit_GetPolicies_SendsTypeAsQuery(t *testing.T) {
 	t.Parallel()
-	tests := []struct{ version, wantPath string }{
-		{"19.0.0", "/admin/realms/r/clients/c/authz/resource-server/policy/role"},
-		{"26.8.2", "/admin/realms/r/clients/c/authz/resource-server/policy"},
-	}
-	for _, tc := range tests {
-		t.Run(tc.version, func(t *testing.T) {
-			t.Parallel()
-			var paths []string
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				paths = append(paths, r.URL.Path)
-				w.Header().Set("Content-Type", "application/json")
-				_, _ = w.Write([]byte(`[]`))
-			}))
-			defer server.Close()
+	var requests []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests = append(requests, r.URL.Path+"?"+r.URL.RawQuery)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[]`))
+	}))
+	defer server.Close()
 
-			_, err := NewClient(server.URL, SetServerVersion(tc.version)).
-				GetPolicies(context.Background(), "token", "r", "c", GetPolicyParams{Type: new("role")})
-			require.NoError(t, err)
-			require.Equal(t, []string{tc.wantPath}, paths)
-		})
+	_, err := NewClient(server.URL).GetPolicies(context.Background(), "token", "r", "c", GetPolicyParams{Type: new("role")})
+	require.NoError(t, err)
+	require.Equal(t, []string{"/admin/realms/r/clients/c/authz/resource-server/policy?type=role"}, requests)
+}
+
+// TestUnit_GetCerts_KeepsKnownKeysWhenRefreshFails checks that expired certs are still used while Keycloak is
+// unreachable and that the next refresh waits for another interval.
+// Input: t [*testing.T]. Output: none.
+func TestUnit_GetCerts_KeepsKnownKeysWhenRefreshFails(t *testing.T) {
+	t.Parallel()
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+
+	var fetches atomic.Int32
+	var down atomic.Bool
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		fetches.Add(1)
+		if down.Load() {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(CertResponse{Keys: []CertResponseKey{jwkFor("k", &key.PublicKey)}})
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, SetCertCacheInvalidationTime(time.Hour))
+	ctx := context.Background()
+	token := signToken(t, "k", key)
+	_, _, err = client.DecodeAccessToken(ctx, token, "r")
+	require.NoError(t, err)
+
+	// let the cache entry expire, then take Keycloak down
+	value, _ := client.certsCache.Load("r")
+	entry, _ := value.(certsCacheEntry)
+	entry.fetchedAt = time.Now().Add(-2 * time.Hour)
+	client.certsCache.Store("r", entry)
+	down.Store(true)
+
+	_, _, err = client.DecodeAccessToken(ctx, token, "r")
+	require.NoError(t, err, "known keys must still validate while Keycloak is down")
+	_, _, err = client.DecodeAccessToken(ctx, token, "r")
+	require.NoError(t, err)
+	require.Equal(t, int32(2), fetches.Load(), "a failed refresh must not be retried on every call")
+}
+
+// TestUnit_RequiredFieldsDoNotPanic checks that missing required pointers return an error instead of panicking.
+// Input: t [*testing.T]. Output: none.
+func TestUnit_RequiredFieldsDoNotPanic(t *testing.T) {
+	t.Parallel()
+	client := NewClient("http://127.0.0.1:0")
+
+	_, err := client.GetToken(context.Background(), "r", TokenOptions{ClientSecret: new("secret"), GrantType: new("client_credentials")})
+	require.EqualError(t, err, "client id required when a client secret is set")
+
+	err = client.ExecuteActionsEmail(context.Background(), "token", "r", ExecuteActionsEmail{Actions: []string{"UPDATE_PASSWORD"}})
+	require.EqualError(t, err, "user id required")
+}
+
+// TestUnit_EventsSendRepeatedQueryParams checks that list filters are sent as repeated query parameters.
+// Input: t [*testing.T]. Output: none.
+func TestUnit_EventsSendRepeatedQueryParams(t *testing.T) {
+	t.Parallel()
+	var queries []url.Values
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		queries = append(queries, r.URL.Query())
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[]`))
+	}))
+	defer server.Close()
+	client := NewClient(server.URL)
+	ctx := context.Background()
+
+	_, err := client.GetEvents(ctx, "token", "r", GetEventsParams{Type: []string{"LOGIN", "LOGOUT"}, Max: new(int32(5))})
+	require.NoError(t, err)
+	_, err = client.GetAdminEvents(ctx, "token", "r", GetAdminEventsParams{
+		OperationTypes: []string{"CREATE", "DELETE"}, ResourceTypes: []string{"USER"}, First: new(int32(10)),
+	})
+	require.NoError(t, err)
+
+	require.Equal(t, url.Values{"type": {"LOGIN", "LOGOUT"}, "max": {"5"}}, queries[0])
+	require.Equal(t, url.Values{"operationTypes": {"CREATE", "DELETE"}, "resourceTypes": {"USER"}, "first": {"10"}}, queries[1])
+}
+
+// TestUnit_CountFunctionsReturnAPIError checks that count functions return the *APIError itself, like all other methods.
+// Input: t [*testing.T]. Output: none.
+func TestUnit_CountFunctionsReturnAPIError(t *testing.T) {
+	t.Parallel()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+	}))
+	defer server.Close()
+	client := NewClient(server.URL)
+	ctx := context.Background()
+
+	counts := map[string]func() (int, error){
+		"GetGroupsCount": func() (int, error) { return client.GetGroupsCount(ctx, "token", "r", GetGroupsParams{}) },
+		"GetUserCount":   func() (int, error) { return client.GetUserCount(ctx, "token", "r", GetUsersParams{}) },
+		"GetOrganizationMemberCount": func() (int, error) {
+			return client.GetOrganizationMemberCount(ctx, "token", "r", "org")
+		},
+	}
+	for name, count := range counts {
+		got, err := count()
+		apiErr, ok := err.(*APIError) //nolint:errorlint // the type assertion is what callers rely on
+		require.True(t, ok, "%s: want *APIError, got %T", name, err)
+		require.Equal(t, http.StatusForbidden, apiErr.Code, name)
+		require.Zero(t, got, name)
 	}
 }
 

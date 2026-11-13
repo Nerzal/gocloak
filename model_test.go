@@ -3,6 +3,7 @@ package gocloak_test
 import (
 	"encoding/json"
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/Nerzal/gocloak/v14"
@@ -533,4 +534,79 @@ func TestModel_APIErrorError(t *testing.T) {
 	var err error = &gocloak.APIError{Code: 404, Message: "404 Not Found"}
 	require.EqualError(t, err, "404 Not Found")
 	require.EqualError(t, gocloak.APIError{Message: "by value"}, "by value")
+}
+
+// fillAllFields sets every exported pointer and slice field of the struct v points to a non-zero value.
+// Input: v [any] pointer to a struct. Output: [any] the same pointer.
+func fillAllFields(v any) any {
+	for _, field := range reflect.ValueOf(v).Elem().Fields() {
+		if !field.CanSet() {
+			continue
+		}
+		switch field.Kind() {
+		case reflect.Pointer:
+			elem := reflect.New(field.Type().Elem())
+			setSample(elem.Elem())
+			field.Set(elem)
+		case reflect.Slice:
+			elem := reflect.New(field.Type().Elem()).Elem()
+			setSample(elem)
+			field.Set(reflect.Append(reflect.MakeSlice(field.Type(), 0, 1), elem))
+		default:
+			setSample(field)
+		}
+	}
+	return v
+}
+
+// setSample sets a non-zero sample value for basic kinds. Input: v [reflect.Value] settable value.
+func setSample(v reflect.Value) {
+	switch v.Kind() {
+	case reflect.String:
+		v.SetString("x")
+	case reflect.Bool:
+		v.SetBool(true)
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		v.SetInt(1)
+	default:
+	}
+}
+
+// TestGetQueryParams_AllParamsTypes makes sure every struct passed to GetQueryParams by the client works with all fields set.
+func TestGetQueryParams_AllParamsTypes(t *testing.T) {
+	t.Parallel()
+	params := []any{
+		&gocloak.GetAdminEventsParams{},
+		&gocloak.GetChildGroupsParams{},
+		&gocloak.GetClientsParams{},
+		&gocloak.GetClientUserSessionsParams{},
+		&gocloak.GetComponentsParams{},
+		&gocloak.GetEventsParams{},
+		&gocloak.GetGroupsParams{},
+		&gocloak.GetMembersParams{},
+		&gocloak.GetOrganizationCountParams{},
+		&gocloak.GetOrganizationGroupsParams{},
+		&gocloak.GetOrganizationGroupSubgroupsParams{},
+		&gocloak.GetOrganizationInvitationsParams{},
+		&gocloak.GetOrganizationMembersParams{},
+		&gocloak.GetOrganizationsParams{},
+		&gocloak.GetPermissionParams{},
+		&gocloak.GetPolicyParams{},
+		&gocloak.GetResourceParams{},
+		&gocloak.GetResourcePoliciesParams{},
+		&gocloak.GetRoleParams{},
+		&gocloak.GetScopeParams{},
+		&gocloak.GetUserPermissionParams{},
+		&gocloak.GetUsersByRoleParams{},
+		&gocloak.GetUsersParams{},
+		&gocloak.ExecuteActionsEmail{},
+	}
+	for _, p := range params {
+		t.Run(reflect.TypeOf(p).Elem().Name(), func(t *testing.T) {
+			t.Parallel()
+			query, err := gocloak.GetQueryParams(reflect.ValueOf(fillAllFields(p)).Elem().Interface())
+			require.NoError(t, err)
+			require.NotEmpty(t, query)
+		})
+	}
 }

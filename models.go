@@ -1016,11 +1016,11 @@ type TokenOptions struct {
 
 // FormData returns a map of options to be used in SetFormData function
 func (t *TokenOptions) FormData() map[string]string {
-	if !NilOrEmptySlice(t.Scopes) {
+	if len(t.Scopes) > 0 {
 		t.Scope = new(strings.Join(t.Scopes, " "))
 	}
 
-	if !NilOrEmptySlice(t.ResponseTypes) {
+	if len(t.ResponseTypes) > 0 {
 		t.ResponseType = new(strings.Join(t.ResponseTypes, " "))
 	}
 
@@ -1393,7 +1393,7 @@ type GetUserPermissionParams struct {
 	ResourceID  *string `json:"resourceId,omitempty"`
 	Owner       *string `json:"owner,omitempty"`
 	Requester   *string `json:"requester,omitempty"`
-	Granted     *bool   `json:"granted,omitempty"`
+	Granted     *bool   `json:"granted,string,omitempty"`
 	ReturnNames *string `json:"returnNames,omitempty"`
 	First       *int    `json:"first,string,omitempty"`
 	Max         *int    `json:"max,string,omitempty"`
@@ -1444,7 +1444,7 @@ type GetEventsParams struct {
 	First     *int32   `json:"first,string,omitempty"`
 	IPAddress *string  `json:"ipAddress,omitempty"`
 	Max       *int32   `json:"max,string,omitempty"`
-	Type      []string `json:"type,omitempty"`
+	Type      []string `json:"-"` // sent as repeated "type" query parameter
 	UserID    *string  `json:"user,omitempty"`
 }
 
@@ -1468,11 +1468,11 @@ type GetAdminEventsParams struct {
 	AuthUser       *string  `json:"authUser,omitempty"`
 	DateFrom       *string  `json:"dateFrom,omitempty"`
 	DateTo         *string  `json:"dateTo,omitempty"`
-	First          *int32   `json:"first,omitempty"`
-	Max            *int32   `json:"max,omitempty"`
-	OperationTypes []string `json:"operationTypes,omitempty"`
+	First          *int32   `json:"first,string,omitempty"`
+	Max            *int32   `json:"max,string,omitempty"`
+	OperationTypes []string `json:"-"` // sent as repeated "operationTypes" query parameter
 	ResourcePath   *string  `json:"resourcePath,omitempty"`
-	ResourceTypes  []string `json:"resourceTypes,omitempty"`
+	ResourceTypes  []string `json:"-"` // sent as repeated "resourceTypes" query parameter
 }
 
 // AdminEventRepresentation is a representation of an Admin Event
