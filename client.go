@@ -18,6 +18,8 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 	"golang.org/x/mod/semver"
 
 	"github.com/Nerzal/gocloak/v14/pkg/jwx"
@@ -109,9 +111,9 @@ func (g *GoCloak) GetServerVersion(ctx context.Context, token string) (string, e
 // GetRequest returns a request for calling endpoints.
 func (g *GoCloak) GetRequest(ctx context.Context) *resty.Request {
 	var err HTTPErrorResponse
-	return g.restyClient.R().
+	return injectTracingHeaders(ctx, g.restyClient.R().
 		SetContext(ctx).
-		SetError(&err)
+		SetError(&err))
 }
 
 // GetRequestWithBearerAuthNoCache returns a JSON base request configured with an auth token and no-cache header.
@@ -231,6 +233,22 @@ func findUsedKey(usedKeyID string, keys []CertResponseKey) *CertResponseKey {
 	}
 
 	return nil
+}
+
+// injectTracingHeaders writes the OpenTelemetry trace context of ctx into the request headers.
+// It uses the propagator attached via WithPropagator, otherwise the global one; without a span in ctx it adds nothing.
+// Input: ctx [context.Context], req [*resty.Request]. Output: [*resty.Request] the same request.
+func injectTracingHeaders(ctx context.Context, req *resty.Request) *resty.Request {
+	// look for propagator in context, use the global propagator if not found
+	propagator, ok := ctx.Value(propagatorContextKey).(propagation.TextMapPropagator)
+	if !ok || propagator == nil {
+		propagator = otel.GetTextMapPropagator()
+	}
+
+	// inject tracing headers into request; this is a no-op when ctx carries no span
+	propagator.Inject(ctx, propagation.HeaderCarrier(req.Header))
+
+	return req
 }
 
 // ===============

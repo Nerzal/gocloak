@@ -1,5 +1,15 @@
 package gocloak
 
+import (
+	"context"
+
+	"go.opentelemetry.io/otel/propagation"
+)
+
+type contextKey string
+
+var propagatorContextKey = contextKey("propagator")
+
 // PString returns a string value from a pointer
 func PString(value *string) string {
 	if value == nil {
@@ -80,4 +90,11 @@ func PStringSlice(value []string) []string {
 // NilOrEmptySlice returns true if the slice is nil or empty.
 func NilOrEmptySlice(value []string) bool {
 	return len(value) == 0
+}
+
+// WithPropagator generates a context that has an OpenTelemetry propagator attached.
+// The propagator is used to inject the span from the context into the request headers.
+// If no propagator is attached, the global propagator (otel.GetTextMapPropagator) is used.
+func WithPropagator(ctx context.Context, propagator propagation.TextMapPropagator) context.Context {
+	return context.WithValue(ctx, propagatorContextKey, propagator)
 }
