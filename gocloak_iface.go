@@ -15,6 +15,10 @@ type GoCloakIface interface {
 	// GetServerVersion returns the server version from the serverinfo endpoint.
 	// If the version is already set, it will return the cached version.
 	// Otherwise, it will fetch the version from the serverinfo endpoint and cache it.
+	// Safe for concurrent use.
+	// Input: ctx [context.Context], token [string] admin token.
+	// Output: [string] server version, [error] if serverinfo fails or has no version
+	// (e.g. admins of non-master realms; use SetServerVersion then).
 	GetServerVersion(ctx context.Context, token string) (string, error)
 	// GetRequest returns a request for calling endpoints.
 	GetRequest(ctx context.Context) *resty.Request
@@ -37,7 +41,10 @@ type GoCloakIface interface {
 	GetUserInfo(ctx context.Context, accessToken, realm string) (*UserInfo, error)
 	// GetRawUserInfo calls the UserInfo endpoint and returns a raw json object
 	GetRawUserInfo(ctx context.Context, accessToken, realm string) (map[string]any, error)
-	// GetCerts fetches certificates for the given realm from the public /open-id-connect/certs endpoint
+	// GetCerts fetches certificates for the given realm from the public /open-id-connect/certs endpoint.
+	// Results are cached for Config.CertsInvalidateTime.
+	// Input: ctx [context.Context], realm [string].
+	// Output: [*CertResponse] certs, [error] if fetching fails.
 	GetCerts(ctx context.Context, realm string) (*CertResponse, error)
 	// GetIssuer gets the issuer of the given realm
 	GetIssuer(ctx context.Context, realm string) (*IssuerResponse, error)
@@ -52,7 +59,7 @@ type GoCloakIface interface {
 	// GetRequestingPartyToken returns a requesting party token with permissions granted by the server
 	GetRequestingPartyToken(ctx context.Context, token, realm string, options RequestingPartyTokenOptions) (*JWT, error)
 	// GetRequestingPartyPermissions returns a requesting party permissions granted by the server
-	GetRequestingPartyPermissions(ctx context.Context, token, realm string, options RequestingPartyTokenOptions) (*[]RequestingPartyPermission, error)
+	GetRequestingPartyPermissions(ctx context.Context, token, realm string, options RequestingPartyTokenOptions) ([]RequestingPartyPermission, error)
 	// GetRequestingPartyPermissionDecision returns a requesting party permission decision granted by the server
 	GetRequestingPartyPermissionDecision(ctx context.Context, token, realm string, options RequestingPartyTokenOptions) (*RequestingPartyPermissionDecision, error)
 	// RefreshToken refreshes the given token.
@@ -397,22 +404,10 @@ type GoCloakIface interface {
 	GetUserOfflineSessionsForClient(ctx context.Context, token, realm, userID, idOfClient string) ([]*UserSessionRepresentation, error)
 	// AddClientRolesToUser adds client-level role mappings
 	AddClientRolesToUser(ctx context.Context, token, realm, idOfClient, userID string, roles []Role) error
-	// AddClientRoleToUser adds client-level role mappings
-	//
-	// Deprecated: replaced by AddClientRolesToUser
-	AddClientRoleToUser(ctx context.Context, token, realm, idOfClient, userID string, roles []Role) error
 	// AddClientRolesToGroup adds a client role to the group
 	AddClientRolesToGroup(ctx context.Context, token, realm, idOfClient, groupID string, roles []Role) error
-	// AddClientRoleToGroup adds a client role to the group
-	//
-	// Deprecated: replaced by AddClientRolesToGroup
-	AddClientRoleToGroup(ctx context.Context, token, realm, idOfClient, groupID string, roles []Role) error
 	// DeleteClientRolesFromUser adds client-level role mappings
 	DeleteClientRolesFromUser(ctx context.Context, token, realm, idOfClient, userID string, roles []Role) error
-	// DeleteClientRoleFromUser adds client-level role mappings
-	//
-	// Deprecated: replaced by DeleteClientRolesFrom
-	DeleteClientRoleFromUser(ctx context.Context, token, realm, idOfClient, userID string, roles []Role) error
 	// DeleteClientRoleFromGroup removes a client role from from the group
 	DeleteClientRoleFromGroup(ctx context.Context, token, realm, idOfClient, groupID string, roles []Role) error
 	// AddClientRoleComposite adds roles as composite

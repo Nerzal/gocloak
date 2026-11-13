@@ -9,7 +9,7 @@ import (
 )
 
 func TestStringP(t *testing.T) {
-	p := gocloak.StringP("test value")
+	p := gocloak.Ptr("test value")
 	assert.Equal(t, "test value", *p)
 }
 func TestPString(t *testing.T) {
@@ -24,13 +24,13 @@ func TestPStringNil(t *testing.T) {
 }
 
 func TestBoolP(t *testing.T) {
-	p1 := gocloak.BoolP(false)
+	p1 := gocloak.Ptr(false)
 	assert.False(t, *p1)
-	p2 := gocloak.BoolP(false)
+	p2 := gocloak.Ptr(false)
 	assert.False(t, *p1)
 	assert.False(t, p1 == p2)
 
-	p := gocloak.BoolP(true)
+	p := gocloak.Ptr(true)
 	assert.True(t, *p)
 }
 
@@ -48,19 +48,19 @@ func TestPBool(t *testing.T) {
 }
 
 func TestIntP(t *testing.T) {
-	p := gocloak.IntP(42)
+	p := gocloak.Ptr(42)
 	assert.Equal(t, 42, *p)
 }
 
 func TestInt32P(t *testing.T) {
 	v := int32(42)
-	p := gocloak.Int32P(v)
+	p := gocloak.Ptr[int32](v)
 	assert.Equal(t, v, *p)
 }
 
 func TestInt64P(t *testing.T) {
 	v := int64(42)
-	p := gocloak.Int64P(v)
+	p := gocloak.Ptr[int64](v)
 	assert.Equal(t, v, *p)
 }
 
@@ -99,12 +99,12 @@ func TestPInt64(t *testing.T) {
 
 func TestFloat32P(t *testing.T) {
 	v := float32(42.42)
-	p := gocloak.Float32P(v)
+	p := gocloak.Ptr[float32](v)
 	assert.Equal(t, v, *p)
 }
 func TestFloat64P(t *testing.T) {
 	v := 42.42
-	p := gocloak.Float64P(v)
+	p := gocloak.Ptr[float64](v)
 	assert.Equal(t, v, *p)
 }
 

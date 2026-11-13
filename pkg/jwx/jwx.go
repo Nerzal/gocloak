@@ -14,7 +14,6 @@ import (
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/pkg/errors"
 )
 
 // SignClaims signs the given claims using a given key and a method
@@ -30,13 +29,13 @@ func DecodeAccessTokenHeader(token string) (*DecodedAccessTokenHeader, error) {
 	headerString := strings.Split(token, ".")
 	decodedData, err := base64.RawStdEncoding.DecodeString(headerString[0])
 	if err != nil {
-		return nil, errors.Wrap(err, errMessage)
+		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 
 	result := &DecodedAccessTokenHeader{}
 	err = json.Unmarshal(decodedData, result)
 	if err != nil {
-		return nil, errors.Wrap(err, errMessage)
+		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 
 	return result, nil
@@ -67,17 +66,17 @@ func decodeECDSAPublicKey(x, y, crv *string) (*ecdsa.PublicKey, error) {
 
 	xInt, err := toBigInt(*x)
 	if err != nil {
-		return nil, errors.Wrap(err, errMessage)
+		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 
 	yInt, err := toBigInt(*y)
 	if err != nil {
-		return nil, errors.Wrap(err, errMessage)
+		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 	var c elliptic.Curve
 	var ok bool
 	if c, ok = curves[*crv]; !ok {
-		return nil, errors.Wrap(fmt.Errorf("unknown curve alg: %s", *crv), errMessage)
+		return nil, fmt.Errorf("%s: unknown curve alg: %s", errMessage, *crv)
 	}
 	return &ecdsa.PublicKey{X: xInt, Y: yInt, Curve: c}, nil
 }
@@ -87,12 +86,12 @@ func decodeRSAPublicKey(e, n *string) (*rsa.PublicKey, error) {
 
 	nInt, err := toBigInt(*n)
 	if err != nil {
-		return nil, errors.Wrap(err, errMessage)
+		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 
 	decE, err := base64.RawURLEncoding.DecodeString(*e)
 	if err != nil {
-		return nil, errors.Wrap(err, errMessage)
+		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 
 	var eBytes []byte
@@ -107,7 +106,7 @@ func decodeRSAPublicKey(e, n *string) (*rsa.PublicKey, error) {
 	var eInt uint64
 	err = binary.Read(eReader, binary.BigEndian, &eInt)
 	if err != nil {
-		return nil, errors.Wrap(err, errMessage)
+		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 
 	pKey := rsa.PublicKey{N: nInt, E: int(eInt)} //nolint
@@ -121,7 +120,7 @@ func DecodeAccessTokenRSACustomClaims(accessToken string, e, n *string, customCl
 
 	rsaPublicKey, err := decodeRSAPublicKey(e, n)
 	if err != nil {
-		return nil, errors.Wrap(err, errMessage)
+		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 
 	token2, err := jwt.ParseWithClaims(accessToken, customClaims, func(token *jwt.Token) (any, error) {
@@ -133,7 +132,7 @@ func DecodeAccessTokenRSACustomClaims(accessToken string, e, n *string, customCl
 	})
 
 	if err != nil {
-		return nil, errors.Wrap(err, errMessage)
+		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 	return token2, nil
 }
@@ -145,7 +144,7 @@ func DecodeAccessTokenECDSACustomClaims(accessToken string, x, y, crv *string, c
 
 	publicKey, err := decodeECDSAPublicKey(x, y, crv)
 	if err != nil {
-		return nil, errors.Wrap(err, errMessage)
+		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 
 	token2, err := jwt.ParseWithClaims(accessToken, customClaims, func(token *jwt.Token) (any, error) {
@@ -157,7 +156,7 @@ func DecodeAccessTokenECDSACustomClaims(accessToken string, x, y, crv *string, c
 	})
 
 	if err != nil {
-		return nil, errors.Wrap(err, errMessage)
+		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 	return token2, nil
 }

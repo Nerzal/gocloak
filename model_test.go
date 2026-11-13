@@ -105,9 +105,9 @@ func TestGetQueryParams(t *testing.T) {
 	)
 
 	params, err = gocloak.GetQueryParams(TestParams{
-		IntField:    gocloak.IntP(1),
-		StringField: gocloak.StringP("fake"),
-		BoolField:   gocloak.BoolP(true),
+		IntField:    gocloak.Ptr(1),
+		StringField: gocloak.Ptr("fake"),
+		BoolField:   gocloak.Ptr(true),
 	})
 	assert.NoError(t, err)
 	assert.Equal(
@@ -121,8 +121,8 @@ func TestGetQueryParams(t *testing.T) {
 	)
 
 	params, err = gocloak.GetQueryParams(TestParams{
-		StringField: gocloak.StringP("fake"),
-		BoolField:   gocloak.BoolP(false),
+		StringField: gocloak.Ptr("fake"),
+		BoolField:   gocloak.Ptr(false),
 	})
 	assert.NoError(t, err)
 	assert.Equal(
@@ -223,13 +223,13 @@ func TestStringer(t *testing.T) {
 	// nested structs
 	actions := []string{"someAction", "anotherAction"}
 	access := gocloak.AccessRepresentation{
-		Manage:      gocloak.BoolP(true),
-		Impersonate: gocloak.BoolP(false),
+		Manage:      gocloak.Ptr(true),
+		Impersonate: gocloak.Ptr(false),
 	}
 	v := gocloak.PermissionTicketDescriptionRepresentation{
-		ID:               gocloak.StringP("someID"),
-		CreatedTimeStamp: gocloak.Int64P(1607702613),
-		Enabled:          gocloak.BoolP(true),
+		ID:               gocloak.Ptr("someID"),
+		CreatedTimeStamp: gocloak.Ptr[int64](1607702613),
+		Enabled:          gocloak.Ptr(true),
 		RequiredActions:  actions,
 		Access:           &access,
 	}
@@ -259,22 +259,22 @@ func TestStringer(t *testing.T) {
 
 	pmappers := []gocloak.ProtocolMapperRepresentation{
 		{
-			Name:   gocloak.StringP("someMapper"),
+			Name:   gocloak.Ptr("someMapper"),
 			Config: config,
 		},
 	}
 	clients := []gocloak.Client{
 		{
-			Name:            gocloak.StringP("someClient"),
+			Name:            gocloak.Ptr("someClient"),
 			ProtocolMappers: pmappers,
 		},
 		{
-			Name: gocloak.StringP("AnotherClient"),
+			Name: gocloak.Ptr("AnotherClient"),
 		},
 	}
 
 	realmRep := gocloak.RealmRepresentation{
-		DisplayName: gocloak.StringP("someRealm"),
+		DisplayName: gocloak.Ptr("someRealm"),
 		Clients:     clients,
 	}
 

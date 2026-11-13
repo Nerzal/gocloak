@@ -17,10 +17,6 @@ import (
 // "string" tag allows to convert the non-string fields of a structure to map[string]string.
 // "omitempty" allows to skip the fields with default values.
 func GetQueryParams(s any) (map[string]string, error) {
-	// if obj, ok := s.(GetGroupsParams); ok {
-	// 	obj.OnMarshal()
-	// 	s = obj
-	// }
 	b, err := json.Marshal(s)
 	if err != nil {
 		return nil, err
@@ -100,7 +96,7 @@ const (
 
 	// APIErrTypeInvalidGrant corresponds with Keycloak's
 	// OAuthErrorException due to "invalid_grant".
-	APIErrTypeInvalidGrant = "oauth: invalid grant"
+	APIErrTypeInvalidGrant APIErrType = "oauth: invalid grant"
 )
 
 // ParseAPIErrType is a convenience method for returning strongly
@@ -369,9 +365,9 @@ func (obj GetGroupsParams) MarshalJSON() ([]byte, error) {
 	type Alias GetGroupsParams
 	a := (Alias)(obj)
 	if a.BriefRepresentation != nil {
-		a.Full = BoolP(!*a.BriefRepresentation)
+		a.Full = Ptr(!*a.BriefRepresentation)
 	} else if a.Full != nil {
-		a.BriefRepresentation = BoolP(!*a.Full)
+		a.BriefRepresentation = Ptr(!*a.Full)
 	}
 	return json.Marshal(a)
 }
@@ -1011,15 +1007,15 @@ type TokenOptions struct {
 // FormData returns a map of options to be used in SetFormData function
 func (t *TokenOptions) FormData() map[string]string {
 	if !NilOrEmptySlice(t.Scopes) {
-		t.Scope = StringP(strings.Join(t.Scopes, " "))
+		t.Scope = Ptr(strings.Join(t.Scopes, " "))
 	}
 
 	if !NilOrEmptySlice(t.ResponseTypes) {
-		t.ResponseType = StringP(strings.Join(t.ResponseTypes, " "))
+		t.ResponseType = Ptr(strings.Join(t.ResponseTypes, " "))
 	}
 
 	if NilOrEmpty(t.ResponseType) {
-		t.ResponseType = StringP("token")
+		t.ResponseType = Ptr("token")
 	}
 
 	m, _ := json.Marshal(t) //nolint:gosec
@@ -1050,11 +1046,11 @@ type RequestingPartyTokenOptions struct {
 // FormData returns a map of options to be used in SetFormData function
 func (t *RequestingPartyTokenOptions) FormData() map[string]string { //nolint:gocognit // can be fixed later
 	if NilOrEmpty(t.GrantType) { // required grant type for RPT
-		t.GrantType = StringP("urn:ietf:params:oauth:grant-type:uma-ticket")
+		t.GrantType = Ptr("urn:ietf:params:oauth:grant-type:uma-ticket")
 	}
 
 	if t.ResponseIncludeResourceName == nil { // defaults to true if no value set
-		t.ResponseIncludeResourceName = BoolP(true)
+		t.ResponseIncludeResourceName = Ptr(true)
 	}
 
 	res := make(map[string]string)

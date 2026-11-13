@@ -69,7 +69,7 @@ func BenchmarkGetGroupsFull(b *testing.B) {
 	client := gocloak.NewClient(cfg.HostName)
 	token := GetAdminToken(b, client)
 	params := gocloak.GetGroupsParams{
-		Full: gocloak.BoolP(true),
+		Full: gocloak.Ptr(true),
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -87,7 +87,7 @@ func BenchmarkGetGroupsBrief(b *testing.B) {
 	cfg := GetConfig(b)
 	client := gocloak.NewClient(cfg.HostName)
 	params := gocloak.GetGroupsParams{
-		BriefRepresentation: gocloak.BoolP(true),
+		BriefRepresentation: gocloak.Ptr(true),
 	}
 	token := GetAdminToken(b, client)
 	b.ResetTimer()

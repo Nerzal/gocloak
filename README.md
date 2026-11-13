@@ -48,11 +48,11 @@ go get github.com/Nerzal/gocloak/v14
  }
 
  user := gocloak.User{
-  FirstName: gocloak.StringP("Bob"),
-  LastName:  gocloak.StringP("Uncle"),
-  Email:     gocloak.StringP("something@really.wrong"),
-  Enabled:   gocloak.BoolP(true),
-  Username:  gocloak.StringP("CoolGuy"),
+  FirstName: gocloak.Ptr("Bob"),
+  LastName:  gocloak.Ptr("Uncle"),
+  Email:     gocloak.Ptr("something@really.wrong"),
+  Enabled:   gocloak.Ptr(true),
+  Username:  gocloak.Ptr("CoolGuy"),
  }
 
  _, err = client.CreateUser(ctx, token.AccessToken, "realm", user)
