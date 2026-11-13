@@ -732,7 +732,8 @@ func Test_GetServerInfo(t *testing.T) {
 		token.AccessToken,
 	)
 	require.NoError(t, err, "Failed to fetch server info")
-	t.Logf("Server Info: %+v", serverInfo)
+	require.NotNil(t, serverInfo.SystemInfo)
+	require.NotEmpty(t, gocloak.PString(serverInfo.SystemInfo.Version))
 
 	FailRequest(client, nil, 1, 0)
 	_, err = client.GetServerInfo(
@@ -753,7 +754,8 @@ func Test_GetUserInfo(t *testing.T) {
 		cfg.GoCloak.Realm,
 	)
 	require.NoError(t, err, "Failed to fetch userinfo")
-	t.Log(userInfo)
+	require.Equal(t, testUserID, gocloak.PString(userInfo.Sub))
+	require.Equal(t, cfg.GoCloak.UserName, gocloak.PString(userInfo.PreferredUsername))
 	FailRequest(client, nil, 1, 0)
 	_, err = client.GetUserInfo(
 		context.Background(),
@@ -886,8 +888,8 @@ func Test_RetrospectRequestingPartyToken(t *testing.T) {
 		cfg.GoCloak.ClientSecret,
 		cfg.GoCloak.Realm,
 	)
-	t.Log(rptResult)
 	require.NoError(t, err, "inspection failed")
+	t.Log(rptResult)
 	require.True(t, gocloak.PBool(rptResult.Active), "Inactive Token oO")
 	require.NotEmpty(t, rptResult.Permissions)
 	permissions := rptResult.Permissions
@@ -1006,8 +1008,7 @@ func Test_LoginClient_UnknownRealm(t *testing.T) {
 		cfg.GoCloak.ClientID,
 		cfg.GoCloak.ClientSecret,
 		"ThisRealmDoesNotExist")
-	require.Error(t, err, "Login shouldn't be successful")
-	require.ErrorContains(t, err, "Realm does not exist")
+	requireAPIErrorCode(t, err, http.StatusNotFound)
 }
 
 func Test_GetIssuer(t *testing.T) {
@@ -1015,8 +1016,8 @@ func Test_GetIssuer(t *testing.T) {
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	issuer, err := client.GetIssuer(context.Background(), cfg.GoCloak.Realm)
-	t.Log(issuer)
 	require.NoError(t, err, "get issuer")
+	t.Log(issuer)
 }
 
 func Test_RetrospectToken_InactiveToken(t *testing.T) {
@@ -1030,8 +1031,8 @@ func Test_RetrospectToken_InactiveToken(t *testing.T) {
 		cfg.GoCloak.ClientID,
 		cfg.GoCloak.ClientSecret,
 		cfg.GoCloak.Realm)
-	t.Log(rptResult)
 	require.NoError(t, err, "inspection failed")
+	t.Log(rptResult)
 	require.False(t, gocloak.PBool(rptResult.Active), "That should never happen. Token is active")
 }
 
@@ -1047,7 +1048,6 @@ func Test_RetrospectToken(t *testing.T) {
 		cfg.GoCloak.ClientID,
 		cfg.GoCloak.ClientSecret,
 		cfg.GoCloak.Realm)
-	t.Log(rptResult)
 	require.NoError(t, err, "Inspection failed")
 	require.True(t, gocloak.PBool(rptResult.Active), "Inactive Token oO")
 }
@@ -1064,8 +1064,10 @@ func Test_DecodeAccessToken(t *testing.T) {
 		cfg.GoCloak.Realm,
 	)
 	require.NoError(t, err)
-	t.Log(resultToken)
-	t.Log(claims)
+	require.True(t, resultToken.Valid)
+	require.NotNil(t, claims)
+	require.Equal(t, cfg.GoCloak.ClientID, (*claims)["azp"])
+	require.Equal(t, cfg.HostName+"/realms/"+cfg.GoCloak.Realm, (*claims)["iss"])
 }
 
 func Test_DecodeAccessTokenCustomClaims(t *testing.T) {
@@ -1081,8 +1083,9 @@ func Test_DecodeAccessTokenCustomClaims(t *testing.T) {
 		claims,
 	)
 	require.NoError(t, err)
-	t.Log(resultToken)
-	t.Log(claims)
+	require.True(t, resultToken.Valid)
+	require.Equal(t, cfg.GoCloak.ClientID, claims["azp"])
+	require.Equal(t, cfg.HostName+"/realms/"+cfg.GoCloak.Realm, claims["iss"])
 }
 
 func Test_RefreshToken(t *testing.T) {
@@ -1097,8 +1100,8 @@ func Test_RefreshToken(t *testing.T) {
 		cfg.GoCloak.ClientID,
 		cfg.GoCloak.ClientSecret,
 		cfg.GoCloak.Realm)
-	t.Log(token)
 	require.NoError(t, err, "RefreshToken failed")
+	require.NotEmpty(t, token.AccessToken)
 }
 
 func Test_UserAttributeContains(t *testing.T) {
@@ -1122,8 +1125,8 @@ func Test_GetKeyStoreConfig(t *testing.T) {
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm)
-	t.Log(config)
 	require.NoError(t, err, "GetKeyStoreConfig")
+	t.Log(config)
 }
 
 func Test_Login(t *testing.T) {
@@ -1192,7 +1195,8 @@ func Test_LoginOtp(t *testing.T) {
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	SetUpTestUser(t, client)
-	_, err := client.LoginOtp(
+	// The test user has no OTP credential, so Keycloak ignores the totp and the password grant succeeds.
+	token, err := client.LoginOtp(
 		context.Background(),
 		cfg.GoCloak.ClientID,
 		cfg.GoCloak.ClientSecret,
@@ -1202,6 +1206,7 @@ func Test_LoginOtp(t *testing.T) {
 		totp,
 	)
 	require.NoError(t, err, "Login failed")
+	require.NotEmpty(t, token.AccessToken)
 }
 
 func Test_GetToken(t *testing.T) {
@@ -2793,10 +2798,8 @@ func Test_ExecuteActionsEmail_UpdatePassword(t *testing.T) {
 		cfg.GoCloak.Realm,
 		params)
 	if err != nil {
-		if err.Error() == "500 Internal Server Error: Failed to send execute actions email" {
-			return
-		}
-		require.NoError(t, err, "ExecuteActionsEmail failed")
+		// the test Keycloak has no SMTP server, so sending fails with 500
+		requireAPIErrorCode(t, err, http.StatusInternalServerError)
 	}
 }
 
@@ -2819,10 +2822,8 @@ func Test_SendVerifyEmail(t *testing.T) {
 		cfg.GoCloak.Realm,
 		params)
 	if err != nil {
-		if err.Error() == "500 Internal Server Error: Failed to send execute actions email" {
-			return
-		}
-		require.NoError(t, err, "SendVerifyEmail failed")
+		// the test Keycloak has no SMTP server, so sending fails with 500
+		requireAPIErrorCode(t, err, http.StatusInternalServerError)
 	}
 }
 
@@ -2838,6 +2839,14 @@ func Test_Logout(t *testing.T) {
 		cfg.GoCloak.Realm,
 		token.RefreshToken)
 	require.NoError(t, err, "Logout failed")
+
+	_, err = client.RefreshToken(
+		context.Background(),
+		token.RefreshToken,
+		cfg.GoCloak.ClientID,
+		cfg.GoCloak.ClientSecret,
+		cfg.GoCloak.Realm)
+	requireAPIErrorCode(t, err, http.StatusBadRequest)
 }
 
 func Test_LogoutAllSessions(t *testing.T) {
@@ -2848,21 +2857,37 @@ func Test_LogoutAllSessions(t *testing.T) {
 
 	tearDown, userID := CreateUser(t, client)
 	defer tearDown()
+	user, err := client.GetUserByID(context.Background(), token.AccessToken, cfg.GoCloak.Realm, userID)
+	require.NoError(t, err, "GetUserByID failed")
+	err = client.SetPassword(context.Background(), token.AccessToken, userID, cfg.GoCloak.Realm, cfg.GoCloak.Password, false)
+	require.NoError(t, err, "SetPassword failed")
+	require.Eventually(t, func() bool {
+		_, loginErr := client.Login(context.Background(), cfg.GoCloak.ClientID, cfg.GoCloak.ClientSecret,
+			cfg.GoCloak.Realm, *user.Username, cfg.GoCloak.Password)
+		return loginErr == nil
+	}, 5*time.Second, 100*time.Millisecond, "user login failed")
+	sessions, err := client.GetUserSessions(context.Background(), token.AccessToken, cfg.GoCloak.Realm, userID)
+	require.NoError(t, err, "GetUserSessions failed")
+	require.NotEmpty(t, sessions)
 
-	err := client.LogoutAllSessions(
+	err = client.LogoutAllSessions(
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		userID,
 	)
 	require.NoError(t, err, "Logout failed")
+
+	sessions, err = client.GetUserSessions(context.Background(), token.AccessToken, cfg.GoCloak.Realm, userID)
+	require.NoError(t, err, "GetUserSessions failed")
+	require.Empty(t, sessions)
 }
 
 func Test_RevokeUserConsents(t *testing.T) {
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	SetUpTestUser(t, client)
-	_, err := client.GetToken(
+	offlineToken, err := client.GetToken(
 		context.Background(),
 		cfg.GoCloak.Realm,
 		gocloak.TokenOptions{
@@ -2885,8 +2910,16 @@ func Test_RevokeUserConsents(t *testing.T) {
 		testUserID,
 		cfg.GoCloak.ClientID,
 	)
-
 	require.NoError(t, err, "Consent revocation failed")
+
+	// Revoking consents also revokes the offline token of the client.
+	_, err = client.RefreshToken(
+		context.Background(),
+		offlineToken.RefreshToken,
+		cfg.GoCloak.ClientID,
+		cfg.GoCloak.ClientSecret,
+		cfg.GoCloak.Realm)
+	requireAPIErrorCode(t, err, http.StatusBadRequest)
 }
 
 func Test_LogoutUserSession(t *testing.T) {
@@ -2902,6 +2935,14 @@ func Test_LogoutUserSession(t *testing.T) {
 		uToken.SessionState,
 	)
 	require.NoError(t, err, "Logout failed")
+
+	_, err = client.RefreshToken(
+		context.Background(),
+		uToken.RefreshToken,
+		cfg.GoCloak.ClientID,
+		cfg.GoCloak.ClientSecret,
+		cfg.GoCloak.Realm)
+	requireAPIErrorCode(t, err, http.StatusBadRequest)
 }
 
 func Test_GetRealm(t *testing.T) {
@@ -2914,8 +2955,8 @@ func Test_GetRealm(t *testing.T) {
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm)
-	t.Logf("%+v", r)
 	require.NoError(t, err, "GetRealm failed")
+	t.Logf("%+v", r)
 }
 
 func Test_GetRealms(t *testing.T) {
@@ -2927,8 +2968,8 @@ func Test_GetRealms(t *testing.T) {
 		context.Background(),
 		token.AccessToken,
 	)
-	t.Logf("%+v", r)
 	require.NoError(t, err, "GetRealms failed")
+	t.Logf("%+v", r)
 }
 
 // -----------
@@ -3001,6 +3042,10 @@ func Test_UpdateRealm(t *testing.T) {
 		token.AccessToken,
 		*realm)
 	require.NoError(t, err, "UpdateRealm failed")
+
+	realm, err = client.GetRealm(context.Background(), token.AccessToken, realmID)
+	require.NoError(t, err, "GetRealm failed")
+	require.False(t, gocloak.PBool(realm.Enabled))
 }
 
 func Test_ClearRealmCache(t *testing.T) {
@@ -3066,7 +3111,7 @@ func Test_GetRealmRole(t *testing.T) {
 	t.Logf("Role: %+v", *role)
 	require.Equal(
 		t,
-		*role.Name, roleName,
+		roleName, *role.Name,
 		"GetRealmRole returns unexpected result. Expected: %s; Actual: %+v",
 		roleName, role)
 }
@@ -3107,16 +3152,11 @@ func Test_UpdateRealmRole(t *testing.T) {
 			Name: &newRoleName,
 		})
 	require.NoError(t, err, "UpdateRealmRole failed")
-	err = client.DeleteRealmRole(
-		context.Background(),
-		token.AccessToken,
-		cfg.GoCloak.Realm,
-		oldRoleName)
-	require.Error(
-		t,
-		err,
-		"Role with old name was deleted successfully, but it shouldn't. Old role: %s; Updated role: %s",
-		oldRoleName, newRoleName)
+	_, err = client.GetRealmRole(context.Background(), token.AccessToken, cfg.GoCloak.Realm, oldRoleName)
+	requireAPIErrorCode(t, err, http.StatusNotFound)
+	role, err := client.GetRealmRole(context.Background(), token.AccessToken, cfg.GoCloak.Realm, newRoleName)
+	require.NoError(t, err, "GetRealmRole failed")
+	require.Equal(t, newRoleName, gocloak.PString(role.Name))
 	err = client.DeleteRealmRole(
 		context.Background(),
 		token.AccessToken,
@@ -3139,6 +3179,8 @@ func Test_DeleteRealmRole(t *testing.T) {
 		cfg.GoCloak.Realm,
 		roleName)
 	require.NoError(t, err, "DeleteRealmRole failed")
+	_, err = client.GetRealmRole(context.Background(), token.AccessToken, cfg.GoCloak.Realm, roleName)
+	requireAPIErrorCode(t, err, http.StatusNotFound)
 }
 
 func Test_AddRealmRoleToUser_DeleteRealmRoleFromUser(t *testing.T) {
@@ -3167,6 +3209,10 @@ func Test_AddRealmRoleToUser_DeleteRealmRoleFromUser(t *testing.T) {
 		roles,
 	)
 	require.NoError(t, err, "AddRealmRoleToUser failed")
+	userRoles, err := client.GetRealmRolesByUserID(context.Background(), token.AccessToken, cfg.GoCloak.Realm, userID)
+	require.NoError(t, err, "GetRealmRolesByUserID failed")
+	require.Contains(t, pluck(userRoles, nameOfRole), roleName)
+
 	err = client.DeleteRealmRoleFromUser(
 		context.Background(),
 		token.AccessToken,
@@ -3175,6 +3221,9 @@ func Test_AddRealmRoleToUser_DeleteRealmRoleFromUser(t *testing.T) {
 		roles,
 	)
 	require.NoError(t, err, "DeleteRealmRoleFromUser failed")
+	userRoles, err = client.GetRealmRolesByUserID(context.Background(), token.AccessToken, cfg.GoCloak.Realm, userID)
+	require.NoError(t, err, "GetRealmRolesByUserID failed")
+	require.NotContains(t, pluck(userRoles, nameOfRole), roleName)
 }
 
 func Test_AddRealmRoleToGroup_DeleteRealmRoleFromGroup(t *testing.T) {
@@ -3203,6 +3252,10 @@ func Test_AddRealmRoleToGroup_DeleteRealmRoleFromGroup(t *testing.T) {
 		roles,
 	)
 	require.NoError(t, err, "AddRealmRoleToGroup failed")
+	groupRoles, err := client.GetRealmRolesByGroupID(context.Background(), token.AccessToken, cfg.GoCloak.Realm, groupID)
+	require.NoError(t, err, "GetRealmRolesByGroupID failed")
+	require.Equal(t, []string{roleName}, pluck(groupRoles, nameOfRole))
+
 	err = client.DeleteRealmRoleFromGroup(
 		context.Background(),
 		token.AccessToken,
@@ -3211,6 +3264,9 @@ func Test_AddRealmRoleToGroup_DeleteRealmRoleFromGroup(t *testing.T) {
 		roles,
 	)
 	require.NoError(t, err, "DeleteRealmRoleFromGroup failed")
+	groupRoles, err = client.GetRealmRolesByGroupID(context.Background(), token.AccessToken, cfg.GoCloak.Realm, groupID)
+	require.NoError(t, err, "GetRealmRolesByGroupID failed")
+	require.Empty(t, groupRoles)
 }
 
 func Test_GetRealmRolesByUserID(t *testing.T) {
@@ -3313,8 +3369,7 @@ func Test_GetRealmRolesByGroupID(t *testing.T) {
 		cfg.GoCloak.Realm,
 		groupID)
 	require.NoError(t, err, "GetRealmRolesByGroupID failed")
-
-	require.Len(t, roles, 1, "GetRealmRolesByGroupID failed")
+	require.Equal(t, []string{roleName}, pluck(roles, nameOfRole))
 }
 
 func Test_AddRealmRoleComposite_DeleteRealmRoleComposite(t *testing.T) {
@@ -3345,6 +3400,9 @@ func Test_AddRealmRoleComposite_DeleteRealmRoleComposite(t *testing.T) {
 		[]gocloak.Role{*role},
 	)
 	require.NoError(t, err)
+	composites, err := client.GetCompositeRealmRoles(context.Background(), token.AccessToken, cfg.GoCloak.Realm, compositeRoleName)
+	require.NoError(t, err, "GetCompositeRealmRoles failed")
+	require.Equal(t, []string{roleName}, pluck(composites, nameOfRole))
 
 	err = client.DeleteRealmRoleComposite(
 		context.Background(),
@@ -3354,6 +3412,9 @@ func Test_AddRealmRoleComposite_DeleteRealmRoleComposite(t *testing.T) {
 		[]gocloak.Role{*role},
 	)
 	require.NoError(t, err)
+	composites, err = client.GetCompositeRealmRoles(context.Background(), token.AccessToken, cfg.GoCloak.Realm, compositeRoleName)
+	require.NoError(t, err, "GetCompositeRealmRoles failed")
+	require.Empty(t, composites)
 }
 
 // -----
@@ -3455,7 +3516,7 @@ func Test_GetUserBruteForceDetectionStatus(t *testing.T) {
 		*realm.ID,
 		*fetchedUser.Username,
 		"wrong password")
-	require.Error(t, err, "401 Unauthorized: invalid_grant: Invalid user credentials")
+	requireAPIErrorCode(t, err, http.StatusBadRequest)
 
 	// Keycloak 26+ processes brute-force events asynchronously, so poll until the status is updated.
 	var bruteForceStatus *gocloak.BruteForceStatus
@@ -3531,7 +3592,7 @@ func Test_GetUserByID(t *testing.T) {
 		cfg.GoCloak.Realm,
 		userID)
 	require.NoError(t, err, "GetUserById failed")
-	t.Log(fetchedUser)
+	require.Equal(t, userID, gocloak.PString(fetchedUser.ID))
 }
 
 func Test_GetUsers(t *testing.T) {
@@ -3563,8 +3624,8 @@ func Test_GetUserCount(t *testing.T) {
 		cfg.GoCloak.Realm,
 		gocloak.GetUsersParams{})
 
-	t.Logf("Users in Realm: %d", count)
 	require.NoError(t, err, "GetUserCount failed")
+	t.Logf("Users in Realm: %d", count)
 }
 
 func Test_GetGroupsCount(t *testing.T) {
@@ -3578,8 +3639,8 @@ func Test_GetGroupsCount(t *testing.T) {
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		gocloak.GetGroupsParams{})
-	t.Logf("Groups in Realm: %d", count)
 	require.NoError(t, err, "GetGroupsCount failed")
+	t.Logf("Groups in Realm: %d", count)
 }
 
 func Test_AddUserToGroup(t *testing.T) {
@@ -3601,6 +3662,9 @@ func Test_AddUserToGroup(t *testing.T) {
 		groupID,
 	)
 	require.NoError(t, err, "AddUserToGroup failed")
+	groups, err := client.GetUserGroups(context.Background(), token.AccessToken, cfg.GoCloak.Realm, userID, gocloak.GetGroupsParams{})
+	require.NoError(t, err, "GetUserGroups failed")
+	require.Equal(t, []string{groupID}, pluck(groups, func(g *gocloak.Group) *string { return g.ID }))
 }
 
 func Test_DeleteUserFromGroup(t *testing.T) {
@@ -3629,6 +3693,9 @@ func Test_DeleteUserFromGroup(t *testing.T) {
 		groupID,
 	)
 	require.NoError(t, err, "DeleteUserFromGroup failed")
+	groups, err := client.GetUserGroups(context.Background(), token.AccessToken, cfg.GoCloak.Realm, userID, gocloak.GetGroupsParams{})
+	require.NoError(t, err, "GetUserGroups failed")
+	require.Empty(t, groups)
 }
 
 func Test_GetUserGroups(t *testing.T) {
@@ -3663,10 +3730,14 @@ func Test_GetUserGroups(t *testing.T) {
 
 func Test_DeleteUser(t *testing.T) {
 	t.Parallel()
+	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
 
-	tearDown, _ := CreateUser(t, client)
-	defer tearDown()
+	tearDown, userID := CreateUser(t, client)
+	tearDown()
+	_, err := client.GetUserByID(context.Background(), token.AccessToken, cfg.GoCloak.Realm, userID)
+	requireAPIErrorCode(t, err, http.StatusNotFound)
 }
 
 func Test_UpdateUser(t *testing.T) {
@@ -3690,6 +3761,9 @@ func Test_UpdateUser(t *testing.T) {
 		cfg.GoCloak.Realm,
 		*user)
 	require.NoError(t, err, "UpdateUser failed")
+	updated, err := client.GetUserByID(context.Background(), token.AccessToken, cfg.GoCloak.Realm, userID)
+	require.NoError(t, err, "GetUserByID failed")
+	require.Equal(t, *user.FirstName, gocloak.PString(updated.FirstName))
 }
 
 func Test_UpdateUserSetEmptyRequiredActions(t *testing.T) {
@@ -4270,6 +4344,9 @@ func Test_AddClientRoleToUser_DeleteClientRoleFromUser(t *testing.T) {
 		roles,
 	)
 	require.NoError(t, err, "AddClientRoleToUser failed")
+	userRoles, err := client.GetClientRolesByUserID(context.Background(), token.AccessToken, cfg.GoCloak.Realm, gocloakClientID, testUserID)
+	require.NoError(t, err, "GetClientRolesByUserID failed")
+	require.Subset(t, pluck(userRoles, nameOfRole), []string{roleName1, roleName2})
 
 	err = client.DeleteClientRolesFromUser(
 		context.Background(),
@@ -4280,6 +4357,10 @@ func Test_AddClientRoleToUser_DeleteClientRoleFromUser(t *testing.T) {
 		roles,
 	)
 	require.NoError(t, err, "DeleteClientRoleFromUser failed")
+	userRoles, err = client.GetClientRolesByUserID(context.Background(), token.AccessToken, cfg.GoCloak.Realm, gocloakClientID, testUserID)
+	require.NoError(t, err, "GetClientRolesByUserID failed")
+	require.NotContains(t, pluck(userRoles, nameOfRole), roleName1)
+	require.NotContains(t, pluck(userRoles, nameOfRole), roleName2)
 }
 
 func Test_GetClientRolesByUserID(t *testing.T) {
@@ -4370,7 +4451,7 @@ func Test_GetAvailableClientRolesByUserID(t *testing.T) {
 		roleName1)
 	require.NoError(t, err)
 
-	role2, err := client.GetClientRole(
+	_, err = client.GetClientRole(
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
@@ -4415,16 +4496,8 @@ func Test_GetAvailableClientRolesByUserID(t *testing.T) {
 		gocloakClientID,
 		userID)
 	require.NoError(t, err)
-	t.Logf("User roles: %+v", roles)
-	for _, r := range roles {
-		if r.Name == nil {
-			continue
-		}
-		if *r.Name == *role2.Name {
-			return
-		}
-	}
-	require.Failf(t, "role not found", "The role2 has not been found in the assigned composite roles. Role: %+v", *role2)
+	require.Contains(t, pluck(roles, nameOfRole), roleName2, "unassigned role must be available")
+	require.NotContains(t, pluck(roles, nameOfRole), roleName1, "assigned role must not be available")
 }
 
 func Test_GetAvailableRealmRolesByUserID(t *testing.T) {
@@ -4447,7 +4520,7 @@ func Test_GetAvailableRealmRolesByUserID(t *testing.T) {
 		roleName1)
 	require.NoError(t, err)
 
-	role2, err := client.GetRealmRole(
+	_, err = client.GetRealmRole(
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
@@ -4488,16 +4561,8 @@ func Test_GetAvailableRealmRolesByUserID(t *testing.T) {
 		cfg.GoCloak.Realm,
 		userID)
 	require.NoError(t, err)
-	t.Logf("User roles: %+v", roles)
-	for _, r := range roles {
-		if r.Name == nil {
-			continue
-		}
-		if *r.Name == *role2.Name {
-			return
-		}
-	}
-	require.Failf(t, "role not found", "The role2 has not been found in the assigned composite roles. Role: %+v", *role2)
+	require.Contains(t, pluck(roles, nameOfRole), roleName2, "unassigned role must be available")
+	require.NotContains(t, pluck(roles, nameOfRole), roleName1, "assigned role must not be available")
 }
 
 func Test_GetAvailableClientRolesByGroupID(t *testing.T) {
@@ -4521,7 +4586,7 @@ func Test_GetAvailableClientRolesByGroupID(t *testing.T) {
 		roleName1)
 	require.NoError(t, err)
 
-	role2, err := client.GetClientRole(
+	_, err = client.GetClientRole(
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
@@ -4566,16 +4631,8 @@ func Test_GetAvailableClientRolesByGroupID(t *testing.T) {
 		gocloakClientID,
 		groupID)
 	require.NoError(t, err)
-	t.Logf("Group roles: %+v", roles)
-	for _, r := range roles {
-		if r.Name == nil {
-			continue
-		}
-		if *r.Name == *role2.Name {
-			return
-		}
-	}
-	require.Failf(t, "role not found", "The role2 has not been found in the assigned composite roles. Role: %+v", *role2)
+	require.Contains(t, pluck(roles, nameOfRole), roleName2, "unassigned role must be available")
+	require.NotContains(t, pluck(roles, nameOfRole), roleName1, "assigned role must not be available")
 }
 
 func Test_GetAvailableRealmRolesByGroupID(t *testing.T) {
@@ -4598,7 +4655,7 @@ func Test_GetAvailableRealmRolesByGroupID(t *testing.T) {
 		roleName1)
 	require.NoError(t, err)
 
-	role2, err := client.GetRealmRole(
+	_, err = client.GetRealmRole(
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
@@ -4640,16 +4697,8 @@ func Test_GetAvailableRealmRolesByGroupID(t *testing.T) {
 		cfg.GoCloak.Realm,
 		groupID)
 	require.NoError(t, err)
-	t.Logf("Group roles: %+v", roles)
-	for _, r := range roles {
-		if r.Name == nil {
-			continue
-		}
-		if *r.Name == *role2.Name {
-			return
-		}
-	}
-	require.Failf(t, "role not found", "The role2 has not been found in the assigned composite roles. Role: %+v", *role2)
+	require.Contains(t, pluck(roles, nameOfRole), roleName2, "unassigned role must be available")
+	require.NotContains(t, pluck(roles, nameOfRole), roleName1, "assigned role must not be available")
 }
 
 func Test_GetClientRolesByGroupID(t *testing.T) {
@@ -4660,22 +4709,30 @@ func Test_GetClientRolesByGroupID(t *testing.T) {
 
 	tearDown, groupID := CreateGroup(t, client)
 	defer tearDown()
+	tearDownRole, roleName := CreateClientRole(t, client)
+	defer tearDownRole()
+	role, err := client.GetClientRole(context.Background(), token.AccessToken, cfg.GoCloak.Realm, gocloakClientID, roleName)
+	require.NoError(t, err, "GetClientRole failed")
+	err = client.AddClientRolesToGroup(context.Background(), token.AccessToken, cfg.GoCloak.Realm, gocloakClientID, groupID, []gocloak.Role{*role})
+	require.NoError(t, err, "AddClientRolesToGroup failed")
 
-	_, err := client.GetClientRolesByGroupID(
+	roles, err := client.GetClientRolesByGroupID(
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		gocloakClientID,
 		groupID)
 	require.NoError(t, err, "GetClientRolesByGroupID failed")
+	require.Equal(t, []string{roleName}, pluck(roles, nameOfRole))
 
-	_, err = client.GetCompositeClientRolesByGroupID(
+	roles, err = client.GetCompositeClientRolesByGroupID(
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		gocloakClientID,
 		groupID)
 	require.NoError(t, err, "GetCompositeClientRolesByGroupID failed")
+	require.Contains(t, pluck(roles, nameOfRole), roleName)
 }
 
 func Test_AddClientRoleToGroup_DeleteClientRoleFromGroup(t *testing.T) {
@@ -4718,6 +4775,9 @@ func Test_AddClientRoleToGroup_DeleteClientRoleFromGroup(t *testing.T) {
 		roles,
 	)
 	require.NoError(t, err, "AddClientRoleToGroup failed")
+	groupRoles, err := client.GetClientRolesByGroupID(context.Background(), token.AccessToken, cfg.GoCloak.Realm, gocloakClientID, groupID)
+	require.NoError(t, err, "GetClientRolesByGroupID failed")
+	require.ElementsMatch(t, []string{roleName1, roleName2}, pluck(groupRoles, nameOfRole))
 
 	err = client.DeleteClientRoleFromGroup(
 		context.Background(),
@@ -4728,6 +4788,9 @@ func Test_AddClientRoleToGroup_DeleteClientRoleFromGroup(t *testing.T) {
 		roles,
 	)
 	require.NoError(t, err, "DeleteClientRoleFromGroup failed")
+	groupRoles, err = client.GetClientRolesByGroupID(context.Background(), token.AccessToken, cfg.GoCloak.Realm, gocloakClientID, groupID)
+	require.NoError(t, err, "GetClientRolesByGroupID failed")
+	require.Empty(t, groupRoles)
 }
 
 func Test_AddDeleteClientRoleComposite(t *testing.T) {
@@ -4777,7 +4840,7 @@ func Test_AddDeleteClientRoleComposite(t *testing.T) {
 		*compositeRoleModel.ID,
 	)
 	require.NoError(t, err, "GetCompositeClientRolesByRoleID failed")
-	require.GreaterOrEqual(t, len(compositeRoles), 1, "GetCompositeClientRolesByRoleID didn't return any composite roles")
+	require.Len(t, compositeRoles, 1, "GetCompositeClientRolesByRoleID must return exactly the added role")
 	require.Equal(t, *roleModel.ID, *compositeRoles[0].ID, "GetCompositeClientRolesByRoleID returned wrong composite role")
 
 	err = client.DeleteClientRoleComposite(
@@ -4788,6 +4851,9 @@ func Test_AddDeleteClientRoleComposite(t *testing.T) {
 		[]gocloak.Role{*roleModel},
 	)
 	require.NoError(t, err, "DeleteClientRoleComposite failed")
+	compositeRoles, err = client.GetCompositeClientRolesByRoleID(context.Background(), token.AccessToken, cfg.GoCloak.Realm, gocloakClientID, *compositeRoleModel.ID)
+	require.NoError(t, err, "GetCompositeClientRolesByRoleID failed")
+	require.Empty(t, compositeRoles)
 }
 
 func Test_AddDeleteRealmRoleComposite(t *testing.T) {
@@ -4834,7 +4900,7 @@ func Test_AddDeleteRealmRoleComposite(t *testing.T) {
 		*compositeRoleModel.ID,
 	)
 	require.NoError(t, err, "GetCompositeRealmRolesByRoleID failed")
-	require.GreaterOrEqual(t, len(compositeRoles), 1, "GetCompositeRealmRolesByRoleID didn't return any composite roles")
+	require.Len(t, compositeRoles, 1, "GetCompositeRealmRolesByRoleID must return exactly the added role")
 	require.Equal(t, *roleModel.ID, *compositeRoles[0].ID, "GetCompositeRealmRolesByRoleID returned wrong composite role")
 
 	err = client.DeleteRealmRoleComposite(
@@ -4845,6 +4911,9 @@ func Test_AddDeleteRealmRoleComposite(t *testing.T) {
 		[]gocloak.Role{*roleModel},
 	)
 	require.NoError(t, err, "DeleteRealmRoleComposite failed")
+	compositeRoles, err = client.GetCompositeRealmRolesByRoleID(context.Background(), token.AccessToken, cfg.GoCloak.Realm, *compositeRoleModel.ID)
+	require.NoError(t, err, "GetCompositeRealmRolesByRoleID failed")
+	require.Empty(t, compositeRoles)
 }
 
 func Test_CreateGetDeleteUserFederatedIdentity(t *testing.T) {
@@ -4916,7 +4985,7 @@ func Test_CreateGetDeleteUserFederatedIdentity(t *testing.T) {
 	require.Equal(t, mapperPID, gocloak.PString(mapperID))
 
 	mapperP.ID = mapperID
-	// get single mapper
+	mapperP.Config["attribute.value"] = "google-updated"
 	err = client.UpdateIdentityProviderMapper(
 		context.Background(),
 		token.AccessToken,
@@ -4937,7 +5006,7 @@ func Test_CreateGetDeleteUserFederatedIdentity(t *testing.T) {
 	require.Equal(t, mapperP.Name, mapper.Name)
 	require.Equal(t, mapperP.IdentityProviderAlias, mapper.IdentityProviderAlias)
 	require.Equal(t, mapperP.IdentityProviderMapper, mapper.IdentityProviderMapper)
-	require.NotNil(t, mapper.Config)
+	require.Equal(t, "google-updated", mapper.Config["attribute.value"])
 
 	defer func() {
 		err = client.DeleteIdentityProviderMapper(
@@ -5885,7 +5954,8 @@ func Test_GetAuthorizationPolicyResources(t *testing.T) {
 		permissionID,
 	)
 	require.NoError(t, err, "GetAuthorizationPolicyResources failed")
-	require.Equal(t, *resources[0].ID, resourceID)
+	require.Len(t, resources, 1)
+	require.Equal(t, resourceID, *resources[0].ID)
 
 	defer func() {
 		resource()
@@ -5951,7 +6021,8 @@ func Test_GetAuthorizationPolicyScopes(t *testing.T) {
 		permissionID,
 	)
 	require.NoError(t, err, "GetAuthorizationPolicyScopes failed")
-	require.Equal(t, *scopes[0].ID, scopeID)
+	require.Len(t, scopes, 1)
+	require.Equal(t, scopeID, *scopes[0].ID)
 
 	defer func() {
 		policy()
@@ -6033,10 +6104,7 @@ func Test_CreateGetUpdateDeleteResourcePolicy(t *testing.T) {
 		require.NoError(t, err, "could not get resource policies")
 		require.Len(t, policies, 1)
 		require.NotNil(t, policies[0])
-
-		if len(policies) == 1 && policies[0] != nil {
-			require.Equal(t, *policyNameP, *policies[0].Name)
-		}
+		require.Equal(t, *policyNameP, gocloak.PString(policies[0].Name))
 		err = client.DeleteResourcePolicy(context.Background(), token.AccessToken, cfg.GoCloak.Realm, *result.ID)
 		require.NoError(t, err, "could not delete resource policies")
 
@@ -6653,8 +6721,8 @@ func Test_GetCredentialRegistrators(t *testing.T) {
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 	)
-	t.Log(res)
 	require.NoError(t, err)
+	t.Log(res)
 }
 
 func Test_GetConfiguredUserStorageCredentialTypes(t *testing.T) {
@@ -6670,8 +6738,8 @@ func Test_GetConfiguredUserStorageCredentialTypes(t *testing.T) {
 		cfg.GoCloak.Realm,
 		testUserID,
 	)
-	t.Log(res)
 	require.NoError(t, err)
+	t.Log(res)
 }
 
 func Test_GetUpdateLableDeleteCredentials(t *testing.T) {
@@ -6697,8 +6765,8 @@ func Test_GetUpdateLableDeleteCredentials(t *testing.T) {
 		cfg.GoCloak.Realm,
 		userID,
 	)
-	t.Log(res)
 	require.NoError(t, err)
+	t.Log(res)
 	require.Len(t, res, 1)
 	credentialID := *res[0].ID
 
@@ -6717,9 +6785,9 @@ func Test_GetUpdateLableDeleteCredentials(t *testing.T) {
 		cfg.GoCloak.Realm,
 		userID,
 	)
-	t.Log(res)
 	require.NoError(t, err)
-	require.Equal(t, "test-label", *res[0].UserLabel)
+	require.Len(t, res, 1)
+	require.Equal(t, "test-label", gocloak.PString(res[0].UserLabel))
 
 	err = client.DeleteCredentials(
 		context.Background(),
@@ -6736,8 +6804,8 @@ func Test_GetUpdateLableDeleteCredentials(t *testing.T) {
 		cfg.GoCloak.Realm,
 		userID,
 	)
-	t.Log(res)
 	require.NoError(t, err)
+	t.Log(res)
 	require.Empty(t, res)
 }
 
@@ -6821,18 +6889,18 @@ func Test_ImportIdentityProviderConfig(t *testing.T) {
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		"https://accounts.google.com/.well-known/openid-configuration",
+		// Keycloak fetches this URL itself, so it must resolve inside the container, where it listens on localhost:8080.
+		"http://localhost:8080/realms/"+cfg.GoCloak.Realm+"/.well-known/openid-configuration",
 		"oidc")
 
 	require.NoError(t, err, "ImportIdentityProviderConfig failed")
 
+	realmURL := cfg.HostName + "/realms/" + cfg.GoCloak.Realm
 	expected := map[string]string{
-		"userInfoUrl":       "https://openidconnect.googleapis.com/v1/userinfo",
 		"validateSignature": "true",
-		"tokenUrl":          "https://oauth2.googleapis.com/token",
-		"authorizationUrl":  "https://accounts.google.com/o/oauth2/v2/auth",
-		"jwksUrl":           "https://www.googleapis.com/oauth2/v3/certs",
-		"issuer":            "https://accounts.google.com",
+		"issuer":            realmURL,
+		"jwksUrl":           realmURL + "/protocol/openid-connect/certs",
+		"tokenUrl":          realmURL + "/protocol/openid-connect/token",
 		"useJwksUrl":        "true",
 	}
 
@@ -6851,7 +6919,7 @@ func Test_ImportIdentityProviderConfigFromFile(t *testing.T) {
 	token := GetAdminToken(t, client)
 
 	sampleFile := `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" entityID="https://accounts.google.com/o/saml2?idpid=C01unc9st" validUntil="2026-04-29T21:34:48.000Z">
+<md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" entityID="https://accounts.google.com/o/saml2?idpid=C01unc9st" validUntil="2099-12-31T23:59:59.000Z">
   <md:IDPSSODescriptor WantAuthnRequestsSigned="false" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
     <md:KeyDescriptor use="signing">
       <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
@@ -6902,14 +6970,10 @@ E8go1LcvbfHNyknHu2sptnRq55fHZSHr18vVsQRfDYMG</ds:X509Certificate>
 		"wantAuthnRequestsSigned":         "false",
 		"addExtensionsElementWithKeyInfo": "false",
 		"loginHint":                       "false",
-		"enabledFromMetadata":             "false",
+		"enabledFromMetadata":             "true", // validUntil lies in the future
 		"idpEntityId":                     "https://accounts.google.com/o/saml2?idpid=C01unc9st",
 		"artifactBindingResponse":         "false",
 	}
-
-	require.Len(
-		t, actual, len(expected),
-		"ImportIdentityProviderConfig should return exactly %d fields", len(expected))
 
 	for expectedKey, expectedVal := range expected {
 		require.Equal(
@@ -7003,8 +7067,8 @@ func TestGocloak_CreateAuthenticationFlowsAndCreateAuthenticationExecutionAndFlo
 		*authFlow.Alias,
 	)
 
-	t.Logf("authentication executions: %+v", authExecs)
 	require.NoError(t, err, "Failed to get authentication executions")
+	t.Logf("authentication executions: %+v", authExecs)
 
 	// UpdateAuthenticationExecution
 	for _, execution := range authExecs {
@@ -7278,7 +7342,7 @@ func TestGocloak_CreateAndGetRequiredAction(t *testing.T) {
 	ra, err := client.GetRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, *requiredAction.Alias)
 	require.NoError(t, err, "Failed to get required action")
 	require.NotNil(t, ra, "required action created must not be nil")
-	require.Equal(t, *ra.Alias, *requiredAction.Alias, "required action alias must be equal with template")
+	require.Equal(t, *requiredAction.Alias, *ra.Alias, "required action alias must be equal with template")
 	t.Logf("got required action: %+v", ra)
 
 	ras, err := client.GetRequiredActions(context.Background(), token.AccessToken, cfg.GoCloak.Realm)
@@ -7325,17 +7389,21 @@ func TestGocloak_UpdateRequiredAction(t *testing.T) {
 	cfg := GetConfig(t)
 	client := NewClientWithDebug(t)
 	token := GetAdminToken(t, client)
-	requiredAction := gocloak.RequiredActionProviderRepresentation{
-		Alias:         new("VERIFY_EMAIL"),
-		Config:        nil,
-		DefaultAction: new(false),
-		Enabled:       new(true),
-		Name:          new("Verify Email"),
-		Priority:      new(int32(50)),
-		ProviderID:    new("VERIFY_EMAIL"),
-	}
-	err := client.UpdateRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, requiredAction)
+	original, err := client.GetRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, "VERIFY_EMAIL")
+	require.NoError(t, err, "Failed to get required action")
+	t.Cleanup(func() {
+		err := client.UpdateRequiredAction(context.Background(), GetAdminToken(t, client).AccessToken, cfg.GoCloak.Realm, *original)
+		require.NoError(t, err, "Failed to restore required action")
+	})
+
+	updated := *original
+	updated.Priority = new(gocloak.PInt32(original.Priority) + 1)
+	err = client.UpdateRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, updated)
 	require.NoError(t, err, "Failed to update required action")
+
+	fetched, err := client.GetRequiredAction(context.Background(), token.AccessToken, cfg.GoCloak.Realm, "VERIFY_EMAIL")
+	require.NoError(t, err, "Failed to get required action")
+	require.Equal(t, *updated.Priority, gocloak.PInt32(fetched.Priority))
 }
 
 func CreateComponent(t *testing.T, client gocloak.GoCloakIface) (func(), *gocloak.Component) {
@@ -7438,16 +7506,8 @@ func Test_UpdateComponent(t *testing.T) {
 	)
 	require.NoError(t, err, "GetComponentWithParams after UpdateComponent failed")
 
-	if len(components) != 1 {
-		require.NoError(t, fmt.Errorf("Expected 1 component, got %d", len(components)), "UpdateComponent failed")
-	}
-	if *components[0].Name != *component.Name {
-		require.NoError(
-			t,
-			fmt.Errorf("Expected name after update '%s', got '%s'", *component.Name, *components[0].Name),
-			"UpdateComponent failed",
-		)
-	}
+	require.Len(t, components, 1)
+	require.Equal(t, *component.Name, gocloak.PString(components[0].Name))
 }
 
 func Test_RevokeToken(t *testing.T) {
@@ -7516,6 +7576,10 @@ func CreateOrganization(t *testing.T, client gocloak.GoCloakIface) (func(), stri
 	return tearDown, orgID
 }
 
+// idOfOrganization returns the ID of an organization.
+// Input: org [*gocloak.OrganizationRepresentation]. Output: [*string].
+func idOfOrganization(org *gocloak.OrganizationRepresentation) *string { return org.ID }
+
 func Test_CreateOrganization(t *testing.T) {
 	t.Parallel()
 	client := NewClientWithDebug(t)
@@ -7531,20 +7595,19 @@ func Test_GetOrganizations(t *testing.T) {
 	token := GetAdminToken(t, client)
 
 	// Create two organizations
-	tearDown1, _ := CreateOrganization(t, client)
+	tearDown1, orgID1 := CreateOrganization(t, client)
 	defer tearDown1()
 
-	tearDown2, _ := CreateOrganization(t, client)
+	tearDown2, orgID2 := CreateOrganization(t, client)
 	defer tearDown2()
 
 	organizations, err := client.GetOrganizations(
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,
-		gocloak.GetOrganizationsParams{})
+		gocloak.GetOrganizationsParams{Max: new(10000)})
 	require.NoError(t, err, "GetOrganizations failed")
-	require.GreaterOrEqual(t, len(organizations), 2)
-	t.Log(organizations)
+	require.Subset(t, pluck(organizations, idOfOrganization), []string{orgID1, orgID2})
 }
 
 func Test_GetOrganizationsByName(t *testing.T) {
@@ -7572,8 +7635,7 @@ func Test_GetOrganizationsByName(t *testing.T) {
 	organizations, err := client.GetOrganizations(ctx, token.AccessToken, cfg.GoCloak.Realm,
 		gocloak.GetOrganizationsParams{Search: new(name)})
 	require.NoError(t, err, "GetOrganizationsByName failed")
-	require.GreaterOrEqual(t, len(organizations), 1)
-	t.Log(organizations)
+	require.Equal(t, []string{orgID}, pluck(organizations, idOfOrganization))
 }
 
 func Test_GetOrganizationsByDomain(t *testing.T) {
@@ -7601,8 +7663,7 @@ func Test_GetOrganizationsByDomain(t *testing.T) {
 	organizations, err := client.GetOrganizations(ctx, token.AccessToken, cfg.GoCloak.Realm,
 		gocloak.GetOrganizationsParams{Search: new(domain)})
 	require.NoError(t, err, "GetOrganizationsByDomain failed")
-	require.GreaterOrEqual(t, len(organizations), 1)
-	t.Log(organizations)
+	require.Equal(t, []string{orgID}, pluck(organizations, idOfOrganization))
 }
 
 func Test_GetOrganizationByID(t *testing.T) {
@@ -7620,7 +7681,11 @@ func Test_GetOrganizationByID(t *testing.T) {
 		cfg.GoCloak.Realm,
 		orgID)
 	require.NoError(t, err, "GetOrganization failed")
-	t.Log(organization)
+	require.Equal(t, orgID, gocloak.PString(organization.ID))
+	require.True(t, gocloak.PBool(organization.Enabled))
+	require.Equal(t, "Just a test organization", gocloak.PString(organization.Description))
+	require.Len(t, organization.Domains, 1)
+	require.True(t, gocloak.PBool(organization.Domains[0].Verified))
 }
 
 func Test_UpdateOrganization(t *testing.T) {
@@ -7640,6 +7705,7 @@ func Test_UpdateOrganization(t *testing.T) {
 	require.NoError(t, err, "GetOrganizationByID failed")
 
 	organization.Enabled = new(false)
+	organization.Description = new("Updated description")
 
 	err = client.UpdateOrganization(
 		context.Background(),
@@ -7647,7 +7713,12 @@ func Test_UpdateOrganization(t *testing.T) {
 		cfg.GoCloak.Realm,
 		*organization)
 	require.NoError(t, err, "UpdateOrganization failed")
-	t.Log(organization)
+
+	updated, err := client.GetOrganizationByID(context.Background(), token.AccessToken, cfg.GoCloak.Realm, orgID)
+	require.NoError(t, err, "GetOrganizationByID failed")
+	require.False(t, gocloak.PBool(updated.Enabled))
+	require.Equal(t, "Updated description", gocloak.PString(updated.Description))
+	require.Equal(t, gocloak.PString(organization.Name), gocloak.PString(updated.Name))
 }
 
 func Test_InviteUserToOrganizationByID(t *testing.T) {
@@ -7723,6 +7794,9 @@ func Test_AddUserToOrganization(t *testing.T) {
 		orgID,
 		userID)
 	require.NoError(t, err, "AddUserToOrganization failed")
+	member, err := client.GetOrganizationMemberByID(context.Background(), token.AccessToken, cfg.GoCloak.Realm, orgID, userID)
+	require.NoError(t, err, "GetOrganizationMemberByID failed")
+	require.Equal(t, userID, gocloak.PString(member.ID))
 }
 
 func Test_RemoveUserFromOrganization(t *testing.T) {
@@ -7754,6 +7828,8 @@ func Test_RemoveUserFromOrganization(t *testing.T) {
 		orgID,
 		userID)
 	require.NoError(t, err, "RemoveUserFromOrganization failed")
+	_, err = client.GetOrganizationMemberByID(ctx, token.AccessToken, cfg.GoCloak.Realm, orgID, userID)
+	requireAPIErrorCode(t, err, http.StatusNotFound)
 }
 
 func Test_GetOrganizationMemberCount(t *testing.T) {
@@ -7782,10 +7858,8 @@ func Test_GetOrganizationMemberCount(t *testing.T) {
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		orgID)
-
-	t.Logf("Members in Organization: %d", count)
-	require.Equal(t, 1, count)
 	require.NoError(t, err, "GetOrganizationMemberCount failed")
+	require.Equal(t, 1, count)
 }
 
 func Test_GetOrganizationMemberByID(t *testing.T) {
@@ -7859,9 +7933,8 @@ func Test_GetOrganizationMembers(t *testing.T) {
 		orgID,
 		gocloak.GetMembersParams{})
 	require.NoError(t, err, "GetOrganizationMembers failed")
-
-	fmt.Println(members)
-	require.GreaterOrEqual(t, len(members), 1)
+	require.ElementsMatch(t, []string{userID, userID2},
+		pluck(members, func(m *gocloak.MemberRepresentation) *string { return m.ID }))
 }
 
 func Test_GetMemberAssociatedOrganizations(t *testing.T) {
@@ -7905,6 +7978,5 @@ func Test_GetMemberAssociatedOrganizations(t *testing.T) {
 		userID,
 		true)
 	require.NoError(t, err, "GetMemberAssociatedOrganizations failed")
-
-	require.GreaterOrEqual(t, len(organizations), 1)
+	require.ElementsMatch(t, []string{orgID1, orgID2}, pluck(organizations, idOfOrganization))
 }
