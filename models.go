@@ -454,6 +454,7 @@ type ProtocolMappersConfig struct {
 	AggregateAttrs                     *string `json:"aggregate.attrs,omitempty"`
 	UsermodelClientRoleMappingClientID *string `json:"usermodel.clientRoleMapping.clientId,omitempty"`
 	IncludedClientAudience             *string `json:"included.client.audience,omitempty"`
+	IncludedCustomAudience             *string `json:"included.custom.audience,omitempty"`
 	FullPath                           *string `json:"full.path,omitempty"`
 	AttributeName                      *string `json:"attribute.name,omitempty"`
 	AttributeNameFormat                *string `json:"attribute.nameformat,omitempty"`
