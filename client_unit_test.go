@@ -171,12 +171,43 @@ func TestUnit_GetServerVersion(t *testing.T) {
 		var wg sync.WaitGroup
 		for range 10 {
 			wg.Go(func() {
+				// t.Errorf, not require: FailNow must not be called outside the test goroutine
 				result, err := client.compareVersions(context.Background(), "20.0.0", "token")
-				require.NoError(t, err)
-				require.Equal(t, 1, result)
+				if err != nil || result != 1 {
+					t.Errorf("compareVersions = %d, %v; want 1, nil", result, err)
+				}
 			})
 		}
 		wg.Wait()
 		require.Equal(t, int32(1), fetches.Load())
 	})
+}
+
+// TestUnit_GetComponent_UsesSeparatePathSegments checks that the component ID is its own path segment
+// and the slash is not escaped to %2F.
+// Input: t [*testing.T]. Output: none.
+func TestUnit_GetComponent_UsesSeparatePathSegments(t *testing.T) {
+	t.Parallel()
+	var gotPath string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.EscapedPath()
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":"abc"}`))
+	}))
+	defer server.Close()
+
+	component, err := NewClient(server.URL).GetComponent(context.Background(), "token", "realm", "abc")
+	require.NoError(t, err)
+	require.Equal(t, "/admin/realms/realm/components/abc", gotPath)
+	require.Equal(t, "abc", PString(component.ID))
+}
+
+// TestUnit_UpdatePermission_RequiresType checks that a permission without a type is rejected
+// before a request is sent instead of panicking.
+// Input: t [*testing.T]. Output: none.
+func TestUnit_UpdatePermission_RequiresType(t *testing.T) {
+	t.Parallel()
+	err := NewClient("http://127.0.0.1:0").UpdatePermission(context.Background(), "token", "realm", "client",
+		PermissionRepresentation{ID: new("id")})
+	require.EqualError(t, err, "type of a permission required")
 }

@@ -48,6 +48,13 @@ jobs:
       fail-fast: false
       matrix:
         go: [oldstable, stable]
+        keycloak: ["26.8.2"]
+        include:
+          # early warning for the next Keycloak release, does not fail the build
+          - go: stable
+            keycloak: nightly
+            experimental: true
+    continue-on-error: ${{ matrix.experimental == true }}
     steps:
       - uses: actions/checkout@v7
 
@@ -56,11 +63,13 @@ jobs:
           go-version: ${{ matrix.go }}
 
       - name: Run Keycloak
+        env:
+          KEYCLOAK_VERSION: ${{ matrix.keycloak }}
         run: docker compose up -d --build --wait --wait-timeout 300
 
       - name: Unit Tests
         run: |
-          go test -race -cover -coverprofile=coverage.txt -covermode=atomic -p 100 -cpu 1,2 -bench . -benchmem > test.log
+          go test -race -cover -coverprofile=coverage.txt -covermode=atomic -p 100 -cpu 1,2 -bench . -benchmem ./... > test.log
           cat test.log
 
       - name: Failed Logs
@@ -71,14 +80,14 @@ jobs:
           docker compose logs keycloak
 
       - name: CodeCov
-        if: matrix.go == 'stable'
+        if: matrix.go == 'stable' && matrix.keycloak != 'nightly'
         uses: codecov/codecov-action@v7
         with:
           files: ./coverage.txt
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Store Benchmark Result
-        if: matrix.go == 'stable' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: matrix.go == 'stable' && matrix.keycloak != 'nightly' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: benchmark-action/github-action-benchmark@v1
         with:
           tool: "go"
@@ -87,6 +96,6 @@ jobs:
           auto-push: true
 
       - name: GoReportCard
-        if: matrix.go == 'stable' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: matrix.go == 'stable' && matrix.keycloak != 'nightly' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         continue-on-error: true
         run: curl --fail --request POST "https://goreportcard.com/checks" --data "repo=github.com/Nerzal/gocloak"

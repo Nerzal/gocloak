@@ -1488,11 +1488,9 @@ func (g *GoCloak) GetComponent(ctx context.Context, token, realm string, compone
 	const errMessage = "could not get components"
 	var result *Component
 
-	componentURL := "components/" + componentID
-
 	resp, err := g.GetRequestWithBearerAuth(ctx, token).
 		SetResult(&result).
-		Get(g.getAdminRealmURL(realm, componentURL))
+		Get(g.getAdminRealmURL(realm, "components", componentID))
 
 	if err = checkForError(resp, err, errMessage); err != nil {
 		return nil, err
@@ -3348,6 +3346,9 @@ func (g *GoCloak) UpdatePermission(ctx context.Context, token, realm, idOfClient
 
 	if NilOrEmpty(permission.ID) {
 		return errors.New("ID of a permission required")
+	}
+	if NilOrEmpty(permission.Type) {
+		return errors.New("type of a permission required")
 	}
 	resp, err := g.GetRequestWithBearerAuth(ctx, token).
 		SetBody(permission).
