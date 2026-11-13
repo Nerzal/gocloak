@@ -236,21 +236,17 @@ func TestUnit_CompareVersions(t *testing.T) {
 	tests := []struct {
 		name, server, v string
 		want            int
-		skip            string
 	}{
 		{name: "server lower", server: "19.0.0", v: "20.0.0", want: -1},
 		{name: "equal", server: "20.0.0", v: "20.0.0", want: 0},
 		{name: "server higher", server: "26.8.2", v: "20.0.0", want: 1},
 		{name: "v prefix on argument", server: "20.0.0", v: "v20.0.0", want: 0},
-		{name: "v prefix on server", server: "v26.0.0", v: "20.0.0", want: 1, skip: "client.go compareVersions builds \"vv26.0.0\", invalid semver compares as lowest"},
-		{name: "non-semver vendor build", server: "26.0.10.redhat-00001", v: "20.0.0", want: 1, skip: "client.go compareVersions: 4-part version is invalid semver and compares as lowest"},
+		{name: "v prefix on server", server: "v26.0.0", v: "20.0.0", want: 1},
+		{name: "non-semver vendor build", server: "26.0.10.redhat-00001", v: "20.0.0", want: 1},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			if tc.skip != "" {
-				t.Skip("known bug: " + tc.skip)
-			}
 			server, fetches := serverInfoServer(t, tc.server)
 			got, err := NewClient(server.URL).compareVersions(context.Background(), tc.v, "token")
 			require.NoError(t, err)
@@ -438,4 +434,18 @@ func TestUnit_MakeURL(t *testing.T) {
 	require.Equal(t, "http://kc/admin/realms", makeURL("http://kc", "admin", "realms"))
 	require.Equal(t, "realms", makeURL("realms"))
 	require.Empty(t, makeURL())
+}
+
+// TestUnit_CheckForError_UnwrapsTransportError checks that a canceled request keeps context.Canceled
+// reachable through errors.Is.
+// Input: t [*testing.T]. Output: none.
+func TestUnit_CheckForError_UnwrapsTransportError(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	_, err := NewClient("http://127.0.0.1:1").GetServerInfo(ctx, "token")
+	var apiErr *APIError
+	require.ErrorAs(t, err, &apiErr)
+	require.Zero(t, apiErr.Code)
+	require.ErrorIs(t, err, context.Canceled)
 }

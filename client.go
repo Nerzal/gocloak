@@ -76,7 +76,15 @@ func (g *GoCloak) compareVersions(ctx context.Context, v, token string) (int, er
 		return 0, err
 	}
 
-	return semver.Compare("v"+curVersion, "v"+strings.TrimPrefix(v, "v")), nil
+	return semver.Compare(normalizeVersion(curVersion), normalizeVersion(v)), nil
+}
+
+// normalizeVersion turns a Keycloak version into a semver string: optional "v" prefix is unified and
+// vendor builds with a fourth part (e.g. "26.0.10.redhat-00001") are cut to major.minor.patch.
+// Input: v [string] version. Output: [string] semver version with "v" prefix.
+func normalizeVersion(v string) string {
+	parts := strings.SplitN(strings.TrimPrefix(v, "v"), ".", 4)
+	return "v" + strings.Join(parts[:min(len(parts), 3)], ".")
 }
 
 // GetServerVersion returns the server version from the serverinfo endpoint.
@@ -165,6 +173,7 @@ func checkForError(resp *resty.Response, err error, errMessage string) error {
 			Code:    0,
 			Message: fmt.Sprintf("%s: %v", errMessage, err),
 			Type:    ParseAPIErrType(err),
+			Err:     err,
 		}
 	}
 
@@ -675,16 +684,24 @@ func (g *GoCloak) LoginClient(ctx context.Context, clientID, clientSecret, realm
 	return g.GetToken(ctx, realm, opts)
 }
 
-// LoginClientTokenExchange will exchange the presented token for a user's token
-// Requires Token-Exchange is enabled: https://www.keycloak.org/docs/latest/securing_apps/index.html#_token-exchange
+// LoginClientTokenExchange exchanges the presented access token for a token of the requesting client
+// (standard token exchange, enabled per client via "standard.token.exchange.enabled").
+// targetClient is sent as audience only when set; userID (requested_subject) is only supported by the
+// legacy token exchange v1 preview feature.
+// See https://www.keycloak.org/securing-apps/token-exchange
+// Input: ctx [context.Context], clientID [string], token [string] subject access token, clientSecret [string],
+// realm [string], targetClient [string] optional audience, userID [string] optional subject. Output: [*JWT], [error].
 func (g *GoCloak) LoginClientTokenExchange(ctx context.Context, clientID, token, clientSecret, realm, targetClient, userID string) (*JWT, error) {
 	tokenOptions := TokenOptions{
 		ClientID:           &clientID,
 		ClientSecret:       &clientSecret,
 		GrantType:          new("urn:ietf:params:oauth:grant-type:token-exchange"),
 		SubjectToken:       &token,
+		SubjectTokenType:   new("urn:ietf:params:oauth:token-type:access_token"),
 		RequestedTokenType: new("urn:ietf:params:oauth:token-type:refresh_token"),
-		Audience:           &targetClient,
+	}
+	if targetClient != "" {
+		tokenOptions.Audience = &targetClient
 	}
 	if userID != "" {
 		tokenOptions.RequestedSubject = &userID
@@ -692,8 +709,9 @@ func (g *GoCloak) LoginClientTokenExchange(ctx context.Context, clientID, token,
 	return g.GetToken(ctx, realm, tokenOptions)
 }
 
-// DirectNakedImpersonationTokenExchange performs "Direct Naked Impersonation"
-// See: https://www.keycloak.org/docs/latest/securing_apps/index.html#direct-naked-impersonation
+// DirectNakedImpersonationTokenExchange performs "Direct Naked Impersonation".
+// Only available with the legacy token exchange v1 (preview feature "token-exchange"); standard token exchange
+// in Keycloak 26.2+ rejects requests without subject_token.
 func (g *GoCloak) DirectNakedImpersonationTokenExchange(ctx context.Context, clientID, clientSecret, realm, userID string) (*JWT, error) {
 	tokenOptions := TokenOptions{
 		ClientID:           &clientID,
@@ -3967,7 +3985,9 @@ func (g *GoCloak) DeleteOrganizationInvitation(ctx context.Context, token, realm
 	return checkForError(resp, err, errMessage)
 }
 
-// ResendOrganizationInvitation resends the invitation with the specified id
+// ResendOrganizationInvitation resends the invitation with the specified id.
+// Keycloak replaces the invitation on resend: the old id is gone afterwards and the new invitation
+// has to be looked up again, e.g. via GetOrganizationInvitations filtered by email.
 // POST /admin/realms/{realm}/organizations/{id}/invitations/{invitation-id}/resend
 func (g *GoCloak) ResendOrganizationInvitation(ctx context.Context, token, realm, idOfOrganization, idOfInvitation string) error {
 	const errMessage = "could not resend organization invitation"

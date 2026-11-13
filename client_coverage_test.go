@@ -3,7 +3,6 @@ package gocloak_test
 import (
 	"context"
 	"net/http"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -433,11 +432,9 @@ func Test_TokenExchange(t *testing.T) {
 	requireAPIErrorCode(t, err, http.StatusBadRequest)
 
 	exchanged, err := client.LoginClientTokenExchange(ctx, clientID, subject.AccessToken, secret, cfg.GoCloak.Realm, "", "")
-	if err != nil && strings.Contains(err.Error(), "subject_token_type") {
-		t.Skip("LoginClientTokenExchange does not send subject_token_type, which standard token exchange v2 requires")
-	}
 	require.NoError(t, err, "LoginClientTokenExchange failed")
 	require.NotEmpty(t, exchanged.AccessToken)
+	require.NotEmpty(t, exchanged.RefreshToken)
 }
 
 func Test_ErrorPaths(t *testing.T) {

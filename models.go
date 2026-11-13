@@ -119,6 +119,14 @@ type APIError struct {
 	Code    int        `json:"code"`
 	Message string     `json:"message"`
 	Type    APIErrType `json:"type"`
+	// Err is the underlying transport error (e.g. context.Canceled), nil for HTTP errors
+	Err error `json:"-"`
+}
+
+// Unwrap returns the underlying transport error so errors.Is/As work on it.
+// Output: [error] wrapped error or nil.
+func (apiError APIError) Unwrap() error {
+	return apiError.Err
 }
 
 // Error stringifies the APIError
@@ -1000,6 +1008,7 @@ type TokenOptions struct {
 	ClientAssertionType *string  `json:"client_assertion_type,omitempty"`
 	ClientAssertion     *string  `json:"client_assertion,omitempty"`
 	SubjectToken        *string  `json:"subject_token,omitempty"`
+	SubjectTokenType    *string  `json:"subject_token_type,omitempty"`
 	RequestedSubject    *string  `json:"requested_subject,omitempty"`
 	Audience            *string  `json:"audience,omitempty"`
 	RequestedTokenType  *string  `json:"requested_token_type,omitempty"`
@@ -1622,13 +1631,13 @@ type GetOrganizationCountParams struct {
 
 // GetOrganizationInvitationsParams represents the optional parameters for getting organization invitations
 type GetOrganizationInvitationsParams struct {
-	Email     *string `json:"email,omitempty"`
-	First     *int    `json:"first,string,omitempty"`
-	FirstName *string `json:"firstName,omitempty"`
-	LastName  *string `json:"lastName,omitempty"`
-	Max       *int    `json:"max,string,omitempty"`
-	Search    *string `json:"search,omitempty"`
-	Status    *string `json:"status,omitempty"`
+	Email     *string           `json:"email,omitempty"`
+	First     *int              `json:"first,string,omitempty"`
+	FirstName *string           `json:"firstName,omitempty"`
+	LastName  *string           `json:"lastName,omitempty"`
+	Max       *int              `json:"max,string,omitempty"`
+	Search    *string           `json:"search,omitempty"`
+	Status    *InvitationStatus `json:"status,omitempty"`
 }
 
 // GetOrganizationGroupsParams represents the optional parameters for getting organization groups

@@ -11,9 +11,6 @@ import (
 	"github.com/Nerzal/gocloak/v14"
 )
 
-// idOfGroup returns the ID of a group. Input: group [*gocloak.Group]. Output: [*string].
-func idOfGroup(group *gocloak.Group) *string { return group.ID }
-
 // idOfOrganization returns the ID of an organization.
 // Input: org [*gocloak.OrganizationRepresentation]. Output: [*string].
 func idOfOrganization(org *gocloak.OrganizationRepresentation) *string { return org.ID }
