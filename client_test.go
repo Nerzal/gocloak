@@ -2797,10 +2797,7 @@ func Test_ExecuteActionsEmail_UpdatePassword(t *testing.T) {
 		token.AccessToken,
 		cfg.GoCloak.Realm,
 		params)
-	if err != nil {
-		// the test Keycloak has no SMTP server, so sending fails with 500
-		requireAPIErrorCode(t, err, http.StatusInternalServerError)
-	}
+	require.NoError(t, err, "sending mail failed, is mailhog running?")
 }
 
 func Test_SendVerifyEmail(t *testing.T) {
@@ -2821,10 +2818,7 @@ func Test_SendVerifyEmail(t *testing.T) {
 		userID,
 		cfg.GoCloak.Realm,
 		params)
-	if err != nil {
-		// the test Keycloak has no SMTP server, so sending fails with 500
-		requireAPIErrorCode(t, err, http.StatusInternalServerError)
-	}
+	require.NoError(t, err, "sending mail failed, is mailhog running?")
 }
 
 func Test_Logout(t *testing.T) {
