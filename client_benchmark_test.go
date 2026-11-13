@@ -15,7 +15,7 @@ func BenchmarkLogin(b *testing.B) {
 	client := gocloak.NewClient(cfg.HostName)
 	SetUpTestUser(b, client)
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		_, err := client.Login(
 			context.Background(),
 			cfg.GoCloak.ClientID,
@@ -53,7 +53,7 @@ func BenchmarkGetGroups(b *testing.B) {
 	client := gocloak.NewClient(cfg.HostName)
 	token := GetAdminToken(b, client)
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_, err := client.GetGroups(
 			context.Background(),
 			token.AccessToken,
@@ -69,10 +69,10 @@ func BenchmarkGetGroupsFull(b *testing.B) {
 	client := gocloak.NewClient(cfg.HostName)
 	token := GetAdminToken(b, client)
 	params := gocloak.GetGroupsParams{
-		Full: gocloak.Ptr(true),
+		Full: new(true),
 	}
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_, err := client.GetGroups(
 			context.Background(),
 			token.AccessToken,
@@ -87,11 +87,11 @@ func BenchmarkGetGroupsBrief(b *testing.B) {
 	cfg := GetConfig(b)
 	client := gocloak.NewClient(cfg.HostName)
 	params := gocloak.GetGroupsParams{
-		BriefRepresentation: gocloak.Ptr(true),
+		BriefRepresentation: new(true),
 	}
 	token := GetAdminToken(b, client)
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_, err := client.GetGroups(
 			context.Background(),
 			token.AccessToken,
@@ -109,7 +109,7 @@ func BenchmarkGetGroup(b *testing.B) {
 	defer teardown()
 	token := GetAdminToken(b, client)
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_, err := client.GetGroup(
 			context.Background(),
 			token.AccessToken,
@@ -129,7 +129,7 @@ func BenchmarkGetGroupByPath(b *testing.B) {
 	group, err := client.GetGroup(context.Background(), token.AccessToken, cfg.GoCloak.Realm, groupID)
 	require.NoError(b, err)
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_, err := client.GetGroupByPath(
 			context.Background(),
 			token.AccessToken,

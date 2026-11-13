@@ -1,10 +1,5 @@
 package gocloak
 
-// Ptr returns a pointer to the given value of any type.
-func Ptr[T any](v T) *T {
-	return &v
-}
-
 // PString returns a string value from a pointer
 func PString(value *string) string {
 	if value == nil {

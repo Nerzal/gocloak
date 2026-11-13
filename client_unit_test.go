@@ -8,7 +8,6 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -25,18 +24,19 @@ import (
 // Input: kid [string], key [*rsa.PublicKey]. Output: [CertResponseKey].
 func jwkFor(kid string, key *rsa.PublicKey) CertResponseKey {
 	return CertResponseKey{
-		Kid: Ptr(kid),
-		Kty: Ptr("RSA"),
-		Alg: Ptr("RS256"),
-		Use: Ptr("sig"),
-		N:   Ptr(base64.RawURLEncoding.EncodeToString(key.N.Bytes())),
-		E:   Ptr(base64.RawURLEncoding.EncodeToString(big.NewInt(int64(key.E)).Bytes())),
+		Kid: new(kid),
+		Kty: new("RSA"),
+		Alg: new("RS256"),
+		Use: new("sig"),
+		N:   new(base64.RawURLEncoding.EncodeToString(key.N.Bytes())),
+		E:   new(base64.RawURLEncoding.EncodeToString(big.NewInt(int64(key.E)).Bytes())),
 	}
 }
 
 // signToken signs a minimal token with the given key and kid.
 // Input: t [*testing.T], kid [string], key [*rsa.PrivateKey]. Output: [string] signed token.
 func signToken(t *testing.T, kid string, key *rsa.PrivateKey) string {
+	t.Helper()
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{"sub": "user"})
 	token.Header["kid"] = kid
 	signed, err := token.SignedString(key)
@@ -55,7 +55,7 @@ func TestUnit_CheckForError_InvalidGrantType(t *testing.T) {
 	_, err := NewClient(server.URL).Login(context.Background(), "client", "secret", "r", "user", "wrong")
 
 	var apiErr *APIError
-	require.True(t, errors.As(err, &apiErr), "expected *APIError, got %v", err)
+	require.ErrorAs(t, err, &apiErr, "expected *APIError, got %v", err)
 	require.Equal(t, http.StatusUnauthorized, apiErr.Code)
 	require.Equal(t, APIErrTypeInvalidGrant, apiErr.Type)
 }
@@ -69,7 +69,10 @@ func TestUnit_DecodeAccessToken_RefetchesCertsAfterKeyRotation(t *testing.T) {
 	var fetches atomic.Int32
 	var rotated atomic.Bool
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, "/realms/r/protocol/openid-connect/certs", r.URL.Path)
+		if r.URL.Path != "/realms/r/protocol/openid-connect/certs" {
+			http.NotFound(w, r)
+			return
+		}
 		fetches.Add(1)
 		key := jwkFor("old", &oldKey.PublicKey)
 		if rotated.Load() {

@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,8 +15,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"errors"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/golang-jwt/jwt/v5"
@@ -420,11 +419,15 @@ var certsMinRefreshInterval = 30 * time.Second
 // Input: realm [string], maxAge [time.Duration].
 // Output: [*CertResponse] cached certs, [bool] true if a fresh entry was found.
 func (g *GoCloak) loadCerts(realm string, maxAge time.Duration) (*CertResponse, bool) {
-	entry, ok := g.certsCache.Load(realm)
-	if !ok || time.Since(entry.(certsCacheEntry).fetchedAt) >= maxAge {
+	value, ok := g.certsCache.Load(realm)
+	if !ok {
 		return nil, false
 	}
-	return entry.(certsCacheEntry).certs, true
+	entry, ok := value.(certsCacheEntry)
+	if !ok || time.Since(entry.fetchedAt) >= maxAge {
+		return nil, false
+	}
+	return entry.certs, true
 }
 
 // getCachedCerts returns the certs of a realm, fetching them if the cache entry is older than maxAge.
@@ -523,7 +526,7 @@ func (g *GoCloak) decodeAccessTokenWithClaims(ctx context.Context, accessToken, 
 	} else if strings.HasPrefix(decodedHeader.Alg, "RS") {
 		return jwx.DecodeAccessTokenRSACustomClaims(accessToken, usedKey.E, usedKey.N, claims)
 	}
-	return nil, fmt.Errorf("unsupported algorithm")
+	return nil, errors.New("unsupported algorithm")
 }
 
 // DecodeAccessToken decodes the accessToken
@@ -585,7 +588,7 @@ func (g *GoCloak) GetRequestingPartyPermissions(ctx context.Context, token, real
 
 	var res []RequestingPartyPermission
 
-	options.ResponseMode = Ptr("permissions")
+	options.ResponseMode = new("permissions")
 
 	resp, err := g.getRequestingParty(ctx, token, realm, options, &res)
 	if err = checkForError(resp, err, errMessage); err != nil {
@@ -600,7 +603,7 @@ func (g *GoCloak) GetRequestingPartyPermissionDecision(ctx context.Context, toke
 
 	var res RequestingPartyPermissionDecision
 
-	options.ResponseMode = Ptr("decision")
+	options.ResponseMode = new("decision")
 
 	resp, err := g.getRequestingParty(ctx, token, realm, options, &res)
 	if err = checkForError(resp, err, errMessage); err != nil {
@@ -616,7 +619,7 @@ func (g *GoCloak) RefreshToken(ctx context.Context, refreshToken, clientID, clie
 	return g.GetToken(ctx, realm, TokenOptions{
 		ClientID:     &clientID,
 		ClientSecret: &clientSecret,
-		GrantType:    Ptr("refresh_token"),
+		GrantType:    new("refresh_token"),
 		RefreshToken: &refreshToken,
 	})
 }
@@ -624,8 +627,8 @@ func (g *GoCloak) RefreshToken(ctx context.Context, refreshToken, clientID, clie
 // LoginAdmin performs a login with Admin client
 func (g *GoCloak) LoginAdmin(ctx context.Context, username, password, realm string) (*JWT, error) {
 	return g.GetToken(ctx, realm, TokenOptions{
-		ClientID:  Ptr(adminClientID),
-		GrantType: Ptr("password"),
+		ClientID:  new(adminClientID),
+		GrantType: new("password"),
 		Username:  &username,
 		Password:  &password,
 	})
@@ -634,8 +637,8 @@ func (g *GoCloak) LoginAdmin(ctx context.Context, username, password, realm stri
 // LoginAdminOtp performs a login with Admin client and OTP token
 func (g *GoCloak) LoginAdminOtp(ctx context.Context, username, password, totp, realm string) (*JWT, error) {
 	return g.GetToken(ctx, realm, TokenOptions{
-		ClientID:  Ptr(adminClientID),
-		GrantType: Ptr("password"),
+		ClientID:  new(adminClientID),
+		GrantType: new("password"),
 		Username:  &username,
 		Password:  &password,
 		Totp:      &totp,
@@ -647,7 +650,7 @@ func (g *GoCloak) LoginClient(ctx context.Context, clientID, clientSecret, realm
 	opts := TokenOptions{
 		ClientID:     &clientID,
 		ClientSecret: &clientSecret,
-		GrantType:    Ptr("client_credentials"),
+		GrantType:    new("client_credentials"),
 		Scopes:       scopes,
 	}
 
@@ -660,9 +663,9 @@ func (g *GoCloak) LoginClientTokenExchange(ctx context.Context, clientID, token,
 	tokenOptions := TokenOptions{
 		ClientID:           &clientID,
 		ClientSecret:       &clientSecret,
-		GrantType:          Ptr("urn:ietf:params:oauth:grant-type:token-exchange"),
+		GrantType:          new("urn:ietf:params:oauth:grant-type:token-exchange"),
 		SubjectToken:       &token,
-		RequestedTokenType: Ptr("urn:ietf:params:oauth:token-type:refresh_token"),
+		RequestedTokenType: new("urn:ietf:params:oauth:token-type:refresh_token"),
 		Audience:           &targetClient,
 	}
 	if userID != "" {
@@ -677,9 +680,9 @@ func (g *GoCloak) DirectNakedImpersonationTokenExchange(ctx context.Context, cli
 	tokenOptions := TokenOptions{
 		ClientID:           &clientID,
 		ClientSecret:       &clientSecret,
-		GrantType:          Ptr("urn:ietf:params:oauth:grant-type:token-exchange"),
-		RequestedTokenType: Ptr("urn:ietf:params:oauth:token-type:refresh_token"),
-		RequestedSubject:   Ptr(userID),
+		GrantType:          new("urn:ietf:params:oauth:grant-type:token-exchange"),
+		RequestedTokenType: new("urn:ietf:params:oauth:token-type:refresh_token"),
+		RequestedSubject:   new(userID),
 	}
 	return g.GetToken(ctx, realm, tokenOptions)
 }
@@ -710,8 +713,8 @@ func (g *GoCloak) LoginClientSignedJWT(
 
 	return g.GetToken(ctx, realm, TokenOptions{
 		ClientID:            &clientID,
-		GrantType:           Ptr("client_credentials"),
-		ClientAssertionType: Ptr("urn:ietf:params:oauth:client-assertion-type:jwt-bearer"),
+		GrantType:           new("client_credentials"),
+		ClientAssertionType: new("urn:ietf:params:oauth:client-assertion-type:jwt-bearer"),
 		ClientAssertion:     &assertion,
 	})
 }
@@ -721,10 +724,10 @@ func (g *GoCloak) Login(ctx context.Context, clientID, clientSecret, realm, user
 	return g.GetToken(ctx, realm, TokenOptions{
 		ClientID:     &clientID,
 		ClientSecret: &clientSecret,
-		GrantType:    Ptr("password"),
+		GrantType:    new("password"),
 		Username:     &username,
 		Password:     &password,
-		Scope:        Ptr("openid"),
+		Scope:        new("openid"),
 	})
 }
 
@@ -733,7 +736,7 @@ func (g *GoCloak) LoginOtp(ctx context.Context, clientID, clientSecret, realm, u
 	return g.GetToken(ctx, realm, TokenOptions{
 		ClientID:     &clientID,
 		ClientSecret: &clientSecret,
-		GrantType:    Ptr("password"),
+		GrantType:    new("password"),
 		Username:     &username,
 		Password:     &password,
 		Totp:         &totp,
@@ -810,7 +813,7 @@ func (g *GoCloak) ExecuteActionsEmail(ctx context.Context, token, realm string, 
 	resp, err := g.GetRequestWithBearerAuth(ctx, token).
 		SetBody(params.Actions).
 		SetQueryParams(queryParams).
-		Put(g.getAdminRealmURL(realm, "users", *(params.UserID), "execute-actions-email"))
+		Put(g.getAdminRealmURL(realm, "users", *params.UserID, "execute-actions-email"))
 
 	return checkForError(resp, err, errMessage)
 }
@@ -1467,7 +1470,7 @@ func (g *GoCloak) GetComponent(ctx context.Context, token, realm string, compone
 	const errMessage = "could not get components"
 	var result *Component
 
-	componentURL := fmt.Sprintf("components/%s", componentID)
+	componentURL := "components/" + componentID
 
 	resp, err := g.GetRequestWithBearerAuth(ctx, token).
 		SetResult(&result).
@@ -1787,12 +1790,7 @@ func (g *GoCloak) GetClientManagementPermissions(ctx context.Context, token, rea
 
 // UserAttributeContains checks if the given attribute value is set
 func UserAttributeContains(attributes map[string][]string, attribute, value string) bool {
-	for _, item := range attributes[attribute] {
-		if item == value {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(attributes[attribute], value)
 }
 
 // -----------
@@ -2417,7 +2415,7 @@ func (g *GoCloak) GetUsersByClientRoleName(ctx context.Context, token, realm, id
 func (g *GoCloak) SetPassword(ctx context.Context, token, userID, realm, password string, temporary bool) error {
 	const errMessage = "could not set password"
 
-	requestBody := SetPasswordRequest{Password: &password, Temporary: &temporary, Type: Ptr("password")}
+	requestBody := SetPasswordRequest{Password: &password, Temporary: &temporary, Type: new("password")}
 	resp, err := g.GetRequestWithBearerAuth(ctx, token).
 		SetBody(requestBody).
 		Put(g.getAdminRealmURL(realm, "users", userID, "reset-password"))
@@ -2514,7 +2512,7 @@ func (g *GoCloak) DeleteClientRolesFromUser(ctx context.Context, token, realm, i
 	return checkForError(resp, err, errMessage)
 }
 
-// DeleteClientRoleFromGroup removes a client role from from the group
+// DeleteClientRoleFromGroup removes a client role from the group
 func (g *GoCloak) DeleteClientRoleFromGroup(ctx context.Context, token, realm, idOfClient, groupID string, roles []Role) error {
 	const errMessage = "could not client role from group"
 
@@ -2848,7 +2846,7 @@ func (g *GoCloak) UpdateResource(ctx context.Context, token, realm, idOfClient s
 
 	resp, err := g.GetRequestWithBearerAuth(ctx, token).
 		SetBody(resource).
-		Put(g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "resource", *(resource.ID)))
+		Put(g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "resource", *resource.ID))
 
 	return checkForError(resp, err, errMessage)
 }
@@ -2863,7 +2861,7 @@ func (g *GoCloak) UpdateResourceClient(ctx context.Context, token, realm string,
 
 	resp, err := g.GetRequestWithBearerAuth(ctx, token).
 		SetBody(resource).
-		Put(g.getRealmURL(realm, "authz", "protection", "resource_set", *(resource.ID)))
+		Put(g.getRealmURL(realm, "authz", "protection", "resource_set", *resource.ID))
 
 	return checkForError(resp, err, errMessage)
 }
@@ -2964,7 +2962,7 @@ func (g *GoCloak) UpdateScope(ctx context.Context, token, realm, idOfClient stri
 
 	resp, err := g.GetRequestWithBearerAuth(ctx, token).
 		SetBody(scope).
-		Put(g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "scope", *(scope.ID)))
+		Put(g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "scope", *scope.ID))
 
 	return checkForError(resp, err, errMessage)
 }
@@ -3242,7 +3240,7 @@ func (g *GoCloak) GrantUserPermission(ctx context.Context, token, realm string, 
 		return nil, err
 	}
 
-	permission.Granted = Ptr(true)
+	permission.Granted = new(true)
 
 	return doRequestPtr[PermissionGrantResponseRepresentation](g.GetRequestWithBearerAuth(ctx, token).
 		SetBody(permission),
@@ -3323,7 +3321,7 @@ func (g *GoCloak) CreatePermission(ctx context.Context, token, realm, idOfClient
 
 	return doRequestPtr[PermissionRepresentation](g.GetRequestWithBearerAuth(ctx, token).
 		SetBody(permission),
-		http.MethodPost, g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "permission", *(permission.Type)), errMessage)
+		http.MethodPost, g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "permission", *permission.Type), errMessage)
 }
 
 // UpdatePermission updates a permission associated with the client

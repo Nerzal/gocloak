@@ -8,10 +8,6 @@ import (
 	"github.com/Nerzal/gocloak/v14"
 )
 
-func TestStringP(t *testing.T) {
-	p := gocloak.Ptr("test value")
-	assert.Equal(t, "test value", *p)
-}
 func TestPString(t *testing.T) {
 	p := "test value"
 	v := gocloak.PString(&p)
@@ -20,18 +16,7 @@ func TestPString(t *testing.T) {
 
 func TestPStringNil(t *testing.T) {
 	v := gocloak.PString(nil)
-	assert.Equal(t, "", v)
-}
-
-func TestBoolP(t *testing.T) {
-	p1 := gocloak.Ptr(false)
-	assert.False(t, *p1)
-	p2 := gocloak.Ptr(false)
-	assert.False(t, *p1)
-	assert.False(t, p1 == p2)
-
-	p := gocloak.Ptr(true)
-	assert.True(t, *p)
+	assert.Empty(t, v)
 }
 
 func TestPBool(t *testing.T) {
@@ -45,23 +30,6 @@ func TestPBool(t *testing.T) {
 
 	v = gocloak.PBool(nil)
 	assert.False(t, v)
-}
-
-func TestIntP(t *testing.T) {
-	p := gocloak.Ptr(42)
-	assert.Equal(t, 42, *p)
-}
-
-func TestInt32P(t *testing.T) {
-	v := int32(42)
-	p := gocloak.Ptr[int32](v)
-	assert.Equal(t, v, *p)
-}
-
-func TestInt64P(t *testing.T) {
-	v := int64(42)
-	p := gocloak.Ptr[int64](v)
-	assert.Equal(t, v, *p)
 }
 
 func TestPInt(t *testing.T) {
@@ -97,17 +65,6 @@ func TestPInt64(t *testing.T) {
 	assert.IsType(t, int64(0), v)
 }
 
-func TestFloat32P(t *testing.T) {
-	v := float32(42.42)
-	p := gocloak.Ptr[float32](v)
-	assert.Equal(t, v, *p)
-}
-func TestFloat64P(t *testing.T) {
-	v := 42.42
-	p := gocloak.Ptr[float64](v)
-	assert.Equal(t, v, *p)
-}
-
 func TestPFloat32(t *testing.T) {
 	var p float32 = 42.42
 	v := gocloak.PFloat32(&p)
@@ -118,6 +75,7 @@ func TestPFloat32(t *testing.T) {
 	assert.Equal(t, float32(0), v)
 	assert.IsType(t, float32(0), v)
 }
+
 func TestPFloat64(t *testing.T) {
 	p := 42.42
 	v := gocloak.PFloat64(&p)
@@ -128,6 +86,7 @@ func TestPFloat64(t *testing.T) {
 	assert.Equal(t, float64(0), v)
 	assert.IsType(t, float64(0), v)
 }
+
 func TestNilOrEmptyArray(t *testing.T) {
 	a := gocloak.NilOrEmptyArray([]string{"c", "d"})
 	b := gocloak.NilOrEmptyArray([]string{"", "b"})
@@ -135,5 +94,4 @@ func TestNilOrEmptyArray(t *testing.T) {
 	assert.False(t, a)
 	assert.True(t, b)
 	assert.True(t, c)
-
 }

@@ -2,14 +2,13 @@
 package jwx
 
 import (
-	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rsa"
 	"encoding/base64"
-	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"math"
 	"math/big"
 	"strings"
 
@@ -52,33 +51,43 @@ func toBigInt(v string) (*big.Int, error) {
 	return res, nil
 }
 
-var (
-	curves = map[string]elliptic.Curve{
-		"P-224": elliptic.P224(),
-		"P-256": elliptic.P256(),
-		"P-384": elliptic.P384(),
-		"P-521": elliptic.P521(),
-	}
-)
+var curves = map[string]elliptic.Curve{
+	"P-224": elliptic.P224(),
+	"P-256": elliptic.P256(),
+	"P-384": elliptic.P384(),
+	"P-521": elliptic.P521(),
+}
 
+// decodeECDSAPublicKey builds an ECDSA public key from JWK coordinates and checks that the point is on the curve.
+// Input: x [*string], y [*string] base64url coordinates, crv [*string] curve name.
+// Output: [*ecdsa.PublicKey], [error] if decoding fails or the point is invalid.
 func decodeECDSAPublicKey(x, y, crv *string) (*ecdsa.PublicKey, error) {
 	const errMessage = "could not decode public key"
 
-	xInt, err := toBigInt(*x)
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", errMessage, err)
-	}
-
-	yInt, err := toBigInt(*y)
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", errMessage, err)
-	}
-	var c elliptic.Curve
-	var ok bool
-	if c, ok = curves[*crv]; !ok {
+	c, ok := curves[*crv]
+	if !ok {
 		return nil, fmt.Errorf("%s: unknown curve alg: %s", errMessage, *crv)
 	}
-	return &ecdsa.PublicKey{X: xInt, Y: yInt, Curve: c}, nil
+	size := (c.Params().BitSize + 7) / 8
+
+	point := make([]byte, 1+2*size)
+	point[0] = 4 // uncompressed point marker
+	for i, coordinate := range []*string{x, y} {
+		decoded, err := base64.RawURLEncoding.DecodeString(*coordinate)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", errMessage, err)
+		}
+		if len(decoded) > size {
+			return nil, fmt.Errorf("%s: coordinate too long", errMessage)
+		}
+		copy(point[1+(i+1)*size-len(decoded):], decoded) // left-pad to the curve size
+	}
+
+	key, err := ecdsa.ParseUncompressedPublicKey(c, point)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", errMessage, err)
+	}
+	return key, nil
 }
 
 func decodeRSAPublicKey(e, n *string) (*rsa.PublicKey, error) {
@@ -94,23 +103,12 @@ func decodeRSAPublicKey(e, n *string) (*rsa.PublicKey, error) {
 		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 
-	var eBytes []byte
-	if len(decE) < 8 {
-		eBytes = make([]byte, 8-len(decE), 8)
-		eBytes = append(eBytes, decE...)
-	} else {
-		eBytes = decE
+	eInt := new(big.Int).SetBytes(decE)
+	if !eInt.IsInt64() || eInt.Int64() > math.MaxInt32 {
+		return nil, fmt.Errorf("%s: rsa exponent out of range", errMessage)
 	}
 
-	eReader := bytes.NewReader(eBytes)
-	var eInt uint64
-	err = binary.Read(eReader, binary.BigEndian, &eInt)
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", errMessage, err)
-	}
-
-	pKey := rsa.PublicKey{N: nInt, E: int(eInt)} //nolint
-	return &pKey, nil
+	return &rsa.PublicKey{N: nInt, E: int(eInt.Int64())}, nil
 }
 
 // DecodeAccessTokenRSACustomClaims decodes string access token into jwt.Token
@@ -130,7 +128,6 @@ func DecodeAccessTokenRSACustomClaims(accessToken string, e, n *string, customCl
 		}
 		return rsaPublicKey, nil
 	})
-
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
@@ -154,7 +151,6 @@ func DecodeAccessTokenECDSACustomClaims(accessToken string, x, y, crv *string, c
 		}
 		return publicKey, nil
 	})
-
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}

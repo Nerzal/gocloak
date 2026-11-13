@@ -363,11 +363,11 @@ type GetChildGroupsParams struct {
 // for backward compatibility
 func (obj GetGroupsParams) MarshalJSON() ([]byte, error) {
 	type Alias GetGroupsParams
-	a := (Alias)(obj)
+	a := Alias(obj)
 	if a.BriefRepresentation != nil {
-		a.Full = Ptr(!*a.BriefRepresentation)
+		a.Full = new(!*a.BriefRepresentation)
 	} else if a.Full != nil {
-		a.BriefRepresentation = Ptr(!*a.Full)
+		a.BriefRepresentation = new(!*a.Full)
 	}
 	return json.Marshal(a)
 }
@@ -977,8 +977,7 @@ func (p *AuthorizationParameters) FormData() map[string]string {
 }
 
 // AuthorizationResponse represents the response to an authorization request.
-type AuthorizationResponse struct {
-}
+type AuthorizationResponse struct{}
 
 // TokenOptions represents the options to obtain a token
 type TokenOptions struct {
@@ -1007,18 +1006,18 @@ type TokenOptions struct {
 // FormData returns a map of options to be used in SetFormData function
 func (t *TokenOptions) FormData() map[string]string {
 	if !NilOrEmptySlice(t.Scopes) {
-		t.Scope = Ptr(strings.Join(t.Scopes, " "))
+		t.Scope = new(strings.Join(t.Scopes, " "))
 	}
 
 	if !NilOrEmptySlice(t.ResponseTypes) {
-		t.ResponseType = Ptr(strings.Join(t.ResponseTypes, " "))
+		t.ResponseType = new(strings.Join(t.ResponseTypes, " "))
 	}
 
 	if NilOrEmpty(t.ResponseType) {
-		t.ResponseType = Ptr("token")
+		t.ResponseType = new("token")
 	}
 
-	m, _ := json.Marshal(t) //nolint:gosec
+	m, _ := json.Marshal(t) //nolint:gosec // form data must carry the credentials; marshaling string pointers cannot fail
 	var res map[string]string
 	_ = json.Unmarshal(m, &res)
 
@@ -1044,46 +1043,41 @@ type RequestingPartyTokenOptions struct {
 }
 
 // FormData returns a map of options to be used in SetFormData function
-func (t *RequestingPartyTokenOptions) FormData() map[string]string { //nolint:gocognit // can be fixed later
+func (t *RequestingPartyTokenOptions) FormData() map[string]string {
 	if NilOrEmpty(t.GrantType) { // required grant type for RPT
-		t.GrantType = Ptr("urn:ietf:params:oauth:grant-type:uma-ticket")
+		t.GrantType = new("urn:ietf:params:oauth:grant-type:uma-ticket")
 	}
 
 	if t.ResponseIncludeResourceName == nil { // defaults to true if no value set
-		t.ResponseIncludeResourceName = Ptr(true)
+		t.ResponseIncludeResourceName = new(true)
 	}
 
 	res := make(map[string]string)
 	v := reflect.ValueOf(t).Elem()
 	typeOf := v.Type()
 
-	for i := 0; i < v.NumField(); i++ {
+	for i := range v.NumField() {
 		field := v.Field(i)
-		fieldType := typeOf.Field(i)
-		jsonTag := fieldType.Tag.Get("json")
-		if jsonTag == "-" {
+		jsonTag := typeOf.Field(i).Tag.Get("json")
+		if jsonTag == "-" || field.Kind() != reflect.Pointer || field.IsNil() {
 			continue
 		}
 
-		jsonName := strings.Split(jsonTag, ",")[0]
+		jsonName, _, _ := strings.Cut(jsonTag, ",")
 		if jsonName == "" {
-			jsonName = fieldType.Name
+			jsonName = typeOf.Field(i).Name
 		}
 
-		switch field.Kind() {
-		case reflect.Ptr: //nolint
-			if !field.IsNil() {
-				switch field.Elem().Kind() {
-				case reflect.String:
-					res[jsonName] = field.Elem().String()
-				case reflect.Bool:
-					res[jsonName] = strconv.FormatBool(field.Elem().Bool())
-				case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-					res[jsonName] = strconv.FormatUint(field.Elem().Uint(), 10)
-				}
-			}
+		switch field.Elem().Kind() {
+		case reflect.String:
+			res[jsonName] = field.Elem().String()
+		case reflect.Bool:
+			res[jsonName] = strconv.FormatBool(field.Elem().Bool())
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			res[jsonName] = strconv.FormatUint(field.Elem().Uint(), 10)
+		default:
+			// other kinds are not used in RequestingPartyTokenOptions
 		}
-
 	}
 	return res
 }

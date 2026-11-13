@@ -17,13 +17,13 @@ var claims = jwt.MapClaims{
 	"testKey": "testValue",
 }
 
-func generateJWTToken(privKey *ecdsa.PrivateKey, sMethod *jwt.SigningMethodECDSA) (string, error) {
+func generateJWTToken(privKey *ecdsa.PrivateKey, sMethod *jwt.SigningMethodECDSA) string {
 	token := jwt.NewWithClaims(sMethod, claims)
 	tokenString, err := token.SignedString(privKey)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return tokenString, nil
+	return tokenString
 }
 
 func TestDecodeAccessTokenECDSACustomClaims(t *testing.T) {
@@ -52,13 +52,12 @@ func TestDecodeAccessTokenECDSACustomClaims(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.curveStr, func(t *testing.T) {
 			pk, _ := ecdsa.GenerateKey(tc.curveAlg, rand.Reader)
-			token, err := generateJWTToken(pk, tc.jwtSighAlg)
-			require.NoError(t, err)
+			token := generateJWTToken(pk, tc.jwtSighAlg)
 
 			testClaims := jwt.MapClaims{}
 			x := base64.RawURLEncoding.EncodeToString(pk.X.Bytes())
 			y := base64.RawURLEncoding.EncodeToString(pk.Y.Bytes())
-			_, err = DecodeAccessTokenECDSACustomClaims(token, &x, &y, &tc.curveStr, testClaims)
+			_, err := DecodeAccessTokenECDSACustomClaims(token, &x, &y, &tc.curveStr, testClaims)
 			require.NoError(t, err)
 			require.Equal(t, claims, testClaims)
 		})

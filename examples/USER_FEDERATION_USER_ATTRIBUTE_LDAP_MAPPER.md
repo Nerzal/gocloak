@@ -12,8 +12,8 @@ func (tk *Tkc) getLdapMapperOfUserFederation(ctx context.Context, idUserFederati
 
 	// get only typed components for given id
 	mapperGetParameter := gocloak.GetComponentsParams{
-		ProviderType: gocloak.Ptr("org.keycloak.storage.ldap.mappers.LDAPStorageMapper"),
-		ParentID:     gocloak.Ptr(idUserFederation),
+		ProviderType: new("org.keycloak.storage.ldap.mappers.LDAPStorageMapper"),
+		ParentID:     new(idUserFederation),
 	}
 
 	if mapperList, getErr = tk.client.GetComponentsWithParams(ctx, tk.token.AccessToken, tk.realm, mapperGetParameter); getErr != nil {
@@ -69,10 +69,10 @@ func prepareUserModelAttributeMapper(userModelAttribute, ldapAttribute, idUserFe
 	mapperConfig["read.only"] = []string{"true"}
 
 	mapper = gocloak.Component{
-		Name:            gocloak.Ptr(userModelAttribute),
-		ProviderID:      gocloak.Ptr("user-attribute-ldap-mapper"),
-		ProviderType:    gocloak.Ptr("org.keycloak.storage.ldap.mappers.LDAPStorageMapper"),
-		ParentID:        gocloak.Ptr(idUserFederation),
+		Name:            new(userModelAttribute),
+		ProviderID:      new("user-attribute-ldap-mapper"),
+		ProviderType:    new("org.keycloak.storage.ldap.mappers.LDAPStorageMapper"),
+		ParentID:        new(idUserFederation),
 		ComponentConfig: &mapperConfig,
 	}
 
@@ -118,10 +118,10 @@ func (tkc *Tkc) newUserFederation(ctx context.Context) (userFederation gocloak.C
 	userFederationConfig["pagination"] = []string{"true"}
 
 	userFederation = gocloak.Component{
-		Name:            gocloak.Ptr("ldap"),
-		ProviderID:      gocloak.Ptr("ldap"),
-		ProviderType:    gocloak.Ptr("org.keycloak.storage.UserStorageProvider"),
-		ParentID:        gocloak.Ptr(idRealm),
+		Name:            new("ldap"),
+		ProviderID:      new("ldap"),
+		ProviderType:    new("org.keycloak.storage.UserStorageProvider"),
+		ParentID:        new(idRealm),
 		ComponentConfig: &userFederationConfig,
 	}
 

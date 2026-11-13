@@ -9,6 +9,7 @@ import (
 	"github.com/Nerzal/gocloak/v14"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestStringOrArray_Unmarshal(t *testing.T) {
@@ -16,14 +17,14 @@ func TestStringOrArray_Unmarshal(t *testing.T) {
 	jsonString := []byte("\"123\"")
 	var dataString gocloak.StringOrArray
 	err := json.Unmarshal(jsonString, &dataString)
-	assert.NoErrorf(t, err, "Unmarshalling failed for json string: %s", jsonString)
+	require.NoErrorf(t, err, "Unmarshalling failed for json string: %s", jsonString)
 	assert.Len(t, dataString, 1)
 	assert.Equal(t, "123", dataString[0])
 
 	jsonArray := []byte("[\"1\",\"2\",\"3\"]")
 	var dataArray gocloak.StringOrArray
 	err = json.Unmarshal(jsonArray, &dataArray)
-	assert.NoError(t, err, "Unmarshalling failed for json array of strings: %s", jsonArray)
+	require.NoError(t, err, "Unmarshalling failed for json array of strings: %s", jsonArray)
 	assert.Len(t, dataArray, 3)
 	assert.EqualValues(t, []string{"1", "2", "3"}, dataArray)
 }
@@ -32,13 +33,13 @@ func TestStringOrArray_Marshal(t *testing.T) {
 	t.Parallel()
 	dataString := gocloak.StringOrArray{"123"}
 	jsonString, err := json.Marshal(&dataString)
-	assert.NoErrorf(t, err, "Marshaling failed for one string: %s", dataString)
-	assert.Equal(t, "\"123\"", string(jsonString))
+	require.NoErrorf(t, err, "Marshaling failed for one string: %s", dataString)
+	assert.JSONEq(t, "\"123\"", string(jsonString))
 
 	dataArray := gocloak.StringOrArray{"1", "2", "3"}
 	jsonArray, err := json.Marshal(&dataArray)
-	assert.NoError(t, err, "Marshaling failed for array of strings: %s", dataArray)
-	assert.Equal(t, "[\"1\",\"2\",\"3\"]", string(jsonArray))
+	require.NoError(t, err, "Marshaling failed for array of strings: %s", dataArray)
+	assert.JSONEq(t, "[\"1\",\"2\",\"3\"]", string(jsonArray))
 }
 
 func TestEnforcedString_UnmarshalJSON(t *testing.T) {
@@ -72,7 +73,7 @@ func TestEnforcedString_UnmarshalJSON(t *testing.T) {
 	for _, d := range data {
 		var val gocloak.EnforcedString
 		err := json.Unmarshal(d.In, &val)
-		assert.NoErrorf(t, err, "Unmarshalling failed with data: %v", d.In)
+		require.NoErrorf(t, err, "Unmarshalling failed with data: %v", d.In)
 		assert.Equal(t, d.Out, val)
 	}
 }
@@ -82,8 +83,8 @@ func TestEnforcedString_MarshalJSON(t *testing.T) {
 
 	data := gocloak.EnforcedString("foo")
 	jsonString, err := json.Marshal(&data)
-	assert.NoErrorf(t, err, "Unmarshalling failed with data: %v", data)
-	assert.Equal(t, `"foo"`, string(jsonString))
+	require.NoErrorf(t, err, "Unmarshalling failed with data: %v", data)
+	assert.JSONEq(t, `"foo"`, string(jsonString))
 }
 
 func TestGetQueryParams(t *testing.T) {
@@ -96,20 +97,20 @@ func TestGetQueryParams(t *testing.T) {
 	}
 
 	params, err := gocloak.GetQueryParams(TestParams{})
-	assert.NoError(t, err)
-	assert.True(
+	require.NoError(t, err)
+	assert.Empty(
 		t,
-		len(params) == 0,
+		params,
 		"Params must be empty, but got: %+v",
 		params,
 	)
 
 	params, err = gocloak.GetQueryParams(TestParams{
-		IntField:    gocloak.Ptr(1),
-		StringField: gocloak.Ptr("fake"),
-		BoolField:   gocloak.Ptr(true),
+		IntField:    new(1),
+		StringField: new("fake"),
+		BoolField:   new(true),
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(
 		t,
 		map[string]string{
@@ -121,10 +122,10 @@ func TestGetQueryParams(t *testing.T) {
 	)
 
 	params, err = gocloak.GetQueryParams(TestParams{
-		StringField: gocloak.Ptr("fake"),
-		BoolField:   gocloak.Ptr(false),
+		StringField: new("fake"),
+		BoolField:   new(false),
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(
 		t,
 		map[string]string{
@@ -148,12 +149,12 @@ func TestParseAPIErrType(t *testing.T) {
 		},
 		{
 			Name:     "invalid grant",
-			Error:    errors.New("something something invalid_grant something"),
+			Error:    errors.New("something invalid_grant something"),
 			Expected: gocloak.APIErrTypeInvalidGrant,
 		},
 		{
 			Name:     "other error",
-			Error:    errors.New("something something unsupported_grant_type something"),
+			Error:    errors.New("something unsupported_grant_type something"),
 			Expected: gocloak.APIErrTypeUnknown,
 		},
 	}
@@ -184,8 +185,8 @@ func TestRequestingPartyTokenOptionsFormData(t *testing.T) {
 		{
 			name: "With grant type and response include resource name",
 			input: &gocloak.RequestingPartyTokenOptions{
-				GrantType:                   ptr("custom_grant_type"),
-				ResponseIncludeResourceName: ptr(false),
+				GrantType:                   new("custom_grant_type"),
+				ResponseIncludeResourceName: new(false),
 			},
 			expected: map[string]string{
 				"grant_type":                     "custom_grant_type",
@@ -195,9 +196,9 @@ func TestRequestingPartyTokenOptionsFormData(t *testing.T) {
 		{
 			name: "With various field types",
 			input: &gocloak.RequestingPartyTokenOptions{
-				Ticket:                        ptr("ticket123"),
-				PermissionResourceMatchingURI: ptr(true),
-				ResponsePermissionsLimit:      ptr(uint32(10)),
+				Ticket:                        new("ticket123"),
+				PermissionResourceMatchingURI: new(true),
+				ResponsePermissionsLimit:      new(uint32(10)),
 			},
 			expected: map[string]string{
 				"grant_type":                       "urn:ietf:params:oauth:grant-type:uma-ticket",
@@ -223,13 +224,13 @@ func TestStringer(t *testing.T) {
 	// nested structs
 	actions := []string{"someAction", "anotherAction"}
 	access := gocloak.AccessRepresentation{
-		Manage:      gocloak.Ptr(true),
-		Impersonate: gocloak.Ptr(false),
+		Manage:      new(true),
+		Impersonate: new(false),
 	}
 	v := gocloak.PermissionTicketDescriptionRepresentation{
-		ID:               gocloak.Ptr("someID"),
-		CreatedTimeStamp: gocloak.Ptr[int64](1607702613),
-		Enabled:          gocloak.Ptr(true),
+		ID:               new("someID"),
+		CreatedTimeStamp: new(int64(1607702613)),
+		Enabled:          new(true),
 		RequiredActions:  actions,
 		Access:           &access,
 	}
@@ -259,22 +260,22 @@ func TestStringer(t *testing.T) {
 
 	pmappers := []gocloak.ProtocolMapperRepresentation{
 		{
-			Name:   gocloak.Ptr("someMapper"),
+			Name:   new("someMapper"),
 			Config: config,
 		},
 	}
 	clients := []gocloak.Client{
 		{
-			Name:            gocloak.Ptr("someClient"),
+			Name:            new("someClient"),
 			ProtocolMappers: pmappers,
 		},
 		{
-			Name: gocloak.Ptr("AnotherClient"),
+			Name: new("AnotherClient"),
 		},
 	}
 
 	realmRep := gocloak.RealmRepresentation{
-		DisplayName: gocloak.Ptr("someRealm"),
+		DisplayName: new("someRealm"),
 		Clients:     clients,
 	}
 
@@ -397,9 +398,4 @@ func TestStringerOmitEmpty(t *testing.T) {
 	for _, custom := range customs {
 		assert.Equal(t, "{}", custom.String())
 	}
-}
-
-// Helper function for creating pointers to values
-func ptr[T any](v T) *T {
-	return &v
 }
