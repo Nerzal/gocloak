@@ -2737,22 +2737,6 @@ func (g *GoCloak) CreateIdentityProviderMapper(ctx context.Context, token, realm
 	return getID(resp), nil
 }
 
-// GetIdentityProviderMapper gets the mapper by id for the given identity provider alias in a realm
-func (g *GoCloak) GetIdentityProviderMapper(ctx context.Context, token string, realm string, alias string, mapperID string) (*IdentityProviderMapper, error) {
-	const errMessage = "could not get identity provider mapper"
-
-	result := IdentityProviderMapper{}
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&result).
-		Get(g.getAdminRealmURL(realm, "identity-provider", "instances", alias, "mappers", mapperID))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return &result, nil
-}
-
 // DeleteIdentityProviderMapper deletes an instance of an identity provider mapper associated with the given alias and mapper ID
 func (g *GoCloak) DeleteIdentityProviderMapper(ctx context.Context, token, realm, alias, mapperID string) error {
 	const errMessage = "could not delete mapper for identity provider"
@@ -2770,7 +2754,9 @@ func (g *GoCloak) GetIdentityProviderMappers(ctx context.Context, token, realm, 
 	return doRequest[[]*IdentityProviderMapper](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "identity-provider", "instances", alias, "mappers"), errMessage)
 }
 
-// GetIdentityProviderMapperByID gets the mapper of an identity provider
+// GetIdentityProviderMapperByID gets the mapper of an identity provider.
+// Input: ctx [context.Context], token [string], realm [string], alias [string] identity provider alias,
+// mapperID [string]. Output: [*IdentityProviderMapper], [error].
 func (g *GoCloak) GetIdentityProviderMapperByID(ctx context.Context, token, realm, alias, mapperID string) (*IdentityProviderMapper, error) {
 	const errMessage = "could not get identity provider mappers"
 

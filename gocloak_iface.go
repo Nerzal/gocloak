@@ -71,11 +71,17 @@ type GoCloakIface interface {
 	LoginAdminOtp(ctx context.Context, username, password, totp, realm string) (*JWT, error)
 	// LoginClient performs a login with client credentials
 	LoginClient(ctx context.Context, clientID, clientSecret, realm string, scopes ...string) (*JWT, error)
-	// LoginClientTokenExchange will exchange the presented token for a user's token
-	// Requires Token-Exchange is enabled: https://www.keycloak.org/docs/latest/securing_apps/index.html#_token-exchange
+	// LoginClientTokenExchange exchanges the presented access token for a token of the requesting client
+	// (standard token exchange, enabled per client via "standard.token.exchange.enabled").
+	// targetClient is sent as audience only when set; userID (requested_subject) is only supported by the
+	// legacy token exchange v1 preview feature.
+	// See https://www.keycloak.org/securing-apps/token-exchange
+	// Input: ctx [context.Context], clientID [string], token [string] subject access token, clientSecret [string],
+	// realm [string], targetClient [string] optional audience, userID [string] optional subject. Output: [*JWT], [error].
 	LoginClientTokenExchange(ctx context.Context, clientID, token, clientSecret, realm, targetClient, userID string) (*JWT, error)
-	// DirectNakedImpersonationTokenExchange performs "Direct Naked Impersonation"
-	// See: https://www.keycloak.org/docs/latest/securing_apps/index.html#direct-naked-impersonation
+	// DirectNakedImpersonationTokenExchange performs "Direct Naked Impersonation".
+	// Only available with the legacy token exchange v1 (preview feature "token-exchange"); standard token exchange
+	// in Keycloak 26.2+ rejects requests without subject_token.
 	DirectNakedImpersonationTokenExchange(ctx context.Context, clientID, clientSecret, realm, userID string) (*JWT, error)
 	// LoginClientSignedJWT performs a login with client credentials and signed jwt claims
 	LoginClientSignedJWT(ctx context.Context, clientID, realm string, key any, signedMethod jwt.SigningMethod, expiresAt *jwt.NumericDate) (*JWT, error)
@@ -408,7 +414,7 @@ type GoCloakIface interface {
 	AddClientRolesToGroup(ctx context.Context, token, realm, idOfClient, groupID string, roles []Role) error
 	// DeleteClientRolesFromUser adds client-level role mappings
 	DeleteClientRolesFromUser(ctx context.Context, token, realm, idOfClient, userID string, roles []Role) error
-	// DeleteClientRoleFromGroup removes a client role from from the group
+	// DeleteClientRoleFromGroup removes a client role from the group
 	DeleteClientRoleFromGroup(ctx context.Context, token, realm, idOfClient, groupID string, roles []Role) error
 	// AddClientRoleComposite adds roles as composite
 	AddClientRoleComposite(ctx context.Context, token, realm, roleID string, roles []Role) error
@@ -440,8 +446,6 @@ type GoCloakIface interface {
 	ImportIdentityProviderConfigFromFile(ctx context.Context, token, realm, providerID, fileName string, fileBody io.Reader) (map[string]string, error)
 	// CreateIdentityProviderMapper creates an instance of an identity provider mapper associated with the given alias
 	CreateIdentityProviderMapper(ctx context.Context, token, realm, alias string, mapper IdentityProviderMapper) (string, error)
-	// GetIdentityProviderMapper gets the mapper by id for the given identity provider alias in a realm
-	GetIdentityProviderMapper(ctx context.Context, token string, realm string, alias string, mapperID string) (*IdentityProviderMapper, error)
 	// DeleteIdentityProviderMapper deletes an instance of an identity provider mapper associated with the given alias and mapper ID
 	DeleteIdentityProviderMapper(ctx context.Context, token, realm, alias, mapperID string) error
 	// GetIdentityProviderMappers returns list of mappers associated with an identity provider
@@ -662,7 +666,9 @@ type GoCloakIface interface {
 	// DeleteOrganizationInvitation removes the invitation with the specified id from the organization
 	// DELETE /admin/realms/{realm}/organizations/{id}/invitations/{invitation-id}
 	DeleteOrganizationInvitation(ctx context.Context, token, realm, idOfOrganization, idOfInvitation string) error
-	// ResendOrganizationInvitation resends the invitation with the specified id
+	// ResendOrganizationInvitation resends the invitation with the specified id.
+	// Keycloak replaces the invitation on resend: the old id is gone afterwards and the new invitation
+	// has to be looked up again, e.g. via GetOrganizationInvitations filtered by email.
 	// POST /admin/realms/{realm}/organizations/{id}/invitations/{invitation-id}/resend
 	ResendOrganizationInvitation(ctx context.Context, token, realm, idOfOrganization, idOfInvitation string) error
 	// AddOrganizationGroup creates a new top-level group in the organization

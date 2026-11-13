@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/require"
 
 	"github.com/Nerzal/gocloak/v14"
@@ -328,7 +329,7 @@ func Test_MoveCredential(t *testing.T) {
 	require.Equal(t, []string{passwordID, otpID}, pluck(credentials, idOfCredential))
 }
 
-func Test_GetIdentityProviderMapper(t *testing.T) {
+func Test_GetIdentityProviderMapperByID(t *testing.T) {
 	t.Parallel()
 	client, cfg, token := coverageSetup(t)
 	ctx := context.Background()
@@ -343,15 +344,11 @@ func Test_GetIdentityProviderMapper(t *testing.T) {
 	require.NoError(t, err, "CreateIdentityProviderMapper failed")
 	require.NotEmpty(t, mapperID)
 
-	mapper, err := client.GetIdentityProviderMapper(ctx, token, cfg.GoCloak.Realm, alias, mapperID)
-	require.NoError(t, err, "GetIdentityProviderMapper failed")
+	mapper, err := client.GetIdentityProviderMapperByID(ctx, token, cfg.GoCloak.Realm, alias, mapperID)
+	require.NoError(t, err, "GetIdentityProviderMapperByID failed")
 	require.Equal(t, mapperID, gocloak.PString(mapper.ID))
 	require.Equal(t, alias, gocloak.PString(mapper.IdentityProviderAlias))
 	require.Equal(t, "google", mapper.Config["attribute.value"])
-
-	byID, err := client.GetIdentityProviderMapperByID(ctx, token, cfg.GoCloak.Realm, alias, mapperID)
-	require.NoError(t, err, "GetIdentityProviderMapperByID failed")
-	require.Equal(t, byID, mapper, "both getters hit the same endpoint")
 }
 
 func Test_GetGroupByPath_GetChildGroupsMax(t *testing.T) {
@@ -426,15 +423,68 @@ func Test_TokenExchange(t *testing.T) {
 	subject, err := client.Login(ctx, clientID, secret, cfg.GoCloak.Realm, cfg.GoCloak.UserName, cfg.GoCloak.Password)
 	require.NoError(t, err, "Login failed")
 
-	// Direct naked impersonation only exists in legacy token exchange v1 (preview feature "token-exchange",
-	// not enabled on the test server); standard token exchange v2 rejects a request without subject_token.
-	_, err = client.DirectNakedImpersonationTokenExchange(ctx, clientID, secret, cfg.GoCloak.Realm, testUserID)
-	requireAPIErrorCode(t, err, http.StatusBadRequest)
-
 	exchanged, err := client.LoginClientTokenExchange(ctx, clientID, subject.AccessToken, secret, cfg.GoCloak.Realm, "", "")
 	require.NoError(t, err, "LoginClientTokenExchange failed")
 	require.NotEmpty(t, exchanged.AccessToken)
 	require.NotEmpty(t, exchanged.RefreshToken)
+}
+
+// Test_DirectNakedImpersonationTokenExchange needs the legacy token exchange v1 preview feature and grants the
+// impersonate permission via the realm-wide users management permissions, so it does not run in parallel.
+func Test_DirectNakedImpersonationTokenExchange(t *testing.T) {
+	client, cfg, token := coverageSetup(t)
+	ctx := context.Background()
+	SetUpTestUser(t, client)
+	clientID := GetRandomName("impersonation-client")
+	secret := "impersonation-secret"
+	idOfClient := createTestClient(t, client, gocloak.Client{
+		ClientID:     &clientID,
+		Secret:       &secret,
+		PublicClient: new(false),
+	})
+
+	original, err := client.GetUsersManagementPermissions(ctx, token, cfg.GoCloak.Realm)
+	require.NoError(t, err, "GetUsersManagementPermissions failed")
+	t.Cleanup(func() {
+		_, err := client.UpdateUsersManagementPermissions(ctx, GetAdminToken(t, client).AccessToken, cfg.GoCloak.Realm,
+			gocloak.ManagementPermissionRepresentation{Enabled: new(gocloak.PBool(original.Enabled))})
+		require.NoError(t, err, "restoring users management permissions failed")
+	})
+	permissions, err := client.UpdateUsersManagementPermissions(ctx, token, cfg.GoCloak.Realm,
+		gocloak.ManagementPermissionRepresentation{Enabled: new(true)})
+	require.NoError(t, err, "UpdateUsersManagementPermissions failed")
+	impersonateID := permissions.ScopePermissions["impersonate"]
+	require.NotEmpty(t, impersonateID, "users management permissions have no impersonate scope")
+
+	_, err = client.DirectNakedImpersonationTokenExchange(ctx, clientID, secret, cfg.GoCloak.Realm, testUserID)
+	requireAPIErrorCode(t, err, http.StatusForbidden)
+
+	idOfRealmManagement := gocloak.PString(GetClientByClientID(t, client, "realm-management").ID)
+	policy, err := client.CreatePolicy(ctx, token, cfg.GoCloak.Realm, idOfRealmManagement, gocloak.PolicyRepresentation{
+		Name:                       GetRandomNameP("impersonation-policy"),
+		Type:                       new("client"),
+		Logic:                      new(gocloak.Positive),
+		ClientPolicyRepresentation: gocloak.ClientPolicyRepresentation{Clients: []string{idOfClient}},
+	})
+	require.NoError(t, err, "CreatePolicy failed")
+	t.Cleanup(func() {
+		err := client.DeletePolicy(ctx, GetAdminToken(t, client).AccessToken, cfg.GoCloak.Realm, idOfRealmManagement, gocloak.PString(policy.ID))
+		require.NoError(t, err, "DeletePolicy failed")
+	})
+
+	impersonate, err := client.GetPermission(ctx, token, cfg.GoCloak.Realm, idOfRealmManagement, impersonateID)
+	require.NoError(t, err, "GetPermission failed")
+	impersonate.Policies = append(impersonate.Policies, gocloak.PString(policy.ID))
+	err = client.UpdatePermission(ctx, token, cfg.GoCloak.Realm, idOfRealmManagement, *impersonate)
+	require.NoError(t, err, "UpdatePermission failed")
+
+	impersonated, err := client.DirectNakedImpersonationTokenExchange(ctx, clientID, secret, cfg.GoCloak.Realm, testUserID)
+	require.NoError(t, err, "DirectNakedImpersonationTokenExchange failed")
+	claims := jwt.MapClaims{}
+	_, _, err = jwt.NewParser().ParseUnverified(impersonated.AccessToken, claims)
+	require.NoError(t, err, "parsing impersonated access token failed")
+	require.Equal(t, testUserID, claims["sub"])
+	require.Equal(t, clientID, claims["azp"])
 }
 
 func Test_ErrorPaths(t *testing.T) {
