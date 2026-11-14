@@ -1187,6 +1187,18 @@ func Test_LoginSignedJWT(t *testing.T) {
 		&jwt.NumericDate{Time: time.Now().Add(30 * time.Second)},
 	)
 	require.NoError(t, err, "Login failed")
+
+	// a base URL that differs from Keycloak's public hostname (e.g. an internal service URL) must work too
+	internal := gocloak.NewClient(strings.Replace(cfg.HostName, "localhost", "127.0.0.1", 1))
+	_, err = internal.LoginClientSignedJWT(
+		context.Background(),
+		*testClient.ClientID,
+		cfg.GoCloak.Realm,
+		rsaKey,
+		jwt.SigningMethodRS256,
+		&jwt.NumericDate{Time: time.Now().Add(30 * time.Second)},
+	)
+	require.NoError(t, err, "Login via internal URL failed")
 }
 
 func Test_LoginOtp(t *testing.T) {

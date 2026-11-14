@@ -529,3 +529,76 @@ func TestUnit_CheckForError_UnwrapsTransportError(t *testing.T) {
 	require.Zero(t, apiErr.Code)
 	require.ErrorIs(t, err, context.Canceled)
 }
+
+// TestUnit_GetResourcesClient_SingleDeepRequest checks that resources are fetched in one request with deep=true.
+// Input: t [*testing.T]. Output: none.
+func TestUnit_GetResourcesClient_SingleDeepRequest(t *testing.T) {
+	t.Parallel()
+	var queries []url.Values
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		queries = append(queries, r.URL.Query())
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[{"_id":"1","name":"a"},{"_id":"2","name":"b"}]`))
+	}))
+	defer server.Close()
+
+	resources, err := NewClient(server.URL).GetResourcesClient(context.Background(), "token", "r", GetResourceParams{Name: new("a")})
+	require.NoError(t, err)
+	require.Equal(t, []url.Values{{"deep": {"true"}, "name": {"a"}}}, queries)
+	require.Len(t, resources, 2)
+	require.Equal(t, "2", PString(resources[1].ID))
+}
+
+// TestUnit_LoginClientSignedJWT_AudienceIsPublicIssuer checks that the client assertion audience is the issuer
+// Keycloak publishes, not the base URL the client was created with.
+// Input: t [*testing.T]. Output: none.
+func TestUnit_LoginClientSignedJWT_AudienceIsPublicIssuer(t *testing.T) {
+	t.Parallel()
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+
+	var audience []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/realms/r":
+			_, _ = w.Write([]byte(`{"realm":"r","token-service":"https://auth.example.com/realms/r/protocol/openid-connect"}`))
+		case "/realms/r/protocol/openid-connect/token":
+			claims := jwt.RegisteredClaims{}
+			_, _, err := jwt.NewParser().ParseUnverified(r.FormValue("client_assertion"), &claims)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			audience = claims.Audience
+			_, _ = w.Write([]byte(`{"access_token":"x"}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	_, err = NewClient(server.URL).LoginClientSignedJWT(context.Background(), "client", "r", key, jwt.SigningMethodRS256,
+		jwt.NewNumericDate(time.Now().Add(time.Minute)))
+	require.NoError(t, err)
+	require.Equal(t, []string{"https://auth.example.com/realms/r"}, audience)
+}
+
+// TestUnit_UpdateRequiresID checks that update methods reject a missing ID before sending a request.
+// Input: t [*testing.T]. Output: none.
+func TestUnit_UpdateRequiresID(t *testing.T) {
+	t.Parallel()
+	client := NewClient("http://127.0.0.1:0")
+	ctx := context.Background()
+
+	updates := map[string]error{
+		"UpdateUser":                      client.UpdateUser(ctx, "token", "r", User{Username: new("bob")}),
+		"UpdateClientScope":               client.UpdateClientScope(ctx, "token", "r", ClientScope{}),
+		"UpdateComponent":                 client.UpdateComponent(ctx, "token", "r", Component{}),
+		"UpdateIdentityProviderMapper":    client.UpdateIdentityProviderMapper(ctx, "token", "r", "alias", IdentityProviderMapper{}),
+		"UpdateClientScopeProtocolMapper": client.UpdateClientScopeProtocolMapper(ctx, "token", "r", "scope", ProtocolMappers{}),
+	}
+	for name, err := range updates {
+		require.ErrorContains(t, err, "required", name)
+	}
+}

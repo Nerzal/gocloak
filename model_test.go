@@ -235,7 +235,16 @@ func TestRequestingPartyTokenOptionsFormData(t *testing.T) {
 	}
 }
 
-func TestStringer(t *testing.T) {
+// prettyJSON marshals v as tab-indented JSON. Input: t [*testing.T], v [any]. Output: [string].
+func prettyJSON(t *testing.T, v any) string {
+	t.Helper()
+	b, err := json.MarshalIndent(v, "", "	")
+	require.NoError(t, err)
+	return string(b)
+}
+
+// TestPrettyJSON checks that nested optional fields are omitted when marshaling models.
+func TestPrettyJSON(t *testing.T) {
 	// nested structs
 	actions := []string{"someAction", "anotherAction"}
 	access := gocloak.AccessRepresentation{
@@ -250,7 +259,7 @@ func TestStringer(t *testing.T) {
 		Access:           &access,
 	}
 
-	str := v.String()
+	str := prettyJSON(t, &v)
 
 	expectedStr := `{
 	"id": "someID",
@@ -294,7 +303,7 @@ func TestStringer(t *testing.T) {
 		Clients:     clients,
 	}
 
-	str = realmRep.String()
+	str = prettyJSON(t, &realmRep)
 	expectedStr = `{
 	"clients": [
 		{
@@ -318,12 +327,9 @@ func TestStringer(t *testing.T) {
 	assert.Equal(t, expectedStr, str)
 }
 
-type Stringable interface {
-	String() string
-}
-
-func TestStringerOmitEmpty(t *testing.T) {
-	customs := []Stringable{
+// TestModelsOmitEmpty checks that zero-value models marshal to an empty JSON object.
+func TestModelsOmitEmpty(t *testing.T) {
+	customs := []any{
 		&gocloak.CertResponseKey{},
 		&gocloak.CertResponse{},
 		&gocloak.IssuerResponse{},
@@ -337,9 +343,6 @@ func TestStringerOmitEmpty(t *testing.T) {
 		&gocloak.KeyStoreConfig{},
 		&gocloak.ActiveKeys{},
 		&gocloak.Key{},
-		&gocloak.Attributes{},
-		&gocloak.Access{},
-		&gocloak.UserGroup{},
 		&gocloak.ExecuteActionsEmail{},
 		&gocloak.Group{},
 		&gocloak.GroupsCount{},
@@ -411,7 +414,7 @@ func TestStringerOmitEmpty(t *testing.T) {
 	}
 
 	for _, custom := range customs {
-		assert.Equal(t, "{}", custom.String())
+		assert.Equal(t, "{}", prettyJSON(t, custom))
 	}
 }
 
@@ -480,24 +483,6 @@ func TestModel_TokenOptionsFormData(t *testing.T) {
 
 	empty := gocloak.TokenOptions{}
 	assert.Equal(t, map[string]string{"response_type": "token"}, empty.FormData())
-}
-
-func TestModel_AuthorizationParametersFormData(t *testing.T) {
-	t.Parallel()
-	params := gocloak.AuthorizationParameters{
-		ResponseType: new("code"),
-		ClientID:     new("client"),
-		Scope:        new("openid"),
-		RedirectURI:  new("https://example.com/cb"),
-		State:        new("state"),
-	}
-	assert.Equal(t, map[string]string{
-		"response_type": "code",
-		"client_id":     "client",
-		"scope":         "openid",
-		"redirect_uri":  "https://example.com/cb",
-		"state":         "state",
-	}, params.FormData())
 }
 
 func TestModel_OrganizationInviteUserParamsFormData(t *testing.T) {

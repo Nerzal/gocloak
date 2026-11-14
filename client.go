@@ -131,12 +131,14 @@ func (g *GoCloak) GetRequestWithBasicAuth(ctx context.Context, clientID, clientS
 	return req
 }
 
-func (g *GoCloak) getRequestingParty(ctx context.Context, token string, realm string, options RequestingPartyTokenOptions, res any) (*resty.Response, error) {
-	return g.GetRequestWithBearerAuth(ctx, token).
+// getRequestingParty posts an UMA ticket request to the token endpoint and decodes the response into a new T.
+// Input: ctx [context.Context], g [*GoCloak], token [string], realm [string], options [RequestingPartyTokenOptions],
+// errMessage [string] error prefix. Output: [T] decoded result, [error] *APIError if the call fails.
+func getRequestingParty[T any](ctx context.Context, g *GoCloak, token, realm string, options RequestingPartyTokenOptions, errMessage string) (T, error) {
+	return doRequest[T](g.GetRequestWithBearerAuth(ctx, token).
 		SetFormData(options.FormData()).
-		SetFormDataFromValues(url.Values{"permission": options.Permissions}).
-		SetResult(&res).
-		Post(g.getOIDCURL(realm, g.Config.tokenEndpoint))
+		SetFormDataFromValues(url.Values{"permission": options.Permissions}),
+		http.MethodPost, g.getOIDCURL(realm, g.Config.tokenEndpoint), errMessage)
 }
 
 func checkForError(resp *resty.Response, err error, errMessage string) error {
@@ -197,6 +199,25 @@ func doRequestPtr[T any](req *resty.Request, method, url, errMessage string) (*T
 		return nil, err
 	}
 	return &result, nil
+}
+
+// doNoResult sends req with the given HTTP method to url and ignores the response body.
+// Input: req [*resty.Request] prepared request, method [string] HTTP method, url [string], errMessage [string] error prefix.
+// Output: [error] *APIError if the call fails.
+func doNoResult(req *resty.Request, method, url, errMessage string) error {
+	resp, err := req.Execute(method, url)
+	return checkForError(resp, err, errMessage)
+}
+
+// doCreate posts req to url and returns the ID of the created resource from the Location header.
+// Input: req [*resty.Request] prepared request, url [string], errMessage [string] error prefix.
+// Output: [string] ID of the created resource, [error] *APIError if the call fails.
+func doCreate(req *resty.Request, url, errMessage string) (string, error) {
+	resp, err := req.Post(url)
+	if err = checkForError(resp, err, errMessage); err != nil {
+		return "", err
+	}
+	return getID(resp), nil
 }
 
 func getID(resp *resty.Response) string {
@@ -553,7 +574,6 @@ func (g *GoCloak) DecodeAccessTokenCustomClaims(ctx context.Context, accessToken
 func (g *GoCloak) GetToken(ctx context.Context, realm string, options TokenOptions) (*JWT, error) {
 	const errMessage = "could not get token"
 
-	var token JWT
 	var req *resty.Request
 
 	if !NilOrEmpty(options.ClientSecret) {
@@ -565,60 +585,32 @@ func (g *GoCloak) GetToken(ctx context.Context, realm string, options TokenOptio
 		req = g.GetRequest(ctx)
 	}
 
-	resp, err := req.SetFormData(options.FormData()).
-		SetResult(&token).
-		Post(g.getOIDCURL(realm, g.Config.tokenEndpoint))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return &token, nil
+	return doRequestPtr[JWT](req.SetFormData(options.FormData()), http.MethodPost, g.getOIDCURL(realm, g.Config.tokenEndpoint), errMessage)
 }
 
 // GetRequestingPartyToken returns a requesting party token with permissions granted by the server
 func (g *GoCloak) GetRequestingPartyToken(ctx context.Context, token, realm string, options RequestingPartyTokenOptions) (*JWT, error) {
 	const errMessage = "could not get requesting party token"
 
-	var res JWT
-
-	resp, err := g.getRequestingParty(ctx, token, realm, options, &res)
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return &res, nil
+	return getRequestingParty[*JWT](ctx, g, token, realm, options, errMessage)
 }
 
 // GetRequestingPartyPermissions returns a requesting party permissions granted by the server
 func (g *GoCloak) GetRequestingPartyPermissions(ctx context.Context, token, realm string, options RequestingPartyTokenOptions) ([]RequestingPartyPermission, error) {
 	const errMessage = "could not get requesting party token"
 
-	var res []RequestingPartyPermission
-
 	options.ResponseMode = new("permissions")
 
-	resp, err := g.getRequestingParty(ctx, token, realm, options, &res)
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-	return res, nil
+	return getRequestingParty[[]RequestingPartyPermission](ctx, g, token, realm, options, errMessage)
 }
 
 // GetRequestingPartyPermissionDecision returns a requesting party permission decision granted by the server
 func (g *GoCloak) GetRequestingPartyPermissionDecision(ctx context.Context, token, realm string, options RequestingPartyTokenOptions) (*RequestingPartyPermissionDecision, error) {
 	const errMessage = "could not get requesting party token"
 
-	var res RequestingPartyPermissionDecision
-
 	options.ResponseMode = new("decision")
 
-	resp, err := g.getRequestingParty(ctx, token, realm, options, &res)
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	return &res, nil
+	return getRequestingParty[*RequestingPartyPermissionDecision](ctx, g, token, realm, options, errMessage)
 }
 
 // RefreshToken refreshes the given token.
@@ -713,6 +705,12 @@ func (g *GoCloak) LoginClientSignedJWT(
 	signedMethod jwt.SigningMethod,
 	expiresAt *jwt.NumericDate,
 ) (*JWT, error) {
+	// Keycloak expects its public issuer as audience, which differs from basePath behind proxies or internal URLs
+	issuer, err := g.GetIssuer(ctx, realm)
+	if err != nil {
+		return nil, err
+	}
+
 	claims := jwt.RegisteredClaims{
 		ExpiresAt: expiresAt,
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -720,7 +718,7 @@ func (g *GoCloak) LoginClientSignedJWT(
 		Subject:   clientID,
 		ID:        rand.Text(),
 		Audience: jwt.ClaimStrings{
-			g.getRealmURL(realm),
+			strings.TrimSuffix(PString(issuer.TokenService), "/protocol/openid-connect"),
 		},
 	}
 	assertion, err := jwx.SignClaims(claims, key, signedMethod)
@@ -764,58 +762,45 @@ func (g *GoCloak) LoginOtp(ctx context.Context, clientID, clientSecret, realm, u
 func (g *GoCloak) Logout(ctx context.Context, clientID, clientSecret, realm, refreshToken string) error {
 	const errMessage = "could not logout"
 
-	resp, err := g.GetRequestWithBasicAuth(ctx, clientID, clientSecret).
+	return doNoResult(g.GetRequestWithBasicAuth(ctx, clientID, clientSecret).
 		SetFormData(map[string]string{
 			"client_id":     clientID,
 			"refresh_token": refreshToken,
-		}).
-		Post(g.getOIDCURL(realm, g.Config.logoutEndpoint))
-
-	return checkForError(resp, err, errMessage)
+		}),
+		http.MethodPost, g.getOIDCURL(realm, g.Config.logoutEndpoint), errMessage)
 }
 
 // LogoutPublicClient performs a logout using a public client and the accessToken.
 func (g *GoCloak) LogoutPublicClient(ctx context.Context, clientID, realm, accessToken, refreshToken string) error {
 	const errMessage = "could not logout public client"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, accessToken).
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, accessToken).
 		SetFormData(map[string]string{
 			"client_id":     clientID,
 			"refresh_token": refreshToken,
-		}).
-		Post(g.getOIDCURL(realm, g.Config.logoutEndpoint))
-
-	return checkForError(resp, err, errMessage)
+		}),
+		http.MethodPost, g.getOIDCURL(realm, g.Config.logoutEndpoint), errMessage)
 }
 
 // LogoutAllSessions logs out all sessions of a user given an id.
 func (g *GoCloak) LogoutAllSessions(ctx context.Context, accessToken, realm, userID string) error {
 	const errMessage = "could not logout"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, accessToken).
-		Post(g.getAdminRealmURL(realm, "users", userID, "logout"))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, accessToken), http.MethodPost, g.getAdminRealmURL(realm, "users", userID, "logout"), errMessage)
 }
 
 // RevokeUserConsents revokes the given user consent.
 func (g *GoCloak) RevokeUserConsents(ctx context.Context, accessToken, realm, userID, clientID string) error {
 	const errMessage = "could not revoke consents"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, accessToken).
-		Delete(g.getAdminRealmURL(realm, "users", userID, "consents", clientID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, accessToken), http.MethodDelete, g.getAdminRealmURL(realm, "users", userID, "consents", clientID), errMessage)
 }
 
 // LogoutUserSession logs out a single sessions of a user given a session id
 func (g *GoCloak) LogoutUserSession(ctx context.Context, accessToken, realm, session string) error {
 	const errMessage = "could not logout"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, accessToken).
-		Delete(g.getAdminRealmURL(realm, "sessions", session))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, accessToken), http.MethodDelete, g.getAdminRealmURL(realm, "sessions", session), errMessage)
 }
 
 // ExecuteActionsEmail executes an actions email
@@ -831,12 +816,10 @@ func (g *GoCloak) ExecuteActionsEmail(ctx context.Context, token, realm string, 
 		return fmt.Errorf("%s: %w", errMessage, err)
 	}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
 		SetBody(params.Actions).
-		SetQueryParams(queryParams).
-		Put(g.getAdminRealmURL(realm, "users", *params.UserID, "execute-actions-email"))
-
-	return checkForError(resp, err, errMessage)
+		SetQueryParams(queryParams),
+		http.MethodPut, g.getAdminRealmURL(realm, "users", *params.UserID, "execute-actions-email"), errMessage)
 }
 
 // SendVerifyEmail sends a verification e-mail to a user.
@@ -856,70 +839,45 @@ func (g *GoCloak) SendVerifyEmail(ctx context.Context, token, realm, userID stri
 		}
 	}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetQueryParams(queryParams).
-		Put(g.getAdminRealmURL(realm, "users", userID, "send-verify-email"))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetQueryParams(queryParams),
+		http.MethodPut, g.getAdminRealmURL(realm, "users", userID, "send-verify-email"), errMessage)
 }
 
 // CreateGroup creates a new group.
 func (g *GoCloak) CreateGroup(ctx context.Context, token, realm string, group Group) (string, error) {
 	const errMessage = "could not create group"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(group).
-		Post(g.getAdminRealmURL(realm, "groups"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return "", err
-	}
-	return getID(resp), nil
+	return doCreate(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(group),
+		g.getAdminRealmURL(realm, "groups"), errMessage)
 }
 
 // CreateChildGroup creates a new child group
 func (g *GoCloak) CreateChildGroup(ctx context.Context, token, realm, groupID string, group Group) (string, error) {
 	const errMessage = "could not create child group"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(group).
-		Post(g.getAdminRealmURL(realm, "groups", groupID, "children"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return "", err
-	}
-
-	return getID(resp), nil
+	return doCreate(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(group),
+		g.getAdminRealmURL(realm, "groups", groupID, "children"), errMessage)
 }
 
 // CreateComponent creates the given component.
 func (g *GoCloak) CreateComponent(ctx context.Context, token, realm string, component Component) (string, error) {
 	const errMessage = "could not create component"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(component).
-		Post(g.getAdminRealmURL(realm, "components"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return "", err
-	}
-
-	return getID(resp), nil
+	return doCreate(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(component),
+		g.getAdminRealmURL(realm, "components"), errMessage)
 }
 
 // CreateClient creates the given client.
 func (g *GoCloak) CreateClient(ctx context.Context, accessToken, realm string, newClient Client) (string, error) {
 	const errMessage = "could not create client"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, accessToken).
-		SetBody(newClient).
-		Post(g.getAdminRealmURL(realm, "clients"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return "", err
-	}
-
-	return getID(resp), nil
+	return doCreate(g.GetRequestWithBearerAuth(ctx, accessToken).
+		SetBody(newClient),
+		g.getAdminRealmURL(realm, "clients"), errMessage)
 }
 
 // CreateClientRepresentation creates a new client representation
@@ -935,45 +893,27 @@ func (g *GoCloak) CreateClientRepresentation(ctx context.Context, token, realm s
 func (g *GoCloak) CreateClientRole(ctx context.Context, token, realm, idOfClient string, role Role) (string, error) {
 	const errMessage = "could not create client role"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(role).
-		Post(g.getAdminRealmURL(realm, "clients", idOfClient, "roles"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return "", err
-	}
-
-	return getID(resp), nil
+	return doCreate(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(role),
+		g.getAdminRealmURL(realm, "clients", idOfClient, "roles"), errMessage)
 }
 
 // CreateClientScope creates a new client scope
 func (g *GoCloak) CreateClientScope(ctx context.Context, token, realm string, scope ClientScope) (string, error) {
 	const errMessage = "could not create client scope"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(scope).
-		Post(g.getAdminRealmURL(realm, "client-scopes"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return "", err
-	}
-
-	return getID(resp), nil
+	return doCreate(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(scope),
+		g.getAdminRealmURL(realm, "client-scopes"), errMessage)
 }
 
 // CreateClientScopeProtocolMapper creates a new protocolMapper under the given client scope
 func (g *GoCloak) CreateClientScopeProtocolMapper(ctx context.Context, token, realm, scopeID string, protocolMapper ProtocolMappers) (string, error) {
 	const errMessage = "could not create client scope protocol mapper"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(protocolMapper).
-		Post(g.getAdminRealmURL(realm, "client-scopes", scopeID, "protocol-mappers", "models"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return "", err
-	}
-
-	return getID(resp), nil
+	return doCreate(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(protocolMapper),
+		g.getAdminRealmURL(realm, "client-scopes", scopeID, "protocol-mappers", "models"), errMessage)
 }
 
 // UpdateGroup updates the given group.
@@ -983,11 +923,9 @@ func (g *GoCloak) UpdateGroup(ctx context.Context, token, realm string, updatedG
 	if NilOrEmpty(updatedGroup.ID) {
 		return fmt.Errorf("%s: ID of a group required", errMessage)
 	}
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(updatedGroup).
-		Put(g.getAdminRealmURL(realm, "groups", PString(updatedGroup.ID)))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(updatedGroup),
+		http.MethodPut, g.getAdminRealmURL(realm, "groups", PString(updatedGroup.ID)), errMessage)
 }
 
 // UpdateGroupManagementPermissions updates the given group management permissions
@@ -1007,11 +945,9 @@ func (g *GoCloak) UpdateClient(ctx context.Context, token, realm string, updated
 		return fmt.Errorf("%s: ID of a client required", errMessage)
 	}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(updatedClient).
-		Put(g.getAdminRealmURL(realm, "clients", PString(updatedClient.ID)))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(updatedClient),
+		http.MethodPut, g.getAdminRealmURL(realm, "clients", PString(updatedClient.ID)), errMessage)
 }
 
 // UpdateClientRepresentation updates the given client representation
@@ -1040,103 +976,84 @@ func (g *GoCloak) UpdateClientManagementPermissions(ctx context.Context, accessT
 func (g *GoCloak) UpdateRole(ctx context.Context, token, realm, idOfClient string, role Role) error {
 	const errMessage = "could not update role"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(role).
-		Put(g.getAdminRealmURL(realm, "clients", idOfClient, "roles", PString(role.Name)))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(role),
+		http.MethodPut, g.getAdminRealmURL(realm, "clients", idOfClient, "roles", PString(role.Name)), errMessage)
 }
 
 // UpdateClientScope updates the given client scope.
 func (g *GoCloak) UpdateClientScope(ctx context.Context, token, realm string, scope ClientScope) error {
 	const errMessage = "could not update client scope"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(scope).
-		Put(g.getAdminRealmURL(realm, "client-scopes", PString(scope.ID)))
+	if NilOrEmpty(scope.ID) {
+		return fmt.Errorf("%s: ID of a client scope required", errMessage)
+	}
 
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(scope),
+		http.MethodPut, g.getAdminRealmURL(realm, "client-scopes", PString(scope.ID)), errMessage)
 }
 
 // UpdateClientScopeProtocolMapper updates the given protocol mapper for a client scope
 func (g *GoCloak) UpdateClientScopeProtocolMapper(ctx context.Context, token, realm, scopeID string, protocolMapper ProtocolMappers) error {
 	const errMessage = "could not update client scope"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(protocolMapper).
-		Put(g.getAdminRealmURL(realm, "client-scopes", scopeID, "protocol-mappers", "models", PString(protocolMapper.ID)))
+	if NilOrEmpty(protocolMapper.ID) {
+		return fmt.Errorf("%s: ID of a protocol mapper required", errMessage)
+	}
 
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(protocolMapper),
+		http.MethodPut, g.getAdminRealmURL(realm, "client-scopes", scopeID, "protocol-mappers", "models", PString(protocolMapper.ID)), errMessage)
 }
 
 // DeleteGroup deletes the group with the given groupID.
 func (g *GoCloak) DeleteGroup(ctx context.Context, token, realm, groupID string) error {
 	const errMessage = "could not delete group"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "groups", groupID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "groups", groupID), errMessage)
 }
 
 // DeleteClient deletes a given client
 func (g *GoCloak) DeleteClient(ctx context.Context, token, realm, idOfClient string) error {
 	const errMessage = "could not delete client"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "clients", idOfClient))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "clients", idOfClient), errMessage)
 }
 
 // DeleteComponent deletes the component with the given id.
 func (g *GoCloak) DeleteComponent(ctx context.Context, token, realm, componentID string) error {
 	const errMessage = "could not delete component"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "components", componentID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "components", componentID), errMessage)
 }
 
 // DeleteClientRepresentation deletes a given client representation.
 func (g *GoCloak) DeleteClientRepresentation(ctx context.Context, accessToken, realm, clientID string) error {
 	const errMessage = "could not delete client representation"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, accessToken).
-		Delete(g.getRealmURL(realm, "clients-registrations", "default", clientID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, accessToken), http.MethodDelete, g.getRealmURL(realm, "clients-registrations", "default", clientID), errMessage)
 }
 
 // DeleteClientRole deletes a given role.
 func (g *GoCloak) DeleteClientRole(ctx context.Context, token, realm, idOfClient, roleName string) error {
 	const errMessage = "could not delete client role"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "clients", idOfClient, "roles", roleName))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "clients", idOfClient, "roles", roleName), errMessage)
 }
 
 // DeleteClientScope deletes the scope with the given id.
 func (g *GoCloak) DeleteClientScope(ctx context.Context, token, realm, scopeID string) error {
 	const errMessage = "could not delete client scope"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "client-scopes", scopeID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "client-scopes", scopeID), errMessage)
 }
 
 // DeleteClientScopeProtocolMapper deletes the given protocol mapper from the client scope
 func (g *GoCloak) DeleteClientScopeProtocolMapper(ctx context.Context, token, realm, scopeID, protocolMapperID string) error {
 	const errMessage = "could not delete client scope"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "client-scopes", scopeID, "protocol-mappers", "models", protocolMapperID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "client-scopes", scopeID, "protocol-mappers", "models", protocolMapperID), errMessage)
 }
 
 // GetClient returns a client
@@ -1171,20 +1088,14 @@ func (g *GoCloak) GetClientsDefaultScopes(ctx context.Context, token, realm, idO
 func (g *GoCloak) AddDefaultScopeToClient(ctx context.Context, token, realm, idOfClient, scopeID string) error {
 	const errMessage = "could not add default scope to client"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Put(g.getAdminRealmURL(realm, "clients", idOfClient, "default-client-scopes", scopeID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodPut, g.getAdminRealmURL(realm, "clients", idOfClient, "default-client-scopes", scopeID), errMessage)
 }
 
 // RemoveDefaultScopeFromClient removes a client scope from the list of client's default scopes
 func (g *GoCloak) RemoveDefaultScopeFromClient(ctx context.Context, token, realm, idOfClient, scopeID string) error {
 	const errMessage = "could not remove default scope from client"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "clients", idOfClient, "default-client-scopes", scopeID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "clients", idOfClient, "default-client-scopes", scopeID), errMessage)
 }
 
 // GetClientsOptionalScopes returns a list of the client's optional scopes
@@ -1198,20 +1109,14 @@ func (g *GoCloak) GetClientsOptionalScopes(ctx context.Context, token, realm, id
 func (g *GoCloak) AddOptionalScopeToClient(ctx context.Context, token, realm, idOfClient, scopeID string) error {
 	const errMessage = "could not add optional scope to client"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Put(g.getAdminRealmURL(realm, "clients", idOfClient, "optional-client-scopes", scopeID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodPut, g.getAdminRealmURL(realm, "clients", idOfClient, "optional-client-scopes", scopeID), errMessage)
 }
 
 // RemoveOptionalScopeFromClient deletes a client scope from the list of client's optional scopes
 func (g *GoCloak) RemoveOptionalScopeFromClient(ctx context.Context, token, realm, idOfClient, scopeID string) error {
 	const errMessage = "could not remove optional scope from client"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "clients", idOfClient, "optional-client-scopes", scopeID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "clients", idOfClient, "optional-client-scopes", scopeID), errMessage)
 }
 
 // GetDefaultOptionalClientScopes returns a list of default realm optional scopes
@@ -1288,22 +1193,18 @@ func (g *GoCloak) GetClientScopeMappingsRealmRolesAvailable(ctx context.Context,
 func (g *GoCloak) CreateClientScopeMappingsRealmRoles(ctx context.Context, token, realm, idOfClient string, roles []Role) error {
 	const errMessage = "could not create realm-level roles to the client’s scope"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(roles).
-		Post(g.getAdminRealmURL(realm, "clients", idOfClient, "scope-mappings", "realm"))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(roles),
+		http.MethodPost, g.getAdminRealmURL(realm, "clients", idOfClient, "scope-mappings", "realm"), errMessage)
 }
 
 // DeleteClientScopeMappingsRealmRoles deletes realm-level roles from the client’s scope
 func (g *GoCloak) DeleteClientScopeMappingsRealmRoles(ctx context.Context, token, realm, idOfClient string, roles []Role) error {
 	const errMessage = "could not delete realm-level roles from the client’s scope"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(roles).
-		Delete(g.getAdminRealmURL(realm, "clients", idOfClient, "scope-mappings", "realm"))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(roles),
+		http.MethodDelete, g.getAdminRealmURL(realm, "clients", idOfClient, "scope-mappings", "realm"), errMessage)
 }
 
 // GetClientScopeMappingsClientRoles returns roles associated with a client’s scope
@@ -1324,22 +1225,18 @@ func (g *GoCloak) GetClientScopeMappingsClientRolesAvailable(ctx context.Context
 func (g *GoCloak) CreateClientScopeMappingsClientRoles(ctx context.Context, token, realm, idOfClient, idOfSelectedClient string, roles []Role) error {
 	const errMessage = "could not create client-level roles from the client’s scope"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(roles).
-		Post(g.getAdminRealmURL(realm, "clients", idOfClient, "scope-mappings", "clients", idOfSelectedClient))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(roles),
+		http.MethodPost, g.getAdminRealmURL(realm, "clients", idOfClient, "scope-mappings", "clients", idOfSelectedClient), errMessage)
 }
 
 // DeleteClientScopeMappingsClientRoles deletes client-level roles from the client’s scope
 func (g *GoCloak) DeleteClientScopeMappingsClientRoles(ctx context.Context, token, realm, idOfClient, idOfSelectedClient string, roles []Role) error {
 	const errMessage = "could not delete client-level roles from the client’s scope"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(roles).
-		Delete(g.getAdminRealmURL(realm, "clients", idOfClient, "scope-mappings", "clients", idOfSelectedClient))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(roles),
+		http.MethodDelete, g.getAdminRealmURL(realm, "clients", idOfClient, "scope-mappings", "clients", idOfSelectedClient), errMessage)
 }
 
 // GetClientSecret returns a client's secret
@@ -1405,36 +1302,25 @@ func (g *GoCloak) GetClientUserSessions(ctx context.Context, token, realm, idOfC
 func (g *GoCloak) CreateClientProtocolMapper(ctx context.Context, token, realm, idOfClient string, mapper ProtocolMapperRepresentation) (string, error) {
 	const errMessage = "could not create client protocol mapper"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(mapper).
-		Post(g.getAdminRealmURL(realm, "clients", idOfClient, "protocol-mappers", "models"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return "", err
-	}
-
-	return getID(resp), nil
+	return doCreate(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(mapper),
+		g.getAdminRealmURL(realm, "clients", idOfClient, "protocol-mappers", "models"), errMessage)
 }
 
 // UpdateClientProtocolMapper updates a protocol mapper in client scope
 func (g *GoCloak) UpdateClientProtocolMapper(ctx context.Context, token, realm, idOfClient, mapperID string, mapper ProtocolMapperRepresentation) error {
 	const errMessage = "could not update client protocol mapper"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(mapper).
-		Put(g.getAdminRealmURL(realm, "clients", idOfClient, "protocol-mappers", "models", mapperID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(mapper),
+		http.MethodPut, g.getAdminRealmURL(realm, "clients", idOfClient, "protocol-mappers", "models", mapperID), errMessage)
 }
 
 // DeleteClientProtocolMapper deletes a protocol mapper in client scope
 func (g *GoCloak) DeleteClientProtocolMapper(ctx context.Context, token, realm, idOfClient, mapperID string) error {
 	const errMessage = "could not delete client protocol mapper"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "clients", idOfClient, "protocol-mappers", "models", mapperID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "clients", idOfClient, "protocol-mappers", "models", mapperID), errMessage)
 }
 
 // GetKeyStoreConfig get keystoreconfig of the realm
@@ -1475,11 +1361,13 @@ func (g *GoCloak) GetComponent(ctx context.Context, token, realm string, compone
 func (g *GoCloak) UpdateComponent(ctx context.Context, token, realm string, component Component) error {
 	const errMessage = "could not update component"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(component).
-		Put(g.getAdminRealmURL(realm, "components", PString(component.ID)))
+	if NilOrEmpty(component.ID) {
+		return fmt.Errorf("%s: ID of a component required", errMessage)
+	}
 
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(component),
+		http.MethodPut, g.getAdminRealmURL(realm, "components", PString(component.ID)), errMessage)
 }
 
 // GetDefaultGroups returns a list of default groups
@@ -1493,20 +1381,14 @@ func (g *GoCloak) GetDefaultGroups(ctx context.Context, token, realm string) ([]
 func (g *GoCloak) AddDefaultGroup(ctx context.Context, token, realm, groupID string) error {
 	const errMessage = "could not add default group"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Put(g.getAdminRealmURL(realm, "default-groups", groupID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodPut, g.getAdminRealmURL(realm, "default-groups", groupID), errMessage)
 }
 
 // RemoveDefaultGroup removes group from the list of default groups
 func (g *GoCloak) RemoveDefaultGroup(ctx context.Context, token, realm, groupID string) error {
 	const errMessage = "could not remove default group"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "default-groups", groupID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "default-groups", groupID), errMessage)
 }
 
 func (g *GoCloak) getRoleMappings(ctx context.Context, token, realm, path, objectID string) (*MappingsRepresentation, error) {
@@ -1734,15 +1616,9 @@ func UserAttributeContains(attributes map[string][]string, attribute, value stri
 func (g *GoCloak) CreateRealmRole(ctx context.Context, token string, realm string, role Role) (string, error) {
 	const errMessage = "could not create realm role"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(role).
-		Post(g.getAdminRealmURL(realm, "roles"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return "", err
-	}
-
-	return getID(resp), nil
+	return doCreate(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(role),
+		g.getAdminRealmURL(realm, "roles"), errMessage)
 }
 
 // GetRealmRole returns a role from a realm by role's name
@@ -1791,98 +1667,79 @@ func (g *GoCloak) GetRealmRolesByGroupID(ctx context.Context, token, realm, grou
 func (g *GoCloak) UpdateRealmRole(ctx context.Context, token, realm, roleName string, role Role) error {
 	const errMessage = "could not update realm role"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(role).
-		Put(g.getAdminRealmURL(realm, "roles", roleName))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(role),
+		http.MethodPut, g.getAdminRealmURL(realm, "roles", roleName), errMessage)
 }
 
 // UpdateRealmRoleByID updates a role in a realm by role's ID
 func (g *GoCloak) UpdateRealmRoleByID(ctx context.Context, token, realm, roleID string, role Role) error {
 	const errMessage = "could not update realm role"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(role).
-		Put(g.getAdminRealmURL(realm, "roles-by-id", roleID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(role),
+		http.MethodPut, g.getAdminRealmURL(realm, "roles-by-id", roleID), errMessage)
 }
 
 // DeleteRealmRole deletes a role in a realm by role's name
 func (g *GoCloak) DeleteRealmRole(ctx context.Context, token, realm, roleName string) error {
 	const errMessage = "could not delete realm role"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "roles", roleName))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "roles", roleName), errMessage)
 }
 
 // AddRealmRoleToUser adds realm-level role mappings
 func (g *GoCloak) AddRealmRoleToUser(ctx context.Context, token, realm, userID string, roles []Role) error {
 	const errMessage = "could not add realm role to user"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(roles).
-		Post(g.getAdminRealmURL(realm, "users", userID, "role-mappings", "realm"))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(roles),
+		http.MethodPost, g.getAdminRealmURL(realm, "users", userID, "role-mappings", "realm"), errMessage)
 }
 
 // DeleteRealmRoleFromUser deletes realm-level role mappings
 func (g *GoCloak) DeleteRealmRoleFromUser(ctx context.Context, token, realm, userID string, roles []Role) error {
 	const errMessage = "could not delete realm role from user"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(roles).
-		Delete(g.getAdminRealmURL(realm, "users", userID, "role-mappings", "realm"))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(roles),
+		http.MethodDelete, g.getAdminRealmURL(realm, "users", userID, "role-mappings", "realm"), errMessage)
 }
 
 // AddRealmRoleToGroup adds realm-level role mappings
 func (g *GoCloak) AddRealmRoleToGroup(ctx context.Context, token, realm, groupID string, roles []Role) error {
 	const errMessage = "could not add realm role to group"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(roles).
-		Post(g.getAdminRealmURL(realm, "groups", groupID, "role-mappings", "realm"))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(roles),
+		http.MethodPost, g.getAdminRealmURL(realm, "groups", groupID, "role-mappings", "realm"), errMessage)
 }
 
 // DeleteRealmRoleFromGroup deletes realm-level role mappings
 func (g *GoCloak) DeleteRealmRoleFromGroup(ctx context.Context, token, realm, groupID string, roles []Role) error {
 	const errMessage = "could not delete realm role from group"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(roles).
-		Delete(g.getAdminRealmURL(realm, "groups", groupID, "role-mappings", "realm"))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(roles),
+		http.MethodDelete, g.getAdminRealmURL(realm, "groups", groupID, "role-mappings", "realm"), errMessage)
 }
 
 // AddRealmRoleComposite adds a role to the composite.
 func (g *GoCloak) AddRealmRoleComposite(ctx context.Context, token, realm, roleName string, roles []Role) error {
 	const errMessage = "could not add realm role composite"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(roles).
-		Post(g.getAdminRealmURL(realm, "roles", roleName, "composites"))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(roles),
+		http.MethodPost, g.getAdminRealmURL(realm, "roles", roleName, "composites"), errMessage)
 }
 
 // DeleteRealmRoleComposite deletes a role from the composite.
 func (g *GoCloak) DeleteRealmRoleComposite(ctx context.Context, token, realm, roleName string, roles []Role) error {
 	const errMessage = "could not delete realm role composite"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(roles).
-		Delete(g.getAdminRealmURL(realm, "roles", roleName, "composites"))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(roles),
+		http.MethodDelete, g.getAdminRealmURL(realm, "roles", roleName, "composites"), errMessage)
 }
 
 // GetCompositeRealmRoles returns all realm composite roles associated with the given realm role
@@ -1958,65 +1815,46 @@ func (g *GoCloak) GetRealms(ctx context.Context, token string) ([]*RealmRepresen
 func (g *GoCloak) CreateRealm(ctx context.Context, token string, realm RealmRepresentation) (string, error) {
 	const errMessage = "could not create realm"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(&realm).
-		Post(g.getAdminRealmURL(""))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return "", err
-	}
-	return getID(resp), nil
+	return doCreate(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(&realm),
+		g.getAdminRealmURL(""), errMessage)
 }
 
 // UpdateRealm updates a given realm
 func (g *GoCloak) UpdateRealm(ctx context.Context, token string, realm RealmRepresentation) error {
 	const errMessage = "could not update realm"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(realm).
-		Put(g.getAdminRealmURL(PString(realm.Realm)))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(realm),
+		http.MethodPut, g.getAdminRealmURL(PString(realm.Realm)), errMessage)
 }
 
 // DeleteRealm removes a realm
 func (g *GoCloak) DeleteRealm(ctx context.Context, token, realm string) error {
 	const errMessage = "could not delete realm"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm), errMessage)
 }
 
 // ClearRealmCache clears realm cache
 func (g *GoCloak) ClearRealmCache(ctx context.Context, token, realm string) error {
 	const errMessage = "could not clear realm cache"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Post(g.getAdminRealmURL(realm, "clear-realm-cache"))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodPost, g.getAdminRealmURL(realm, "clear-realm-cache"), errMessage)
 }
 
 // ClearUserCache clears realm cache
 func (g *GoCloak) ClearUserCache(ctx context.Context, token, realm string) error {
 	const errMessage = "could not clear user cache"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Post(g.getAdminRealmURL(realm, "clear-user-cache"))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodPost, g.getAdminRealmURL(realm, "clear-user-cache"), errMessage)
 }
 
 // ClearKeysCache clears realm cache
 func (g *GoCloak) ClearKeysCache(ctx context.Context, token, realm string) error {
 	const errMessage = "could not clear keys cache"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Post(g.getAdminRealmURL(realm, "clear-keys-cache"))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodPost, g.getAdminRealmURL(realm, "clear-keys-cache"), errMessage)
 }
 
 // GetAuthenticationFlows get all authentication flows from a realm
@@ -2034,11 +1872,9 @@ func (g *GoCloak) GetAuthenticationFlow(ctx context.Context, token, realm string
 // CreateAuthenticationFlow creates a new Authentication flow in a realm
 func (g *GoCloak) CreateAuthenticationFlow(ctx context.Context, token, realm string, flow AuthenticationFlowRepresentation) error {
 	const errMessage = "could not create authentication flows"
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(flow).
-		Post(g.getAdminRealmURL(realm, "authentication", "flows"))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(flow),
+		http.MethodPost, g.getAdminRealmURL(realm, "authentication", "flows"), errMessage)
 }
 
 // UpdateAuthenticationFlow a given Authentication Flow
@@ -2053,22 +1889,14 @@ func (g *GoCloak) UpdateAuthenticationFlow(ctx context.Context, token, realm str
 // DeleteAuthenticationFlow deletes a flow in a realm with the given ID
 func (g *GoCloak) DeleteAuthenticationFlow(ctx context.Context, token, realm, flowID string) error {
 	const errMessage = "could not delete authentication flows"
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "authentication", "flows", flowID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "authentication", "flows", flowID), errMessage)
 }
 
 // CreateAuthenticatorConfig creates a new authenticator configuration and returns its ID
 func (g *GoCloak) CreateAuthenticatorConfig(ctx context.Context, token, realm string, config AuthenticatorConfigRepresentation) (string, error) {
 	const errMessage = "could not create authenticator config"
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).SetBody(config).
-		Post(g.getAdminRealmURL(realm, "authentication", "config"))
 
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return "", err
-	}
-	return getID(resp), nil
+	return doCreate(g.GetRequestWithBearerAuth(ctx, token).SetBody(config), g.getAdminRealmURL(realm, "authentication", "config"), errMessage)
 }
 
 // GetAuthenticatorConfigDescription gets the configuration description for an authenticator provider
@@ -2086,19 +1914,13 @@ func (g *GoCloak) GetAuthenticatorConfig(ctx context.Context, token, realm, conf
 // UpdateAuthenticatorConfig updates an authenticator configuration by ID
 func (g *GoCloak) UpdateAuthenticatorConfig(ctx context.Context, token, realm string, config AuthenticatorConfigRepresentation, configID string) error {
 	const errMessage = "could not update authenticator config"
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).SetBody(config).
-		Put(g.getAdminRealmURL(realm, "authentication", "config", configID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).SetBody(config), http.MethodPut, g.getAdminRealmURL(realm, "authentication", "config", configID), errMessage)
 }
 
 // DeleteAuthenticatorConfig deletes an authenticator configuration by ID
 func (g *GoCloak) DeleteAuthenticatorConfig(ctx context.Context, token, realm, configID string) error {
 	const errMessage = "could not delete authenticator config"
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "authentication", "config", configID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "authentication", "config", configID), errMessage)
 }
 
 // GetAuthenticationExecutions retrieves all executions of a given flow
@@ -2110,40 +1932,26 @@ func (g *GoCloak) GetAuthenticationExecutions(ctx context.Context, token, realm,
 // CreateAuthenticationExecution creates a new execution for the given flow name in the given realm
 func (g *GoCloak) CreateAuthenticationExecution(ctx context.Context, token, realm, flow string, execution CreateAuthenticationExecutionRepresentation) error {
 	const errMessage = "could not create authentication execution"
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).SetBody(execution).
-		Post(g.getAdminRealmURL(realm, "authentication", "flows", flow, "executions", "execution"))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).SetBody(execution), http.MethodPost, g.getAdminRealmURL(realm, "authentication", "flows", flow, "executions", "execution"), errMessage)
 }
 
 // UpdateAuthenticationExecution updates an authentication execution for the given flow in the given realm
 func (g *GoCloak) UpdateAuthenticationExecution(ctx context.Context, token, realm, flow string, execution ModifyAuthenticationExecutionRepresentation) error {
 	const errMessage = "could not update authentication execution"
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).SetBody(execution).
-		Put(g.getAdminRealmURL(realm, "authentication", "flows", flow, "executions"))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).SetBody(execution), http.MethodPut, g.getAdminRealmURL(realm, "authentication", "flows", flow, "executions"), errMessage)
 }
 
 // DeleteAuthenticationExecution delete a single execution with the given ID
 func (g *GoCloak) DeleteAuthenticationExecution(ctx context.Context, token, realm, executionID string) error {
 	const errMessage = "could not delete authentication execution"
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "authentication", "executions", executionID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "authentication", "executions", executionID), errMessage)
 }
 
 // CreateAuthenticationExecutionConfig creates a new configuration for an authentication execution and returns its ID
 func (g *GoCloak) CreateAuthenticationExecutionConfig(ctx context.Context, token, realm, executionID string, config AuthenticatorConfigRepresentation) (string, error) {
 	const errMessage = "could not create authentication execution config"
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).SetBody(config).
-		Post(g.getAdminRealmURL(realm, "authentication", "executions", executionID, "config"))
 
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return "", err
-	}
-	return getID(resp), nil
+	return doCreate(g.GetRequestWithBearerAuth(ctx, token).SetBody(config), g.getAdminRealmURL(realm, "authentication", "executions", executionID, "config"), errMessage)
 }
 
 // GetAuthenticationExecutionConfig gets the configuration for an authentication execution
@@ -2155,10 +1963,7 @@ func (g *GoCloak) GetAuthenticationExecutionConfig(ctx context.Context, token, r
 // CreateAuthenticationExecutionFlow creates a new execution for the given flow name in the given realm
 func (g *GoCloak) CreateAuthenticationExecutionFlow(ctx context.Context, token, realm, flow string, executionFlow CreateAuthenticationExecutionFlowRepresentation) error {
 	const errMessage = "could not create authentication execution flow"
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).SetBody(executionFlow).
-		Post(g.getAdminRealmURL(realm, "authentication", "flows", flow, "executions", "flow"))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).SetBody(executionFlow), http.MethodPost, g.getAdminRealmURL(realm, "authentication", "flows", flow, "executions", "flow"), errMessage)
 }
 
 // -----
@@ -2171,25 +1976,16 @@ func (g *GoCloak) CreateAuthenticationExecutionFlow(ctx context.Context, token, 
 func (g *GoCloak) CreateUser(ctx context.Context, token, realm string, user User) (string, error) {
 	const errMessage = "could not create user"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(user).
-		Post(g.getAdminRealmURL(realm, "users"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return "", err
-	}
-
-	return getID(resp), nil
+	return doCreate(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(user),
+		g.getAdminRealmURL(realm, "users"), errMessage)
 }
 
 // DeleteUser delete a given user
 func (g *GoCloak) DeleteUser(ctx context.Context, token, realm, userID string) error {
 	const errMessage = "could not delete user"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "users", userID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "users", userID), errMessage)
 }
 
 // GetUserByID fetches a user from the given realm with the given userID
@@ -2288,53 +2084,45 @@ func (g *GoCloak) SetPassword(ctx context.Context, token, realm, userID, passwor
 	const errMessage = "could not set password"
 
 	requestBody := SetPasswordRequest{Password: &password, Temporary: &temporary, Type: new("password")}
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(requestBody).
-		Put(g.getAdminRealmURL(realm, "users", userID, "reset-password"))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(requestBody),
+		http.MethodPut, g.getAdminRealmURL(realm, "users", userID, "reset-password"), errMessage)
 }
 
 // UpdateUser updates a given user
 func (g *GoCloak) UpdateUser(ctx context.Context, token, realm string, user User) error {
 	const errMessage = "could not update user"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(user).
-		Put(g.getAdminRealmURL(realm, "users", PString(user.ID)))
+	if NilOrEmpty(user.ID) {
+		return fmt.Errorf("%s: ID of a user required", errMessage)
+	}
 
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(user),
+		http.MethodPut, g.getAdminRealmURL(realm, "users", PString(user.ID)), errMessage)
 }
 
 // UpdateUserProfileConfig updates the user profile configuration for a realm
 func (g *GoCloak) UpdateUserProfileConfig(ctx context.Context, token, realm string, config UserProfileConfig) error {
 	const errMessage = "could not update user profile configuration"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(config).
-		Put(g.getAdminRealmURL(realm, "users", "profile"))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(config),
+		http.MethodPut, g.getAdminRealmURL(realm, "users", "profile"), errMessage)
 }
 
 // AddUserToGroup puts given user to given group
 func (g *GoCloak) AddUserToGroup(ctx context.Context, token, realm, userID, groupID string) error {
 	const errMessage = "could not add user to group"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Put(g.getAdminRealmURL(realm, "users", userID, "groups", groupID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodPut, g.getAdminRealmURL(realm, "users", userID, "groups", groupID), errMessage)
 }
 
 // DeleteUserFromGroup deletes given user from given group
 func (g *GoCloak) DeleteUserFromGroup(ctx context.Context, token, realm, userID, groupID string) error {
 	const errMessage = "could not delete user from group"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "users", userID, "groups", groupID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "users", userID, "groups", groupID), errMessage)
 }
 
 // GetUserSessions returns user sessions associated with the user
@@ -2355,66 +2143,54 @@ func (g *GoCloak) GetUserOfflineSessionsForClient(ctx context.Context, token, re
 func (g *GoCloak) AddClientRolesToUser(ctx context.Context, token, realm, idOfClient, userID string, roles []Role) error {
 	const errMessage = "could not add client role to user"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(roles).
-		Post(g.getAdminRealmURL(realm, "users", userID, "role-mappings", "clients", idOfClient))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(roles),
+		http.MethodPost, g.getAdminRealmURL(realm, "users", userID, "role-mappings", "clients", idOfClient), errMessage)
 }
 
 // AddClientRolesToGroup adds a client role to the group
 func (g *GoCloak) AddClientRolesToGroup(ctx context.Context, token, realm, idOfClient, groupID string, roles []Role) error {
 	const errMessage = "could not add client role to group"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(roles).
-		Post(g.getAdminRealmURL(realm, "groups", groupID, "role-mappings", "clients", idOfClient))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(roles),
+		http.MethodPost, g.getAdminRealmURL(realm, "groups", groupID, "role-mappings", "clients", idOfClient), errMessage)
 }
 
 // DeleteClientRolesFromUser adds client-level role mappings
 func (g *GoCloak) DeleteClientRolesFromUser(ctx context.Context, token, realm, idOfClient, userID string, roles []Role) error {
 	const errMessage = "could not delete client role from user"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(roles).
-		Delete(g.getAdminRealmURL(realm, "users", userID, "role-mappings", "clients", idOfClient))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(roles),
+		http.MethodDelete, g.getAdminRealmURL(realm, "users", userID, "role-mappings", "clients", idOfClient), errMessage)
 }
 
 // DeleteClientRoleFromGroup removes a client role from the group
 func (g *GoCloak) DeleteClientRoleFromGroup(ctx context.Context, token, realm, idOfClient, groupID string, roles []Role) error {
 	const errMessage = "could not client role from group"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(roles).
-		Delete(g.getAdminRealmURL(realm, "groups", groupID, "role-mappings", "clients", idOfClient))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(roles),
+		http.MethodDelete, g.getAdminRealmURL(realm, "groups", groupID, "role-mappings", "clients", idOfClient), errMessage)
 }
 
 // AddClientRoleComposite adds roles as composite
 func (g *GoCloak) AddClientRoleComposite(ctx context.Context, token, realm, roleID string, roles []Role) error {
 	const errMessage = "could not add client role composite"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(roles).
-		Post(g.getAdminRealmURL(realm, "roles-by-id", roleID, "composites"))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(roles),
+		http.MethodPost, g.getAdminRealmURL(realm, "roles-by-id", roleID, "composites"), errMessage)
 }
 
 // DeleteClientRoleComposite deletes composites from a role
 func (g *GoCloak) DeleteClientRoleComposite(ctx context.Context, token, realm, roleID string, roles []Role) error {
 	const errMessage = "could not delete client role composite"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(roles).
-		Delete(g.getAdminRealmURL(realm, "roles-by-id", roleID, "composites"))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(roles),
+		http.MethodDelete, g.getAdminRealmURL(realm, "roles-by-id", roleID, "composites"), errMessage)
 }
 
 // GetUserFederatedIdentities gets all user federated identities
@@ -2428,21 +2204,16 @@ func (g *GoCloak) GetUserFederatedIdentities(ctx context.Context, token, realm, 
 func (g *GoCloak) CreateUserFederatedIdentity(ctx context.Context, token, realm, userID, providerID string, federatedIdentityRep FederatedIdentityRepresentation) error {
 	const errMessage = "could not create user federeated identity"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(federatedIdentityRep).
-		Post(g.getAdminRealmURL(realm, "users", userID, "federated-identity", providerID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(federatedIdentityRep),
+		http.MethodPost, g.getAdminRealmURL(realm, "users", userID, "federated-identity", providerID), errMessage)
 }
 
 // DeleteUserFederatedIdentity deletes an user federated identity
 func (g *GoCloak) DeleteUserFederatedIdentity(ctx context.Context, token, realm, userID, providerID string) error {
 	const errMessage = "could not delete user federeated identity"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "users", userID, "federated-identity", providerID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "users", userID, "federated-identity", providerID), errMessage)
 }
 
 // GetUserBruteForceDetectionStatus fetches a user status regarding brute force protection
@@ -2459,15 +2230,9 @@ func (g *GoCloak) GetUserBruteForceDetectionStatus(ctx context.Context, accessTo
 func (g *GoCloak) CreateIdentityProvider(ctx context.Context, token string, realm string, providerRep IdentityProviderRepresentation) (string, error) {
 	const errMessage = "could not create identity provider"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(providerRep).
-		Post(g.getAdminRealmURL(realm, "identity-provider", "instances"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return "", err
-	}
-
-	return getID(resp), nil
+	return doCreate(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(providerRep),
+		g.getAdminRealmURL(realm, "identity-provider", "instances"), errMessage)
 }
 
 // GetIdentityProviders returns list of identity providers in a realm
@@ -2488,21 +2253,16 @@ func (g *GoCloak) GetIdentityProvider(ctx context.Context, token, realm, alias s
 func (g *GoCloak) UpdateIdentityProvider(ctx context.Context, token, realm, alias string, providerRep IdentityProviderRepresentation) error {
 	const errMessage = "could not update identity provider"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(providerRep).
-		Put(g.getAdminRealmURL(realm, "identity-provider", "instances", alias))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(providerRep),
+		http.MethodPut, g.getAdminRealmURL(realm, "identity-provider", "instances", alias), errMessage)
 }
 
 // DeleteIdentityProvider deletes the identity provider in a realm
 func (g *GoCloak) DeleteIdentityProvider(ctx context.Context, token, realm, alias string) error {
 	const errMessage = "could not delete identity provider"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "identity-provider", "instances", alias))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "identity-provider", "instances", alias), errMessage)
 }
 
 // ExportIDPPublicBrokerConfig exports the broker config for a given alias
@@ -2548,25 +2308,16 @@ func (g *GoCloak) ImportIdentityProviderConfigFromFile(ctx context.Context, toke
 func (g *GoCloak) CreateIdentityProviderMapper(ctx context.Context, token, realm, alias string, mapper IdentityProviderMapper) (string, error) {
 	const errMessage = "could not create mapper for identity provider"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(mapper).
-		Post(g.getAdminRealmURL(realm, "identity-provider", "instances", alias, "mappers"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return "", err
-	}
-
-	return getID(resp), nil
+	return doCreate(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(mapper),
+		g.getAdminRealmURL(realm, "identity-provider", "instances", alias, "mappers"), errMessage)
 }
 
 // DeleteIdentityProviderMapper deletes an instance of an identity provider mapper associated with the given alias and mapper ID
 func (g *GoCloak) DeleteIdentityProviderMapper(ctx context.Context, token, realm, alias, mapperID string) error {
 	const errMessage = "could not delete mapper for identity provider"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "identity-provider", "instances", alias, "mappers", mapperID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "identity-provider", "instances", alias, "mappers", mapperID), errMessage)
 }
 
 // GetIdentityProviderMappers returns list of mappers associated with an identity provider
@@ -2589,11 +2340,13 @@ func (g *GoCloak) GetIdentityProviderMapperByID(ctx context.Context, token, real
 func (g *GoCloak) UpdateIdentityProviderMapper(ctx context.Context, token, realm, alias string, mapper IdentityProviderMapper) error {
 	const errMessage = "could not update identity provider mapper"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(mapper).
-		Put(g.getAdminRealmURL(realm, "identity-provider", "instances", alias, "mappers", PString(mapper.ID)))
+	if NilOrEmpty(mapper.ID) {
+		return fmt.Errorf("%s: ID of a mapper required", errMessage)
+	}
 
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(mapper),
+		http.MethodPut, g.getAdminRealmURL(realm, "identity-provider", "instances", alias, "mappers", PString(mapper.ID)), errMessage)
 }
 
 // ------------------
@@ -2637,25 +2390,12 @@ func (g *GoCloak) GetResourcesClient(ctx context.Context, token, realm string, p
 		return nil, err
 	}
 
-	var result []*ResourceRepresentation
-	var resourceIDs []string
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetResult(&resourceIDs).
-		SetQueryParams(queryParams).
-		Get(g.getRealmURL(realm, "authz", "protection", "resource_set"))
+	// deep=true returns the full resources in one call instead of only their IDs
+	queryParams["deep"] = "true"
 
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return nil, err
-	}
-
-	for _, resourceID := range resourceIDs {
-		resource, err := g.GetResourceClient(ctx, token, realm, resourceID)
-		if err == nil {
-			result = append(result, resource)
-		}
-	}
-
-	return result, nil
+	return doRequest[[]*ResourceRepresentation](g.GetRequestWithBearerAuth(ctx, token).
+		SetQueryParams(queryParams),
+		http.MethodGet, g.getRealmURL(realm, "authz", "protection", "resource_set"), errMessage)
 }
 
 // GetResourceServer returns resource server settings.
@@ -2675,11 +2415,9 @@ func (g *GoCloak) UpdateResource(ctx context.Context, token, realm, idOfClient s
 		return errors.New("ID of a resource required")
 	}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(resource).
-		Put(g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "resource", *resource.ID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(resource),
+		http.MethodPut, g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "resource", *resource.ID), errMessage)
 }
 
 // UpdateResourceClient updates a resource associated with the client, using access token from client
@@ -2690,11 +2428,9 @@ func (g *GoCloak) UpdateResourceClient(ctx context.Context, token, realm string,
 		return errors.New("ID of a resource required")
 	}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(resource).
-		Put(g.getRealmURL(realm, "authz", "protection", "resource_set", *resource.ID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(resource),
+		http.MethodPut, g.getRealmURL(realm, "authz", "protection", "resource_set", *resource.ID), errMessage)
 }
 
 // CreateResource creates a resource associated with the client, using access token from admin
@@ -2719,20 +2455,14 @@ func (g *GoCloak) CreateResourceClient(ctx context.Context, token, realm string,
 func (g *GoCloak) DeleteResource(ctx context.Context, token, realm, idOfClient, resourceID string) error {
 	const errMessage = "could not delete resource"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "resource", resourceID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "resource", resourceID), errMessage)
 }
 
 // DeleteResourceClient deletes a resource associated with the client (using a client token)
 func (g *GoCloak) DeleteResourceClient(ctx context.Context, token, realm, resourceID string) error {
 	const errMessage = "could not delete resource"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getRealmURL(realm, "authz", "protection", "resource_set", resourceID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getRealmURL(realm, "authz", "protection", "resource_set", resourceID), errMessage)
 }
 
 // GetScope returns a client's scope with the given id
@@ -2776,11 +2506,9 @@ func (g *GoCloak) GetPermissionScope(ctx context.Context, token, realm, idOfClie
 func (g *GoCloak) UpdatePermissionScope(ctx context.Context, token, realm, idOfClient string, idOfScope string, policy PolicyRepresentation) error {
 	const errMessage = "could not create permission scope"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(policy).
-		Put(g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "permission", "scope", idOfScope))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(policy),
+		http.MethodPut, g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "permission", "scope", idOfScope), errMessage)
 }
 
 // UpdateScope updates a scope associated with the client
@@ -2791,21 +2519,16 @@ func (g *GoCloak) UpdateScope(ctx context.Context, token, realm, idOfClient stri
 		return errors.New("ID of a scope required")
 	}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(scope).
-		Put(g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "scope", *scope.ID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(scope),
+		http.MethodPut, g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "scope", *scope.ID), errMessage)
 }
 
 // DeleteScope deletes a scope associated with the client
 func (g *GoCloak) DeleteScope(ctx context.Context, token, realm, idOfClient, scopeID string) error {
 	const errMessage = "could not delete scope"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "scope", scopeID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "scope", scopeID), errMessage)
 }
 
 // GetPolicy returns a client's policy with the given id
@@ -2858,21 +2581,16 @@ func (g *GoCloak) UpdatePolicy(ctx context.Context, token, realm, idOfClient str
 
 	path := []string{"clients", idOfClient, "authz", "resource-server", "policy", *policy.Type, *policy.ID}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(policy).
-		Put(g.getAdminRealmURL(realm, path...))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(policy),
+		http.MethodPut, g.getAdminRealmURL(realm, path...), errMessage)
 }
 
 // DeletePolicy deletes a policy associated with the client
 func (g *GoCloak) DeletePolicy(ctx context.Context, token, realm, idOfClient, policyID string) error {
 	const errMessage = "could not delete policy"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "policy", policyID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "policy", policyID), errMessage)
 }
 
 // GetAuthorizationPolicyAssociatedPolicies returns a client's associated policies of specific policy with the given policy id, using access token from admin
@@ -2930,21 +2648,16 @@ func (g *GoCloak) CreateResourcePolicy(ctx context.Context, token, realm, resour
 func (g *GoCloak) UpdateResourcePolicy(ctx context.Context, token, realm, permissionID string, policy ResourcePolicyRepresentation) error {
 	const errMessage = "could not update resource policy"
 
-	resp, err := g.GetRequestWithBearerAuthNoCache(ctx, token).
-		SetBody(policy).
-		Put(g.getRealmURL(realm, "authz", "protection", "uma-policy", permissionID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuthNoCache(ctx, token).
+		SetBody(policy),
+		http.MethodPut, g.getRealmURL(realm, "authz", "protection", "uma-policy", permissionID), errMessage)
 }
 
 // DeleteResourcePolicy deletes a permission for a specific resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
 func (g *GoCloak) DeleteResourcePolicy(ctx context.Context, token, realm, permissionID string) error {
 	const errMessage = "could not  delete resource policy"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getRealmURL(realm, "authz", "protection", "uma-policy", permissionID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getRealmURL(realm, "authz", "protection", "uma-policy", permissionID), errMessage)
 }
 
 // GetPermission returns a client's permission with the given id
@@ -2991,14 +2704,9 @@ func (g *GoCloak) GetPermissions(ctx context.Context, token, realm, idOfClient s
 		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 
-	path := []string{"clients", idOfClient, "authz", "resource-server", "permission"}
-	if !NilOrEmpty(params.Type) {
-		path = append(path, *params.Type)
-	}
-
 	return doRequest[[]*PermissionRepresentation](g.GetRequestWithBearerAuth(ctx, token).
 		SetQueryParams(queryParams),
-		http.MethodGet, g.getAdminRealmURL(realm, path...), errMessage)
+		http.MethodGet, g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "permission"), errMessage)
 }
 
 // checkPermissionTicketParams checks that mandatory fields are present
@@ -3125,10 +2833,7 @@ func (g *GoCloak) GetUserPermissions(ctx context.Context, token, realm string, p
 func (g *GoCloak) DeleteUserPermission(ctx context.Context, token, realm, ticketID string) error {
 	const errMessage = "could not delete user permission"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getRealmURL(realm, "authz", "protection", "permission", "ticket", ticketID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getRealmURL(realm, "authz", "protection", "permission", "ticket", ticketID), errMessage)
 }
 
 // CreatePermission creates a permission associated with the client
@@ -3154,21 +2859,16 @@ func (g *GoCloak) UpdatePermission(ctx context.Context, token, realm, idOfClient
 	if NilOrEmpty(permission.Type) {
 		return errors.New("type of a permission required")
 	}
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(permission).
-		Put(g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "permission", *permission.Type, *permission.ID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(permission),
+		http.MethodPut, g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "permission", *permission.Type, *permission.ID), errMessage)
 }
 
 // DeletePermission deletes a policy associated with the client
 func (g *GoCloak) DeletePermission(ctx context.Context, token, realm, idOfClient, permissionID string) error {
 	const errMessage = "could not delete permission"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "permission", permissionID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "permission", permissionID), errMessage)
 }
 
 // ---------------
@@ -3200,53 +2900,40 @@ func (g *GoCloak) GetCredentials(ctx context.Context, token, realm, userID strin
 func (g *GoCloak) DeleteCredentials(ctx context.Context, token, realm, userID, credentialID string) error {
 	const errMessage = "could not delete user credentials"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "users", userID, "credentials", credentialID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "users", userID, "credentials", credentialID), errMessage)
 }
 
 // UpdateCredentialUserLabel updates label for the given credential for the given user
 func (g *GoCloak) UpdateCredentialUserLabel(ctx context.Context, token, realm, userID, credentialID, userLabel string) error {
 	const errMessage = "could not update credential label for a user"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
 		SetHeader("Content-Type", "text/plain").
-		SetBody(userLabel).
-		Put(g.getAdminRealmURL(realm, "users", userID, "credentials", credentialID, "userLabel"))
-
-	return checkForError(resp, err, errMessage)
+		SetBody(userLabel),
+		http.MethodPut, g.getAdminRealmURL(realm, "users", userID, "credentials", credentialID, "userLabel"), errMessage)
 }
 
 // DisableAllCredentialsByType disables all credentials for a user of a specific type
 func (g *GoCloak) DisableAllCredentialsByType(ctx context.Context, token, realm, userID string, types []string) error {
 	const errMessage = "could not update disable credentials"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(types).
-		Put(g.getAdminRealmURL(realm, "users", userID, "disable-credential-types"))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(types),
+		http.MethodPut, g.getAdminRealmURL(realm, "users", userID, "disable-credential-types"), errMessage)
 }
 
 // MoveCredentialBehind move a credential to a position behind another credential
 func (g *GoCloak) MoveCredentialBehind(ctx context.Context, token, realm, userID, credentialID, newPreviousCredentialID string) error {
 	const errMessage = "could not move credential"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Post(g.getAdminRealmURL(realm, "users", userID, "credentials", credentialID, "moveAfter", newPreviousCredentialID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodPost, g.getAdminRealmURL(realm, "users", userID, "credentials", credentialID, "moveAfter", newPreviousCredentialID), errMessage)
 }
 
 // MoveCredentialToFirst move a credential to a first position in the credentials list of the user
 func (g *GoCloak) MoveCredentialToFirst(ctx context.Context, token, realm, userID, credentialID string) error {
 	const errMessage = "could not move credential"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Post(g.getAdminRealmURL(realm, "users", userID, "credentials", credentialID, "moveToFirst"))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodPost, g.getAdminRealmURL(realm, "users", userID, "credentials", credentialID, "moveToFirst"), errMessage)
 }
 
 // GetEvents returns events
@@ -3297,37 +2984,27 @@ func (g *GoCloak) GetClientScopesScopeMappingsRealmRoles(ctx context.Context, to
 func (g *GoCloak) DeleteClientScopesScopeMappingsRealmRoles(ctx context.Context, token, realm, clientScopeID string, roles []Role) error {
 	const errMessage = "could not delete realm-level roles from the client-scope"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(roles).
-		Delete(g.getAdminRealmURL(realm, "client-scopes", clientScopeID, "scope-mappings", "realm"))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(roles),
+		http.MethodDelete, g.getAdminRealmURL(realm, "client-scopes", clientScopeID, "scope-mappings", "realm"), errMessage)
 }
 
 // CreateClientScopesScopeMappingsRealmRoles creates realm-level roles to the client scope
 func (g *GoCloak) CreateClientScopesScopeMappingsRealmRoles(ctx context.Context, token, realm, clientScopeID string, roles []Role) error {
 	const errMessage = "could not create realm-level roles to the client-scope"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(roles).
-		Post(g.getAdminRealmURL(realm, "client-scopes", clientScopeID, "scope-mappings", "realm"))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(roles),
+		http.MethodPost, g.getAdminRealmURL(realm, "client-scopes", clientScopeID, "scope-mappings", "realm"), errMessage)
 }
 
 // RegisterRequiredAction creates a required action for a given realm
 func (g *GoCloak) RegisterRequiredAction(ctx context.Context, token string, realm string, requiredAction RequiredActionProviderRepresentation) error {
 	const errMessage = "could not create required action"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(requiredAction).
-		Post(g.getAdminRealmURL(realm, "authentication", "register-required-action"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return err
-	}
-
-	return err
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(requiredAction),
+		http.MethodPost, g.getAdminRealmURL(realm, "authentication", "register-required-action"), errMessage)
 }
 
 // GetUnregisteredRequiredActions gets a list of unregistered required actions for a given realm
@@ -3361,11 +3038,9 @@ func (g *GoCloak) UpdateRequiredAction(ctx context.Context, token string, realm 
 	if NilOrEmpty(requiredAction.ProviderID) {
 		return errors.New("providerId is required for updating a required action")
 	}
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(requiredAction).
-		Put(g.getAdminRealmURL(realm, "authentication", "required-actions", *requiredAction.ProviderID))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(requiredAction),
+		http.MethodPut, g.getAdminRealmURL(realm, "authentication", "required-actions", *requiredAction.ProviderID), errMessage)
 }
 
 // DeleteRequiredAction updates a required action for a given realm
@@ -3375,14 +3050,8 @@ func (g *GoCloak) DeleteRequiredAction(ctx context.Context, token string, realm 
 	if alias == "" {
 		return errors.New("alias is required for deleting a required action")
 	}
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "authentication", "required-actions", alias))
 
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return err
-	}
-
-	return err
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "authentication", "required-actions", alias), errMessage)
 }
 
 // CreateClientScopesScopeMappingsClientRoles attaches a client role to a client scope (not client's scope)
@@ -3391,11 +3060,9 @@ func (g *GoCloak) CreateClientScopesScopeMappingsClientRoles(
 ) error {
 	const errMessage = "could not create client-level roles to the client-scope"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(roles).
-		Post(g.getAdminRealmURL(realm, "client-scopes", idOfClientScope, "scope-mappings", "clients", idOfClient))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(roles),
+		http.MethodPost, g.getAdminRealmURL(realm, "client-scopes", idOfClientScope, "scope-mappings", "clients", idOfClient), errMessage)
 }
 
 // GetClientScopesScopeMappingsClientRolesAvailable returns available (i.e. not attached via
@@ -3420,26 +3087,22 @@ func (g *GoCloak) GetClientScopesScopeMappingsClientRoles(ctx context.Context, t
 func (g *GoCloak) DeleteClientScopesScopeMappingsClientRoles(ctx context.Context, token, realm, idOfClientScope, idOfClient string, roles []Role) error {
 	const errMessage = "could not delete client-level roles from the client-scope"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(roles).
-		Delete(g.getAdminRealmURL(realm, "client-scopes", idOfClientScope, "scope-mappings", "clients", idOfClient))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(roles),
+		http.MethodDelete, g.getAdminRealmURL(realm, "client-scopes", idOfClientScope, "scope-mappings", "clients", idOfClient), errMessage)
 }
 
 // RevokeToken revokes the passed token. The token can either be an access or refresh token.
 func (g *GoCloak) RevokeToken(ctx context.Context, realm, clientID, clientSecret, refreshToken string) error {
 	const errMessage = "could not revoke token"
 
-	resp, err := g.GetRequestWithBasicAuth(ctx, clientID, clientSecret).
+	return doNoResult(g.GetRequestWithBasicAuth(ctx, clientID, clientSecret).
 		SetFormData(map[string]string{
 			"client_id":     clientID,
 			"client_secret": clientSecret,
 			"token":         refreshToken,
-		}).
-		Post(g.getOIDCURL(realm, g.Config.revokeEndpoint))
-
-	return checkForError(resp, err, errMessage)
+		}),
+		http.MethodPost, g.getOIDCURL(realm, g.Config.revokeEndpoint), errMessage)
 }
 
 // UpdateUsersManagementPermissions updates the management permissions for users
@@ -3462,15 +3125,9 @@ func (g *GoCloak) GetUsersManagementPermissions(ctx context.Context, accessToken
 func (g *GoCloak) CreateOrganization(ctx context.Context, token, realm string, organization OrganizationRepresentation) (string, error) {
 	const errMessage = "could not create organization"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(organization).
-		Post(g.getAdminRealmURL(realm, "organizations"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return "", err
-	}
-
-	return getID(resp), nil
+	return doCreate(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(organization),
+		g.getAdminRealmURL(realm, "organizations"), errMessage)
 }
 
 // GetOrganizations returns a paginated list of organizations filtered according to the specified parameters
@@ -3501,21 +3158,16 @@ func (g *GoCloak) UpdateOrganization(ctx context.Context, token, realm string, o
 		return fmt.Errorf("%s: ID of an organization required", errMessage)
 	}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(organization).
-		Put(g.getAdminRealmURL(realm, "organizations", PString(organization.ID)))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(organization),
+		http.MethodPut, g.getAdminRealmURL(realm, "organizations", PString(organization.ID)), errMessage)
 }
 
 // DeleteOrganization deletes a given organization
 func (g *GoCloak) DeleteOrganization(ctx context.Context, token, realm, idOfOrganization string) error {
 	const errMessage = "could not delete organization"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "organizations", idOfOrganization))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "organizations", idOfOrganization), errMessage)
 }
 
 // InviteUserToOrganization invites an existing user or sends a registration link to a new user, based on the provided e-mail address.
@@ -3529,15 +3181,9 @@ func (g *GoCloak) InviteUserToOrganization(ctx context.Context, token, realm str
 		return err
 	}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetFormData(user.FormData()).
-		Post(g.getAdminRealmURL(realm, "organizations", idOfOrganization, "members", "invite-user"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return err
-	}
-
-	return nil
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetFormData(user.FormData()),
+		http.MethodPost, g.getAdminRealmURL(realm, "organizations", idOfOrganization, "members", "invite-user"), errMessage)
 }
 
 func checkOrganizationInviteUserParams(invitation OrganizationInviteUserParams) error {
@@ -3553,13 +3199,11 @@ func checkOrganizationInviteUserParams(invitation OrganizationInviteUserParams) 
 func (g *GoCloak) InviteUserToOrganizationByID(ctx context.Context, token, realm, idOfOrganization, idOfUser string) error {
 	const errMessage = "could not invite user to organization by id"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
 		SetFormData(map[string]string{
 			"id": idOfUser,
-		}).
-		Post(g.getAdminRealmURL(realm, "organizations", idOfOrganization, "members", "invite-existing-user"))
-
-	return checkForError(resp, err, errMessage)
+		}),
+		http.MethodPost, g.getAdminRealmURL(realm, "organizations", idOfOrganization, "members", "invite-existing-user"), errMessage)
 }
 
 // AddUserToOrganization adds the user with the specified id as a member of the organization
@@ -3568,11 +3212,9 @@ func (g *GoCloak) InviteUserToOrganizationByID(ctx context.Context, token, realm
 func (g *GoCloak) AddUserToOrganization(ctx context.Context, token, realm, idOfOrganization, idOfUser string) error {
 	const errMessage = "could not add user to organization"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(idOfUser).
-		Post(g.getAdminRealmURL(realm, "organizations", idOfOrganization, "members"))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(idOfUser),
+		http.MethodPost, g.getAdminRealmURL(realm, "organizations", idOfOrganization, "members"), errMessage)
 }
 
 // GetOrganizationMemberCount returns number of members in the organization.
@@ -3631,10 +3273,7 @@ func (g *GoCloak) GetOrganizationMemberOrganizations(ctx context.Context, access
 func (g *GoCloak) RemoveUserFromOrganization(ctx context.Context, token, realm, idOfOrganization, idOfUser string) error {
 	const errMessage = "could not remove user from organization"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "organizations", idOfOrganization, "members", idOfUser))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "organizations", idOfOrganization, "members", idOfUser), errMessage)
 }
 
 // AddIdentityProviderToOrganization adds the identity provider with the specified alias to the organization
@@ -3642,11 +3281,9 @@ func (g *GoCloak) RemoveUserFromOrganization(ctx context.Context, token, realm, 
 func (g *GoCloak) AddIdentityProviderToOrganization(ctx context.Context, token, realm string, idOfOrganization, identityProviderAlias string) error {
 	const errMessage = "could not add identity provider to organization"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(identityProviderAlias).
-		Post(g.getAdminRealmURL(realm, "organizations", idOfOrganization, "identity-providers"))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(identityProviderAlias),
+		http.MethodPost, g.getAdminRealmURL(realm, "organizations", idOfOrganization, "identity-providers"), errMessage)
 }
 
 // GetOrganizationIdentityProviders returns all identity providers associated with the organization
@@ -3668,10 +3305,7 @@ func (g *GoCloak) GetOrganizationIdentityProvider(ctx context.Context, token, re
 func (g *GoCloak) RemoveIdentityProviderFromOrganization(ctx context.Context, token, realm, idOfOrganization, alias string) error {
 	const errMessage = "could not remove identity provider from organization"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "organizations", idOfOrganization, "identity-providers", alias))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "organizations", idOfOrganization, "identity-providers", alias), errMessage)
 }
 
 // GetOrganizationCount returns the number of organizations in the realm
@@ -3725,10 +3359,7 @@ func (g *GoCloak) GetOrganizationInvitationByID(ctx context.Context, token, real
 func (g *GoCloak) DeleteOrganizationInvitation(ctx context.Context, token, realm, idOfOrganization, idOfInvitation string) error {
 	const errMessage = "could not delete organization invitation"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "organizations", idOfOrganization, "invitations", idOfInvitation))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "organizations", idOfOrganization, "invitations", idOfInvitation), errMessage)
 }
 
 // ResendOrganizationInvitation resends the invitation with the specified id.
@@ -3738,10 +3369,7 @@ func (g *GoCloak) DeleteOrganizationInvitation(ctx context.Context, token, realm
 func (g *GoCloak) ResendOrganizationInvitation(ctx context.Context, token, realm, idOfOrganization, idOfInvitation string) error {
 	const errMessage = "could not resend organization invitation"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Post(g.getAdminRealmURL(realm, "organizations", idOfOrganization, "invitations", idOfInvitation, "resend"))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodPost, g.getAdminRealmURL(realm, "organizations", idOfOrganization, "invitations", idOfInvitation, "resend"), errMessage)
 }
 
 // AddOrganizationGroup creates a new top-level group in the organization
@@ -3749,15 +3377,9 @@ func (g *GoCloak) ResendOrganizationInvitation(ctx context.Context, token, realm
 func (g *GoCloak) AddOrganizationGroup(ctx context.Context, token, realm, idOfOrganization string, group Group) (string, error) {
 	const errMessage = "could not add organization group"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(group).
-		Post(g.getAdminRealmURL(realm, "organizations", idOfOrganization, "groups"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return "", err
-	}
-
-	return getID(resp), nil
+	return doCreate(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(group),
+		g.getAdminRealmURL(realm, "organizations", idOfOrganization, "groups"), errMessage)
 }
 
 // GetOrganizationGroups returns the groups associated with the organization
@@ -3800,11 +3422,9 @@ func (g *GoCloak) UpdateOrganizationGroup(ctx context.Context, token, realm, idO
 		return fmt.Errorf("%s: ID of a group required", errMessage)
 	}
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(group).
-		Put(g.getAdminRealmURL(realm, "organizations", idOfOrganization, "groups", PString(group.ID)))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(group),
+		http.MethodPut, g.getAdminRealmURL(realm, "organizations", idOfOrganization, "groups", PString(group.ID)), errMessage)
 }
 
 // DeleteOrganizationGroup removes the organization group with the specified id
@@ -3812,10 +3432,7 @@ func (g *GoCloak) UpdateOrganizationGroup(ctx context.Context, token, realm, idO
 func (g *GoCloak) DeleteOrganizationGroup(ctx context.Context, token, realm, idOfOrganization, idOfGroup string) error {
 	const errMessage = "could not delete organization group"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "organizations", idOfOrganization, "groups", idOfGroup))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "organizations", idOfOrganization, "groups", idOfGroup), errMessage)
 }
 
 // GetOrganizationGroupSubgroups returns the subgroups of the specified organization group
@@ -3838,15 +3455,9 @@ func (g *GoCloak) GetOrganizationGroupSubgroups(ctx context.Context, token, real
 func (g *GoCloak) AddOrganizationSubgroup(ctx context.Context, token, realm, idOfOrganization, idOfGroup string, group Group) (string, error) {
 	const errMessage = "could not add organization subgroup"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		SetBody(group).
-		Post(g.getAdminRealmURL(realm, "organizations", idOfOrganization, "groups", idOfGroup, "children"))
-
-	if err = checkForError(resp, err, errMessage); err != nil {
-		return "", err
-	}
-
-	return getID(resp), nil
+	return doCreate(g.GetRequestWithBearerAuth(ctx, token).
+		SetBody(group),
+		g.getAdminRealmURL(realm, "organizations", idOfOrganization, "groups", idOfGroup, "children"), errMessage)
 }
 
 // GetOrganizationGroupMembers returns the members of the specified organization group
@@ -3869,10 +3480,7 @@ func (g *GoCloak) GetOrganizationGroupMembers(ctx context.Context, token, realm,
 func (g *GoCloak) AddMemberToOrganizationGroup(ctx context.Context, token, realm, idOfOrganization, idOfGroup, idOfUser string) error {
 	const errMessage = "could not add member to organization group"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Put(g.getAdminRealmURL(realm, "organizations", idOfOrganization, "groups", idOfGroup, "members", idOfUser))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodPut, g.getAdminRealmURL(realm, "organizations", idOfOrganization, "groups", idOfGroup, "members", idOfUser), errMessage)
 }
 
 // RemoveMemberFromOrganizationGroup removes the user with the specified id from the organization group
@@ -3880,8 +3488,5 @@ func (g *GoCloak) AddMemberToOrganizationGroup(ctx context.Context, token, realm
 func (g *GoCloak) RemoveMemberFromOrganizationGroup(ctx context.Context, token, realm, idOfOrganization, idOfGroup, idOfUser string) error {
 	const errMessage = "could not remove member from organization group"
 
-	resp, err := g.GetRequestWithBearerAuth(ctx, token).
-		Delete(g.getAdminRealmURL(realm, "organizations", idOfOrganization, "groups", idOfGroup, "members", idOfUser))
-
-	return checkForError(resp, err, errMessage)
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token), http.MethodDelete, g.getAdminRealmURL(realm, "organizations", idOfOrganization, "groups", idOfGroup, "members", idOfUser), errMessage)
 }
