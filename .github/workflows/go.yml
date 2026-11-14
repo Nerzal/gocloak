@@ -1,38 +1,75 @@
 name: Tests
 on:
-  - push
-  - pull_request
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # weekly vulnerability scan, new advisories appear without code changes
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  tests:
+  lint:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - name: Setup Go environment
-        uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
-          go-version: "1.26"
+          go-version: stable
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
-          version: latest
-          install-mode: goinstall
+          version: v2.15.0
 
+  govulncheck:
+    runs-on: ubuntu-latest
+    steps:
       - name: Run govulncheck
         uses: golang/govulncheck-action@v1
         with:
-          go-version-input: "1.26"
+          go-version-input: stable
+          go-package: ./...
+
+  tests:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # benchmark results are pushed to gh-pages
+    strategy:
+      fail-fast: false
+      matrix:
+        go: [oldstable, stable]
+        keycloak: ["26.8.2"]
+        include:
+          # early warning for the next Keycloak release, does not fail the build
+          - go: stable
+            keycloak: nightly
+            experimental: true
+    continue-on-error: ${{ matrix.experimental == true }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version: ${{ matrix.go }}
 
       - name: Run Keycloak
-        run: |
-          make start-keycloak
-          sleep 30
+        env:
+          KEYCLOAK_VERSION: ${{ matrix.keycloak }}
+        run: docker compose up -d --build --wait --wait-timeout 300
 
       - name: Unit Tests
         run: |
-          go test -race -cover -coverprofile=coverage.txt -covermode=atomic -p 100 -cpu 1,2 -bench . -benchmem > test.log
+          go test -race -cover -coverprofile=coverage.txt -covermode=atomic -p 100 -cpu 1,2 -bench . -benchmem ./... > test.log
           cat test.log
 
       - name: Failed Logs
@@ -40,17 +77,18 @@ jobs:
         run: |
           cat test.log
           docker ps
-          docker logs keycloak
+          docker compose logs keycloak
 
       - name: CodeCov
-        uses: codecov/codecov-action@v4
+        if: matrix.go == 'stable' && matrix.keycloak != 'nightly'
+        uses: codecov/codecov-action@v7
         with:
-          file: ./coverage.txt
+          files: ./coverage.txt
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Store Benchmark Result
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: rhysd/github-action-benchmark@v1
+        if: matrix.go == 'stable' && matrix.keycloak != 'nightly' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: benchmark-action/github-action-benchmark@v1
         with:
           tool: "go"
           output-file-path: test.log
@@ -58,6 +96,6 @@ jobs:
           auto-push: true
 
       - name: GoReportCard
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: matrix.go == 'stable' && matrix.keycloak != 'nightly' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         continue-on-error: true
         run: curl --fail --request POST "https://goreportcard.com/checks" --data "repo=github.com/Nerzal/gocloak"

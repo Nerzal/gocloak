@@ -48,11 +48,11 @@ go get github.com/Nerzal/gocloak/v14
  }
 
  user := gocloak.User{
-  FirstName: gocloak.StringP("Bob"),
-  LastName:  gocloak.StringP("Uncle"),
-  Email:     gocloak.StringP("something@really.wrong"),
-  Enabled:   gocloak.BoolP(true),
-  Username:  gocloak.StringP("CoolGuy"),
+  FirstName: new("Bob"),
+  LastName:  new("Uncle"),
+  Email:     new("something@really.wrong"),
+  Enabled:   new(true),
+  Username:  new("CoolGuy"),
  }
 
  _, err = client.CreateUser(ctx, token.AccessToken, "realm", user)
@@ -187,10 +187,11 @@ yields a large set of pointer values
 {<nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> 0xc00000e960 <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> 0xc000093cf0 <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> null <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil> <nil>}
 ```
 
-For convenience, the `String()` interface has been added so you can easily see the contents, even for nested custom types. For example,
+Marshal them to JSON to see the contents, even for nested custom types. The types have no `String()` method on purpose, so passwords and secrets in them don't end up in logs by accident. For example,
 
 ```go
-fmt.Println(someRealmRepresentation.String())
+out, _ := json.MarshalIndent(someRealmRepresentation, "", "  ")
+fmt.Println(string(out))
 ```
 
 yields

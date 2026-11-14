@@ -17,10 +17,6 @@ import (
 // "string" tag allows to convert the non-string fields of a structure to map[string]string.
 // "omitempty" allows to skip the fields with default values.
 func GetQueryParams(s any) (map[string]string, error) {
-	// if obj, ok := s.(GetGroupsParams); ok {
-	// 	obj.OnMarshal()
-	// 	s = obj
-	// }
 	b, err := json.Marshal(s)
 	if err != nil {
 		return nil, err
@@ -56,26 +52,27 @@ func (s *StringOrArray) UnmarshalJSON(data []byte) error {
 }
 
 // MarshalJSON converts the array of strings to a JSON array or JSON string if there is only one item in the array
-func (s *StringOrArray) MarshalJSON() ([]byte, error) {
-	if len(*s) == 1 {
-		return json.Marshal([]string(*s)[0])
+// Value receiver, so non-addressable values (e.g. json.Marshal(StringOrArray{"x"})) use it too.
+func (s StringOrArray) MarshalJSON() ([]byte, error) {
+	if len(s) == 1 {
+		return json.Marshal(s[0])
 	}
-	return json.Marshal([]string(*s))
+	return json.Marshal([]string(s))
 }
 
 // EnforcedString can be used when the expected value is string but Keycloak in some cases gives you mixed types
 type EnforcedString string
 
-// UnmarshalJSON modify data as string before json unmarshal
+// UnmarshalJSON keeps a JSON string as its value and any other JSON value (number, bool, object, array)
+// as its raw JSON text; null leaves the value unchanged.
+// Input: data [[]byte] JSON value. Output: [error] if a JSON string is malformed.
 func (s *EnforcedString) UnmarshalJSON(data []byte) error {
+	if bytes.Equal(data, []byte("null")) {
+		return nil
+	}
 	if data[0] != '"' {
-		// Escape unescaped quotes
-		data = bytes.ReplaceAll(data, []byte(`"`), []byte(`\"`))
-		data = bytes.ReplaceAll(data, []byte(`\\"`), []byte(`\"`))
-
-		// Wrap data in quotes
-		data = append([]byte(`"`), data...)
-		data = append(data, []byte(`"`)...)
+		*s = EnforcedString(data)
+		return nil
 	}
 
 	var val string
@@ -100,7 +97,7 @@ const (
 
 	// APIErrTypeInvalidGrant corresponds with Keycloak's
 	// OAuthErrorException due to "invalid_grant".
-	APIErrTypeInvalidGrant = "oauth: invalid grant"
+	APIErrTypeInvalidGrant APIErrType = "oauth: invalid grant"
 )
 
 // ParseAPIErrType is a convenience method for returning strongly
@@ -122,6 +119,14 @@ type APIError struct {
 	Code    int        `json:"code"`
 	Message string     `json:"message"`
 	Type    APIErrType `json:"type"`
+	// Err is the underlying transport error (e.g. context.Canceled), nil for HTTP errors
+	Err error `json:"-"`
+}
+
+// Unwrap returns the underlying transport error so errors.Is/As work on it.
+// Output: [error] wrapped error or nil.
+func (apiError APIError) Unwrap() error {
+	return apiError.Err
 }
 
 // Error stringifies the APIError
@@ -264,28 +269,6 @@ type Key struct {
 	Certificate      *string `json:"certificate,omitempty"`
 }
 
-// Attributes holds Attributes
-type Attributes struct {
-	LDAPENTRYDN []string `json:"LDAP_ENTRY_DN,omitempty"`
-	LDAPID      []string `json:"LDAP_ID,omitempty"`
-}
-
-// Access represents access
-type Access struct {
-	ManageGroupMembership *bool `json:"manageGroupMembership,omitempty"`
-	View                  *bool `json:"view,omitempty"`
-	MapRoles              *bool `json:"mapRoles,omitempty"`
-	Impersonate           *bool `json:"impersonate,omitempty"`
-	Manage                *bool `json:"manage,omitempty"`
-}
-
-// UserGroup is a UserGroup
-type UserGroup struct {
-	ID   *string `json:"id,omitempty"`
-	Name *string `json:"name,omitempty"`
-	Path *string `json:"path,omitempty"`
-}
-
 // GetUsersParams represents the optional parameters for getting users
 type GetUsersParams struct {
 	BriefRepresentation *bool   `json:"briefRepresentation,string,omitempty"`
@@ -367,11 +350,11 @@ type GetChildGroupsParams struct {
 // for backward compatibility
 func (obj GetGroupsParams) MarshalJSON() ([]byte, error) {
 	type Alias GetGroupsParams
-	a := (Alias)(obj)
+	a := Alias(obj)
 	if a.BriefRepresentation != nil {
-		a.Full = BoolP(!*a.BriefRepresentation)
+		a.Full = new(!*a.BriefRepresentation)
 	} else if a.Full != nil {
-		a.BriefRepresentation = BoolP(!*a.Full)
+		a.BriefRepresentation = new(!*a.Full)
 	}
 	return json.Marshal(a)
 }
@@ -458,6 +441,7 @@ type ProtocolMappersConfig struct {
 	AggregateAttrs                     *string `json:"aggregate.attrs,omitempty"`
 	UsermodelClientRoleMappingClientID *string `json:"usermodel.clientRoleMapping.clientId,omitempty"`
 	IncludedClientAudience             *string `json:"included.client.audience,omitempty"`
+	IncludedCustomAudience             *string `json:"included.custom.audience,omitempty"`
 	FullPath                           *string `json:"full.path,omitempty"`
 	AttributeName                      *string `json:"attribute.name,omitempty"`
 	AttributeNameFormat                *string `json:"attribute.nameformat,omitempty"`
@@ -961,29 +945,6 @@ type MultiValuedHashMap struct {
 	Threshold  *int32   `json:"threshold,omitempty"`
 }
 
-// AuthorizationParameters represents the options to obtain get an authorization
-type AuthorizationParameters struct {
-	ResponseType *string `json:"code,omitempty"`
-	ClientID     *string `json:"client_id,omitempty"`
-	Scope        *string `json:"scope,omitempty"`
-	RedirectURI  *string `json:"redirect_uri,omitempty"`
-	State        *string `json:"state,omitempty"`
-	Nonce        *string `json:"nonce,omitempty"`
-	IDTokenHint  *string `json:"id_token_hint,omitempty"`
-}
-
-// FormData returns a map of options to be used in SetFormData function
-func (p *AuthorizationParameters) FormData() map[string]string {
-	m, _ := json.Marshal(p)
-	var res map[string]string
-	_ = json.Unmarshal(m, &res)
-	return res
-}
-
-// AuthorizationResponse represents the response to an authorization request.
-type AuthorizationResponse struct {
-}
-
 // TokenOptions represents the options to obtain a token
 type TokenOptions struct {
 	ClientID            *string  `json:"client_id,omitempty"`
@@ -1003,6 +964,7 @@ type TokenOptions struct {
 	ClientAssertionType *string  `json:"client_assertion_type,omitempty"`
 	ClientAssertion     *string  `json:"client_assertion,omitempty"`
 	SubjectToken        *string  `json:"subject_token,omitempty"`
+	SubjectTokenType    *string  `json:"subject_token_type,omitempty"`
 	RequestedSubject    *string  `json:"requested_subject,omitempty"`
 	Audience            *string  `json:"audience,omitempty"`
 	RequestedTokenType  *string  `json:"requested_token_type,omitempty"`
@@ -1010,19 +972,19 @@ type TokenOptions struct {
 
 // FormData returns a map of options to be used in SetFormData function
 func (t *TokenOptions) FormData() map[string]string {
-	if !NilOrEmptySlice(t.Scopes) {
-		t.Scope = StringP(strings.Join(t.Scopes, " "))
+	if len(t.Scopes) > 0 {
+		t.Scope = new(strings.Join(t.Scopes, " "))
 	}
 
-	if !NilOrEmptySlice(t.ResponseTypes) {
-		t.ResponseType = StringP(strings.Join(t.ResponseTypes, " "))
+	if len(t.ResponseTypes) > 0 {
+		t.ResponseType = new(strings.Join(t.ResponseTypes, " "))
 	}
 
 	if NilOrEmpty(t.ResponseType) {
-		t.ResponseType = StringP("token")
+		t.ResponseType = new("token")
 	}
 
-	m, _ := json.Marshal(t) //nolint:gosec
+	m, _ := json.Marshal(t) //nolint:gosec // form data must carry the credentials; marshaling string pointers cannot fail
 	var res map[string]string
 	_ = json.Unmarshal(m, &res)
 
@@ -1048,46 +1010,41 @@ type RequestingPartyTokenOptions struct {
 }
 
 // FormData returns a map of options to be used in SetFormData function
-func (t *RequestingPartyTokenOptions) FormData() map[string]string { //nolint:gocognit // can be fixed later
+func (t *RequestingPartyTokenOptions) FormData() map[string]string {
 	if NilOrEmpty(t.GrantType) { // required grant type for RPT
-		t.GrantType = StringP("urn:ietf:params:oauth:grant-type:uma-ticket")
+		t.GrantType = new("urn:ietf:params:oauth:grant-type:uma-ticket")
 	}
 
 	if t.ResponseIncludeResourceName == nil { // defaults to true if no value set
-		t.ResponseIncludeResourceName = BoolP(true)
+		t.ResponseIncludeResourceName = new(true)
 	}
 
 	res := make(map[string]string)
 	v := reflect.ValueOf(t).Elem()
 	typeOf := v.Type()
 
-	for i := 0; i < v.NumField(); i++ {
+	for i := range v.NumField() {
 		field := v.Field(i)
-		fieldType := typeOf.Field(i)
-		jsonTag := fieldType.Tag.Get("json")
-		if jsonTag == "-" {
+		jsonTag := typeOf.Field(i).Tag.Get("json")
+		if jsonTag == "-" || field.Kind() != reflect.Pointer || field.IsNil() {
 			continue
 		}
 
-		jsonName := strings.Split(jsonTag, ",")[0]
+		jsonName, _, _ := strings.Cut(jsonTag, ",")
 		if jsonName == "" {
-			jsonName = fieldType.Name
+			jsonName = typeOf.Field(i).Name
 		}
 
-		switch field.Kind() {
-		case reflect.Ptr: //nolint
-			if !field.IsNil() {
-				switch field.Elem().Kind() {
-				case reflect.String:
-					res[jsonName] = field.Elem().String()
-				case reflect.Bool:
-					res[jsonName] = strconv.FormatBool(field.Elem().Bool())
-				case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-					res[jsonName] = strconv.FormatUint(field.Elem().Uint(), 10)
-				}
-			}
+		switch field.Elem().Kind() {
+		case reflect.String:
+			res[jsonName] = field.Elem().String()
+		case reflect.Bool:
+			res[jsonName] = strconv.FormatBool(field.Elem().Bool())
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			res[jsonName] = strconv.FormatUint(field.Elem().Uint(), 10)
+		default:
+			// other kinds are not used in RequestingPartyTokenOptions
 		}
-
 	}
 	return res
 }
@@ -1255,7 +1212,6 @@ type IdentityProviderMapper struct {
 
 // GetResourceParams represents the optional parameters for getting resources
 type GetResourceParams struct {
-	Deep        *bool   `json:"deep,string,omitempty"`
 	First       *int    `json:"first,string,omitempty"`
 	Max         *int    `json:"max,string,omitempty"`
 	Name        *string `json:"name,omitempty"`
@@ -1392,7 +1348,7 @@ type GetUserPermissionParams struct {
 	ResourceID  *string `json:"resourceId,omitempty"`
 	Owner       *string `json:"owner,omitempty"`
 	Requester   *string `json:"requester,omitempty"`
-	Granted     *bool   `json:"granted,omitempty"`
+	Granted     *bool   `json:"granted,string,omitempty"`
 	ReturnNames *string `json:"returnNames,omitempty"`
 	First       *int    `json:"first,string,omitempty"`
 	Max         *int    `json:"max,string,omitempty"`
@@ -1443,7 +1399,7 @@ type GetEventsParams struct {
 	First     *int32   `json:"first,string,omitempty"`
 	IPAddress *string  `json:"ipAddress,omitempty"`
 	Max       *int32   `json:"max,string,omitempty"`
-	Type      []string `json:"type,omitempty"`
+	Type      []string `json:"-"` // sent as repeated "type" query parameter
 	UserID    *string  `json:"user,omitempty"`
 }
 
@@ -1467,11 +1423,11 @@ type GetAdminEventsParams struct {
 	AuthUser       *string  `json:"authUser,omitempty"`
 	DateFrom       *string  `json:"dateFrom,omitempty"`
 	DateTo         *string  `json:"dateTo,omitempty"`
-	First          *int32   `json:"first,omitempty"`
-	Max            *int32   `json:"max,omitempty"`
-	OperationTypes []string `json:"operationTypes,omitempty"`
+	First          *int32   `json:"first,string,omitempty"`
+	Max            *int32   `json:"max,string,omitempty"`
+	OperationTypes []string `json:"-"` // sent as repeated "operationTypes" query parameter
 	ResourcePath   *string  `json:"resourcePath,omitempty"`
-	ResourceTypes  []string `json:"resourceTypes,omitempty"`
+	ResourceTypes  []string `json:"-"` // sent as repeated "resourceTypes" query parameter
 }
 
 // AdminEventRepresentation is a representation of an Admin Event
@@ -1630,13 +1586,13 @@ type GetOrganizationCountParams struct {
 
 // GetOrganizationInvitationsParams represents the optional parameters for getting organization invitations
 type GetOrganizationInvitationsParams struct {
-	Email     *string `json:"email,omitempty"`
-	First     *int    `json:"first,string,omitempty"`
-	FirstName *string `json:"firstName,omitempty"`
-	LastName  *string `json:"lastName,omitempty"`
-	Max       *int    `json:"max,string,omitempty"`
-	Search    *string `json:"search,omitempty"`
-	Status    *string `json:"status,omitempty"`
+	Email     *string           `json:"email,omitempty"`
+	First     *int              `json:"first,string,omitempty"`
+	FirstName *string           `json:"firstName,omitempty"`
+	LastName  *string           `json:"lastName,omitempty"`
+	Max       *int              `json:"max,string,omitempty"`
+	Search    *string           `json:"search,omitempty"`
+	Status    *InvitationStatus `json:"status,omitempty"`
 }
 
 // GetOrganizationGroupsParams represents the optional parameters for getting organization groups
@@ -1707,16 +1663,6 @@ type OrganizationInvitationRepresentation struct {
 	InviteLink     *string           `json:"inviteLink,omitempty"`
 }
 
-// prettyStringStruct returns struct formatted into pretty string
-func prettyStringStruct(t any) string {
-	json, err := json.MarshalIndent(t, "", "\t")
-	if err != nil {
-		return ""
-	}
-
-	return string(json)
-}
-
 // UserProfileAttribute represents a user profile attribute
 type UserProfileAttribute struct {
 	Name        *string                          `json:"name,omitempty"`
@@ -1773,108 +1719,3 @@ const (
 	// UnmanagedAttributePolicyAdminEdit indicates that unmanaged attributes are enabled but can only be viewed and edited by admin in user profile
 	UnmanagedAttributePolicyAdminEdit UnmanagedAttributePolicy = "ADMIN_EDIT"
 )
-
-// Stringer implementations for all struct types
-func (v *CertResponseKey) String() string                           { return prettyStringStruct(v) }
-func (v *CertResponse) String() string                              { return prettyStringStruct(v) }
-func (v *IssuerResponse) String() string                            { return prettyStringStruct(v) }
-func (v *ResourcePermission) String() string                        { return prettyStringStruct(v) }
-func (v *PermissionResource) String() string                        { return prettyStringStruct(v) }
-func (v *PermissionScope) String() string                           { return prettyStringStruct(v) }
-func (v *IntroSpectTokenResult) String() string                     { return prettyStringStruct(v) }
-func (v *User) String() string                                      { return prettyStringStruct(v) }
-func (v *SetPasswordRequest) String() string                        { return prettyStringStruct(v) }
-func (v *Component) String() string                                 { return prettyStringStruct(v) }
-func (v *KeyStoreConfig) String() string                            { return prettyStringStruct(v) }
-func (v *ActiveKeys) String() string                                { return prettyStringStruct(v) }
-func (v *Key) String() string                                       { return prettyStringStruct(v) }
-func (v *Attributes) String() string                                { return prettyStringStruct(v) }
-func (v *Access) String() string                                    { return prettyStringStruct(v) }
-func (v *UserGroup) String() string                                 { return prettyStringStruct(v) }
-func (v *GetUsersParams) String() string                            { return prettyStringStruct(v) }
-func (v *GetComponentsParams) String() string                       { return prettyStringStruct(v) }
-func (v *ExecuteActionsEmail) String() string                       { return prettyStringStruct(v) }
-func (v *Group) String() string                                     { return prettyStringStruct(v) }
-func (v *GroupsCount) String() string                               { return prettyStringStruct(v) }
-func (obj *GetGroupsParams) String() string                         { return prettyStringStruct(obj) }
-func (v *CompositesRepresentation) String() string                  { return prettyStringStruct(v) }
-func (v *Role) String() string                                      { return prettyStringStruct(v) }
-func (v *GetRoleParams) String() string                             { return prettyStringStruct(v) }
-func (v *ClientMappingsRepresentation) String() string              { return prettyStringStruct(v) }
-func (v *MappingsRepresentation) String() string                    { return prettyStringStruct(v) }
-func (v *ClientScope) String() string                               { return prettyStringStruct(v) }
-func (v *ClientScopeAttributes) String() string                     { return prettyStringStruct(v) }
-func (v *ProtocolMappers) String() string                           { return prettyStringStruct(v) }
-func (v *ProtocolMappersConfig) String() string                     { return prettyStringStruct(v) }
-func (v *Client) String() string                                    { return prettyStringStruct(v) }
-func (v *ResourceServerRepresentation) String() string              { return prettyStringStruct(v) }
-func (v *RoleDefinition) String() string                            { return prettyStringStruct(v) }
-func (v *PolicyRepresentation) String() string                      { return prettyStringStruct(v) }
-func (v *RolePolicyRepresentation) String() string                  { return prettyStringStruct(v) }
-func (v *JSPolicyRepresentation) String() string                    { return prettyStringStruct(v) }
-func (v *ClientPolicyRepresentation) String() string                { return prettyStringStruct(v) }
-func (v *TimePolicyRepresentation) String() string                  { return prettyStringStruct(v) }
-func (v *UserPolicyRepresentation) String() string                  { return prettyStringStruct(v) }
-func (v *AggregatedPolicyRepresentation) String() string            { return prettyStringStruct(v) }
-func (v *GroupPolicyRepresentation) String() string                 { return prettyStringStruct(v) }
-func (v *GroupDefinition) String() string                           { return prettyStringStruct(v) }
-func (v *ResourceRepresentation) String() string                    { return prettyStringStruct(v) }
-func (v *ResourceOwnerRepresentation) String() string               { return prettyStringStruct(v) }
-func (v *ScopeRepresentation) String() string                       { return prettyStringStruct(v) }
-func (v *ProtocolMapperRepresentation) String() string              { return prettyStringStruct(v) }
-func (v *GetClientsParams) String() string                          { return prettyStringStruct(v) }
-func (v *UserInfoAddress) String() string                           { return prettyStringStruct(v) }
-func (v *UserInfo) String() string                                  { return prettyStringStruct(v) }
-func (v *RolesRepresentation) String() string                       { return prettyStringStruct(v) }
-func (v *RealmRepresentation) String() string                       { return prettyStringStruct(v) }
-func (v *MultiValuedHashMap) String() string                        { return prettyStringStruct(v) }
-func (t *TokenOptions) String() string                              { return prettyStringStruct(t) }
-func (t *RequestingPartyTokenOptions) String() string               { return prettyStringStruct(t) }
-func (v *RequestingPartyPermission) String() string                 { return prettyStringStruct(v) }
-func (v *UserSessionRepresentation) String() string                 { return prettyStringStruct(v) }
-func (v *SystemInfoRepresentation) String() string                  { return prettyStringStruct(v) }
-func (v *MemoryInfoRepresentation) String() string                  { return prettyStringStruct(v) }
-func (v *ServerInfoRepresentation) String() string                  { return prettyStringStruct(v) }
-func (v *FederatedIdentityRepresentation) String() string           { return prettyStringStruct(v) }
-func (v *IdentityProviderRepresentation) String() string            { return prettyStringStruct(v) }
-func (v *GetResourceParams) String() string                         { return prettyStringStruct(v) }
-func (v *GetScopeParams) String() string                            { return prettyStringStruct(v) }
-func (v *GetPolicyParams) String() string                           { return prettyStringStruct(v) }
-func (v *GetPermissionParams) String() string                       { return prettyStringStruct(v) }
-func (v *GetUsersByRoleParams) String() string                      { return prettyStringStruct(v) }
-func (v *PermissionRepresentation) String() string                  { return prettyStringStruct(v) }
-func (v *CreatePermissionTicketParams) String() string              { return prettyStringStruct(v) }
-func (v *PermissionTicketDescriptionRepresentation) String() string { return prettyStringStruct(v) }
-func (v *AccessRepresentation) String() string                      { return prettyStringStruct(v) }
-func (v *PermissionTicketResponseRepresentation) String() string    { return prettyStringStruct(v) }
-func (v *PermissionTicketRepresentation) String() string            { return prettyStringStruct(v) }
-func (v *PermissionTicketPermissionRepresentation) String() string  { return prettyStringStruct(v) }
-func (v *PermissionGrantParams) String() string                     { return prettyStringStruct(v) }
-func (v *PermissionGrantResponseRepresentation) String() string     { return prettyStringStruct(v) }
-func (v *GetUserPermissionParams) String() string                   { return prettyStringStruct(v) }
-func (v *ResourcePolicyRepresentation) String() string              { return prettyStringStruct(v) }
-func (v *GetResourcePoliciesParams) String() string                 { return prettyStringStruct(v) }
-func (v *CredentialRepresentation) String() string                  { return prettyStringStruct(v) }
-func (v *RequiredActionProviderRepresentation) String() string      { return prettyStringStruct(v) }
-func (v *BruteForceStatus) String() string                          { return prettyStringStruct(v) }
-func (v *GetClientUserSessionsParams) String() string               { return prettyStringStruct(v) }
-func (v *GetOrganizationsParams) String() string                    { return prettyStringStruct(v) }
-func (v *OrganizationInviteUserParams) String() string              { return prettyStringStruct(v) }
-func (v *GetMembersParams) String() string                          { return prettyStringStruct(v) }
-func (v *MembershipType) String() string                            { return prettyStringStruct(v) }
-func (v *MemberRepresentation) String() string                      { return prettyStringStruct(v) }
-func (v *OrganizationDomainRepresentation) String() string          { return prettyStringStruct(v) }
-func (v *OrganizationRepresentation) String() string                { return prettyStringStruct(v) }
-func (v *GetOrganizationMembersParams) String() string              { return prettyStringStruct(v) }
-func (v *GetOrganizationCountParams) String() string                { return prettyStringStruct(v) }
-func (v *GetOrganizationInvitationsParams) String() string          { return prettyStringStruct(v) }
-func (v *GetOrganizationGroupsParams) String() string               { return prettyStringStruct(v) }
-func (v *GetOrganizationGroupSubgroupsParams) String() string       { return prettyStringStruct(v) }
-func (v *OrganizationInvitationRepresentation) String() string      { return prettyStringStruct(v) }
-func (v *UnmanagedAttributePolicy) String() string                  { return prettyStringStruct(v) }
-func (v *UserProfileAttribute) String() string                      { return prettyStringStruct(v) }
-func (v *UserProfileAttributePermissions) String() string           { return prettyStringStruct(v) }
-func (v *UserProfileAttributeRequired) String() string              { return prettyStringStruct(v) }
-func (v *UserProfileAttributeSelector) String() string              { return prettyStringStruct(v) }
-func (v *UserProfileConfig) String() string                         { return prettyStringStruct(v) }
-func (v *UserProfileGroup) String() string                          { return prettyStringStruct(v) }

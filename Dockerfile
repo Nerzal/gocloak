@@ -1,16 +1,13 @@
-FROM quay.io/keycloak/keycloak:26.6.0
+ARG KEYCLOAK_VERSION=26.8.2
+FROM quay.io/keycloak/keycloak:${KEYCLOAK_VERSION}
 
-WORKDIR /opt/keycloak
-
-COPY testdata/gocloak-realm.json /opt/keycloak/data/import/
-
-ENV KEYCLOAK_ADMIN=admin
-ENV KEYCLOAK_ADMIN_PASSWORD=secret
-
+ENV KC_BOOTSTRAP_ADMIN_USERNAME=admin
+ENV KC_BOOTSTRAP_ADMIN_PASSWORD=secret
 ENV KC_HOSTNAME=localhost
 ENV KC_HEALTH_ENABLED=true
-ENV KC_FEATURES=account-api,authorization,client-policies,impersonation,docker,scripts,admin-fine-grained-authz:v1,organization
-RUN /opt/keycloak/bin/kc.sh build
+# preview: all preview features, e.g. legacy token exchange v1 (direct naked impersonation)
+# admin-fine-grained-authz:v1: tests use the v1 management permission endpoints (users/groups/clients)
+ENV KC_FEATURES=preview,docker,admin-fine-grained-authz:v1
 
 ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
-CMD ["start-dev", "--import-realm", "--features=preview,organization,admin-fine-grained-authz"]
+CMD ["start-dev", "--import-realm"]

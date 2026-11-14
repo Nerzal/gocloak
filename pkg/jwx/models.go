@@ -18,11 +18,11 @@ type Claims struct {
 	SessionState      string         `json:"session_state,omitempty"`
 	Acr               string         `json:"acr,omitempty"`
 	AllowedOrigins    []string       `json:"allowed-origins,omitempty"`
-	RealmAccess       RealmAccess    `json:"realm_access,omitempty"`
-	ResourceAccess    ResourceAccess `json:"resource_access,omitempty"`
+	RealmAccess       RealmAccess    `json:"realm_access,omitzero"`
+	ResourceAccess    ResourceAccess `json:"resource_access,omitzero"`
 	Scope             string         `json:"scope,omitempty"`
 	EmailVerified     bool           `json:"email_verified,omitempty"`
-	Address           Address        `json:"address,omitempty"`
+	Address           Address        `json:"address,omitzero"`
 	Name              string         `json:"name,omitempty"`
 	PreferredUsername string         `json:"preferred_username,omitempty"`
 	GivenName         string         `json:"given_name,omitempty"`
@@ -34,8 +34,7 @@ type Claims struct {
 }
 
 // Address TODO what fields does any address have?
-type Address struct {
-}
+type Address struct{}
 
 // RealmAccess holds roles of the user
 type RealmAccess struct {
@@ -44,8 +43,8 @@ type RealmAccess struct {
 
 // ResourceAccess holds TODO: What does it hold?
 type ResourceAccess struct {
-	RealmManagement RealmManagement `json:"realm-management,omitempty"`
-	Account         Account         `json:"account,omitempty"`
+	RealmManagement RealmManagement `json:"realm-management,omitzero"`
+	Account         Account         `json:"account,omitzero"`
 }
 
 // RealmManagement holds TODO: What does it hold?
