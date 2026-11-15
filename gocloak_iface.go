@@ -203,7 +203,9 @@ type GoCloakIface interface {
 	DeleteClientScopeMappingsClientRoles(ctx context.Context, token, realm, idOfClient, idOfSelectedClient string, roles []Role) error
 	// GetClientSecret returns a client's secret
 	GetClientSecret(ctx context.Context, token, realm, idOfClient string) (*CredentialRepresentation, error)
-	// GetClientServiceAccount retrieves the service account "user" for a client if enabled
+	// GetClientServiceAccount retrieves the service account [User] of the client identified by idOfClient [string].
+	// It reads [Client.ServiceAccountUserID] and loads that user; Keycloak releases before 27 do not
+	// expose that field, so the legacy service-account-user endpoint is used for them.
 	GetClientServiceAccount(ctx context.Context, token, realm, idOfClient string) (*User, error)
 	// RegenerateClientSecret triggers the creation of the new client secret.
 	RegenerateClientSecret(ctx context.Context, token, realm, idOfClient string) (*CredentialRepresentation, error)

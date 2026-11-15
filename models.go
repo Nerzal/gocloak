@@ -489,6 +489,7 @@ type Client struct {
 	RootURL                            *string                        `json:"rootUrl,omitempty"`
 	Secret                             *string                        `json:"secret,omitempty"`
 	ServiceAccountsEnabled             *bool                          `json:"serviceAccountsEnabled,omitempty"`
+	ServiceAccountUserID               *string                        `json:"serviceAccountUserId,omitempty"`
 	StandardFlowEnabled                *bool                          `json:"standardFlowEnabled,omitempty"`
 	SurrogateAuthRequired              *bool                          `json:"surrogateAuthRequired,omitempty"`
 	UseTemplateConfig                  *bool                          `json:"useTemplateConfig,omitempty"`

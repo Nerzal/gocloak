@@ -1246,10 +1246,22 @@ func (g *GoCloak) GetClientSecret(ctx context.Context, token, realm, idOfClient 
 	return doRequestPtr[CredentialRepresentation](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "clients", idOfClient, "client-secret"), errMessage)
 }
 
-// GetClientServiceAccount retrieves the service account "user" for a client if enabled
+// GetClientServiceAccount retrieves the service account [User] of the client identified by idOfClient [string].
+// It reads [Client.ServiceAccountUserID] and loads that user; Keycloak releases before 27 do not
+// expose that field, so the legacy service-account-user endpoint is used for them.
 func (g *GoCloak) GetClientServiceAccount(ctx context.Context, token, realm, idOfClient string) (*User, error) {
 	const errMessage = "could not get client service account"
 
+	client, err := g.GetClient(ctx, token, realm, idOfClient)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", errMessage, err)
+	}
+
+	if userID := PString(client.ServiceAccountUserID); userID != "" {
+		return g.GetUserByID(ctx, token, realm, userID)
+	}
+
+	// shortcut: fallback for Keycloak < 27 (endpoint removed in 27), drop once 26 is unsupported.
 	return doRequestPtr[User](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "clients", idOfClient, "service-account-user"), errMessage)
 }
 

@@ -602,3 +602,32 @@ func TestUnit_UpdateRequiresID(t *testing.T) {
 		require.ErrorContains(t, err, "required", name)
 	}
 }
+
+// TestUnit_GetClientServiceAccount_UsesServiceAccountUserID checks that the service account user is
+// loaded via serviceAccountUserId from the client representation (Keycloak 27+) and that a failing
+// client lookup is reported as an error.
+// Input: t [*testing.T]. Output: none.
+func TestUnit_GetClientServiceAccount_UsesServiceAccountUserID(t *testing.T) {
+	t.Parallel()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/admin/realms/realm/clients/client-id":
+			_, _ = w.Write([]byte(`{"id":"client-id","serviceAccountUserId":"sa-id"}`))
+		case "/admin/realms/realm/users/sa-id":
+			_, _ = w.Write([]byte(`{"id":"sa-id","username":"service-account-client"}`))
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+	client := NewClient(server.URL)
+
+	user, err := client.GetClientServiceAccount(context.Background(), "token", "realm", "client-id")
+	require.NoError(t, err)
+	require.Equal(t, "sa-id", PString(user.ID))
+	require.Equal(t, "service-account-client", PString(user.Username))
+
+	_, err = client.GetClientServiceAccount(context.Background(), "token", "realm", "missing")
+	require.Error(t, err)
+}
