@@ -955,3 +955,29 @@ func TestUnit_GettersNeverReturnNilWithoutError(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, organization)
 }
+
+// TestUnit_GetServerInfo_UsesAdminPrefix checks that serverinfo follows the configured admin path, e.g. the legacy
+// "/auth" prefix.
+// Input: t [*testing.T]. Output: none.
+func TestUnit_GetServerInfo_UsesAdminPrefix(t *testing.T) {
+	t.Parallel()
+	var paths []string
+	var mu sync.Mutex
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		paths = append(paths, r.URL.Path)
+		mu.Unlock()
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"systemInfo":{"version":"26.8.2"}}`))
+	}))
+	defer server.Close()
+	ctx := context.Background()
+
+	_, err := NewClient(server.URL).GetServerInfo(ctx, "token")
+	require.NoError(t, err)
+	info, err := NewClient(server.URL, SetLegacyWildFlySupport()).GetServerInfo(ctx, "token")
+	require.NoError(t, err)
+	require.Equal(t, "26.8.2", info.SystemInfo.Version)
+
+	require.Equal(t, []string{"/admin/serverinfo", "/auth/admin/serverinfo"}, paths)
+}

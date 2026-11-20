@@ -468,7 +468,8 @@ func SetCertCacheInvalidationTime(duration time.Duration) func(g *GoCloak) {
 // Output: [*ServerInfoRepresentation] server info, [error] if the call fails.
 func (g *GoCloak) GetServerInfo(ctx context.Context, accessToken string) (*ServerInfoRepresentation, error) {
 	errMessage := "could not get server info"
-	return doRequestPtr[ServerInfoRepresentation](g.GetRequestWithBearerAuth(ctx, accessToken), http.MethodGet, makeURL(g.basePath, "admin", "serverinfo"), errMessage)
+	return doRequestPtr[ServerInfoRepresentation](g.GetRequestWithBearerAuth(ctx, accessToken), http.MethodGet,
+		makeURL(g.basePath, strings.TrimSuffix(g.Config.authAdminRealms, urlSeparator+"realms"), "serverinfo"), errMessage)
 }
 
 // GetUserInfo calls the OIDC UserInfo endpoint.
