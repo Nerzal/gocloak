@@ -468,7 +468,7 @@ func SetCertCacheInvalidationTime(duration time.Duration) func(g *GoCloak) {
 // Output: [*ServerInfoRepresentation] server info, [error] if the call fails.
 func (g *GoCloak) GetServerInfo(ctx context.Context, accessToken string) (*ServerInfoRepresentation, error) {
 	errMessage := "could not get server info"
-	return doRequest[*ServerInfoRepresentation](g.GetRequestWithBearerAuth(ctx, accessToken), http.MethodGet, makeURL(g.basePath, "admin", "serverinfo"), errMessage)
+	return doRequestPtr[ServerInfoRepresentation](g.GetRequestWithBearerAuth(ctx, accessToken), http.MethodGet, makeURL(g.basePath, "admin", "serverinfo"), errMessage)
 }
 
 // GetUserInfo calls the OIDC UserInfo endpoint.
@@ -1576,7 +1576,7 @@ func (g *GoCloak) GetClientScopeProtocolMappers(ctx context.Context, token, real
 func (g *GoCloak) GetClientScopeProtocolMapper(ctx context.Context, token, realm, scopeID, protocolMapperID string) (*ProtocolMappers, error) {
 	const errMessage = "could not get client scope protocol mappers"
 
-	return doRequest[*ProtocolMappers](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "client-scopes", scopeID, "protocol-mappers", "models", protocolMapperID), errMessage)
+	return doRequestPtr[ProtocolMappers](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "client-scopes", scopeID, "protocol-mappers", "models", protocolMapperID), errMessage)
 }
 
 // GetClientScopeMappings returns all realm and client scope mappings of the given client.
@@ -1585,7 +1585,7 @@ func (g *GoCloak) GetClientScopeProtocolMapper(ctx context.Context, token, realm
 func (g *GoCloak) GetClientScopeMappings(ctx context.Context, token, realm, idOfClient string) (*MappingsRepresentation, error) {
 	const errMessage = "could not get all scope mappings for the client"
 
-	return doRequest[*MappingsRepresentation](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "clients", idOfClient, "scope-mappings"), errMessage)
+	return doRequestPtr[MappingsRepresentation](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "clients", idOfClient, "scope-mappings"), errMessage)
 }
 
 // GetRealmRoleGroups returns the groups that have the given realm role.
@@ -1843,7 +1843,7 @@ func (g *GoCloak) GetComponentsWithParams(ctx context.Context, token, realm stri
 func (g *GoCloak) GetComponent(ctx context.Context, token, realm string, componentID string) (*Component, error) {
 	const errMessage = "could not get components"
 
-	return doRequest[*Component](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "components", componentID), errMessage)
+	return doRequestPtr[Component](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "components", componentID), errMessage)
 }
 
 // UpdateComponent updates the given component.
@@ -2491,7 +2491,7 @@ func (g *GoCloak) GetAuthenticationFlows(ctx context.Context, token, realm strin
 // Output: [*AuthenticationFlowRepresentation] flow, [error] if the call fails.
 func (g *GoCloak) GetAuthenticationFlow(ctx context.Context, token, realm string, authenticationFlowID string) (*AuthenticationFlowRepresentation, error) {
 	const errMessage = "could not retrieve authentication flows"
-	return doRequest[*AuthenticationFlowRepresentation](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "authentication", "flows", authenticationFlowID), errMessage)
+	return doRequestPtr[AuthenticationFlowRepresentation](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "authentication", "flows", authenticationFlowID), errMessage)
 }
 
 // CreateAuthenticationFlow creates a new authentication flow in the realm.
@@ -2540,7 +2540,7 @@ func (g *GoCloak) CreateAuthenticatorConfig(ctx context.Context, token, realm st
 // Output: [*AuthenticatorConfigInfoRepresentation] config description, [error] if the call fails.
 func (g *GoCloak) GetAuthenticatorConfigDescription(ctx context.Context, token, realm, providerID string) (*AuthenticatorConfigInfoRepresentation, error) {
 	const errMessage = "could not retrieve authenticator config description"
-	return doRequest[*AuthenticatorConfigInfoRepresentation](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "authentication", "config-description", providerID), errMessage)
+	return doRequestPtr[AuthenticatorConfigInfoRepresentation](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "authentication", "config-description", providerID), errMessage)
 }
 
 // GetAuthenticatorConfig fetches an authenticator configuration by its ID.
@@ -2548,7 +2548,7 @@ func (g *GoCloak) GetAuthenticatorConfigDescription(ctx context.Context, token, 
 // Output: [*AuthenticatorConfigRepresentation] configuration, [error] if the call fails.
 func (g *GoCloak) GetAuthenticatorConfig(ctx context.Context, token, realm, configID string) (*AuthenticatorConfigRepresentation, error) {
 	const errMessage = "could not retrieve authenticator config"
-	return doRequest[*AuthenticatorConfigRepresentation](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "authentication", "config", configID), errMessage)
+	return doRequestPtr[AuthenticatorConfigRepresentation](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "authentication", "config", configID), errMessage)
 }
 
 // UpdateAuthenticatorConfig updates an authenticator configuration by its ID.
@@ -2617,7 +2617,7 @@ func (g *GoCloak) CreateAuthenticationExecutionConfig(ctx context.Context, token
 // Output: [*AuthenticatorConfigRepresentation] configuration, [error] if the call fails.
 func (g *GoCloak) GetAuthenticationExecutionConfig(ctx context.Context, token, realm, executionID, configID string) (*AuthenticatorConfigRepresentation, error) {
 	const errMessage = "could not retrieve authentication execution config"
-	return doRequest[*AuthenticatorConfigRepresentation](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "authentication", "executions", executionID, "config", configID), errMessage)
+	return doRequestPtr[AuthenticatorConfigRepresentation](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "authentication", "executions", executionID, "config", configID), errMessage)
 }
 
 // CreateAuthenticationExecutionFlow adds a new sub-flow execution to the flow with the given alias.
@@ -3167,7 +3167,7 @@ func (g *GoCloak) GetResourcesClient(ctx context.Context, token, realm string, p
 func (g *GoCloak) GetResourceServer(ctx context.Context, token, realm, idOfClient string) (*ResourceServerRepresentation, error) {
 	const errMessage = "could not get resource server settings"
 
-	return doRequest[*ResourceServerRepresentation](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "settings"), errMessage)
+	return doRequestPtr[ResourceServerRepresentation](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "clients", idOfClient, "authz", "resource-server", "settings"), errMessage)
 }
 
 // UpdateResource updates a resource of the client's resource server, using an admin token.
@@ -4102,7 +4102,7 @@ func (g *GoCloak) GetOrganizations(ctx context.Context, token, realm string, par
 // Output: [*OrganizationRepresentation] organization, [error] if the call fails.
 func (g *GoCloak) GetOrganizationByID(ctx context.Context, token, realm, idOfOrganization string) (*OrganizationRepresentation, error) {
 	const errMessage = "could not find organization"
-	return doRequest[*OrganizationRepresentation](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "organizations", idOfOrganization), errMessage)
+	return doRequestPtr[OrganizationRepresentation](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "organizations", idOfOrganization), errMessage)
 }
 
 // UpdateOrganization updates the given organization.
@@ -4224,7 +4224,7 @@ func (g *GoCloak) GetOrganizationMembers(ctx context.Context, token, realm, idOf
 // Output: [*MemberRepresentation] member, [error] if the call fails.
 func (g *GoCloak) GetOrganizationMemberByID(ctx context.Context, token, realm, idOfOrganization, idOfUser string) (*MemberRepresentation, error) {
 	const errMessage = "could not get organization member by ID"
-	return doRequest[*MemberRepresentation](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "organizations", idOfOrganization, "members", idOfUser), errMessage)
+	return doRequestPtr[MemberRepresentation](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "organizations", idOfOrganization, "members", idOfUser), errMessage)
 }
 
 // GetMemberAssociatedOrganizations returns the organizations associated with the user that has the specified id.
@@ -4297,7 +4297,7 @@ func (g *GoCloak) GetOrganizationIdentityProviders(ctx context.Context, token, r
 // Output: [*IdentityProviderRepresentation] identity provider, [error] if the call fails.
 func (g *GoCloak) GetOrganizationIdentityProvider(ctx context.Context, token, realm, idOfOrganization, alias string) (*IdentityProviderRepresentation, error) {
 	const errMessage = "could not get organization identity provider"
-	return doRequest[*IdentityProviderRepresentation](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "organizations", idOfOrganization, "identity-providers", alias), errMessage)
+	return doRequestPtr[IdentityProviderRepresentation](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "organizations", idOfOrganization, "identity-providers", alias), errMessage)
 }
 
 // RemoveIdentityProviderFromOrganization removes the identity provider with the specified alias from the
@@ -4367,7 +4367,7 @@ func (g *GoCloak) GetOrganizationInvitations(ctx context.Context, token, realm, 
 // Output: [*OrganizationInvitationRepresentation] invitation, [error] if the call fails.
 func (g *GoCloak) GetOrganizationInvitationByID(ctx context.Context, token, realm, idOfOrganization, idOfInvitation string) (*OrganizationInvitationRepresentation, error) {
 	const errMessage = "could not get organization invitation"
-	return doRequest[*OrganizationInvitationRepresentation](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "organizations", idOfOrganization, "invitations", idOfInvitation), errMessage)
+	return doRequestPtr[OrganizationInvitationRepresentation](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "organizations", idOfOrganization, "invitations", idOfInvitation), errMessage)
 }
 
 // DeleteOrganizationInvitation removes the invitation with the specified id from the organization.
@@ -4432,7 +4432,7 @@ func (g *GoCloak) GetOrganizationGroups(ctx context.Context, token, realm, idOfO
 // Output: [*Group] group, [error] if the call fails.
 func (g *GoCloak) GetOrganizationGroupByPath(ctx context.Context, token, realm, idOfOrganization, groupPath string, subGroupsCount bool) (*Group, error) {
 	const errMessage = "could not get organization group by path"
-	return doRequest[*Group](g.GetRequestWithBearerAuth(ctx, token).
+	return doRequestPtr[Group](g.GetRequestWithBearerAuth(ctx, token).
 		SetQueryParam("subGroupsCount", strconv.FormatBool(subGroupsCount)),
 		http.MethodGet, g.getAdminRealmURL(realm, append([]string{"organizations", idOfOrganization, "groups", "group-by-path"},
 			groupPathSegments(groupPath)...)...), errMessage)
@@ -4445,7 +4445,7 @@ func (g *GoCloak) GetOrganizationGroupByPath(ctx context.Context, token, realm, 
 // Output: [*Group] group, [error] if the call fails.
 func (g *GoCloak) GetOrganizationGroupByID(ctx context.Context, token, realm, idOfOrganization, idOfGroup string) (*Group, error) {
 	const errMessage = "could not get organization group"
-	return doRequest[*Group](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "organizations", idOfOrganization, "groups", idOfGroup), errMessage)
+	return doRequestPtr[Group](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, g.getAdminRealmURL(realm, "organizations", idOfOrganization, "groups", idOfGroup), errMessage)
 }
 
 // UpdateOrganizationGroup updates the organization group with the specified id.

@@ -166,6 +166,13 @@ if len(clients) == 0 {
 return gocloak.PString(clients[0].ID), nil
 ```
 
+### Upgrading from v14
+
+- IDs, names and realms are path-escaped by gocloak. Pass them unescaped: code that called `url.PathEscape(roleName)`
+  itself now sends a double-escaped name and gets a 404. IDs returned by `Create*` functions are unescaped too.
+- `UpdateAuthenticationFlow` returns only an `error`; read the flow back with `GetAuthenticationFlow`.
+- `ValidateAccessToken` rejects tokens without `exp`.
+
 ## Configuration
 
 `NewClient` takes functional options:

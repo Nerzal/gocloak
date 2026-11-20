@@ -930,3 +930,28 @@ func TestUnit_PKCE(t *testing.T) {
 	require.Equal(t, "x", (&TokenOptions{CodeVerifier: "x"}).FormData()["code_verifier"])
 	require.NotContains(t, (&TokenOptions{}).FormData(), "code_verifier")
 }
+
+// TestUnit_GettersNeverReturnNilWithoutError checks that getters return a non-nil result when Keycloak answers 2xx
+// without a JSON body, so callers can dereference the result after a nil error.
+// Input: t [*testing.T]. Output: none.
+func TestUnit_GettersNeverReturnNilWithoutError(t *testing.T) {
+	t.Parallel()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+	client := NewClient(server.URL)
+	ctx := context.Background()
+
+	component, err := client.GetComponent(ctx, "token", "r", "id")
+	require.NoError(t, err)
+	require.NotNil(t, component)
+
+	flow, err := client.GetAuthenticationFlow(ctx, "token", "r", "id")
+	require.NoError(t, err)
+	require.NotNil(t, flow)
+
+	organization, err := client.GetOrganizationByID(ctx, "token", "r", "id")
+	require.NoError(t, err)
+	require.NotNil(t, organization)
+}
