@@ -315,7 +315,9 @@ func TestUnit_GetCerts_ReturnsCopy(t *testing.T) {
 	require.NoError(t, err)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(CertResponse{Keys: []CertResponseKey{jwkFor("k", &key.PublicKey)}})
+		jwk := jwkFor("k", &key.PublicKey)
+		jwk.X5c, jwk.KeyOps = []string{"cert"}, []string{"verify"}
+		_ = json.NewEncoder(w).Encode(CertResponse{Keys: []CertResponseKey{jwk}})
 	}))
 	defer server.Close()
 	client := NewClient(server.URL)
@@ -324,12 +326,15 @@ func TestUnit_GetCerts_ReturnsCopy(t *testing.T) {
 	certs, err := client.GetCerts(ctx, "r")
 	require.NoError(t, err)
 	certs.Keys[0].Kid = "changed"
+	certs.Keys[0].X5c[0], certs.Keys[0].KeyOps[0] = "evil", "sign"
 	certs.Keys = append(certs.Keys, CertResponseKey{Kid: "added"})
 
 	certs, err = client.GetCerts(ctx, "r")
 	require.NoError(t, err)
 	require.Len(t, certs.Keys, 1)
 	require.Equal(t, "k", certs.Keys[0].Kid)
+	require.Equal(t, []string{"cert"}, certs.Keys[0].X5c)
+	require.Equal(t, []string{"verify"}, certs.Keys[0].KeyOps)
 }
 
 // TestUnit_GetPolicies_SendsTypeAsQuery checks that the policy type is a query parameter and that no
@@ -483,10 +488,12 @@ func TestUnit_ValidateAccessToken(t *testing.T) {
 
 	exp := time.Now().Add(time.Minute).Unix()
 	sign := func(claims jwt.MapClaims) string {
-		if v, ok := claims["exp"]; !ok {
-			claims["exp"] = exp
-		} else if v == nil {
-			delete(claims, "exp")
+		for name, value := range map[string]any{"exp": exp, "iss": "https://public.example.com/realms/r"} {
+			if v, ok := claims[name]; !ok {
+				claims[name] = value
+			} else if v == nil {
+				delete(claims, name)
+			}
 		}
 		token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 		token.Header["kid"] = "k"
@@ -513,6 +520,9 @@ func TestUnit_ValidateAccessToken(t *testing.T) {
 		{"nothing to check", valid, TokenValidation{}, true},
 		{"no expiry", jwt.MapClaims{"typ": "Bearer", "aud": "api", "azp": "web", "exp": nil}, want, true},
 		{"expired", jwt.MapClaims{"typ": "Bearer", "aud": "api", "azp": "web", "exp": time.Now().Add(-time.Minute).Unix()}, want, true},
+		{"no issuer", jwt.MapClaims{"typ": "Bearer", "aud": "api", "azp": "web", "iss": nil}, want, true},
+		{"other realm", jwt.MapClaims{"typ": "Bearer", "aud": "api", "azp": "web", "iss": "https://public.example.com/realms/other"}, want, true},
+		{"realm name suffix", jwt.MapClaims{"typ": "Bearer", "aud": "api", "azp": "web", "iss": "https://public.example.com/realms/xr"}, want, true},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -946,6 +956,7 @@ func TestUnit_ValidateAccessToken_LeewayAndCustomClaims(t *testing.T) {
 	client := NewClient(server.URL)
 
 	sign := func(claims jwt.MapClaims) string {
+		claims["iss"] = "http://kc/realms/r"
 		token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 		token.Header["kid"] = "k"
 		signed, err := token.SignedString(key)

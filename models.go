@@ -3,6 +3,7 @@ package gocloak
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"reflect"
 	"strconv"
 	"strings"
@@ -69,10 +70,13 @@ type EnforcedString string
 
 // UnmarshalJSON keeps a JSON string as its value and any other JSON value (number, bool, object, array)
 // as its raw JSON text; null leaves the value unchanged.
-// Input: data [[]byte] JSON value. Output: [error] if a JSON string is malformed.
+// Input: data [[]byte] JSON value. Output: [error] if data is empty or a JSON string is malformed.
 func (s *EnforcedString) UnmarshalJSON(data []byte) error {
 	if bytes.Equal(data, []byte("null")) {
 		return nil
+	}
+	if len(data) == 0 {
+		return errors.New("EnforcedString: empty JSON value")
 	}
 	if data[0] != '"' {
 		*s = EnforcedString(data)
