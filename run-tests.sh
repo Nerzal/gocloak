@@ -1,26 +1,17 @@
-#!/bin/sh
+#!/usr/bin/env bash
+# usage: ./run-tests.sh [TestName ...]   (KEYCLOAK_VERSION=x.y.z to test another Keycloak release)
+
+trap 'docker compose down' EXIT
 
 docker compose down
-docker compose up -d
-
-keycloakServer=http://localhost
-url="${keycloakServer}:9000/health"
-echo "Checking service availability at $url (CTRL+C to exit)"
-while true; do
-    response=$(curl -s -o /dev/null -w "%{http_code}" $url)
-    if [ $response -eq 200 ]; then
-        break
-    fi
-    sleep 1
-done
-echo "Service is now available at ${keycloakServer}:8080"
+docker compose up -d --build --wait --wait-timeout 300 || exit 1
+echo "Keycloak is ready at http://localhost:8080"
 
 ARGS=()
 if [ $# -gt 0 ]; then
-    ARGS+=("-run")
-    ARGS+=("^($@)$")
+    IFS='|'
+    ARGS+=("-run" "^($*)$")
+    unset IFS
 fi
 
-go test -race -cover -coverprofile=coverage.out -covermode=atomic -p 10 -cpu 1,2 -bench . -benchmem ${ARGS[@]}
-
-docker compose down
+go test -race -cover -coverprofile=coverage.out -covermode=atomic -p 10 -cpu 1,2 -bench . -benchmem "${ARGS[@]}" ./...

@@ -1,33 +1,73 @@
 version: "2"
-linters:
-  enable:
-    - gocognit
-    - gocyclo
-    - gosec
-    - misspell
-    - revive
-    - unconvert
 
 run:
-  timeout: 1m
-  issues-exit-code: 1
-  tests: false
-  enable-build-vcs: false
-  allow-parallel-runners: true
-  allow-serial-runners: false
-  go: "1.26"
-  concurrency: 4
-  modules-download-mode: mod
-  
-output:
-  path-mode: abs
-  path-prefix: ""
-  show-stats: true
+  timeout: 5m
+  tests: true
+
+linters:
+  # errcheck, govet, ineffassign, staticcheck, unused
+  default: standard
+  enable:
+    - copyloopvar
+    - dupword
+    - durationcheck
+    - errname
+    - errorlint
+    - exhaustive
+    - forcetypeassert
+    - gocognit
+    - gocritic
+    - gocyclo
+    - gosec
+    - intrange
+    - misspell
+    - modernize
+    - nakedret
+    - nilerr
+    - nolintlint
+    - perfsprint
+    - predeclared
+    - revive
+    - testifylint
+    - thelper
+    - unconvert
+    - unparam
+    - usestdlibvars
+    - wastedassign
+  settings:
+    gocognit:
+      min-complexity: 15
+    gocyclo:
+      min-complexity: 15
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment # models mirror Keycloak's JSON, field order follows the API
+        - shadow
+    exhaustive:
+      default-signifies-exhaustive: true
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+    testifylint:
+      disable:
+        - float-compare # pointer helper tests compare the identical value, no rounding involved
+    thelper:
+      tb:
+        name: false
+  exclusions:
+    presets:
+      - common-false-positives
+      - std-error-handling
+    rules:
+      # integration tests are long linear scenarios
+      - path: _test\.go
+        linters:
+          - gocognit
+          - gocyclo
+          - gosec
 
 formatters:
   enable:
-    - gofmt
-    - swaggo
+    - gofumpt
     - goimports
-    
-

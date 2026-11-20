@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -17,10 +18,6 @@ import (
 // "string" tag allows to convert the non-string fields of a structure to map[string]string.
 // "omitempty" allows to skip the fields with default values.
 func GetQueryParams(s any) (map[string]string, error) {
-	// if obj, ok := s.(GetGroupsParams); ok {
-	// 	obj.OnMarshal()
-	// 	s = obj
-	// }
 	b, err := json.Marshal(s)
 	if err != nil {
 		return nil, err
@@ -36,7 +33,9 @@ func GetQueryParams(s any) (map[string]string, error) {
 // StringOrArray represents a value that can either be a string or an array of strings
 type StringOrArray []string
 
-// UnmarshalJSON unmarshals a string or an array object from a JSON array or a JSON string
+// UnmarshalJSON decodes either a JSON array of strings or a single JSON string into the StringOrArray.
+// Input: data [[]byte] JSON array or string.
+// Output: [error] if data is neither.
 func (s *StringOrArray) UnmarshalJSON(data []byte) error {
 	if len(data) > 1 && data[0] == '[' {
 		var obj []string
@@ -55,27 +54,29 @@ func (s *StringOrArray) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// MarshalJSON converts the array of strings to a JSON array or JSON string if there is only one item in the array
-func (s *StringOrArray) MarshalJSON() ([]byte, error) {
-	if len(*s) == 1 {
-		return json.Marshal([]string(*s)[0])
+// MarshalJSON encodes a single-item StringOrArray as a JSON string, otherwise as a JSON array.
+// Value receiver, so non-addressable values (e.g. json.Marshal(StringOrArray{"x"})) use it too.
+// Output: [[]byte] JSON, [error] if encoding fails.
+func (s StringOrArray) MarshalJSON() ([]byte, error) {
+	if len(s) == 1 {
+		return json.Marshal(s[0])
 	}
-	return json.Marshal([]string(*s))
+	return json.Marshal([]string(s))
 }
 
 // EnforcedString can be used when the expected value is string but Keycloak in some cases gives you mixed types
 type EnforcedString string
 
-// UnmarshalJSON modify data as string before json unmarshal
+// UnmarshalJSON keeps a JSON string as its value and any other JSON value (number, bool, object, array)
+// as its raw JSON text; null leaves the value unchanged.
+// Input: data [[]byte] JSON value. Output: [error] if a JSON string is malformed.
 func (s *EnforcedString) UnmarshalJSON(data []byte) error {
+	if bytes.Equal(data, []byte("null")) {
+		return nil
+	}
 	if data[0] != '"' {
-		// Escape unescaped quotes
-		data = bytes.ReplaceAll(data, []byte(`"`), []byte(`\"`))
-		data = bytes.ReplaceAll(data, []byte(`\\"`), []byte(`\"`))
-
-		// Wrap data in quotes
-		data = append([]byte(`"`), data...)
-		data = append(data, []byte(`"`)...)
+		*s = EnforcedString(data)
+		return nil
 	}
 
 	var val string
@@ -84,7 +85,8 @@ func (s *EnforcedString) UnmarshalJSON(data []byte) error {
 	return err
 }
 
-// MarshalJSON return json marshal
+// MarshalJSON encodes the EnforcedString as a plain JSON string.
+// Output: [[]byte] JSON, [error] if encoding fails.
 func (s *EnforcedString) MarshalJSON() ([]byte, error) {
 	return json.Marshal(*s)
 }
@@ -100,11 +102,12 @@ const (
 
 	// APIErrTypeInvalidGrant corresponds with Keycloak's
 	// OAuthErrorException due to "invalid_grant".
-	APIErrTypeInvalidGrant = "oauth: invalid grant"
+	APIErrTypeInvalidGrant APIErrType = "oauth: invalid grant"
 )
 
-// ParseAPIErrType is a convenience method for returning strongly
-// typed API errors.
+// ParseAPIErrType is a convenience method for returning strongly typed API errors.
+// Input: err [error].
+// Output: [APIErrType] APIErrTypeInvalidGrant if the message contains "invalid_grant", otherwise APIErrTypeUnknown.
 func ParseAPIErrType(err error) APIErrType {
 	if err == nil {
 		return APIErrTypeUnknown
@@ -122,9 +125,18 @@ type APIError struct {
 	Code    int        `json:"code"`
 	Message string     `json:"message"`
 	Type    APIErrType `json:"type"`
+	// Err is the underlying transport error (e.g. context.Canceled), nil for HTTP errors
+	Err error `json:"-"`
 }
 
-// Error stringifies the APIError
+// Unwrap returns the underlying transport error so errors.Is/As work on it.
+// Output: [error] wrapped error or nil.
+func (apiError APIError) Unwrap() error {
+	return apiError.Err
+}
+
+// Error returns the message of the APIError.
+// Output: [string] error message.
 func (apiError APIError) Error() string {
 	return apiError.Message
 }
@@ -133,69 +145,69 @@ func (apiError APIError) Error() string {
 // JSON Web Key structure is described here:
 // https://self-issued.info/docs/draft-ietf-jose-json-web-key.html#JWKContents
 type CertResponseKey struct {
-	Kid     *string  `json:"kid,omitempty"`
-	Kty     *string  `json:"kty,omitempty"`
-	Alg     *string  `json:"alg,omitempty"`
-	Use     *string  `json:"use,omitempty"`
-	N       *string  `json:"n,omitempty"`
-	E       *string  `json:"e,omitempty"`
-	X       *string  `json:"x,omitempty"`
-	Y       *string  `json:"y,omitempty"`
-	Crv     *string  `json:"crv,omitempty"`
-	KeyOps  []string `json:"key_ops,omitempty"`
-	X5u     *string  `json:"x5u,omitempty"`
-	X5c     []string `json:"x5c,omitempty"`
-	X5t     *string  `json:"x5t,omitempty"`
-	X5tS256 *string  `json:"x5t#S256,omitempty"`
+	Kid     string   `json:"kid,omitzero"`
+	Kty     string   `json:"kty,omitzero"`
+	Alg     string   `json:"alg,omitzero"`
+	Use     string   `json:"use,omitzero"`
+	N       string   `json:"n,omitzero"`
+	E       string   `json:"e,omitzero"`
+	X       string   `json:"x,omitzero"`
+	Y       string   `json:"y,omitzero"`
+	Crv     string   `json:"crv,omitzero"`
+	KeyOps  []string `json:"key_ops,omitzero"`
+	X5u     string   `json:"x5u,omitzero"`
+	X5c     []string `json:"x5c,omitzero"`
+	X5t     string   `json:"x5t,omitzero"`
+	X5tS256 string   `json:"x5t#S256,omitzero"`
 }
 
 // CertResponse is returned by the certs endpoint
 type CertResponse struct {
-	Keys []CertResponseKey `json:"keys,omitempty"`
+	Keys []CertResponseKey `json:"keys,omitzero"`
 }
 
 // IssuerResponse is returned by the issuer endpoint
 type IssuerResponse struct {
-	Realm           *string `json:"realm,omitempty"`
-	PublicKey       *string `json:"public_key,omitempty"`
-	TokenService    *string `json:"token-service,omitempty"`
-	AccountService  *string `json:"account-service,omitempty"`
-	TokensNotBefore *int    `json:"tokens-not-before,omitempty"`
+	Realm           string `json:"realm,omitzero"`
+	PublicKey       string `json:"public_key,omitzero"`
+	TokenService    string `json:"token-service,omitzero"`
+	AccountService  string `json:"account-service,omitzero"`
+	TokensNotBefore int    `json:"tokens-not-before,omitzero"`
 }
 
 // ResourcePermission represents a permission granted to a resource
 type ResourcePermission struct {
-	RSID           *string  `json:"rsid,omitempty"`
-	ResourceID     *string  `json:"resource_id,omitempty"`
-	RSName         *string  `json:"rsname,omitempty"`
-	Scopes         []string `json:"scopes,omitempty"`
-	ResourceScopes []string `json:"resource_scopes,omitempty"`
+	RSID           string   `json:"rsid,omitzero"`
+	ResourceID     string   `json:"resource_id,omitzero"`
+	RSName         string   `json:"rsname,omitzero"`
+	Scopes         []string `json:"scopes,omitzero"`
+	ResourceScopes []string `json:"resource_scopes,omitzero"`
 }
 
 // PermissionResource represents a resources asscoiated with a permission
 type PermissionResource struct {
-	ResourceID   *string `json:"_id,omitempty"`
-	ResourceName *string `json:"name,omitempty"`
+	ResourceID   string `json:"_id,omitzero"`
+	ResourceName string `json:"name,omitzero"`
 }
 
 // PermissionScope represents scopes associated with a permission
 type PermissionScope struct {
-	ScopeID   *string `json:"id,omitempty"`
-	ScopeName *string `json:"name,omitempty"`
+	ScopeID   string `json:"id,omitzero"`
+	ScopeName string `json:"name,omitzero"`
 }
 
 // IntroSpectTokenResult is returned when a token was checked
 type IntroSpectTokenResult struct {
-	Permissions []ResourcePermission `json:"permissions,omitempty"`
-	Exp         *int                 `json:"exp,omitempty"`
-	Nbf         *int                 `json:"nbf,omitempty"`
-	Iat         *int                 `json:"iat,omitempty"`
-	Aud         *StringOrArray       `json:"aud,omitempty"`
-	Active      *bool                `json:"active,omitempty"`
-	AuthTime    *int                 `json:"auth_time,omitempty"`
-	Jti         *string              `json:"jti,omitempty"`
-	Type        *string              `json:"typ,omitempty"`
-	Azp         *string              `json:"azp,omitempty"`
+	Permissions []ResourcePermission `json:"permissions,omitzero"`
+	Exp         int                  `json:"exp,omitzero"`
+	Nbf         int                  `json:"nbf,omitzero"`
+	Iat         int                  `json:"iat,omitzero"`
+	Aud         StringOrArray        `json:"aud,omitzero"`
+	Active      bool                 `json:"active,omitzero"`
+	AuthTime    int                  `json:"auth_time,omitzero"`
+	Jti         string               `json:"jti,omitzero"`
+	Type        string               `json:"typ,omitzero"`
+	Azp         string               `json:"azp,omitzero"`
 }
 
 // User represents the Keycloak User Structure
@@ -210,22 +222,22 @@ type User struct {
 	LastName                   *string                    `json:"lastName,omitempty"`
 	Email                      *string                    `json:"email,omitempty"`
 	FederationLink             *string                    `json:"federationLink,omitempty"`
-	Attributes                 map[string][]string        `json:"attributes,omitempty"`
-	DisableableCredentialTypes []any                      `json:"disableableCredentialTypes,omitempty"`
-	RequiredActions            []string                   `json:"requiredActions,omitempty"`
-	Access                     map[string]bool            `json:"access,omitempty"`
-	ClientRoles                map[string][]string        `json:"clientRoles,omitempty"`
-	RealmRoles                 []string                   `json:"realmRoles,omitempty"`
-	Groups                     []string                   `json:"groups,omitempty"`
+	Attributes                 map[string][]string        `json:"attributes,omitzero"`
+	DisableableCredentialTypes []any                      `json:"disableableCredentialTypes,omitzero"`
+	RequiredActions            []string                   `json:"requiredActions,omitzero"`
+	Access                     map[string]bool            `json:"access,omitzero"`
+	ClientRoles                map[string][]string        `json:"clientRoles,omitzero"`
+	RealmRoles                 []string                   `json:"realmRoles,omitzero"`
+	Groups                     []string                   `json:"groups,omitzero"`
 	ServiceAccountClientID     *string                    `json:"serviceAccountClientId,omitempty"`
-	Credentials                []CredentialRepresentation `json:"credentials,omitempty"`
+	Credentials                []CredentialRepresentation `json:"credentials,omitzero"`
 }
 
 // SetPasswordRequest sets a new password
 type SetPasswordRequest struct {
-	Type      *string `json:"type,omitempty"`
-	Temporary *bool   `json:"temporary,omitempty"`
-	Password  *string `json:"value,omitempty"`
+	Type      string `json:"type,omitzero"`
+	Temporary bool   `json:"temporary,omitzero"`
+	Password  string `json:"value,omitzero"`
 }
 
 // Component is a component
@@ -235,55 +247,33 @@ type Component struct {
 	ProviderID      *string             `json:"providerId,omitempty"`
 	ProviderType    *string             `json:"providerType,omitempty"`
 	ParentID        *string             `json:"parentId,omitempty"`
-	ComponentConfig map[string][]string `json:"config,omitempty"`
+	ComponentConfig map[string][]string `json:"config,omitzero"`
 	SubType         *string             `json:"subType,omitempty"`
 }
 
 // KeyStoreConfig holds the keyStoreConfig
 type KeyStoreConfig struct {
-	ActiveKeys *ActiveKeys `json:"active,omitempty"`
-	Key        []Key       `json:"keys,omitempty"`
+	ActiveKeys ActiveKeys `json:"active,omitzero"`
+	Key        []Key      `json:"keys,omitzero"`
 }
 
 // ActiveKeys holds the active keys
 type ActiveKeys struct {
-	HS256 *string `json:"HS256,omitempty"`
-	RS256 *string `json:"RS256,omitempty"`
-	AES   *string `json:"AES,omitempty"`
+	HS256 string `json:"HS256,omitzero"`
+	RS256 string `json:"RS256,omitzero"`
+	AES   string `json:"AES,omitzero"`
 }
 
 // Key is a key
 type Key struct {
-	ProviderID       *string `json:"providerId,omitempty"`
-	ProviderPriority *int    `json:"providerPriority,omitempty"`
-	Kid              *string `json:"kid,omitempty"`
-	Status           *string `json:"status,omitempty"`
-	Type             *string `json:"type,omitempty"`
-	Algorithm        *string `json:"algorithm,omitempty"`
-	PublicKey        *string `json:"publicKey,omitempty"`
-	Certificate      *string `json:"certificate,omitempty"`
-}
-
-// Attributes holds Attributes
-type Attributes struct {
-	LDAPENTRYDN []string `json:"LDAP_ENTRY_DN,omitempty"`
-	LDAPID      []string `json:"LDAP_ID,omitempty"`
-}
-
-// Access represents access
-type Access struct {
-	ManageGroupMembership *bool `json:"manageGroupMembership,omitempty"`
-	View                  *bool `json:"view,omitempty"`
-	MapRoles              *bool `json:"mapRoles,omitempty"`
-	Impersonate           *bool `json:"impersonate,omitempty"`
-	Manage                *bool `json:"manage,omitempty"`
-}
-
-// UserGroup is a UserGroup
-type UserGroup struct {
-	ID   *string `json:"id,omitempty"`
-	Name *string `json:"name,omitempty"`
-	Path *string `json:"path,omitempty"`
+	ProviderID       string `json:"providerId,omitzero"`
+	ProviderPriority int    `json:"providerPriority,omitzero"`
+	Kid              string `json:"kid,omitzero"`
+	Status           string `json:"status,omitzero"`
+	Type             string `json:"type,omitzero"`
+	Algorithm        string `json:"algorithm,omitzero"`
+	PublicKey        string `json:"publicKey,omitzero"`
+	Certificate      string `json:"certificate,omitzero"`
 }
 
 // GetUsersParams represents the optional parameters for getting users
@@ -331,11 +321,11 @@ type Group struct {
 	ID          *string             `json:"id,omitempty"`
 	Name        *string             `json:"name,omitempty"`
 	Path        *string             `json:"path,omitempty"`
-	SubGroups   []Group             `json:"subGroups,omitempty"`
-	Attributes  map[string][]string `json:"attributes,omitempty"`
-	Access      map[string]bool     `json:"access,omitempty"`
-	ClientRoles map[string][]string `json:"clientRoles,omitempty"`
-	RealmRoles  []string            `json:"realmRoles,omitempty"`
+	SubGroups   []Group             `json:"subGroups,omitzero"`
+	Attributes  map[string][]string `json:"attributes,omitzero"`
+	Access      map[string]bool     `json:"access,omitzero"`
+	ClientRoles map[string][]string `json:"clientRoles,omitzero"`
+	RealmRoles  []string            `json:"realmRoles,omitzero"`
 }
 
 // GroupsCount represents the groups count response from keycloak
@@ -363,36 +353,37 @@ type GetChildGroupsParams struct {
 	Search              *string `json:"search,omitempty"`
 }
 
-// MarshalJSON is a custom json marshaling function to automatically set the Full and BriefRepresentation properties
-// for backward compatibility
+// MarshalJSON is a custom json marshaling function that keeps Full and BriefRepresentation consistent (one is the
+// negation of the other) for backward compatibility.
+// Output: [[]byte] JSON, [error] if encoding fails.
 func (obj GetGroupsParams) MarshalJSON() ([]byte, error) {
 	type Alias GetGroupsParams
-	a := (Alias)(obj)
+	a := Alias(obj)
 	if a.BriefRepresentation != nil {
-		a.Full = BoolP(!*a.BriefRepresentation)
+		a.Full = new(!*a.BriefRepresentation)
 	} else if a.Full != nil {
-		a.BriefRepresentation = BoolP(!*a.Full)
+		a.BriefRepresentation = new(!*a.Full)
 	}
 	return json.Marshal(a)
 }
 
 // CompositesRepresentation represents the composite roles of a role
 type CompositesRepresentation struct {
-	Client map[string][]string `json:"client,omitempty"`
-	Realm  []string            `json:"realm,omitempty"`
+	Client map[string][]string `json:"client,omitzero"`
+	Realm  []string            `json:"realm,omitzero"`
 }
 
 // Role is a role
 type Role struct {
-	ID                 *string                   `json:"id,omitempty"`
-	Name               *string                   `json:"name,omitempty"`
-	ScopeParamRequired *bool                     `json:"scopeParamRequired,omitempty"`
-	Composite          *bool                     `json:"composite,omitempty"`
-	Composites         *CompositesRepresentation `json:"composites,omitempty"`
-	ClientRole         *bool                     `json:"clientRole,omitempty"`
-	ContainerID        *string                   `json:"containerId,omitempty"`
-	Description        *string                   `json:"description,omitempty"`
-	Attributes         map[string][]string       `json:"attributes,omitempty"`
+	ID                 *string                  `json:"id,omitempty"`
+	Name               *string                  `json:"name,omitempty"`
+	ScopeParamRequired *bool                    `json:"scopeParamRequired,omitempty"`
+	Composite          *bool                    `json:"composite,omitempty"`
+	Composites         CompositesRepresentation `json:"composites,omitzero"`
+	ClientRole         *bool                    `json:"clientRole,omitempty"`
+	ContainerID        *string                  `json:"containerId,omitempty"`
+	Description        *string                  `json:"description,omitempty"`
+	Attributes         map[string][]string      `json:"attributes,omitzero"`
 }
 
 // GetRoleParams represents the optional parameters for getting roles
@@ -405,26 +396,26 @@ type GetRoleParams struct {
 
 // ClientMappingsRepresentation is a client role mappings
 type ClientMappingsRepresentation struct {
-	ID       *string `json:"id,omitempty"`
-	Client   *string `json:"client,omitempty"`
-	Mappings []Role  `json:"mappings,omitempty"`
+	ID       string `json:"id,omitzero"`
+	Client   string `json:"client,omitzero"`
+	Mappings []Role `json:"mappings,omitzero"`
 }
 
 // MappingsRepresentation is a representation of role mappings
 type MappingsRepresentation struct {
-	ClientMappings map[string]*ClientMappingsRepresentation `json:"clientMappings,omitempty"`
-	RealmMappings  []Role                                   `json:"realmMappings,omitempty"`
+	ClientMappings map[string]ClientMappingsRepresentation `json:"clientMappings,omitzero"`
+	RealmMappings  []Role                                  `json:"realmMappings,omitzero"`
 }
 
 // ClientScope is a ClientScope
 type ClientScope struct {
-	ID                    *string                `json:"id,omitempty"`
-	Name                  *string                `json:"name,omitempty"`
-	Type                  *string                `json:"type,omitempty"`
-	Description           *string                `json:"description,omitempty"`
-	Protocol              *string                `json:"protocol,omitempty"`
-	ClientScopeAttributes *ClientScopeAttributes `json:"attributes,omitempty"`
-	ProtocolMappers       []ProtocolMappers      `json:"protocolMappers,omitempty"`
+	ID                    *string               `json:"id,omitempty"`
+	Name                  *string               `json:"name,omitempty"`
+	Type                  *string               `json:"type,omitempty"`
+	Description           *string               `json:"description,omitempty"`
+	Protocol              *string               `json:"protocol,omitempty"`
+	ClientScopeAttributes ClientScopeAttributes `json:"attributes,omitzero"`
+	ProtocolMappers       []ProtocolMappers     `json:"protocolMappers,omitzero"`
 }
 
 // ClientScopeAttributes are attributes of client scopes
@@ -436,12 +427,12 @@ type ClientScopeAttributes struct {
 
 // ProtocolMappers are protocolmappers
 type ProtocolMappers struct {
-	ID                    *string                `json:"id,omitempty"`
-	Name                  *string                `json:"name,omitempty"`
-	Protocol              *string                `json:"protocol,omitempty"`
-	ProtocolMapper        *string                `json:"protocolMapper,omitempty"`
-	ConsentRequired       *bool                  `json:"consentRequired,omitempty"`
-	ProtocolMappersConfig *ProtocolMappersConfig `json:"config,omitempty"`
+	ID                    *string               `json:"id,omitempty"`
+	Name                  *string               `json:"name,omitempty"`
+	Protocol              *string               `json:"protocol,omitempty"`
+	ProtocolMapper        *string               `json:"protocolMapper,omitempty"`
+	ConsentRequired       *bool                 `json:"consentRequired,omitempty"`
+	ProtocolMappersConfig ProtocolMappersConfig `json:"config,omitzero"`
 }
 
 // ProtocolMappersConfig is a config of a protocol mapper
@@ -458,6 +449,7 @@ type ProtocolMappersConfig struct {
 	AggregateAttrs                     *string `json:"aggregate.attrs,omitempty"`
 	UsermodelClientRoleMappingClientID *string `json:"usermodel.clientRoleMapping.clientId,omitempty"`
 	IncludedClientAudience             *string `json:"included.client.audience,omitempty"`
+	IncludedCustomAudience             *string `json:"included.custom.audience,omitempty"`
 	FullPath                           *string `json:"full.path,omitempty"`
 	AttributeName                      *string `json:"attribute.name,omitempty"`
 	AttributeNameFormat                *string `json:"attribute.nameformat,omitempty"`
@@ -470,20 +462,20 @@ type ProtocolMappersConfig struct {
 
 // Client is a ClientRepresentation
 type Client struct {
-	Access                             map[string]any                 `json:"access,omitempty"`
+	Access                             map[string]any                 `json:"access,omitzero"`
 	AdminURL                           *string                        `json:"adminUrl,omitempty"`
-	Attributes                         map[string]string              `json:"attributes,omitempty"`
-	AuthenticationFlowBindingOverrides map[string]string              `json:"authenticationFlowBindingOverrides,omitempty"`
+	Attributes                         map[string]string              `json:"attributes,omitzero"`
+	AuthenticationFlowBindingOverrides map[string]string              `json:"authenticationFlowBindingOverrides,omitzero"`
 	AuthorizationServicesEnabled       *bool                          `json:"authorizationServicesEnabled,omitempty"`
-	AuthorizationSettings              *ResourceServerRepresentation  `json:"authorizationSettings,omitempty"`
+	AuthorizationSettings              ResourceServerRepresentation   `json:"authorizationSettings,omitzero"`
 	BaseURL                            *string                        `json:"baseUrl,omitempty"`
 	BearerOnly                         *bool                          `json:"bearerOnly,omitempty"`
 	ClientAuthenticatorType            *string                        `json:"clientAuthenticatorType,omitempty"`
 	ClientID                           *string                        `json:"clientId,omitempty"`
 	ClientTemplate                     *string                        `json:"clientTemplate,omitempty"`
 	ConsentRequired                    *bool                          `json:"consentRequired,omitempty"`
-	DefaultClientScopes                []string                       `json:"defaultClientScopes,omitempty"`
-	DefaultRoles                       []string                       `json:"defaultRoles,omitempty"`
+	DefaultClientScopes                []string                       `json:"defaultClientScopes,omitzero"`
+	DefaultRoles                       []string                       `json:"defaultRoles,omitzero"`
 	Description                        *string                        `json:"description,omitempty"`
 	DirectAccessGrantsEnabled          *bool                          `json:"directAccessGrantsEnabled,omitempty"`
 	Enabled                            *bool                          `json:"enabled,omitempty"`
@@ -494,23 +486,24 @@ type Client struct {
 	Name                               *string                        `json:"name,omitempty"`
 	NodeReRegistrationTimeout          *int32                         `json:"nodeReRegistrationTimeout,omitempty"`
 	NotBefore                          *int32                         `json:"notBefore,omitempty"`
-	OptionalClientScopes               []string                       `json:"optionalClientScopes,omitempty"`
+	OptionalClientScopes               []string                       `json:"optionalClientScopes,omitzero"`
 	Origin                             *string                        `json:"origin,omitempty"`
 	Protocol                           *string                        `json:"protocol,omitempty"`
-	ProtocolMappers                    []ProtocolMapperRepresentation `json:"protocolMappers,omitempty"`
+	ProtocolMappers                    []ProtocolMapperRepresentation `json:"protocolMappers,omitzero"`
 	PublicClient                       *bool                          `json:"publicClient,omitempty"`
-	RedirectURIs                       []string                       `json:"redirectUris,omitempty"`
-	RegisteredNodes                    map[string]int                 `json:"registeredNodes,omitempty"`
+	RedirectURIs                       []string                       `json:"redirectUris,omitzero"`
+	RegisteredNodes                    map[string]int                 `json:"registeredNodes,omitzero"`
 	RegistrationAccessToken            *string                        `json:"registrationAccessToken,omitempty"`
 	RootURL                            *string                        `json:"rootUrl,omitempty"`
 	Secret                             *string                        `json:"secret,omitempty"`
 	ServiceAccountsEnabled             *bool                          `json:"serviceAccountsEnabled,omitempty"`
+	ServiceAccountUserID               *string                        `json:"serviceAccountUserId,omitempty"`
 	StandardFlowEnabled                *bool                          `json:"standardFlowEnabled,omitempty"`
 	SurrogateAuthRequired              *bool                          `json:"surrogateAuthRequired,omitempty"`
 	UseTemplateConfig                  *bool                          `json:"useTemplateConfig,omitempty"`
 	UseTemplateMappers                 *bool                          `json:"useTemplateMappers,omitempty"`
 	UseTemplateScope                   *bool                          `json:"useTemplateScope,omitempty"`
-	WebOrigins                         []string                       `json:"webOrigins,omitempty"`
+	WebOrigins                         []string                       `json:"webOrigins,omitzero"`
 }
 
 // ResourceServerRepresentation represents the resources of a Server
@@ -519,11 +512,11 @@ type ResourceServerRepresentation struct {
 	ClientID                      *string                  `json:"clientId,omitempty"`
 	ID                            *string                  `json:"id,omitempty"`
 	Name                          *string                  `json:"name,omitempty"`
-	Policies                      []PolicyRepresentation   `json:"policies,omitempty"`
-	PolicyEnforcementMode         *PolicyEnforcementMode   `json:"policyEnforcementMode,omitempty"`
-	Resources                     []ResourceRepresentation `json:"resources,omitempty"`
-	Scopes                        []ScopeRepresentation    `json:"scopes,omitempty"`
-	DecisionStrategy              *DecisionStrategy        `json:"decisionStrategy,omitempty"`
+	Policies                      []PolicyRepresentation   `json:"policies,omitzero"`
+	PolicyEnforcementMode         PolicyEnforcementMode    `json:"policyEnforcementMode,omitzero"`
+	Resources                     []ResourceRepresentation `json:"resources,omitzero"`
+	Scopes                        []ScopeRepresentation    `json:"scopes,omitzero"`
+	DecisionStrategy              DecisionStrategy         `json:"decisionStrategy,omitzero"`
 }
 
 // RoleDefinition represents a role in a RolePolicyRepresentation
@@ -535,12 +528,12 @@ type RoleDefinition struct {
 
 // AdapterConfiguration represents adapter configuration of a client
 type AdapterConfiguration struct {
-	Realm            *string `json:"realm"`
-	AuthServerURL    *string `json:"auth-server-url"`
-	SSLRequired      *string `json:"ssl-required"`
-	Resource         *string `json:"resource"`
-	Credentials      any     `json:"credentials"`
-	ConfidentialPort *int    `json:"confidential-port"`
+	Realm            string `json:"realm"`
+	AuthServerURL    string `json:"auth-server-url"`
+	SSLRequired      string `json:"ssl-required"`
+	Resource         string `json:"resource"`
+	Credentials      any    `json:"credentials"`
+	ConfidentialPort int    `json:"confidential-port"`
 }
 
 // PolicyEnforcementMode is an enum type for PolicyEnforcementMode of ResourceServerRepresentation
@@ -574,16 +567,16 @@ const (
 
 // PolicyRepresentation is a representation of a Policy
 type PolicyRepresentation struct {
-	Config           map[string]string `json:"config,omitempty"`
-	DecisionStrategy *DecisionStrategy `json:"decisionStrategy,omitempty"`
+	Config           map[string]string `json:"config,omitzero"`
+	DecisionStrategy DecisionStrategy  `json:"decisionStrategy,omitzero"`
 	Description      *string           `json:"description,omitempty"`
 	ID               *string           `json:"id,omitempty"`
-	Logic            *Logic            `json:"logic,omitempty"`
+	Logic            Logic             `json:"logic,omitzero"`
 	Name             *string           `json:"name,omitempty"`
 	Owner            *string           `json:"owner,omitempty"`
-	Policies         []string          `json:"policies,omitempty"`
-	Resources        []string          `json:"resources,omitempty"`
-	Scopes           []string          `json:"scopes,omitempty"`
+	Policies         []string          `json:"policies,omitzero"`
+	Resources        []string          `json:"resources,omitzero"`
+	Scopes           []string          `json:"scopes,omitzero"`
 	Type             *string           `json:"type,omitempty"`
 	RolePolicyRepresentation
 	JSPolicyRepresentation
@@ -597,7 +590,7 @@ type PolicyRepresentation struct {
 // RolePolicyRepresentation represents role based policies
 type RolePolicyRepresentation struct {
 	FetchRoles *bool            `json:"fetchRoles,omitempty"`
-	Roles      []RoleDefinition `json:"roles,omitempty"`
+	Roles      []RoleDefinition `json:"roles,omitzero"`
 }
 
 // JSPolicyRepresentation represents js based policies
@@ -607,7 +600,7 @@ type JSPolicyRepresentation struct {
 
 // ClientPolicyRepresentation represents client based policies
 type ClientPolicyRepresentation struct {
-	Clients []string `json:"clients,omitempty"`
+	Clients []string `json:"clients,omitzero"`
 }
 
 // TimePolicyRepresentation represents time based policies
@@ -628,17 +621,17 @@ type TimePolicyRepresentation struct {
 
 // UserPolicyRepresentation represents user based policies
 type UserPolicyRepresentation struct {
-	Users []string `json:"users,omitempty"`
+	Users []string `json:"users,omitzero"`
 }
 
 // AggregatedPolicyRepresentation represents aggregated policies
 type AggregatedPolicyRepresentation struct {
-	Policies []string `json:"policies,omitempty"`
+	Policies []string `json:"policies,omitzero"`
 }
 
 // GroupPolicyRepresentation represents group based policies
 type GroupPolicyRepresentation struct {
-	Groups      []GroupDefinition `json:"groups,omitempty"`
+	Groups      []GroupDefinition `json:"groups,omitzero"`
 	GroupsClaim *string           `json:"groupsClaim,omitempty"`
 }
 
@@ -651,17 +644,17 @@ type GroupDefinition struct {
 
 // ResourceRepresentation is a representation of a Resource
 type ResourceRepresentation struct {
-	ID                 *string                      `json:"_id,omitempty"` // TODO: is marked "_optional" in template, input error or deliberate?
-	Attributes         map[string][]string          `json:"attributes,omitempty"`
-	DisplayName        *string                      `json:"displayName,omitempty"`
-	IconURI            *string                      `json:"icon_uri,omitempty"` // TODO: With "_" because that's how it's written down in the template
-	Name               *string                      `json:"name,omitempty"`
-	Owner              *ResourceOwnerRepresentation `json:"owner,omitempty"`
-	OwnerManagedAccess *bool                        `json:"ownerManagedAccess,omitempty"`
-	ResourceScopes     []ScopeRepresentation        `json:"resource_scopes,omitempty"`
-	Scopes             []ScopeRepresentation        `json:"scopes,omitempty"`
-	Type               *string                      `json:"type,omitempty"`
-	URIs               []string                     `json:"uris,omitempty"`
+	ID                 *string                     `json:"_id,omitempty"` // TODO: is marked "_optional" in template, input error or deliberate?
+	Attributes         map[string][]string         `json:"attributes,omitzero"`
+	DisplayName        *string                     `json:"displayName,omitempty"`
+	IconURI            *string                     `json:"icon_uri,omitempty"` // TODO: With "_" because that's how it's written down in the template
+	Name               *string                     `json:"name,omitempty"`
+	Owner              ResourceOwnerRepresentation `json:"owner,omitzero"`
+	OwnerManagedAccess *bool                       `json:"ownerManagedAccess,omitempty"`
+	ResourceScopes     []ScopeRepresentation       `json:"resource_scopes,omitzero"`
+	Scopes             []ScopeRepresentation       `json:"scopes,omitzero"`
+	Type               *string                     `json:"type,omitempty"`
+	URIs               []string                    `json:"uris,omitzero"`
 }
 
 // ResourceOwnerRepresentation represents a resource's owner
@@ -676,13 +669,13 @@ type ScopeRepresentation struct {
 	IconURI     *string                  `json:"iconUri,omitempty"`
 	ID          *string                  `json:"id,omitempty"`
 	Name        *string                  `json:"name,omitempty"`
-	Policies    []PolicyRepresentation   `json:"policies,omitempty"`
-	Resources   []ResourceRepresentation `json:"resources,omitempty"`
+	Policies    []PolicyRepresentation   `json:"policies,omitzero"`
+	Resources   []ResourceRepresentation `json:"resources,omitzero"`
 }
 
 // ProtocolMapperRepresentation represents....
 type ProtocolMapperRepresentation struct {
-	Config          map[string]string `json:"config,omitempty"`
+	Config          map[string]string `json:"config,omitzero"`
 	ID              *string           `json:"id,omitempty"`
 	Name            *string           `json:"name,omitempty"`
 	Protocol        *string           `json:"protocol,omitempty"`
@@ -703,42 +696,42 @@ type GetClientsParams struct {
 // UserInfoAddress is representation of the address sub-filed of UserInfo
 // https://openid.net/specs/openid-connect-core-1_0.html#AddressClaim
 type UserInfoAddress struct {
-	Formatted     *string `json:"formatted,omitempty"`
-	StreetAddress *string `json:"street_address,omitempty"`
-	Locality      *string `json:"locality,omitempty"`
-	Region        *string `json:"region,omitempty"`
-	PostalCode    *string `json:"postal_code,omitempty"`
-	Country       *string `json:"country,omitempty"`
+	Formatted     string `json:"formatted,omitzero"`
+	StreetAddress string `json:"street_address,omitzero"`
+	Locality      string `json:"locality,omitzero"`
+	Region        string `json:"region,omitzero"`
+	PostalCode    string `json:"postal_code,omitzero"`
+	Country       string `json:"country,omitzero"`
 }
 
 // UserInfo is returned by the userinfo endpoint
 // https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
 type UserInfo struct {
-	Sub                 *string          `json:"sub,omitempty"`
-	Name                *string          `json:"name,omitempty"`
-	GivenName           *string          `json:"given_name,omitempty"`
-	FamilyName          *string          `json:"family_name,omitempty"`
-	MiddleName          *string          `json:"middle_name,omitempty"`
-	Nickname            *string          `json:"nickname,omitempty"`
-	PreferredUsername   *string          `json:"preferred_username,omitempty"`
-	Profile             *string          `json:"profile,omitempty"`
-	Picture             *string          `json:"picture,omitempty"`
-	Website             *string          `json:"website,omitempty"`
-	Email               *string          `json:"email,omitempty"`
-	EmailVerified       *bool            `json:"email_verified,omitempty"`
-	Gender              *string          `json:"gender,omitempty"`
-	ZoneInfo            *string          `json:"zoneinfo,omitempty"`
-	Locale              *string          `json:"locale,omitempty"`
-	PhoneNumber         *string          `json:"phone_number,omitempty"`
-	PhoneNumberVerified *bool            `json:"phone_number_verified,omitempty"`
-	Address             *UserInfoAddress `json:"address,omitempty"`
-	UpdatedAt           *int             `json:"updated_at,omitempty"`
+	Sub                 string          `json:"sub,omitzero"`
+	Name                string          `json:"name,omitzero"`
+	GivenName           string          `json:"given_name,omitzero"`
+	FamilyName          string          `json:"family_name,omitzero"`
+	MiddleName          string          `json:"middle_name,omitzero"`
+	Nickname            string          `json:"nickname,omitzero"`
+	PreferredUsername   string          `json:"preferred_username,omitzero"`
+	Profile             string          `json:"profile,omitzero"`
+	Picture             string          `json:"picture,omitzero"`
+	Website             string          `json:"website,omitzero"`
+	Email               string          `json:"email,omitzero"`
+	EmailVerified       bool            `json:"email_verified,omitzero"`
+	Gender              string          `json:"gender,omitzero"`
+	ZoneInfo            string          `json:"zoneinfo,omitzero"`
+	Locale              string          `json:"locale,omitzero"`
+	PhoneNumber         string          `json:"phone_number,omitzero"`
+	PhoneNumberVerified bool            `json:"phone_number_verified,omitzero"`
+	Address             UserInfoAddress `json:"address,omitzero"`
+	UpdatedAt           int             `json:"updated_at,omitzero"`
 }
 
 // RolesRepresentation represents the roles of a realm
 type RolesRepresentation struct {
-	Client map[string][]Role `json:"client,omitempty"`
-	Realm  []Role            `json:"realm,omitempty"`
+	Client map[string][]Role `json:"client,omitzero"`
+	Realm  []Role            `json:"realm,omitzero"`
 }
 
 // RealmRepresentation represents a realm
@@ -754,30 +747,30 @@ type RealmRepresentation struct {
 	AdminEventsDetailsEnabled                                 *bool                            `json:"adminEventsDetailsEnabled,omitempty"`
 	AdminEventsEnabled                                        *bool                            `json:"adminEventsEnabled,omitempty"`
 	AdminTheme                                                *string                          `json:"adminTheme,omitempty"`
-	Attributes                                                map[string]string                `json:"attributes,omitempty"`
-	AuthenticationFlows                                       []any                            `json:"authenticationFlows,omitempty"`
-	AuthenticatorConfig                                       []any                            `json:"authenticatorConfig,omitempty"`
+	Attributes                                                map[string]string                `json:"attributes,omitzero"`
+	AuthenticationFlows                                       []any                            `json:"authenticationFlows,omitzero"`
+	AuthenticatorConfig                                       []any                            `json:"authenticatorConfig,omitzero"`
 	BruteForceProtected                                       *bool                            `json:"bruteForceProtected,omitempty"`
 	BruteForceStrategy                                        *string                          `json:"bruteForceStrategy,omitempty"`
 	BrowserFlow                                               *string                          `json:"browserFlow,omitempty"`
-	BrowserSecurityHeaders                                    map[string]string                `json:"browserSecurityHeaders,omitempty"`
+	BrowserSecurityHeaders                                    map[string]string                `json:"browserSecurityHeaders,omitzero"`
 	ClientOfflineSessionIdleTimeout                           *int                             `json:"clientOfflineSessionIdleTimeout,omitempty"`
 	ClientOfflineSessionMaxLifespan                           *int                             `json:"clientOfflineSessionMaxLifespan,omitempty"`
 	ClientAuthenticationFlow                                  *string                          `json:"clientAuthenticationFlow,omitempty"`
-	ClientPolicies                                            map[string][]any                 `json:"clientPolicies,omitempty"`
-	ClientProfiles                                            map[string][]any                 `json:"clientProfiles,omitempty"`
-	ClientScopeMappings                                       map[string][]any                 `json:"clientScopeMappings,omitempty"`
-	ClientScopes                                              []ClientScope                    `json:"clientScopes,omitempty"`
+	ClientPolicies                                            map[string][]any                 `json:"clientPolicies,omitzero"`
+	ClientProfiles                                            map[string][]any                 `json:"clientProfiles,omitzero"`
+	ClientScopeMappings                                       map[string][]any                 `json:"clientScopeMappings,omitzero"`
+	ClientScopes                                              []ClientScope                    `json:"clientScopes,omitzero"`
 	ClientSessionIdleTimeout                                  *int                             `json:"clientSessionIdleTimeout,omitempty"`
 	ClientSessionMaxLifespan                                  *int                             `json:"clientSessionMaxLifespan,omitempty"`
-	Clients                                                   []Client                         `json:"clients,omitempty"`
-	Components                                                map[string][]Component           `json:"components,omitempty"`
-	DefaultDefaultClientScopes                                []string                         `json:"defaultDefaultClientScopes,omitempty"`
-	DefaultGroups                                             []string                         `json:"defaultGroups,omitempty"`
+	Clients                                                   []Client                         `json:"clients,omitzero"`
+	Components                                                map[string][]Component           `json:"components,omitzero"`
+	DefaultDefaultClientScopes                                []string                         `json:"defaultDefaultClientScopes,omitzero"`
+	DefaultGroups                                             []string                         `json:"defaultGroups,omitzero"`
 	DefaultLocale                                             *string                          `json:"defaultLocale,omitempty"`
-	DefaultOptionalClientScopes                               []string                         `json:"defaultOptionalClientScopes,omitempty"`
-	DefaultRole                                               *Role                            `json:"defaultRole,omitempty"`
-	DefaultRoles                                              []string                         `json:"defaultRoles,omitempty"`
+	DefaultOptionalClientScopes                               []string                         `json:"defaultOptionalClientScopes,omitzero"`
+	DefaultRole                                               Role                             `json:"defaultRole,omitzero"`
+	DefaultRoles                                              []string                         `json:"defaultRoles,omitzero"`
 	DefaultSignatureAlgorithm                                 *string                          `json:"defaultSignatureAlgorithm,omitempty"`
 	DirectGrantFlow                                           *string                          `json:"directGrantFlow,omitempty"`
 	DisplayName                                               *string                          `json:"displayName,omitempty"`
@@ -786,19 +779,19 @@ type RealmRepresentation struct {
 	EditUsernameAllowed                                       *bool                            `json:"editUsernameAllowed,omitempty"`
 	EmailTheme                                                *string                          `json:"emailTheme,omitempty"`
 	Enabled                                                   *bool                            `json:"enabled,omitempty"`
-	EnabledEventTypes                                         []string                         `json:"enabledEventTypes,omitempty"`
+	EnabledEventTypes                                         []string                         `json:"enabledEventTypes,omitzero"`
 	EventsEnabled                                             *bool                            `json:"eventsEnabled,omitempty"`
-	EventsListeners                                           []string                         `json:"eventsListeners,omitempty"`
+	EventsListeners                                           []string                         `json:"eventsListeners,omitzero"`
 	FailureFactor                                             *int                             `json:"failureFactor,omitempty"`
-	FederatedUsers                                            []any                            `json:"federatedUsers,omitempty"`
-	Groups                                                    []Group                          `json:"groups,omitempty"`
+	FederatedUsers                                            []any                            `json:"federatedUsers,omitzero"`
+	Groups                                                    []Group                          `json:"groups,omitzero"`
 	ID                                                        *string                          `json:"id,omitempty"`
-	IdentityProviderMappers                                   []IdentityProviderMapper         `json:"identityProviderMappers,omitempty"`
-	IdentityProviders                                         []IdentityProviderRepresentation `json:"identityProviders,omitempty"`
+	IdentityProviderMappers                                   []IdentityProviderMapper         `json:"identityProviderMappers,omitzero"`
+	IdentityProviders                                         []IdentityProviderRepresentation `json:"identityProviders,omitzero"`
 	InternationalizationEnabled                               *bool                            `json:"internationalizationEnabled,omitempty"`
 	KeycloakVersion                                           *string                          `json:"keycloakVersion,omitempty"`
 	LoginTheme                                                *string                          `json:"loginTheme,omitempty"`
-	LocalizationTexts                                         map[string]map[string]string     `json:"localizationTexts,omitempty"`
+	LocalizationTexts                                         map[string]map[string]string     `json:"localizationTexts,omitzero"`
 	LoginWithEmailAllowed                                     *bool                            `json:"loginWithEmailAllowed,omitempty"`
 	MaxDeltaTimeSeconds                                       *int                             `json:"maxDeltaTimeSeconds,omitempty"`
 	MaxFailureWaitSeconds                                     *int                             `json:"maxFailureWaitSeconds,omitempty"`
@@ -818,10 +811,10 @@ type RealmRepresentation struct {
 	OTPPolicyLookAheadWindow                                  *int                             `json:"otpPolicyLookAheadWindow,omitempty"`
 	OTPPolicyPeriod                                           *int                             `json:"otpPolicyPeriod,omitempty"`
 	OTPPolicyType                                             *string                          `json:"otpPolicyType,omitempty"`
-	OTPSupportedApplications                                  []string                         `json:"otpSupportedApplications,omitempty"`
+	OTPSupportedApplications                                  []string                         `json:"otpSupportedApplications,omitzero"`
 	PasswordPolicy                                            *string                          `json:"passwordPolicy,omitempty"`
 	PermanentLockout                                          *bool                            `json:"permanentLockout,omitempty"`
-	ProtocolMappers                                           []any                            `json:"protocolMappers,omitempty"`
+	ProtocolMappers                                           []any                            `json:"protocolMappers,omitzero"`
 	QuickLoginCheckMilliSeconds                               *int                             `json:"quickLoginCheckMilliSeconds,omitempty"`
 	Realm                                                     *string                          `json:"realm,omitempty"`
 	RevokeRefreshToken                                        *bool                            `json:"revokeRefreshToken,omitempty"`
@@ -830,45 +823,45 @@ type RealmRepresentation struct {
 	RegistrationEmailAsUsername                               *bool                            `json:"registrationEmailAsUsername,omitempty"`
 	RegistrationFlow                                          *string                          `json:"registrationFlow,omitempty"`
 	RememberMe                                                *bool                            `json:"rememberMe,omitempty"`
-	RequiredActions                                           []any                            `json:"requiredActions,omitempty"`
+	RequiredActions                                           []any                            `json:"requiredActions,omitzero"`
 	ResetCredentialsFlow                                      *string                          `json:"resetCredentialsFlow,omitempty"`
-	RequiredCredentials                                       []string                         `json:"requiredCredentials,omitempty"`
+	RequiredCredentials                                       []string                         `json:"requiredCredentials,omitzero"`
 	ResetPasswordAllowed                                      *bool                            `json:"resetPasswordAllowed,omitempty"`
-	Roles                                                     *RolesRepresentation             `json:"roles,omitempty"`
+	Roles                                                     RolesRepresentation              `json:"roles,omitzero"`
 	SSOSessionIdleTimeout                                     *int                             `json:"ssoSessionIdleTimeout,omitempty"`
 	SSOSessionIdleTimeoutRememberMe                           *int                             `json:"ssoSessionIdleTimeoutRememberMe,omitempty"`
 	SSOSessionMaxLifespan                                     *int                             `json:"ssoSessionMaxLifespan,omitempty"`
 	SSOSessionMaxLifespanRememberMe                           *int                             `json:"ssoSessionMaxLifespanRememberMe,omitempty"`
-	SMTPServer                                                map[string]string                `json:"smtpServer,omitempty"`
-	ScopeMappings                                             []any                            `json:"scopeMappings,omitempty"`
+	SMTPServer                                                map[string]string                `json:"smtpServer,omitzero"`
+	ScopeMappings                                             []any                            `json:"scopeMappings,omitzero"`
 	SSLRequired                                               *string                          `json:"sslRequired,omitempty"`
-	SupportedLocales                                          []string                         `json:"supportedLocales,omitempty"`
-	UserFederationMappers                                     []any                            `json:"userFederationMappers,omitempty"`
-	UserFederationProviders                                   []any                            `json:"userFederationProviders,omitempty"`
+	SupportedLocales                                          []string                         `json:"supportedLocales,omitzero"`
+	UserFederationMappers                                     []any                            `json:"userFederationMappers,omitzero"`
+	UserFederationProviders                                   []any                            `json:"userFederationProviders,omitzero"`
 	UserManagedAccessAllowed                                  *bool                            `json:"userManagedAccessAllowed,omitempty"`
-	Users                                                     []User                           `json:"users,omitempty"`
+	Users                                                     []User                           `json:"users,omitzero"`
 	VerifyEmail                                               *bool                            `json:"verifyEmail,omitempty"`
-	WebAuthnPolicyAcceptableAaguids                           []string                         `json:"webAuthnPolicyAcceptableAaguids,omitempty"`
+	WebAuthnPolicyAcceptableAaguids                           []string                         `json:"webAuthnPolicyAcceptableAaguids,omitzero"`
 	WebAuthnPolicyAttestationConveyancePreference             *string                          `json:"webAuthnPolicyAttestationConveyancePreference,omitempty"`
 	WebAuthnPolicyAuthenticatorAttachment                     *string                          `json:"webAuthnPolicyAuthenticatorAttachment,omitempty"`
 	WebAuthnPolicyAvoidSameAuthenticatorRegister              *bool                            `json:"webAuthnPolicyAvoidSameAuthenticatorRegister,omitempty"`
 	WebAuthnPolicyCreateTimeout                               *int                             `json:"webAuthnPolicyCreateTimeout,omitempty"`
-	WebAuthnPolicyExtraOrigins                                []string                         `json:"webAuthnPolicyExtraOrigins,omitempty"`
+	WebAuthnPolicyExtraOrigins                                []string                         `json:"webAuthnPolicyExtraOrigins,omitzero"`
 	WebAuthnPolicyRequireResidentKey                          *string                          `json:"webAuthnPolicyRequireResidentKey,omitempty"`
 	WebAuthnPolicyRpEntityName                                *string                          `json:"webAuthnPolicyRpEntityName,omitempty"`
 	WebAuthnPolicyRpID                                        *string                          `json:"webAuthnPolicyRpId,omitempty"`
-	WebAuthnPolicySignatureAlgorithms                         []string                         `json:"webAuthnPolicySignatureAlgorithms,omitempty"`
+	WebAuthnPolicySignatureAlgorithms                         []string                         `json:"webAuthnPolicySignatureAlgorithms,omitzero"`
 	WebAuthnPolicyUserVerificationRequirement                 *string                          `json:"webAuthnPolicyUserVerificationRequirement,omitempty"`
-	WebAuthnPolicyPasswordlessAcceptableAaguids               []string                         `json:"webAuthnPolicyPasswordlessAcceptableAaguids,omitempty"`
+	WebAuthnPolicyPasswordlessAcceptableAaguids               []string                         `json:"webAuthnPolicyPasswordlessAcceptableAaguids,omitzero"`
 	WebAuthnPolicyPasswordlessAttestationConveyancePreference *string                          `json:"webAuthnPolicyPasswordlessAttestationConveyancePreference,omitempty"`
 	WebAuthnPolicyPasswordlessAuthenticatorAttachment         *string                          `json:"webAuthnPolicyPasswordlessAuthenticatorAttachment,omitempty"`
 	WebAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister  *bool                            `json:"webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister,omitempty"`
 	WebAuthnPolicyPasswordlessCreateTimeout                   *int                             `json:"webAuthnPolicyPasswordlessCreateTimeout,omitempty"`
-	WebAuthnPolicyPasswordlessExtraOrigins                    []string                         `json:"webAuthnPolicyPasswordlessExtraOrigins,omitempty"`
+	WebAuthnPolicyPasswordlessExtraOrigins                    []string                         `json:"webAuthnPolicyPasswordlessExtraOrigins,omitzero"`
 	WebAuthnPolicyPasswordlessRequireResidentKey              *string                          `json:"webAuthnPolicyPasswordlessRequireResidentKey,omitempty"`
 	WebAuthnPolicyPasswordlessRpEntityName                    *string                          `json:"webAuthnPolicyPasswordlessRpEntityName,omitempty"`
 	WebAuthnPolicyPasswordlessRpID                            *string                          `json:"webAuthnPolicyPasswordlessRpId,omitempty"`
-	WebAuthnPolicyPasswordlessSignatureAlgorithms             []string                         `json:"webAuthnPolicyPasswordlessSignatureAlgorithms,omitempty"`
+	WebAuthnPolicyPasswordlessSignatureAlgorithms             []string                         `json:"webAuthnPolicyPasswordlessSignatureAlgorithms,omitzero"`
 	WebAuthnPolicyPasswordlessUserVerificationRequirement     *string                          `json:"webAuthnPolicyPasswordlessUserVerificationRequirement,omitempty"`
 	WaitIncrementSeconds                                      *int                             `json:"waitIncrementSeconds,omitempty"`
 }
@@ -876,7 +869,7 @@ type RealmRepresentation struct {
 // AuthenticationFlowRepresentation represents an authentication flow of a realm
 type AuthenticationFlowRepresentation struct {
 	Alias                    *string                                 `json:"alias,omitempty"`
-	AuthenticationExecutions []AuthenticationExecutionRepresentation `json:"authenticationExecutions,omitempty"`
+	AuthenticationExecutions []AuthenticationExecutionRepresentation `json:"authenticationExecutions,omitzero"`
 	BuiltIn                  *bool                                   `json:"builtIn,omitempty"`
 	Description              *string                                 `json:"description,omitempty"`
 	ID                       *string                                 `json:"id,omitempty"`
@@ -886,30 +879,30 @@ type AuthenticationFlowRepresentation struct {
 
 // ConfigPropertyRepresentation represents a configuration property
 type ConfigPropertyRepresentation struct {
-	Name         *string  `json:"name,omitempty"`
-	Label        *string  `json:"label,omitempty"`
-	HelpText     *string  `json:"helpText,omitempty"`
-	Type         *string  `json:"type,omitempty"`
+	Name         string   `json:"name,omitzero"`
+	Label        string   `json:"label,omitzero"`
+	HelpText     string   `json:"helpText,omitzero"`
+	Type         string   `json:"type,omitzero"`
 	DefaultValue any      `json:"defaultValue,omitempty"`
-	Options      []string `json:"options,omitempty"`
-	Secret       *bool    `json:"secret,omitempty"`
-	Required     *bool    `json:"required,omitempty"`
-	ReadOnly     *bool    `json:"readOnly,omitempty"`
+	Options      []string `json:"options,omitzero"`
+	Secret       bool     `json:"secret,omitzero"`
+	Required     bool     `json:"required,omitzero"`
+	ReadOnly     bool     `json:"readOnly,omitzero"`
 }
 
 // AuthenticatorConfigInfoRepresentation represents an authenticator config description
 type AuthenticatorConfigInfoRepresentation struct {
-	Name       *string                        `json:"name,omitempty"`
-	ProviderID *string                        `json:"providerId,omitempty"`
-	HelpText   *string                        `json:"helpText,omitempty"`
-	Properties []ConfigPropertyRepresentation `json:"properties,omitempty"`
+	Name       string                         `json:"name,omitzero"`
+	ProviderID string                         `json:"providerId,omitzero"`
+	HelpText   string                         `json:"helpText,omitzero"`
+	Properties []ConfigPropertyRepresentation `json:"properties,omitzero"`
 }
 
 // AuthenticatorConfigRepresentation represents an authenticator config of a realm
 type AuthenticatorConfigRepresentation struct {
 	ID     *string           `json:"id,omitempty"`
 	Alias  *string           `json:"alias,omitempty"`
-	Config map[string]string `json:"config,omitempty"`
+	Config map[string]string `json:"config,omitzero"`
 }
 
 // AuthenticationExecutionRepresentation represents the authentication execution of an AuthenticationFlowRepresentation
@@ -926,15 +919,15 @@ type AuthenticationExecutionRepresentation struct {
 
 // CreateAuthenticationExecutionRepresentation contains the provider to be used for a new authentication representation
 type CreateAuthenticationExecutionRepresentation struct {
-	Provider *string `json:"provider,omitempty"`
+	Provider string `json:"provider,omitzero"`
 }
 
 // CreateAuthenticationExecutionFlowRepresentation contains the provider to be used for a new authentication representation
 type CreateAuthenticationExecutionFlowRepresentation struct {
-	Alias       *string `json:"alias,omitempty"`
-	Description *string `json:"description,omitempty"`
-	Provider    *string `json:"provider,omitempty"`
-	Type        *string `json:"type,omitempty"`
+	Alias       string `json:"alias,omitzero"`
+	Description string `json:"description,omitzero"`
+	Provider    string `json:"provider,omitzero"`
+	Type        string `json:"type,omitzero"`
 }
 
 // ModifyAuthenticationExecutionRepresentation is the payload for updating an execution representation
@@ -947,7 +940,7 @@ type ModifyAuthenticationExecutionRepresentation struct {
 	FlowID               *string  `json:"flowId"`
 	DisplayName          *string  `json:"displayName,omitempty"`
 	Alias                *string  `json:"alias,omitempty"`
-	RequirementChoices   []string `json:"requirementChoices,omitempty"`
+	RequirementChoices   []string `json:"requirementChoices,omitzero"`
 	Configurable         *bool    `json:"configurable,omitempty"`
 	Level                *int     `json:"level,omitempty"`
 	Index                *int     `json:"index,omitempty"`
@@ -956,73 +949,68 @@ type ModifyAuthenticationExecutionRepresentation struct {
 
 // MultiValuedHashMap represents something
 type MultiValuedHashMap struct {
-	Empty      *bool    `json:"empty,omitempty"`
-	LoadFactor *float32 `json:"loadFactor,omitempty"`
-	Threshold  *int32   `json:"threshold,omitempty"`
-}
-
-// AuthorizationParameters represents the options to obtain get an authorization
-type AuthorizationParameters struct {
-	ResponseType *string `json:"code,omitempty"`
-	ClientID     *string `json:"client_id,omitempty"`
-	Scope        *string `json:"scope,omitempty"`
-	RedirectURI  *string `json:"redirect_uri,omitempty"`
-	State        *string `json:"state,omitempty"`
-	Nonce        *string `json:"nonce,omitempty"`
-	IDTokenHint  *string `json:"id_token_hint,omitempty"`
-}
-
-// FormData returns a map of options to be used in SetFormData function
-func (p *AuthorizationParameters) FormData() map[string]string {
-	m, _ := json.Marshal(p)
-	var res map[string]string
-	_ = json.Unmarshal(m, &res)
-	return res
-}
-
-// AuthorizationResponse represents the response to an authorization request.
-type AuthorizationResponse struct {
+	Empty      bool    `json:"empty,omitzero"`
+	LoadFactor float32 `json:"loadFactor,omitzero"`
+	Threshold  int32   `json:"threshold,omitzero"`
 }
 
 // TokenOptions represents the options to obtain a token
 type TokenOptions struct {
-	ClientID            *string  `json:"client_id,omitempty"`
-	ClientSecret        *string  `json:"-"`
-	GrantType           *string  `json:"grant_type,omitempty"`
-	RefreshToken        *string  `json:"refresh_token,omitempty"`
+	ClientID            string   `json:"client_id,omitzero"`
+	ClientSecret        string   `json:"-"`
+	GrantType           string   `json:"grant_type,omitzero"`
+	RefreshToken        string   `json:"refresh_token,omitzero"`
 	Scopes              []string `json:"-"`
-	Scope               *string  `json:"scope,omitempty"`
+	Scope               string   `json:"scope,omitzero"`
 	ResponseTypes       []string `json:"-"`
-	ResponseType        *string  `json:"response_type,omitempty"`
-	Permission          *string  `json:"permission,omitempty"`
-	Username            *string  `json:"username,omitempty"`
-	Password            *string  `json:"password,omitempty"`
-	Totp                *string  `json:"totp,omitempty"`
-	Code                *string  `json:"code,omitempty"`
-	RedirectURI         *string  `json:"redirect_uri,omitempty"`
-	ClientAssertionType *string  `json:"client_assertion_type,omitempty"`
-	ClientAssertion     *string  `json:"client_assertion,omitempty"`
-	SubjectToken        *string  `json:"subject_token,omitempty"`
-	RequestedSubject    *string  `json:"requested_subject,omitempty"`
-	Audience            *string  `json:"audience,omitempty"`
-	RequestedTokenType  *string  `json:"requested_token_type,omitempty"`
+	ResponseType        string   `json:"response_type,omitzero"`
+	Permission          string   `json:"permission,omitzero"`
+	Username            string   `json:"username,omitzero"`
+	Password            string   `json:"password,omitzero"`
+	Totp                string   `json:"totp,omitzero"`
+	Code                string   `json:"code,omitzero"`
+	RedirectURI         string   `json:"redirect_uri,omitzero"`
+	CodeVerifier        string   `json:"code_verifier,omitzero"` // PKCE (RFC 7636), see NewPKCE
+	ClientAssertionType string   `json:"client_assertion_type,omitzero"`
+	ClientAssertion     string   `json:"client_assertion,omitzero"`
+	SubjectToken        string   `json:"subject_token,omitzero"`
+	SubjectTokenType    string   `json:"subject_token_type,omitzero"`
+	RequestedSubject    string   `json:"requested_subject,omitzero"`
+	Audience            string   `json:"audience,omitzero"`
+	RequestedTokenType  string   `json:"requested_token_type,omitzero"`
 }
 
-// FormData returns a map of options to be used in SetFormData function
+// TokenValidation lists the claims ValidateAccessToken checks in addition to signature, exp and nbf.
+type TokenValidation struct {
+	// Audience must be contained in the aud claim; empty skips the check.
+	Audience string
+	// AuthorizedParty must equal the azp claim (the client the token was issued to); empty skips the check.
+	AuthorizedParty string
+	// Type must equal the typ claim; empty means "Bearer", which rejects ID and refresh tokens.
+	Type string
+	// Leeway tolerates clock skew between Keycloak and this service when checking exp and nbf.
+	Leeway time.Duration
+}
+
+// FormData returns the options as form fields for SetFormData, joining Scopes and ResponseTypes and defaulting
+// response_type to "token". The receiver is not modified.
+// Output: [map[string]string] form fields.
 func (t *TokenOptions) FormData() map[string]string {
-	if !NilOrEmptySlice(t.Scopes) {
-		t.Scope = StringP(strings.Join(t.Scopes, " "))
+	o := *t
+	t = &o
+	if len(t.Scopes) > 0 {
+		t.Scope = strings.Join(t.Scopes, " ")
 	}
 
-	if !NilOrEmptySlice(t.ResponseTypes) {
-		t.ResponseType = StringP(strings.Join(t.ResponseTypes, " "))
+	if len(t.ResponseTypes) > 0 {
+		t.ResponseType = strings.Join(t.ResponseTypes, " ")
 	}
 
-	if NilOrEmpty(t.ResponseType) {
-		t.ResponseType = StringP("token")
+	if t.ResponseType == "" {
+		t.ResponseType = "token"
 	}
 
-	m, _ := json.Marshal(t) //nolint:gosec
+	m, _ := json.Marshal(t) //nolint:gosec // form data must carry the credentials; marshaling string pointers cannot fail
 	var res map[string]string
 	_ = json.Unmarshal(m, &res)
 
@@ -1031,122 +1019,122 @@ func (t *TokenOptions) FormData() map[string]string {
 
 // RequestingPartyTokenOptions represents the options to obtain a requesting party token
 type RequestingPartyTokenOptions struct {
-	GrantType                     *string  `json:"grant_type,omitempty"`
-	Ticket                        *string  `json:"ticket,omitempty"`
-	ClaimToken                    *string  `json:"claim_token,omitempty"`
-	ClaimTokenFormat              *string  `json:"claim_token_format,omitempty"`
-	RPT                           *string  `json:"rpt,omitempty"`
+	GrantType                     string   `json:"grant_type,omitzero"`
+	Ticket                        string   `json:"ticket,omitzero"`
+	ClaimToken                    string   `json:"claim_token,omitzero"`
+	ClaimTokenFormat              string   `json:"claim_token_format,omitzero"`
+	RPT                           string   `json:"rpt,omitzero"`
 	Permissions                   []string `json:"-"`
-	PermissionResourceFormat      *string  `json:"permission_resource_format,omitempty"`
-	PermissionResourceMatchingURI *bool    `json:"permission_resource_matching_uri,string,omitempty"`
-	Audience                      *string  `json:"audience,omitempty"`
+	PermissionResourceFormat      string   `json:"permission_resource_format,omitzero"`
+	PermissionResourceMatchingURI bool     `json:"permission_resource_matching_uri,string,omitzero"`
+	Audience                      string   `json:"audience,omitzero"`
 	ResponseIncludeResourceName   *bool    `json:"response_include_resource_name,string,omitempty"`
-	ResponsePermissionsLimit      *uint32  `json:"response_permissions_limit,omitempty"`
-	SubmitRequest                 *bool    `json:"submit_request,string,omitempty"`
-	ResponseMode                  *string  `json:"response_mode,omitempty"`
-	SubjectToken                  *string  `json:"subject_token,omitempty"`
+	ResponsePermissionsLimit      uint32   `json:"response_permissions_limit,omitzero"`
+	SubmitRequest                 bool     `json:"submit_request,string,omitzero"`
+	ResponseMode                  string   `json:"response_mode,omitzero"`
+	SubjectToken                  string   `json:"subject_token,omitzero"`
 }
 
-// FormData returns a map of options to be used in SetFormData function
-func (t *RequestingPartyTokenOptions) FormData() map[string]string { //nolint:gocognit // can be fixed later
-	if NilOrEmpty(t.GrantType) { // required grant type for RPT
-		t.GrantType = StringP("urn:ietf:params:oauth:grant-type:uma-ticket")
+// FormData returns the options as form fields for SetFormData, defaulting grant_type to the UMA ticket grant and
+// response_include_resource_name to true. The receiver is not modified.
+// Output: [map[string]string] form fields.
+func (t *RequestingPartyTokenOptions) FormData() map[string]string {
+	o := *t
+	t = &o
+	if t.GrantType == "" { // required grant type for RPT
+		t.GrantType = "urn:ietf:params:oauth:grant-type:uma-ticket"
 	}
 
 	if t.ResponseIncludeResourceName == nil { // defaults to true if no value set
-		t.ResponseIncludeResourceName = BoolP(true)
+		t.ResponseIncludeResourceName = new(true)
 	}
 
 	res := make(map[string]string)
 	v := reflect.ValueOf(t).Elem()
 	typeOf := v.Type()
 
-	for i := 0; i < v.NumField(); i++ {
+	for i := range v.NumField() {
 		field := v.Field(i)
-		fieldType := typeOf.Field(i)
-		jsonTag := fieldType.Tag.Get("json")
-		if jsonTag == "-" {
+		jsonTag := typeOf.Field(i).Tag.Get("json")
+		if jsonTag == "-" || field.IsZero() {
 			continue
 		}
+		field = reflect.Indirect(field)
 
-		jsonName := strings.Split(jsonTag, ",")[0]
+		jsonName, _, _ := strings.Cut(jsonTag, ",")
 		if jsonName == "" {
-			jsonName = fieldType.Name
+			jsonName = typeOf.Field(i).Name
 		}
 
 		switch field.Kind() {
-		case reflect.Ptr: //nolint
-			if !field.IsNil() {
-				switch field.Elem().Kind() {
-				case reflect.String:
-					res[jsonName] = field.Elem().String()
-				case reflect.Bool:
-					res[jsonName] = strconv.FormatBool(field.Elem().Bool())
-				case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-					res[jsonName] = strconv.FormatUint(field.Elem().Uint(), 10)
-				}
-			}
+		case reflect.String:
+			res[jsonName] = field.String()
+		case reflect.Bool:
+			res[jsonName] = strconv.FormatBool(field.Bool())
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			res[jsonName] = strconv.FormatUint(field.Uint(), 10)
+		default:
+			// other kinds are not used in RequestingPartyTokenOptions
 		}
-
 	}
 	return res
 }
 
 // RequestingPartyPermission is returned by request party token with response type set to "permissions"
 type RequestingPartyPermission struct {
-	Claims       map[string]string `json:"claims,omitempty"`
-	ResourceID   *string           `json:"rsid,omitempty"`
-	ResourceName *string           `json:"rsname,omitempty"`
-	Scopes       []string          `json:"scopes,omitempty"`
+	Claims       map[string]string `json:"claims,omitzero"`
+	ResourceID   string            `json:"rsid,omitzero"`
+	ResourceName string            `json:"rsname,omitzero"`
+	Scopes       []string          `json:"scopes,omitzero"`
 }
 
 // RequestingPartyPermissionDecision is returned by request party token with response type set to "decision"
 type RequestingPartyPermissionDecision struct {
-	Result *bool `json:"result,omitempty"`
+	Result bool `json:"result,omitzero"`
 }
 
 // UserSessionRepresentation represents a list of user's sessions
 type UserSessionRepresentation struct {
-	Clients    map[string]string `json:"clients,omitempty"`
-	ID         *string           `json:"id,omitempty"`
-	IPAddress  *string           `json:"ipAddress,omitempty"`
-	LastAccess *int64            `json:"lastAccess,omitempty"`
-	Start      *int64            `json:"start,omitempty"`
-	UserID     *string           `json:"userId,omitempty"`
-	Username   *string           `json:"username,omitempty"`
+	Clients    map[string]string `json:"clients,omitzero"`
+	ID         string            `json:"id,omitzero"`
+	IPAddress  string            `json:"ipAddress,omitzero"`
+	LastAccess int64             `json:"lastAccess,omitzero"`
+	Start      int64             `json:"start,omitzero"`
+	UserID     string            `json:"userId,omitzero"`
+	Username   string            `json:"username,omitzero"`
 }
 
 // SystemInfoRepresentation represents a system info
 type SystemInfoRepresentation struct {
-	FileEncoding   *string `json:"fileEncoding,omitempty"`
-	JavaHome       *string `json:"javaHome,omitempty"`
-	JavaRuntime    *string `json:"javaRuntime,omitempty"`
-	JavaVendor     *string `json:"javaVendor,omitempty"`
-	JavaVersion    *string `json:"javaVersion,omitempty"`
-	JavaVM         *string `json:"javaVm,omitempty"`
-	JavaVMVersion  *string `json:"javaVmVersion,omitempty"`
-	OSArchitecture *string `json:"osArchitecture,omitempty"`
-	OSName         *string `json:"osName,omitempty"`
-	OSVersion      *string `json:"osVersion,omitempty"`
-	ServerTime     *string `json:"serverTime,omitempty"`
-	Uptime         *string `json:"uptime,omitempty"`
-	UptimeMillis   *int    `json:"uptimeMillis,omitempty"`
-	UserDir        *string `json:"userDir,omitempty"`
-	UserLocale     *string `json:"userLocale,omitempty"`
-	UserName       *string `json:"userName,omitempty"`
-	UserTimezone   *string `json:"userTimezone,omitempty"`
-	Version        *string `json:"version,omitempty"`
+	FileEncoding   string `json:"fileEncoding,omitzero"`
+	JavaHome       string `json:"javaHome,omitzero"`
+	JavaRuntime    string `json:"javaRuntime,omitzero"`
+	JavaVendor     string `json:"javaVendor,omitzero"`
+	JavaVersion    string `json:"javaVersion,omitzero"`
+	JavaVM         string `json:"javaVm,omitzero"`
+	JavaVMVersion  string `json:"javaVmVersion,omitzero"`
+	OSArchitecture string `json:"osArchitecture,omitzero"`
+	OSName         string `json:"osName,omitzero"`
+	OSVersion      string `json:"osVersion,omitzero"`
+	ServerTime     string `json:"serverTime,omitzero"`
+	Uptime         string `json:"uptime,omitzero"`
+	UptimeMillis   int    `json:"uptimeMillis,omitzero"`
+	UserDir        string `json:"userDir,omitzero"`
+	UserLocale     string `json:"userLocale,omitzero"`
+	UserName       string `json:"userName,omitzero"`
+	UserTimezone   string `json:"userTimezone,omitzero"`
+	Version        string `json:"version,omitzero"`
 }
 
 // MemoryInfoRepresentation represents a memory info
 type MemoryInfoRepresentation struct {
-	Free           *int    `json:"free,omitempty"`
-	FreeFormatted  *string `json:"freeFormated,omitempty"`
-	FreePercentage *int    `json:"freePercentage,omitempty"`
-	Total          *int    `json:"total,omitempty"`
-	TotalFormatted *string `json:"totalFormated,omitempty"`
-	Used           *int    `json:"used,omitempty"`
-	UsedFormatted  *string `json:"usedFormated,omitempty"`
+	Free           int    `json:"free,omitzero"`
+	FreeFormatted  string `json:"freeFormated,omitzero"`
+	FreePercentage int    `json:"freePercentage,omitzero"`
+	Total          int    `json:"total,omitzero"`
+	TotalFormatted string `json:"totalFormated,omitzero"`
+	Used           int    `json:"used,omitzero"`
+	UsedFormatted  string `json:"usedFormated,omitzero"`
 }
 
 // PasswordPolicy represents the configuration for a supported password policy
@@ -1164,7 +1152,7 @@ type ProtocolMapperTypeProperty struct {
 	Label        string         `json:"label,omitempty"`
 	HelpText     string         `json:"helpText,omitempty"`
 	Type         string         `json:"type,omitempty"`
-	Options      []string       `json:"options,omitempty"`
+	Options      []string       `json:"options,omitzero"`
 	DefaultValue EnforcedString `json:"defaultValue,omitempty"`
 	Secret       bool           `json:"secret,omitempty"`
 	ReadOnly     bool           `json:"readOnly,omitempty"`
@@ -1177,60 +1165,60 @@ type ProtocolMapperType struct {
 	Category   string                       `json:"category,omitempty"`
 	HelpText   string                       `json:"helpText,omitempty"`
 	Priority   int                          `json:"priority,omitempty"`
-	Properties []ProtocolMapperTypeProperty `json:"properties,omitempty"`
+	Properties []ProtocolMapperTypeProperty `json:"properties,omitzero"`
 }
 
 // ProtocolMapperTypes holds the currently available ProtocolMapperType-s grouped by protocol
 type ProtocolMapperTypes struct {
-	DockerV2      []ProtocolMapperType `json:"docker-v2,omitempty"`
-	SAML          []ProtocolMapperType `json:"saml,omitempty"`
-	OpenIDConnect []ProtocolMapperType `json:"openid-connect,omitempty"`
+	DockerV2      []ProtocolMapperType `json:"docker-v2,omitzero"`
+	SAML          []ProtocolMapperType `json:"saml,omitzero"`
+	OpenIDConnect []ProtocolMapperType `json:"openid-connect,omitzero"`
 }
 
 // BuiltinProtocolMappers holds the currently available built-in blueprints of ProtocolMapper-s grouped by protocol
 type BuiltinProtocolMappers struct {
-	SAML          []ProtocolMapperRepresentation `json:"saml,omitempty"`
-	OpenIDConnect []ProtocolMapperRepresentation `json:"openid-connect,omitempty"`
+	SAML          []ProtocolMapperRepresentation `json:"saml,omitzero"`
+	OpenIDConnect []ProtocolMapperRepresentation `json:"openid-connect,omitzero"`
 }
 
 // ServerInfoRepresentation represents a server info
 type ServerInfoRepresentation struct {
-	SystemInfo             *SystemInfoRepresentation `json:"systemInfo,omitempty"`
-	MemoryInfo             *MemoryInfoRepresentation `json:"memoryInfo,omitempty"`
-	PasswordPolicies       []*PasswordPolicy         `json:"passwordPolicies,omitempty"`
-	ProtocolMapperTypes    *ProtocolMapperTypes      `json:"protocolMapperTypes,omitempty"`
-	BuiltinProtocolMappers *BuiltinProtocolMappers   `json:"builtinProtocolMappers,omitempty"`
-	Themes                 *Themes                   `json:"themes,omitempty"`
+	SystemInfo             SystemInfoRepresentation `json:"systemInfo,omitzero"`
+	MemoryInfo             MemoryInfoRepresentation `json:"memoryInfo,omitzero"`
+	PasswordPolicies       []PasswordPolicy         `json:"passwordPolicies,omitzero"`
+	ProtocolMapperTypes    ProtocolMapperTypes      `json:"protocolMapperTypes,omitzero"`
+	BuiltinProtocolMappers BuiltinProtocolMappers   `json:"builtinProtocolMappers,omitzero"`
+	Themes                 Themes                   `json:"themes,omitzero"`
 }
 
 // ThemeRepresentation contains the theme name and locales
 type ThemeRepresentation struct {
 	Name    string   `json:"name,omitempty"`
-	Locales []string `json:"locales,omitempty"`
+	Locales []string `json:"locales,omitzero"`
 }
 
 // Themes contains the available keycloak themes with locales
 type Themes struct {
-	Accounts []ThemeRepresentation `json:"account,omitempty"`
-	Admin    []ThemeRepresentation `json:"admin,omitempty"`
-	Common   []ThemeRepresentation `json:"common,omitempty"`
-	Email    []ThemeRepresentation `json:"email,omitempty"`
-	Login    []ThemeRepresentation `json:"login,omitempty"`
-	Welcome  []ThemeRepresentation `json:"welcome,omitempty"`
+	Accounts []ThemeRepresentation `json:"account,omitzero"`
+	Admin    []ThemeRepresentation `json:"admin,omitzero"`
+	Common   []ThemeRepresentation `json:"common,omitzero"`
+	Email    []ThemeRepresentation `json:"email,omitzero"`
+	Login    []ThemeRepresentation `json:"login,omitzero"`
+	Welcome  []ThemeRepresentation `json:"welcome,omitzero"`
 }
 
 // FederatedIdentityRepresentation represents an user federated identity
 type FederatedIdentityRepresentation struct {
-	IdentityProvider *string `json:"identityProvider,omitempty"`
-	UserID           *string `json:"userId,omitempty"`
-	UserName         *string `json:"userName,omitempty"`
+	IdentityProvider string `json:"identityProvider,omitzero"`
+	UserID           string `json:"userId,omitzero"`
+	UserName         string `json:"userName,omitzero"`
 }
 
 // IdentityProviderRepresentation represents an identity provider
 type IdentityProviderRepresentation struct {
 	AddReadTokenRoleOnCreate  *bool             `json:"addReadTokenRoleOnCreate,omitempty"`
 	Alias                     *string           `json:"alias,omitempty"`
-	Config                    map[string]string `json:"config,omitempty"`
+	Config                    map[string]string `json:"config,omitzero"`
 	DisplayName               *string           `json:"displayName,omitempty"`
 	Enabled                   *bool             `json:"enabled,omitempty"`
 	FirstBrokerLoginFlowAlias *string           `json:"firstBrokerLoginFlowAlias,omitempty"`
@@ -1255,7 +1243,6 @@ type IdentityProviderMapper struct {
 
 // GetResourceParams represents the optional parameters for getting resources
 type GetResourceParams struct {
-	Deep        *bool   `json:"deep,string,omitempty"`
 	First       *int    `json:"first,string,omitempty"`
 	Max         *int    `json:"max,string,omitempty"`
 	Name        *string `json:"name,omitempty"`
@@ -1303,87 +1290,87 @@ type GetUsersByRoleParams struct {
 
 // PermissionRepresentation is a representation of a RequestingPartyPermission
 type PermissionRepresentation struct {
-	DecisionStrategy *DecisionStrategy `json:"decisionStrategy,omitempty"`
-	Description      *string           `json:"description,omitempty"`
-	ID               *string           `json:"id,omitempty"`
-	Logic            *Logic            `json:"logic,omitempty"`
-	Name             *string           `json:"name,omitempty"`
-	Policies         []string          `json:"policies,omitempty"`
-	Resources        []string          `json:"resources,omitempty"`
-	ResourceType     *string           `json:"resourceType,omitempty"`
-	Scopes           []string          `json:"scopes,omitempty"`
-	Type             *string           `json:"type,omitempty"`
+	DecisionStrategy DecisionStrategy `json:"decisionStrategy,omitzero"`
+	Description      *string          `json:"description,omitempty"`
+	ID               *string          `json:"id,omitempty"`
+	Logic            Logic            `json:"logic,omitzero"`
+	Name             *string          `json:"name,omitempty"`
+	Policies         []string         `json:"policies,omitzero"`
+	Resources        []string         `json:"resources,omitzero"`
+	ResourceType     *string          `json:"resourceType,omitempty"`
+	Scopes           []string         `json:"scopes,omitzero"`
+	Type             *string          `json:"type,omitempty"`
 }
 
 // CreatePermissionTicketParams represents the optional parameters for getting a permission ticket
 type CreatePermissionTicketParams struct {
-	ResourceID     *string             `json:"resource_id,omitempty"`
-	ResourceScopes []string            `json:"resource_scopes,omitempty"`
-	Claims         map[string][]string `json:"claims,omitempty"`
+	ResourceID     string              `json:"resource_id,omitzero"`
+	ResourceScopes []string            `json:"resource_scopes,omitzero"`
+	Claims         map[string][]string `json:"claims,omitzero"`
 }
 
 // PermissionTicketDescriptionRepresentation represents the parameters returned along with a permission ticket
 type PermissionTicketDescriptionRepresentation struct {
-	ID                     *string               `json:"id,omitempty"`
-	CreatedTimeStamp       *int64                `json:"createdTimestamp,omitempty"`
-	UserName               *string               `json:"username,omitempty"`
-	Enabled                *bool                 `json:"enabled,omitempty"`
-	TOTP                   *bool                 `json:"totp,omitempty"`
-	EmailVerified          *bool                 `json:"emailVerified,omitempty"`
-	FirstName              *string               `json:"firstName,omitempty"`
-	LastName               *string               `json:"lastName,omitempty"`
-	Email                  *string               `json:"email,omitempty"`
-	DisableCredentialTypes []string              `json:"disableCredentialTypes,omitempty"`
-	RequiredActions        []string              `json:"requiredActions,omitempty"`
-	NotBefore              *int64                `json:"notBefore,omitempty"`
-	Access                 *AccessRepresentation `json:"access,omitempty"`
+	ID                     string               `json:"id,omitzero"`
+	CreatedTimeStamp       int64                `json:"createdTimestamp,omitzero"`
+	UserName               string               `json:"username,omitzero"`
+	Enabled                bool                 `json:"enabled,omitzero"`
+	TOTP                   bool                 `json:"totp,omitzero"`
+	EmailVerified          bool                 `json:"emailVerified,omitzero"`
+	FirstName              string               `json:"firstName,omitzero"`
+	LastName               string               `json:"lastName,omitzero"`
+	Email                  string               `json:"email,omitzero"`
+	DisableCredentialTypes []string             `json:"disableCredentialTypes,omitzero"`
+	RequiredActions        []string             `json:"requiredActions,omitzero"`
+	NotBefore              int64                `json:"notBefore,omitzero"`
+	Access                 AccessRepresentation `json:"access,omitzero"`
 }
 
 // AccessRepresentation represents the access parameters returned in the permission ticket description
 type AccessRepresentation struct {
-	ManageGroupMembership *bool `json:"manageGroupMembership,omitempty"`
-	View                  *bool `json:"view,omitempty"`
-	MapRoles              *bool `json:"mapRoles,omitempty"`
-	Impersonate           *bool `json:"impersonate,omitempty"`
-	Manage                *bool `json:"manage,omitempty"`
+	ManageGroupMembership bool `json:"manageGroupMembership,omitzero"`
+	View                  bool `json:"view,omitzero"`
+	MapRoles              bool `json:"mapRoles,omitzero"`
+	Impersonate           bool `json:"impersonate,omitzero"`
+	Manage                bool `json:"manage,omitzero"`
 }
 
 // PermissionTicketResponseRepresentation represents the keycloak response containing the permission ticket
 type PermissionTicketResponseRepresentation struct {
-	Ticket *string `json:"ticket,omitempty"`
+	Ticket string `json:"ticket,omitzero"`
 }
 
 // PermissionTicketRepresentation represents the permission ticket contents
 type PermissionTicketRepresentation struct {
-	AZP         *string                                    `json:"azp,omitempty"`
-	Claims      map[string][]string                        `json:"claims,omitempty"`
-	Permissions []PermissionTicketPermissionRepresentation `json:"permissions,omitempty"`
+	AZP         string                                     `json:"azp,omitzero"`
+	Claims      map[string][]string                        `json:"claims,omitzero"`
+	Permissions []PermissionTicketPermissionRepresentation `json:"permissions,omitzero"`
 	jwt.RegisteredClaims
 }
 
 // PermissionTicketPermissionRepresentation represents the individual permissions in a permission ticket
 type PermissionTicketPermissionRepresentation struct {
-	Scopes []string `json:"scopes,omitempty"`
-	RSID   *string  `json:"rsid,omitempty"`
+	Scopes []string `json:"scopes,omitzero"`
+	RSID   string   `json:"rsid,omitzero"`
 }
 
 // PermissionGrantParams represents the permission which the resource owner is granting to a specific user
 type PermissionGrantParams struct {
-	ResourceID  *string `json:"resource,omitempty"`
-	RequesterID *string `json:"requester,omitempty"`
-	Granted     *bool   `json:"granted,omitempty"`
-	ScopeName   *string `json:"scopeName,omitempty"`
-	TicketID    *string `json:"id,omitempty"`
+	ResourceID  string `json:"resource,omitzero"`
+	RequesterID string `json:"requester,omitzero"`
+	Granted     *bool  `json:"granted,omitempty"`
+	ScopeName   string `json:"scopeName,omitzero"`
+	TicketID    string `json:"id,omitzero"`
 }
 
 // PermissionGrantResponseRepresentation represents the reply from Keycloack after granting permission
 type PermissionGrantResponseRepresentation struct {
-	ID          *string `json:"id,omitempty"`
-	Owner       *string `json:"owner,omitempty"`
-	ResourceID  *string `json:"resource,omitempty"`
-	Scope       *string `json:"scope,omitempty"`
-	Granted     *bool   `json:"granted,omitempty"`
-	RequesterID *string `json:"requester,omitempty"`
+	ID          string `json:"id,omitzero"`
+	Owner       string `json:"owner,omitzero"`
+	ResourceID  string `json:"resource,omitzero"`
+	Scope       string `json:"scope,omitzero"`
+	Granted     bool   `json:"granted,omitzero"`
+	RequesterID string `json:"requester,omitzero"`
 }
 
 // GetUserPermissionParams represents the optional parameters for getting user permissions
@@ -1392,7 +1379,7 @@ type GetUserPermissionParams struct {
 	ResourceID  *string `json:"resourceId,omitempty"`
 	Owner       *string `json:"owner,omitempty"`
 	Requester   *string `json:"requester,omitempty"`
-	Granted     *bool   `json:"granted,omitempty"`
+	Granted     *bool   `json:"granted,string,omitempty"`
 	ReturnNames *string `json:"returnNames,omitempty"`
 	First       *int    `json:"first,string,omitempty"`
 	Max         *int    `json:"max,string,omitempty"`
@@ -1400,30 +1387,30 @@ type GetUserPermissionParams struct {
 
 // ResourcePolicyRepresentation is a representation of a Policy applied to a resource
 type ResourcePolicyRepresentation struct {
-	Name             *string           `json:"name,omitempty"`
-	Description      *string           `json:"description,omitempty"`
-	Scopes           []string          `json:"scopes,omitempty"`
-	Roles            []string          `json:"roles,omitempty"`
-	Groups           []string          `json:"groups,omitempty"`
-	Clients          []string          `json:"clients,omitempty"`
-	ID               *string           `json:"id,omitempty"`
-	Logic            *Logic            `json:"logic,omitempty"`
-	DecisionStrategy *DecisionStrategy `json:"decisionStrategy,omitempty"`
-	Owner            *string           `json:"owner,omitempty"`
-	Type             *string           `json:"type,omitempty"`
-	Users            []string          `json:"users,omitempty"`
+	Name             *string          `json:"name,omitempty"`
+	Description      *string          `json:"description,omitempty"`
+	Scopes           []string         `json:"scopes,omitzero"`
+	Roles            []string         `json:"roles,omitzero"`
+	Groups           []string         `json:"groups,omitzero"`
+	Clients          []string         `json:"clients,omitzero"`
+	ID               *string          `json:"id,omitempty"`
+	Logic            Logic            `json:"logic,omitzero"`
+	DecisionStrategy DecisionStrategy `json:"decisionStrategy,omitzero"`
+	Owner            *string          `json:"owner,omitempty"`
+	Type             *string          `json:"type,omitempty"`
+	Users            []string         `json:"users,omitzero"`
 }
 
 // PolicyScopeRepresentation is a representation of a scopes of specific policy
 type PolicyScopeRepresentation struct {
-	ID   *string `json:"id,omitempty"`
-	Name *string `json:"name,omitempty"`
+	ID   string `json:"id,omitzero"`
+	Name string `json:"name,omitzero"`
 }
 
 // PolicyResourceRepresentation is a representation of a resource of specific policy
 type PolicyResourceRepresentation struct {
-	ID   *string `json:"_id,omitempty"`
-	Name *string `json:"name,omitempty"`
+	ID   string `json:"_id,omitzero"`
+	Name string `json:"name,omitzero"`
 }
 
 // GetResourcePoliciesParams is a representation of the query params for getting policies
@@ -1443,20 +1430,20 @@ type GetEventsParams struct {
 	First     *int32   `json:"first,string,omitempty"`
 	IPAddress *string  `json:"ipAddress,omitempty"`
 	Max       *int32   `json:"max,string,omitempty"`
-	Type      []string `json:"type,omitempty"`
+	Type      []string `json:"-"` // sent as repeated "type" query parameter
 	UserID    *string  `json:"user,omitempty"`
 }
 
 // EventRepresentation is a representation of a Event
 type EventRepresentation struct {
 	Time      int64             `json:"time,omitempty"`
-	Type      *string           `json:"type,omitempty"`
-	RealmID   *string           `json:"realmId,omitempty"`
-	ClientID  *string           `json:"clientId,omitempty"`
-	UserID    *string           `json:"userId,omitempty"`
-	SessionID *string           `json:"sessionId,omitempty"`
-	IPAddress *string           `json:"ipAddress,omitempty"`
-	Details   map[string]string `json:"details,omitempty"`
+	Type      string            `json:"type,omitzero"`
+	RealmID   string            `json:"realmId,omitzero"`
+	ClientID  string            `json:"clientId,omitzero"`
+	UserID    string            `json:"userId,omitzero"`
+	SessionID string            `json:"sessionId,omitzero"`
+	IPAddress string            `json:"ipAddress,omitzero"`
+	Details   map[string]string `json:"details,omitzero"`
 }
 
 // GetAdminEventsParams represents the optional parameters for getting events
@@ -1467,30 +1454,30 @@ type GetAdminEventsParams struct {
 	AuthUser       *string  `json:"authUser,omitempty"`
 	DateFrom       *string  `json:"dateFrom,omitempty"`
 	DateTo         *string  `json:"dateTo,omitempty"`
-	First          *int32   `json:"first,omitempty"`
-	Max            *int32   `json:"max,omitempty"`
-	OperationTypes []string `json:"operationTypes,omitempty"`
+	First          *int32   `json:"first,string,omitempty"`
+	Max            *int32   `json:"max,string,omitempty"`
+	OperationTypes []string `json:"-"` // sent as repeated "operationTypes" query parameter
 	ResourcePath   *string  `json:"resourcePath,omitempty"`
-	ResourceTypes  []string `json:"resourceTypes,omitempty"`
+	ResourceTypes  []string `json:"-"` // sent as repeated "resourceTypes" query parameter
 }
 
 // AdminEventRepresentation is a representation of an Admin Event
 type AdminEventRepresentation struct {
-	Time           int64                                `json:"time,omitempty"`
-	OperationType  *string                              `json:"operationType,omitempty"`
-	RealmID        *string                              `json:"realmId,omitempty"`
-	ResourceType   *string                              `json:"resourceType,omitempty"`
-	ResourcePath   *string                              `json:"resourcePath,omitempty"`
-	AuthDetails    *AdminEventAuthDetailsRepresentation `json:"authDetails,omitempty"`
-	Representation *string                              `json:"representation,omitempty"`
+	Time           int64                               `json:"time,omitempty"`
+	OperationType  string                              `json:"operationType,omitzero"`
+	RealmID        string                              `json:"realmId,omitzero"`
+	ResourceType   string                              `json:"resourceType,omitzero"`
+	ResourcePath   string                              `json:"resourcePath,omitzero"`
+	AuthDetails    AdminEventAuthDetailsRepresentation `json:"authDetails,omitzero"`
+	Representation string                              `json:"representation,omitzero"`
 }
 
 // AdminEventAuthDetailsRepresentation is a representation of an Admin Event Details
 type AdminEventAuthDetailsRepresentation struct {
-	RealmID   *string `json:"realmId,omitempty"`
-	ClientID  *string `json:"clientId,omitempty"`
-	UserID    *string `json:"userId,omitempty"`
-	IPAddress *string `json:"ipAddress,omitempty"`
+	RealmID   string `json:"realmId,omitzero"`
+	ClientID  string `json:"clientId,omitzero"`
+	UserID    string `json:"userId,omitzero"`
+	IPAddress string `json:"ipAddress,omitzero"`
 }
 
 // CredentialRepresentation is a representations of the credentials
@@ -1504,15 +1491,15 @@ type CredentialRepresentation struct {
 	Value       *string `json:"value,omitempty"`
 
 	// <= v7
-	Algorithm         *string             `json:"algorithm,omitempty"`
-	Config            *MultiValuedHashMap `json:"config,omitempty"`
-	Counter           *int32              `json:"counter,omitempty"`
-	Device            *string             `json:"device,omitempty"`
-	Digits            *int32              `json:"digits,omitempty"`
-	HashIterations    *int32              `json:"hashIterations,omitempty"`
-	HashedSaltedValue *string             `json:"hashedSaltedValue,omitempty"`
-	Period            *int32              `json:"period,omitempty"`
-	Salt              *string             `json:"salt,omitempty"`
+	Algorithm         *string            `json:"algorithm,omitempty"`
+	Config            MultiValuedHashMap `json:"config,omitzero"`
+	Counter           *int32             `json:"counter,omitempty"`
+	Device            *string            `json:"device,omitempty"`
+	Digits            *int32             `json:"digits,omitempty"`
+	HashIterations    *int32             `json:"hashIterations,omitempty"`
+	HashedSaltedValue *string            `json:"hashedSaltedValue,omitempty"`
+	Period            *int32             `json:"period,omitempty"`
+	Salt              *string            `json:"salt,omitempty"`
 
 	// >= v8
 	CredentialData *string `json:"credentialData,omitempty"`
@@ -1524,17 +1511,17 @@ type CredentialRepresentation struct {
 
 // BruteForceStatus is a representation of realm user regarding brute force attack
 type BruteForceStatus struct {
-	NumFailures   *int    `json:"numFailures,omitempty"`
-	Disabled      *bool   `json:"disabled,omitempty"`
-	LastIPFailure *string `json:"lastIPFailure,omitempty"`
-	LastFailure   *int    `json:"lastFailure,omitempty"`
+	NumFailures   int    `json:"numFailures,omitzero"`
+	Disabled      bool   `json:"disabled,omitzero"`
+	LastIPFailure string `json:"lastIPFailure,omitzero"`
+	LastFailure   int    `json:"lastFailure,omitzero"`
 }
 
 // RequiredActionProviderRepresentation is a representation of required actions
 // v15: https://www.keycloak.org/docs-api/15.0/rest-api/index.html#_requiredactionproviderrepresentation
 type RequiredActionProviderRepresentation struct {
 	Alias         *string           `json:"alias,omitempty"`
-	Config        map[string]string `json:"config,omitempty"`
+	Config        map[string]string `json:"config,omitzero"`
 	DefaultAction *bool             `json:"defaultAction,omitempty"`
 	Enabled       *bool             `json:"enabled,omitempty"`
 	Name          *string           `json:"name,omitempty"`
@@ -1544,8 +1531,8 @@ type RequiredActionProviderRepresentation struct {
 
 // UnregisteredRequiredActionProviderRepresentation is a representation of unregistered required actions.
 type UnregisteredRequiredActionProviderRepresentation struct {
-	Name       *string `json:"name,omitempty"`
-	ProviderID *string `json:"providerId,omitempty"`
+	Name       string `json:"name,omitzero"`
+	ProviderID string `json:"providerId,omitzero"`
 }
 
 // ManagementPermissionRepresentation is a representation of management permissions
@@ -1553,7 +1540,7 @@ type UnregisteredRequiredActionProviderRepresentation struct {
 type ManagementPermissionRepresentation struct {
 	Enabled          *bool             `json:"enabled,omitempty"`
 	Resource         *string           `json:"resource,omitempty"`
-	ScopePermissions map[string]string `json:"scopePermissions,omitempty"`
+	ScopePermissions map[string]string `json:"scopePermissions,omitzero"`
 }
 
 // GetClientUserSessionsParams represents the optional parameters for getting user sessions associated with the client
@@ -1564,12 +1551,13 @@ type GetClientUserSessionsParams struct {
 
 // OrganizationInviteUserParams represents the parameters for inviting a new user to an organization
 type OrganizationInviteUserParams struct {
-	Email     *string `json:"email,omitempty"`
-	FirstName *string `json:"firstName,omitempty"`
-	LastName  *string `json:"lastName,omitempty"`
+	Email     string `json:"email,omitzero"`
+	FirstName string `json:"firstName,omitzero"`
+	LastName  string `json:"lastName,omitzero"`
 }
 
-// FormData returns form data for a given OrganizationInviteUserParams
+// FormData returns the OrganizationInviteUserParams as form data, keyed by their JSON field names.
+// Output: [map[string]string] form fields.
 func (v *OrganizationInviteUserParams) FormData() map[string]string {
 	m, _ := json.Marshal(v)
 	var res map[string]string
@@ -1592,7 +1580,7 @@ const (
 // v26: https://www.keycloak.org/docs-api/latest/rest-api/index.html#MemberRepresentation
 type MemberRepresentation struct {
 	User
-	MembershipType *MembershipType `json:"membershipType,omitempty"`
+	MembershipType MembershipType `json:"membershipType,omitzero"`
 }
 
 // GetMembersParams represents the optional parameters for getting members of an organization
@@ -1630,13 +1618,13 @@ type GetOrganizationCountParams struct {
 
 // GetOrganizationInvitationsParams represents the optional parameters for getting organization invitations
 type GetOrganizationInvitationsParams struct {
-	Email     *string `json:"email,omitempty"`
-	First     *int    `json:"first,string,omitempty"`
-	FirstName *string `json:"firstName,omitempty"`
-	LastName  *string `json:"lastName,omitempty"`
-	Max       *int    `json:"max,string,omitempty"`
-	Search    *string `json:"search,omitempty"`
-	Status    *string `json:"status,omitempty"`
+	Email     *string           `json:"email,omitempty"`
+	First     *int              `json:"first,string,omitempty"`
+	FirstName *string           `json:"firstName,omitempty"`
+	LastName  *string           `json:"lastName,omitempty"`
+	Max       *int              `json:"max,string,omitempty"`
+	Search    *string           `json:"search,omitempty"`
+	Status    *InvitationStatus `json:"status,omitempty"`
 }
 
 // GetOrganizationGroupsParams represents the optional parameters for getting organization groups
@@ -1676,11 +1664,11 @@ type OrganizationRepresentation struct {
 	Enabled           *bool                              `json:"enabled,omitempty"`
 	Description       *string                            `json:"description,omitempty"`
 	RedirectURL       *string                            `json:"redirectUrl,omitempty"`
-	Attributes        map[string][]string                `json:"attributes,omitempty"`
-	Domains           []OrganizationDomainRepresentation `json:"domains,omitempty"`
-	Members           []MemberRepresentation             `json:"members,omitempty"`
-	IdentityProviders []IdentityProviderRepresentation   `json:"identityProviders,omitempty"`
-	Groups            []Group                            `json:"groups,omitempty"`
+	Attributes        map[string][]string                `json:"attributes,omitzero"`
+	Domains           []OrganizationDomainRepresentation `json:"domains,omitzero"`
+	Members           []MemberRepresentation             `json:"members,omitzero"`
+	IdentityProviders []IdentityProviderRepresentation   `json:"identityProviders,omitzero"`
+	Groups            []Group                            `json:"groups,omitzero"`
 }
 
 // InvitationStatus represents the status of an organization invitation
@@ -1696,62 +1684,52 @@ const (
 // OrganizationInvitationRepresentation represents an invitation to join an organization
 // v26: https://www.keycloak.org/docs-api/latest/rest-api/index.html#OrganizationInvitationRepresentation
 type OrganizationInvitationRepresentation struct {
-	ID             *string           `json:"id,omitempty"`
-	OrganizationID *string           `json:"organizationId,omitempty"`
-	Email          *string           `json:"email,omitempty"`
-	FirstName      *string           `json:"firstName,omitempty"`
-	LastName       *string           `json:"lastName,omitempty"`
-	SentDate       *int64            `json:"sentDate,omitempty"`
-	ExpiresAt      *int64            `json:"expiresAt,omitempty"`
-	Status         *InvitationStatus `json:"status,omitempty"`
-	InviteLink     *string           `json:"inviteLink,omitempty"`
-}
-
-// prettyStringStruct returns struct formatted into pretty string
-func prettyStringStruct(t any) string {
-	json, err := json.MarshalIndent(t, "", "\t")
-	if err != nil {
-		return ""
-	}
-
-	return string(json)
+	ID             string           `json:"id,omitzero"`
+	OrganizationID string           `json:"organizationId,omitzero"`
+	Email          string           `json:"email,omitzero"`
+	FirstName      string           `json:"firstName,omitzero"`
+	LastName       string           `json:"lastName,omitzero"`
+	SentDate       int64            `json:"sentDate,omitzero"`
+	ExpiresAt      int64            `json:"expiresAt,omitzero"`
+	Status         InvitationStatus `json:"status,omitzero"`
+	InviteLink     string           `json:"inviteLink,omitzero"`
 }
 
 // UserProfileAttribute represents a user profile attribute
 type UserProfileAttribute struct {
-	Name        *string                          `json:"name,omitempty"`
-	DisplayName *string                          `json:"displayName,omitempty"`
-	Validations map[string]any                   `json:"validations,omitempty"`
-	Annotations map[string]any                   `json:"annotations,omitempty"`
-	Required    *UserProfileAttributeRequired    `json:"required,omitempty"`
-	Permissions *UserProfileAttributePermissions `json:"permissions,omitempty"`
-	Selector    *UserProfileAttributeSelector    `json:"selector,omitempty"`
-	Group       *string                          `json:"group,omitempty"`
-	MultiValued *bool                            `json:"multivalued,omitempty"`
+	Name        *string                         `json:"name,omitempty"`
+	DisplayName *string                         `json:"displayName,omitempty"`
+	Validations map[string]any                  `json:"validations,omitzero"`
+	Annotations map[string]any                  `json:"annotations,omitzero"`
+	Required    UserProfileAttributeRequired    `json:"required,omitzero"`
+	Permissions UserProfileAttributePermissions `json:"permissions,omitzero"`
+	Selector    UserProfileAttributeSelector    `json:"selector,omitzero"`
+	Group       *string                         `json:"group,omitempty"`
+	MultiValued *bool                           `json:"multivalued,omitempty"`
 }
 
 // UserProfileAttributePermissions represents the permissions of a user profile attribute
 type UserProfileAttributePermissions struct {
-	View []string `json:"view,omitempty"`
-	Edit []string `json:"edit,omitempty"`
+	View []string `json:"view,omitzero"`
+	Edit []string `json:"edit,omitzero"`
 }
 
 // UserProfileAttributeRequired represents the required roles and scopes for a user profile attribute
 type UserProfileAttributeRequired struct {
-	Roles  []string `json:"roles,omitempty"`
-	Scopes []string `json:"scopes,omitempty"`
+	Roles  []string `json:"roles,omitzero"`
+	Scopes []string `json:"scopes,omitzero"`
 }
 
 // UserProfileAttributeSelector represents the scopes for selecting a user profile attribute
 type UserProfileAttributeSelector struct {
-	Scopes []string `json:"scopes,omitempty"`
+	Scopes []string `json:"scopes,omitzero"`
 }
 
 // UserProfileConfig represents the configuration of user profile
 type UserProfileConfig struct {
-	Attributes               []UserProfileAttribute    `json:"attributes,omitempty"`
-	Groups                   []UserProfileGroup        `json:"groups,omitempty"`
-	UnmanagedAttributePolicy *UnmanagedAttributePolicy `json:"unmanagedAttributePolicy,omitempty"`
+	Attributes               []UserProfileAttribute   `json:"attributes,omitzero"`
+	Groups                   []UserProfileGroup       `json:"groups,omitzero"`
+	UnmanagedAttributePolicy UnmanagedAttributePolicy `json:"unmanagedAttributePolicy,omitzero"`
 }
 
 // UserProfileGroup represents a user profile group
@@ -1759,7 +1737,7 @@ type UserProfileGroup struct {
 	Name               *string        `json:"name,omitempty"`
 	DisplayHeader      *string        `json:"displayHeader,omitempty"`
 	DisplayDescription *string        `json:"displayDescription,omitempty"`
-	Annotations        map[string]any `json:"annotations,omitempty"`
+	Annotations        map[string]any `json:"annotations,omitzero"`
 }
 
 // UnmanagedAttributePolicy represents the policy for unmanaged attributes in user profile
@@ -1773,108 +1751,3 @@ const (
 	// UnmanagedAttributePolicyAdminEdit indicates that unmanaged attributes are enabled but can only be viewed and edited by admin in user profile
 	UnmanagedAttributePolicyAdminEdit UnmanagedAttributePolicy = "ADMIN_EDIT"
 )
-
-// Stringer implementations for all struct types
-func (v *CertResponseKey) String() string                           { return prettyStringStruct(v) }
-func (v *CertResponse) String() string                              { return prettyStringStruct(v) }
-func (v *IssuerResponse) String() string                            { return prettyStringStruct(v) }
-func (v *ResourcePermission) String() string                        { return prettyStringStruct(v) }
-func (v *PermissionResource) String() string                        { return prettyStringStruct(v) }
-func (v *PermissionScope) String() string                           { return prettyStringStruct(v) }
-func (v *IntroSpectTokenResult) String() string                     { return prettyStringStruct(v) }
-func (v *User) String() string                                      { return prettyStringStruct(v) }
-func (v *SetPasswordRequest) String() string                        { return prettyStringStruct(v) }
-func (v *Component) String() string                                 { return prettyStringStruct(v) }
-func (v *KeyStoreConfig) String() string                            { return prettyStringStruct(v) }
-func (v *ActiveKeys) String() string                                { return prettyStringStruct(v) }
-func (v *Key) String() string                                       { return prettyStringStruct(v) }
-func (v *Attributes) String() string                                { return prettyStringStruct(v) }
-func (v *Access) String() string                                    { return prettyStringStruct(v) }
-func (v *UserGroup) String() string                                 { return prettyStringStruct(v) }
-func (v *GetUsersParams) String() string                            { return prettyStringStruct(v) }
-func (v *GetComponentsParams) String() string                       { return prettyStringStruct(v) }
-func (v *ExecuteActionsEmail) String() string                       { return prettyStringStruct(v) }
-func (v *Group) String() string                                     { return prettyStringStruct(v) }
-func (v *GroupsCount) String() string                               { return prettyStringStruct(v) }
-func (obj *GetGroupsParams) String() string                         { return prettyStringStruct(obj) }
-func (v *CompositesRepresentation) String() string                  { return prettyStringStruct(v) }
-func (v *Role) String() string                                      { return prettyStringStruct(v) }
-func (v *GetRoleParams) String() string                             { return prettyStringStruct(v) }
-func (v *ClientMappingsRepresentation) String() string              { return prettyStringStruct(v) }
-func (v *MappingsRepresentation) String() string                    { return prettyStringStruct(v) }
-func (v *ClientScope) String() string                               { return prettyStringStruct(v) }
-func (v *ClientScopeAttributes) String() string                     { return prettyStringStruct(v) }
-func (v *ProtocolMappers) String() string                           { return prettyStringStruct(v) }
-func (v *ProtocolMappersConfig) String() string                     { return prettyStringStruct(v) }
-func (v *Client) String() string                                    { return prettyStringStruct(v) }
-func (v *ResourceServerRepresentation) String() string              { return prettyStringStruct(v) }
-func (v *RoleDefinition) String() string                            { return prettyStringStruct(v) }
-func (v *PolicyRepresentation) String() string                      { return prettyStringStruct(v) }
-func (v *RolePolicyRepresentation) String() string                  { return prettyStringStruct(v) }
-func (v *JSPolicyRepresentation) String() string                    { return prettyStringStruct(v) }
-func (v *ClientPolicyRepresentation) String() string                { return prettyStringStruct(v) }
-func (v *TimePolicyRepresentation) String() string                  { return prettyStringStruct(v) }
-func (v *UserPolicyRepresentation) String() string                  { return prettyStringStruct(v) }
-func (v *AggregatedPolicyRepresentation) String() string            { return prettyStringStruct(v) }
-func (v *GroupPolicyRepresentation) String() string                 { return prettyStringStruct(v) }
-func (v *GroupDefinition) String() string                           { return prettyStringStruct(v) }
-func (v *ResourceRepresentation) String() string                    { return prettyStringStruct(v) }
-func (v *ResourceOwnerRepresentation) String() string               { return prettyStringStruct(v) }
-func (v *ScopeRepresentation) String() string                       { return prettyStringStruct(v) }
-func (v *ProtocolMapperRepresentation) String() string              { return prettyStringStruct(v) }
-func (v *GetClientsParams) String() string                          { return prettyStringStruct(v) }
-func (v *UserInfoAddress) String() string                           { return prettyStringStruct(v) }
-func (v *UserInfo) String() string                                  { return prettyStringStruct(v) }
-func (v *RolesRepresentation) String() string                       { return prettyStringStruct(v) }
-func (v *RealmRepresentation) String() string                       { return prettyStringStruct(v) }
-func (v *MultiValuedHashMap) String() string                        { return prettyStringStruct(v) }
-func (t *TokenOptions) String() string                              { return prettyStringStruct(t) }
-func (t *RequestingPartyTokenOptions) String() string               { return prettyStringStruct(t) }
-func (v *RequestingPartyPermission) String() string                 { return prettyStringStruct(v) }
-func (v *UserSessionRepresentation) String() string                 { return prettyStringStruct(v) }
-func (v *SystemInfoRepresentation) String() string                  { return prettyStringStruct(v) }
-func (v *MemoryInfoRepresentation) String() string                  { return prettyStringStruct(v) }
-func (v *ServerInfoRepresentation) String() string                  { return prettyStringStruct(v) }
-func (v *FederatedIdentityRepresentation) String() string           { return prettyStringStruct(v) }
-func (v *IdentityProviderRepresentation) String() string            { return prettyStringStruct(v) }
-func (v *GetResourceParams) String() string                         { return prettyStringStruct(v) }
-func (v *GetScopeParams) String() string                            { return prettyStringStruct(v) }
-func (v *GetPolicyParams) String() string                           { return prettyStringStruct(v) }
-func (v *GetPermissionParams) String() string                       { return prettyStringStruct(v) }
-func (v *GetUsersByRoleParams) String() string                      { return prettyStringStruct(v) }
-func (v *PermissionRepresentation) String() string                  { return prettyStringStruct(v) }
-func (v *CreatePermissionTicketParams) String() string              { return prettyStringStruct(v) }
-func (v *PermissionTicketDescriptionRepresentation) String() string { return prettyStringStruct(v) }
-func (v *AccessRepresentation) String() string                      { return prettyStringStruct(v) }
-func (v *PermissionTicketResponseRepresentation) String() string    { return prettyStringStruct(v) }
-func (v *PermissionTicketRepresentation) String() string            { return prettyStringStruct(v) }
-func (v *PermissionTicketPermissionRepresentation) String() string  { return prettyStringStruct(v) }
-func (v *PermissionGrantParams) String() string                     { return prettyStringStruct(v) }
-func (v *PermissionGrantResponseRepresentation) String() string     { return prettyStringStruct(v) }
-func (v *GetUserPermissionParams) String() string                   { return prettyStringStruct(v) }
-func (v *ResourcePolicyRepresentation) String() string              { return prettyStringStruct(v) }
-func (v *GetResourcePoliciesParams) String() string                 { return prettyStringStruct(v) }
-func (v *CredentialRepresentation) String() string                  { return prettyStringStruct(v) }
-func (v *RequiredActionProviderRepresentation) String() string      { return prettyStringStruct(v) }
-func (v *BruteForceStatus) String() string                          { return prettyStringStruct(v) }
-func (v *GetClientUserSessionsParams) String() string               { return prettyStringStruct(v) }
-func (v *GetOrganizationsParams) String() string                    { return prettyStringStruct(v) }
-func (v *OrganizationInviteUserParams) String() string              { return prettyStringStruct(v) }
-func (v *GetMembersParams) String() string                          { return prettyStringStruct(v) }
-func (v *MembershipType) String() string                            { return prettyStringStruct(v) }
-func (v *MemberRepresentation) String() string                      { return prettyStringStruct(v) }
-func (v *OrganizationDomainRepresentation) String() string          { return prettyStringStruct(v) }
-func (v *OrganizationRepresentation) String() string                { return prettyStringStruct(v) }
-func (v *GetOrganizationMembersParams) String() string              { return prettyStringStruct(v) }
-func (v *GetOrganizationCountParams) String() string                { return prettyStringStruct(v) }
-func (v *GetOrganizationInvitationsParams) String() string          { return prettyStringStruct(v) }
-func (v *GetOrganizationGroupsParams) String() string               { return prettyStringStruct(v) }
-func (v *GetOrganizationGroupSubgroupsParams) String() string       { return prettyStringStruct(v) }
-func (v *OrganizationInvitationRepresentation) String() string      { return prettyStringStruct(v) }
-func (v *UnmanagedAttributePolicy) String() string                  { return prettyStringStruct(v) }
-func (v *UserProfileAttribute) String() string                      { return prettyStringStruct(v) }
-func (v *UserProfileAttributePermissions) String() string           { return prettyStringStruct(v) }
-func (v *UserProfileAttributeRequired) String() string              { return prettyStringStruct(v) }
-func (v *UserProfileAttributeSelector) String() string              { return prettyStringStruct(v) }
-func (v *UserProfileConfig) String() string                         { return prettyStringStruct(v) }
-func (v *UserProfileGroup) String() string                          { return prettyStringStruct(v) }

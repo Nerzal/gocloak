@@ -12,8 +12,8 @@ func (tk *Tkc) getLdapMapperOfUserFederation(ctx context.Context, idUserFederati
 
 	// get only typed components for given id
 	mapperGetParameter := gocloak.GetComponentsParams{
-		ProviderType: gocloak.StringP("org.keycloak.storage.ldap.mappers.LDAPStorageMapper"),
-		ParentID:     gocloak.StringP(idUserFederation),
+		ProviderType: new("org.keycloak.storage.ldap.mappers.LDAPStorageMapper"),
+		ParentID:     new(idUserFederation),
 	}
 
 	if mapperList, getErr = tk.client.GetComponentsWithParams(ctx, tk.token.AccessToken, tk.realm, mapperGetParameter); getErr != nil {
@@ -72,11 +72,11 @@ func prepareRoleLdapMapper(name, idUserFederation string) (mapper gocloak.Compon
 	mapperConfig["client.id"] = []string{"account"}
 
 	mapper = gocloak.Component{
-		Name:            gocloak.StringP(name),
-		ProviderID:      gocloak.StringP("role-ldap-mapper"),
-		ProviderType:    gocloak.StringP("org.keycloak.storage.ldap.mappers.LDAPStorageMapper"),
-		ParentID:        gocloak.StringP(idUserFederation),
-		ComponentConfig: &mapperConfig,
+		Name:            new(name),
+		ProviderID:      new("role-ldap-mapper"),
+		ProviderType:    new("org.keycloak.storage.ldap.mappers.LDAPStorageMapper"),
+		ParentID:        new(idUserFederation),
+		ComponentConfig: mapperConfig,
 	}
 
 	return mapper
@@ -121,11 +121,11 @@ func (tkc *Tkc) newUserFederation(ctx context.Context) (userFederation gocloak.C
 	userFederationConfig["pagination"] = []string{"true"}
 
 	userFederation = gocloak.Component{
-		Name:            gocloak.StringP("ldap"),
-		ProviderID:      gocloak.StringP("ldap"),
-		ProviderType:    gocloak.StringP("org.keycloak.storage.UserStorageProvider"),
-		ParentID:        gocloak.StringP(idRealm),
-		ComponentConfig: &userFederationConfig,
+		Name:            new("ldap"),
+		ProviderID:      new("ldap"),
+		ProviderType:    new("org.keycloak.storage.UserStorageProvider"),
+		ParentID:        new(idRealm),
+		ComponentConfig: userFederationConfig,
 	}
 
 	return userFederation, nil
@@ -189,7 +189,7 @@ func (tkc *Tkc) RunCreateUserFederation() error {
 		} else {
 			// set ID of user federation for update exactly existing user federation
 			userFederation.ID = comps[0].ID
-			if updateErr := tkc.client.UpdateComponent(ctx, tkc.token.AccessToken, tkc.baseConfig.Realm, userFederation); updateErr != nil {
+			if updateErr := tkc.client.UpdateComponent(ctx, tkc.token.AccessToken, tkc.realm, userFederation); updateErr != nil {
 				return updateErr
 			} else {
 				// do change sync only after update exiting one

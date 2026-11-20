@@ -1,19 +1,18 @@
 services:
   keycloak:
-    build: .
-    command: start-dev --import-realm --features=preview,organization,admin-fine-grained-authz:v1
-    environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: secret
-      KC_HEALTH_ENABLED: "true"
+    build:
+      context: .
+      args:
+        KEYCLOAK_VERSION: ${KEYCLOAK_VERSION:-26.8.2}
     ports:
       - "8080:8080"
       - "9000:9000"
     healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 || exit 1"]
-      interval: 10s
-      timeout: 10s
-      retries: 5
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q UP <&3"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 300s
     volumes:
       - ./testdata/gocloak-realm.json:/opt/keycloak/data/import/gocloak-realm.json
     depends_on:

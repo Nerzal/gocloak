@@ -707,6 +707,18 @@
       "nodeReRegistrationTimeout": -1,
       "protocolMappers": [
         {
+          "name": "gocloak audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "gocloak",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
           "id": "c213647e-cb4c-43c3-b06c-d9a573bea602",
           "name": "Client Host",
           "protocol": "openid-connect",
