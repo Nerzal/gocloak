@@ -3122,6 +3122,29 @@ func Test_CreateRealmRole(t *testing.T) {
 	defer tearDown()
 }
 
+// Test_CreateRealmRole_NameWithSpace checks that the returned ID of a role whose name Keycloak percent-encodes in the
+// Location header can be passed to the other role functions unchanged.
+// Input: t [*testing.T]. Output: none.
+func Test_CreateRealmRole_NameWithSpace(t *testing.T) {
+	t.Parallel()
+	cfg := GetConfig(t)
+	client := NewClientWithDebug(t)
+	token := GetAdminToken(t, client)
+	ctx := context.Background()
+
+	roleName := GetRandomName("Role With Space")
+	roleID, err := client.CreateRealmRole(ctx, token.AccessToken, cfg.GoCloak.Realm, gocloak.Role{Name: &roleName})
+	require.NoError(t, err, "CreateRealmRole failed")
+	require.Equal(t, roleName, roleID)
+	t.Cleanup(func() {
+		require.NoError(t, client.DeleteRealmRole(ctx, token.AccessToken, cfg.GoCloak.Realm, roleID), "DeleteRealmRole failed")
+	})
+
+	role, err := client.GetRealmRole(ctx, token.AccessToken, cfg.GoCloak.Realm, roleID)
+	require.NoError(t, err, "GetRealmRole failed")
+	require.Equal(t, roleName, gocloak.PString(role.Name))
+}
+
 func Test_GetRealmRole(t *testing.T) {
 	t.Parallel()
 	cfg := GetConfig(t)
@@ -7141,7 +7164,7 @@ func TestGocloak_CreateAuthenticationFlowsAndCreateAuthenticationExecutionAndFlo
 	require.True(t, execFlowFound, "Failed to find authentication execution flow")
 
 	authFlow.Description = new("my-new-description")
-	_, err = client.UpdateAuthenticationFlow(
+	err = client.UpdateAuthenticationFlow(
 		context.Background(),
 		token.AccessToken,
 		cfg.GoCloak.Realm,

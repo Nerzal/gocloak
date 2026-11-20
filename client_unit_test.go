@@ -127,12 +127,15 @@ func TestUnit_URLSegmentsAreEscaped(t *testing.T) {
 	require.NoError(t, err)
 	_, err = client.GetGroupByPath(ctx, "token", "r", "/parent/../x")
 	require.NoError(t, err)
+	_, err = client.GetOrganizationGroupByPath(ctx, "token", "r", "org", "/parent/child name", false)
+	require.NoError(t, err)
 
 	require.Equal(t, []string{
 		"/admin/realms/r/users/a%2F..%2F..%2Fusers%3Fx=y",
 		"/admin/realms/r/users/%2E%2E",
 		"/admin/realms/r/group-by-path/parent/child",
 		"/admin/realms/r/group-by-path/parent/%2E%2E/x",
+		"/admin/realms/r/organizations/org/groups/group-by-path/parent/child%20name",
 	}, paths)
 }
 
@@ -418,7 +421,13 @@ func TestUnit_ValidateAccessToken(t *testing.T) {
 	defer server.Close()
 	client := NewClient(server.URL)
 
+	exp := time.Now().Add(time.Minute).Unix()
 	sign := func(claims jwt.MapClaims) string {
+		if v, ok := claims["exp"]; !ok {
+			claims["exp"] = exp
+		} else if v == nil {
+			delete(claims, "exp")
+		}
 		token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 		token.Header["kid"] = "k"
 		signed, err := token.SignedString(key)
@@ -442,6 +451,8 @@ func TestUnit_ValidateAccessToken(t *testing.T) {
 		{"wrong azp", jwt.MapClaims{"typ": "Bearer", "aud": "api", "azp": "evil"}, want, true},
 		{"custom type", jwt.MapClaims{"typ": "Custom", "azp": "web"}, TokenValidation{AuthorizedParty: "web", Type: "Custom"}, false},
 		{"nothing to check", valid, TokenValidation{}, true},
+		{"no expiry", jwt.MapClaims{"typ": "Bearer", "aud": "api", "azp": "web", "exp": nil}, want, true},
+		{"expired", jwt.MapClaims{"typ": "Bearer", "aud": "api", "azp": "web", "exp": time.Now().Add(-time.Minute).Unix()}, want, true},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -454,6 +465,9 @@ func TestUnit_ValidateAccessToken(t *testing.T) {
 			require.NotNil(t, claims)
 		})
 	}
+
+	_, _, err = client.ValidateAccessToken(context.Background(), sign(jwt.MapClaims{"typ": "Bearer", "azp": "web", "exp": nil}), "r", want)
+	require.ErrorIs(t, err, jwt.ErrTokenRequiredClaimMissing)
 }
 
 // TestUnit_FormDataKeepsOptions checks that FormData does not modify the caller's options.
@@ -643,6 +657,9 @@ func TestUnit_GetID(t *testing.T) {
 	t.Parallel()
 	tests := []struct{ location, want string }{
 		{"http://kc/admin/realms/r/users/abc-123", "abc-123"},
+		{"http://kc/admin/realms/r/roles/my%20role", "my role"},
+		{"http://kc/admin/realms/r/roles/a%2Fb", "a/b"},
+		{"http://kc/admin/realms/r/roles/bad%zz", "bad%zz"}, // invalid escape is returned as is
 		{"abc", "abc"},
 		{"", ""},
 	}
@@ -876,6 +893,7 @@ func TestUnit_ValidateAccessToken_LeewayAndCustomClaims(t *testing.T) {
 		return signed
 	}
 	ctx := context.Background()
+	exp := time.Now().Add(time.Minute).Unix()
 
 	// expired 5s ago: rejected without leeway, accepted with 10s
 	expired := sign(jwt.MapClaims{"typ": "Bearer", "azp": "web", "exp": time.Now().Add(-5 * time.Second).Unix()})
@@ -886,10 +904,10 @@ func TestUnit_ValidateAccessToken_LeewayAndCustomClaims(t *testing.T) {
 
 	// custom claims without typ/azp fields: the checks still read them from the verified payload
 	var claims jwt.RegisteredClaims
-	_, err = client.ValidateAccessTokenCustomClaims(ctx, sign(jwt.MapClaims{"typ": "ID", "azp": "web", "sub": "u"}), "r",
+	_, err = client.ValidateAccessTokenCustomClaims(ctx, sign(jwt.MapClaims{"typ": "ID", "azp": "web", "sub": "u", "exp": exp}), "r",
 		&claims, TokenValidation{AuthorizedParty: "web"})
 	require.ErrorContains(t, err, "unexpected token type")
-	_, err = client.ValidateAccessTokenCustomClaims(ctx, sign(jwt.MapClaims{"typ": "Bearer", "azp": "web", "sub": "u"}), "r",
+	_, err = client.ValidateAccessTokenCustomClaims(ctx, sign(jwt.MapClaims{"typ": "Bearer", "azp": "web", "sub": "u", "exp": exp}), "r",
 		&claims, TokenValidation{AuthorizedParty: "web"})
 	require.NoError(t, err)
 	require.Equal(t, "u", claims.Subject)

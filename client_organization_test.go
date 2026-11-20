@@ -267,6 +267,11 @@ func Test_OrganizationGroups(t *testing.T) {
 	require.Equal(t, []string{subGroupID}, pluck(subGroups, idOfGroup))
 	require.Equal(t, subName, gocloak.PString(subGroups[0].Name))
 
+	// nested path: "/" separates the group names and must not be escaped
+	group, err = client.GetOrganizationGroupByPath(ctx, token.AccessToken, cfg.GoCloak.Realm, orgID, "/"+newName+"/"+subName, false)
+	require.NoError(t, err, "GetOrganizationGroupByPath with nested path failed")
+	require.Equal(t, subGroupID, gocloak.PString(group.ID))
+
 	err = client.DeleteOrganizationGroup(ctx, token.AccessToken, cfg.GoCloak.Realm, orgID, groupID)
 	require.NoError(t, err, "DeleteOrganizationGroup failed")
 

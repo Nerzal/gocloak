@@ -72,7 +72,8 @@ type versionCall struct {
 // If the version is already set, it will return the cached version.
 // Otherwise, it will fetch the version from the serverinfo endpoint and cache it.
 // Safe for concurrent use: concurrent callers share one request and its result; a failure is not cached,
-// so callers do not queue up behind each other while serverinfo fails.
+// so callers do not queue up behind each other while serverinfo fails. A shared request uses the token of the
+// caller that started it, so a concurrent caller may get that caller's error (e.g. an expired token) once.
 // Input: ctx [context.Context], token [string] admin token.
 // Output: [string] server version, [error] if serverinfo fails or has no version
 // (e.g. admins of non-master realms; use SetServerVersion then).
@@ -269,14 +270,17 @@ func doCreate(req *resty.Request, url, errMessage string) (string, error) {
 	return getID(resp), nil
 }
 
-// getID returns the last path segment of the Location header, i.e. the ID of a created resource.
+// getID returns the unescaped last path segment of the Location header, i.e. the ID of a created resource.
+// Keycloak percent-encodes names (e.g. role names with spaces) there; the URL helpers escape again on reuse.
 // Input: resp [*resty.Response].
 // Output: [string] resource ID.
 func getID(resp *resty.Response) string {
 	header := resp.Header().Get("Location")
-	parts := strings.Split(header, urlSeparator)
-
-	return parts[len(parts)-1]
+	last := header[strings.LastIndex(header, urlSeparator)+1:]
+	if id, err := url.PathUnescape(last); err == nil {
+		return id
+	}
+	return last
 }
 
 // injectTracingHeaders writes the OpenTelemetry trace context of ctx into the request headers.
@@ -670,6 +674,7 @@ func (g *GoCloak) getCachedCerts(ctx context.Context, realm string, maxAge time.
 // GetCerts fetches certificates for the given realm from the public /open-id-connect/certs endpoint.
 // Results are cached for Config.CertsInvalidateTime; afterwards the cached certs are served for up to
 // another interval while they are refreshed in the background.
+// The returned value is shared with the cache and must be treated as read-only.
 // Input: ctx [context.Context], realm [string].
 // Output: [*CertResponse] certs, [error] if fetching fails.
 func (g *GoCloak) GetCerts(ctx context.Context, realm string) (*CertResponse, error) {
@@ -760,8 +765,8 @@ func (g *GoCloak) DecodeAccessTokenCustomClaims(ctx context.Context, accessToken
 	return g.decodeAccessTokenWithClaims(ctx, accessToken, realm, claims)
 }
 
-// ValidateAccessToken verifies accessToken [string] like DecodeAccessToken and additionally checks typ, aud and azp,
-// so ID tokens and tokens issued to other clients are rejected. At least one of validation.Audience and
+// ValidateAccessToken verifies accessToken [string] like DecodeAccessToken and additionally requires exp and checks
+// typ, aud and azp, so ID tokens, tokens without expiry and tokens issued to other clients are rejected. At least one of validation.Audience and
 // validation.AuthorizedParty must be set.
 // Input: ctx [context.Context], accessToken [string] optionally prefixed with "Bearer ", realm [string] trusted realm,
 // validation [TokenValidation] expected claims. Output: [*jwt.Token], [*jwt.MapClaims], [error] if a check fails.
@@ -784,7 +789,9 @@ func (g *GoCloak) ValidateAccessTokenCustomClaims(ctx context.Context, accessTok
 		return nil, fmt.Errorf("%s: audience or authorized party required", errMessage)
 	}
 
-	token, err := g.decodeAccessTokenWithClaims(ctx, accessToken, realm, claims, jwt.WithLeeway(validation.Leeway))
+	// Keycloak access tokens always carry exp; a token without one would never expire
+	token, err := g.decodeAccessTokenWithClaims(ctx, accessToken, realm, claims,
+		jwt.WithLeeway(validation.Leeway), jwt.WithExpirationRequired())
 	if err != nil {
 		return nil, err
 	}
@@ -1937,11 +1944,15 @@ func (g *GoCloak) GetChildGroups(ctx context.Context, token, realm, groupID stri
 func (g *GoCloak) GetGroupByPath(ctx context.Context, token, realm, groupPath string) (*Group, error) {
 	const errMessage = "could not get group"
 
-	// nested groups use "/" as separator, so only the single group names get escaped
-	groupNames := strings.Split(strings.TrimLeft(groupPath, urlSeparator), urlSeparator)
-	groupURL := makeURL(g.getAdminRealmURL(realm, "group-by-path"), makeURL(escapeSegments(groupNames...)...))
+	return doRequestPtr[Group](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet,
+		g.getAdminRealmURL(realm, append([]string{"group-by-path"}, groupPathSegments(groupPath)...)...), errMessage)
+}
 
-	return doRequestPtr[Group](g.GetRequestWithBearerAuth(ctx, token), http.MethodGet, groupURL, errMessage)
+// groupPathSegments splits a group path like "/parent/child" into its group names, so each name is escaped as its
+// own segment while "/" stays the separator Keycloak expects.
+// Input: groupPath [string]. Output: [[]string] group names.
+func groupPathSegments(groupPath string) []string {
+	return strings.Split(strings.TrimLeft(groupPath, urlSeparator), urlSeparator)
 }
 
 // GetGroups returns the groups of the realm filtered by the given query params.
@@ -2496,11 +2507,12 @@ func (g *GoCloak) CreateAuthenticationFlow(ctx context.Context, token, realm str
 // UpdateAuthenticationFlow updates the authentication flow with the given ID.
 // Input: ctx [context.Context], token [string] admin token, realm [string], flow [AuthenticationFlowRepresentation],
 // authenticationFlowID [string].
-// Output: [*AuthenticationFlowRepresentation] updated flow, [error] if the call fails.
-func (g *GoCloak) UpdateAuthenticationFlow(ctx context.Context, token, realm string, flow AuthenticationFlowRepresentation, authenticationFlowID string) (*AuthenticationFlowRepresentation, error) {
+// Keycloak answers with 204 No Content; read the flow back with GetAuthenticationFlow if needed.
+// Output: [error] if the call fails.
+func (g *GoCloak) UpdateAuthenticationFlow(ctx context.Context, token, realm string, flow AuthenticationFlowRepresentation, authenticationFlowID string) error {
 	const errMessage = "could not update authentication flow"
 
-	return doRequest[*AuthenticationFlowRepresentation](g.GetRequestWithBearerAuth(ctx, token).
+	return doNoResult(g.GetRequestWithBearerAuth(ctx, token).
 		SetBody(flow),
 		http.MethodPut, g.getAdminRealmURL(realm, "authentication", "flows", authenticationFlowID), errMessage)
 }
@@ -4422,7 +4434,8 @@ func (g *GoCloak) GetOrganizationGroupByPath(ctx context.Context, token, realm, 
 	const errMessage = "could not get organization group by path"
 	return doRequest[*Group](g.GetRequestWithBearerAuth(ctx, token).
 		SetQueryParam("subGroupsCount", strconv.FormatBool(subGroupsCount)),
-		http.MethodGet, g.getAdminRealmURL(realm, "organizations", idOfOrganization, "groups", "group-by-path", groupPath), errMessage)
+		http.MethodGet, g.getAdminRealmURL(realm, append([]string{"organizations", idOfOrganization, "groups", "group-by-path"},
+			groupPathSegments(groupPath)...)...), errMessage)
 }
 
 // GetOrganizationGroupByID returns the organization group with the specified id.

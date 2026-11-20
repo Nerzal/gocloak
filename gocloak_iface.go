@@ -16,7 +16,8 @@ type GoCloakIface interface {
 	// If the version is already set, it will return the cached version.
 	// Otherwise, it will fetch the version from the serverinfo endpoint and cache it.
 	// Safe for concurrent use: concurrent callers share one request and its result; a failure is not cached,
-	// so callers do not queue up behind each other while serverinfo fails.
+	// so callers do not queue up behind each other while serverinfo fails. A shared request uses the token of the
+	// caller that started it, so a concurrent caller may get that caller's error (e.g. an expired token) once.
 	// Input: ctx [context.Context], token [string] admin token.
 	// Output: [string] server version, [error] if serverinfo fails or has no version
 	// (e.g. admins of non-master realms; use SetServerVersion then).
@@ -62,6 +63,7 @@ type GoCloakIface interface {
 	// GetCerts fetches certificates for the given realm from the public /open-id-connect/certs endpoint.
 	// Results are cached for Config.CertsInvalidateTime; afterwards the cached certs are served for up to
 	// another interval while they are refreshed in the background.
+	// The returned value is shared with the cache and must be treated as read-only.
 	// Input: ctx [context.Context], realm [string].
 	// Output: [*CertResponse] certs, [error] if fetching fails.
 	GetCerts(ctx context.Context, realm string) (*CertResponse, error)
@@ -86,8 +88,8 @@ type GoCloakIface interface {
 	// Input: ctx [context.Context], accessToken [string], realm [string], claims [jwt.Claims].
 	// Output: [*jwt.Token], [error] if verification fails.
 	DecodeAccessTokenCustomClaims(ctx context.Context, accessToken, realm string, claims jwt.Claims) (*jwt.Token, error)
-	// ValidateAccessToken verifies accessToken [string] like DecodeAccessToken and additionally checks typ, aud and azp,
-	// so ID tokens and tokens issued to other clients are rejected. At least one of validation.Audience and
+	// ValidateAccessToken verifies accessToken [string] like DecodeAccessToken and additionally requires exp and checks
+	// typ, aud and azp, so ID tokens, tokens without expiry and tokens issued to other clients are rejected. At least one of validation.Audience and
 	// validation.AuthorizedParty must be set.
 	// Input: ctx [context.Context], accessToken [string] optionally prefixed with "Bearer ", realm [string] trusted realm,
 	// validation [TokenValidation] expected claims. Output: [*jwt.Token], [*jwt.MapClaims], [error] if a check fails.
@@ -703,8 +705,9 @@ type GoCloakIface interface {
 	// UpdateAuthenticationFlow updates the authentication flow with the given ID.
 	// Input: ctx [context.Context], token [string] admin token, realm [string], flow [AuthenticationFlowRepresentation],
 	// authenticationFlowID [string].
-	// Output: [*AuthenticationFlowRepresentation] updated flow, [error] if the call fails.
-	UpdateAuthenticationFlow(ctx context.Context, token, realm string, flow AuthenticationFlowRepresentation, authenticationFlowID string) (*AuthenticationFlowRepresentation, error)
+	// Keycloak answers with 204 No Content; read the flow back with GetAuthenticationFlow if needed.
+	// Output: [error] if the call fails.
+	UpdateAuthenticationFlow(ctx context.Context, token, realm string, flow AuthenticationFlowRepresentation, authenticationFlowID string) error
 	// DeleteAuthenticationFlow deletes the authentication flow with the given ID.
 	// Input: ctx [context.Context], token [string] admin token, realm [string], flowID [string].
 	// Output: [error] if the call fails.
