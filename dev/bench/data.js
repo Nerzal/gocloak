@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785237773138,
+  "lastUpdate": 1795198305715,
   "repoUrl": "https://github.com/Nerzal/gocloak",
   "entries": {
     "Benchmark": [
@@ -14259,6 +14259,318 @@ window.BENCHMARK_DATA = {
             "value": 122,
             "unit": "allocs/op",
             "extra": "960 times\n2 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tobias.theel@noobygames.de",
+            "name": "Nerzal",
+            "username": "Nerzal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "063b73ed3ba8bea3794a3028753192859f703cad",
+          "message": "Fix error typing, key rotation, version race and URL escaping; slim down API (#539)\n\n* add included.custom.audience to ProtocolMappersConfig\n\nFixes #536\n\n* replace opentracing with opentelemetry propagation\n\nopentracing-go is archived and EOL. Tracing headers are now injected with an\nOpenTelemetry TextMapPropagator: the one attached via WithPropagator, or the\nglobal propagator (otel.GetTextMapPropagator) by default.\n\nBREAKING CHANGE: WithTracer(ctx, opentracing.Tracer) is replaced by\nWithPropagator(ctx, propagation.TextMapPropagator).\n\nFixes #534\n\n* add code graph\n\n* Fix error typing, key rotation, version race and URL escaping; slim down API\n\nFixes:\n- checkForError now sets APIError.Type from the HTTP error body, so\n  invalid_grant responses are reported as APIErrTypeInvalidGrant\n- DecodeAccessToken refetches the realm certs on an unknown kid\n  (rate limited to once per 30s), so key rotation no longer breaks\n  token validation until the cache expires\n- GetServerVersion is guarded by a mutex and returns an error instead\n  of panicking when serverinfo has no systemInfo\n- realm and ID path segments are escaped, so IDs containing \"/\", \"?\"\n  or \"..\" can no longer change the requested endpoint\n- LoginClient sends all given scopes instead of only the first one\n\nCleanup (breaking, v14):\n- remove opentracing integration (WithTracer), pkg/errors and ksuid\n- remove StringP/BoolP/IntP/Int32P/Int64P/Float32P/Float64P in favor of Ptr\n- remove deprecated AddClientRoleToUser, AddClientRoleToGroup,\n  DeleteClientRoleFromUser\n- GetRequestingPartyPermissions returns []RequestingPartyPermission\n- add generic doRequest/doRequestPtr helpers and use them in 127 methods\n- stop tracking .scannerwork output\n\nAdds httptest based unit tests that run without Keycloak.\n\n* Tighten golangci-lint config, update CI and tooling\n\nCI:\n- pin golangci-lint v2.15.0, bump actions (checkout v7, setup-go v7,\n  codeql v4, codecov v7)\n- govulncheck as its own job, also runs weekly on a schedule\n- test against oldstable and stable Go\n- least-privilege permissions, cancel superseded runs\n- wait for Keycloak health check instead of sleep 30\n- add Dependabot for GitHub Actions and Go modules\n\nLint:\n- standard linters plus errorlint, gocritic, testifylint, modernize,\n  thelper, nolintlint and more; tests are linted too\n- gocognit/gocyclo threshold 15, gofumpt formatter\n- fix all findings\n\nGo 1.26 is now the minimum version (1.25 is out of support).\nPtr is removed in favor of the Go 1.26 builtin new(expr).\nECDSA keys are built via ecdsa.ParseUncompressedPublicKey, which\nalso rejects points that are not on the curve.\n\n* Run tests against Keycloak 26.8.2 and harden integration tests\n\nTest infrastructure:\n- Dockerfile/compose: Keycloak 26.8.2 via KEYCLOAK_VERSION build arg,\n  KC_BOOTSTRAP_ADMIN_* instead of deprecated KEYCLOAK_ADMIN*, single\n  feature list (docker, scripts, admin-fine-grained-authz:v1), readiness\n  healthcheck on /health/ready\n- run-tests.sh: bash shebang, propagate go test exit code, join multiple\n  test names with |, wait for health, test ./...\n- CI: Keycloak version matrix with non-blocking nightly job, test ./...\n- realm: audience mapper on gocloak client (introspection audience check\n  since 26.6.2)\n\nLibrary fixes:\n- GetComponent requested components%2F<id> after segment escaping\n- UpdatePermission panicked on nil Type\n\nTests:\n- adapt to 26.8 offline token exp and introspection audience check\n- restore brute force realm settings, fix assertions that could never fail\n- replace count/position based checks that raced with parallel tests\n- random names and early cleanup for IdPs, policies, scopes, mappers, flows\n- make error/revoke/password/user-profile tests assert real behavior\n\n* Add integration tests for organization members, identity providers, invitations and groups\n\n* Add integration tests for previously untested client methods\n\nCover realm role by-id and composite getters, client role and client scope updates, client-scope realm role mappings, scope permissions, policy type filtering, users management permissions, components, credential reordering, identity provider mapper, group by path and child group paging, public client logout, token exchange and several error paths.\n\n* Add unit tests for models, utils, errors and jwx; fix found bugs\n\n- StringOrArray.MarshalJSON uses a value receiver so non-addressable values marshal as a string\n- EnforcedString keeps non-string JSON as raw text and ignores null\n- AuthorizationParameters.ResponseType serializes as response_type\n- jwx: decode token header as base64url, reject nil JWK fields instead of panicking\n- client_unit_test: restore certsMinRefreshInterval via t.Cleanup\n- benchmarks: b.Loop, b.Fatal, logout per login, fresh token for group teardown\n\n* Fix version comparison, token exchange and transport error unwrapping\n\n- compareVersions: normalize \"v\" prefix and vendor builds such as\n  26.0.10.redhat-00001 to major.minor.patch, both took the wrong branch\n- LoginClientTokenExchange: send subject_token_type and only send audience\n  when a target client is given, standard token exchange (26.2+) rejected\n  the request before\n- APIError: keep the transport error and implement Unwrap, so\n  errors.Is(err, context.Canceled) works\n- GetOrganizationInvitationsParams.Status uses InvitationStatus\n- document that resending an organization invitation replaces its id\n  and that direct naked impersonation needs legacy token exchange v1\n- drop duplicate idOfGroup test helper\n\n* Strengthen integration test assertions with read-back verification\n\nVerify add/update/delete calls by re-fetching state (roles, composites,\ngroups, users, realms, organizations, required actions, IdP mappers),\ncheck sessions/refresh tokens are invalid after logout and consent\nrevocation, assert exact IDs instead of minimum counts in organization\ntests, check HTTP status codes instead of error strings, use Keycloak's\nown discovery document for the OIDC import test and a non-expiring SAML\nmetadata fixture.\n\n* Require mail sending to succeed and drop duplicate test helper\n\n* Enable Keycloak preview features in tests, test naked impersonation, drop duplicate mapper getter\n\nThe test server now runs with all preview features, so legacy token exchange v1\nis available and DirectNakedImpersonationTokenExchange is tested end to end.\nGetIdentityProviderMapper is removed in favor of GetIdentityProviderMapperByID,\nwhich calls the same endpoint. The generated interface is refreshed.\n\n* Fix query params, panics and cert refresh; drop version branch and copied request code\n\n- GetEvents/GetAdminEvents/GetUserPermissions: list filters are sent as repeated\n  query parameters and scalar filters as strings, so filtering no longer fails\n  with a JSON error before the request is sent.\n- GetToken and ExecuteActionsEmail return an error instead of panicking when\n  ClientID (with a secret) or UserID is missing.\n- Cert and serverinfo fetches made while holding a lock time out after 10s.\n- A failed cert refresh keeps using the known keys for another interval.\n- GetPolicies always sends the type as query parameter; the Keycloak < 20\n  branch, compareVersions and golang.org/x/mod are gone, so no serverinfo call\n  is needed anymore.\n- Count functions return the *APIError unwrapped and 0 on error.\n- SendVerifyEmail and SetPassword take realm before userID like all other\n  methods; SendVerifyEmail no longer panics on an empty params slice.\n- 30 more methods use doRequest/doRequestPtr instead of copied request code.\n- Removed PStringSlice and NilOrEmptySlice.\n\n* Fix resource listing and signed JWT audience; drop String methods and dead types\n\n- GetResourcesClient fetches all resources in one request with deep=true. It\n  failed with a JSON error when Deep was set and silently dropped resources\n  whose single fetch failed. GetResourceParams.Deep is removed.\n- LoginClientSignedJWT uses the issuer published by Keycloak as audience, so it\n  works when the base URL differs from the public hostname.\n- Removed the String() methods of all models: they printed passwords, client\n  secrets and tokens in plain text. The README shows json.MarshalIndent instead.\n- Removed unused types AuthorizationParameters, AuthorizationResponse,\n  UserGroup, Attributes and Access.\n- UpdateUser, UpdateClientScope, UpdateComponent, UpdateIdentityProviderMapper\n  and UpdateClientScopeProtocolMapper require an ID like the other updates.\n- New doNoResult and doCreate helpers replace 128 copied request blocks;\n  getRequestingParty is generic and GetToken uses doRequestPtr.\n- GetPermissions sends the type only as query parameter.\n\n* Read service account user via serviceAccountUserId\n\nKeycloak 27 removed GET /clients/{id}/service-account-user and exposes\nserviceAccountUserId on the client representation instead. Load the user\nvia that ID and fall back to the legacy endpoint for Keycloak 26.\n\n* Add token validation and PKCE; share cert fetches; document all functions\n\n- ValidateAccessToken / ValidateAccessTokenCustomClaims check typ, aud and azp\n  on top of the signature, with optional clock skew leeway\n- PKCE: TokenOptions.CodeVerifier, NewPKCE and PKCEChallenge helpers\n- Cert fetches are shared per realm and callers return when their context ends\n- Default request timeout of 30s\n- Slices and maps use omitzero, so empty lists are sent and can be cleared\n- FormData no longer modifies the receiver\n- Signed JWT login defaults exp to 30s when none is given\n- Typed godocs for all functions, fixed wrong comments and error messages\n- CI: pin benchmark action to a SHA, drop oldstable (Go 1.26 required)\n\n* Move module to v15, rewrite README, fix examples\n\n- Module path is github.com/Nerzal/gocloak/v15\n- README covers pointer handling, errors, token validation, PKCE,\n  configuration, TLS, tracing, mocking and testing; drops the outdated\n  docker run instructions and the debug-logging TLS example\n- Examples compile against the current API again\n\n* Require exp in token validation, unescape created IDs, fix flow update\n\n- ValidateAccessToken rejects tokens without exp (jwt.WithExpirationRequired)\n- getID unescapes the Location segment, so role and realm names with spaces\n  returned by Create* work with the other functions again\n- GetOrganizationGroupByPath escapes each group name like GetGroupByPath\n  instead of sending \"/\" as %2F, which proxies may reject\n- UpdateAuthenticationFlow returns only an error: Keycloak answers 204,\n  so the returned flow was always nil\n- GetCerts documents the result as read-only, GetServerVersion documents\n  that a shared request uses the starting caller's token\n- jwx tests for DecodePublicKey, DecodeAccessTokenWithKey (key confusion,\n  alg none, alg pinning, leeway) and the ECDSA error paths\n\n* Return non-nil results from all getters, add v14 upgrade notes\n\n- Remaining doRequest[*T] getters use doRequestPtr, so an empty 2xx\n  response no longer yields a nil result with a nil error\n- README lists breaking changes: path escaping (do not pre-escape IDs),\n  UpdateAuthenticationFlow signature, exp required in ValidateAccessToken\n\n* Respect the admin path prefix in GetServerInfo\n\nserverinfo was always requested at /admin/serverinfo, so clients using\nSetLegacyWildFlySupport (or a custom admin path) could not read the\nserver version.\n\n* Share serverinfo requests only per token, return a copy from GetCerts\n\n- GetServerVersion joins a running request only when the token matches,\n  so one caller's expired token no longer fails concurrent callers\n- GetCerts returns a copy of the cached keys, so callers modifying the\n  result cannot change the cache\n\n---------\n\nCo-authored-by: rmocanu001 <rmocanu001@gmail.com>",
+          "timestamp": "2026-11-20T19:08:55+01:00",
+          "tree_id": "7cfc3f82289a4abc8abc62e496e956f527c666ab",
+          "url": "https://github.com/Nerzal/gocloak/commit/063b73ed3ba8bea3794a3028753192859f703cad"
+        },
+        "date": 1795198305069,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkLogin",
+            "value": 37039804,
+            "unit": "ns/op\t   90374 B/op\t     173 allocs/op",
+            "extra": "31 times"
+          },
+          {
+            "name": "BenchmarkLogin - ns/op",
+            "value": 37039804,
+            "unit": "ns/op",
+            "extra": "31 times"
+          },
+          {
+            "name": "BenchmarkLogin - B/op",
+            "value": 90374,
+            "unit": "B/op",
+            "extra": "31 times"
+          },
+          {
+            "name": "BenchmarkLogin - allocs/op",
+            "value": 173,
+            "unit": "allocs/op",
+            "extra": "31 times"
+          },
+          {
+            "name": "BenchmarkLogin",
+            "value": 34422856,
+            "unit": "ns/op\t   93269 B/op\t     173 allocs/op",
+            "extra": "34 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLogin - ns/op",
+            "value": 34422856,
+            "unit": "ns/op",
+            "extra": "34 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLogin - B/op",
+            "value": 93269,
+            "unit": "B/op",
+            "extra": "34 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkLogin - allocs/op",
+            "value": 173,
+            "unit": "allocs/op",
+            "extra": "34 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroups",
+            "value": 2031139,
+            "unit": "ns/op\t   39702 B/op\t     118 allocs/op",
+            "extra": "618 times"
+          },
+          {
+            "name": "BenchmarkGetGroups - ns/op",
+            "value": 2031139,
+            "unit": "ns/op",
+            "extra": "618 times"
+          },
+          {
+            "name": "BenchmarkGetGroups - B/op",
+            "value": 39702,
+            "unit": "B/op",
+            "extra": "618 times"
+          },
+          {
+            "name": "BenchmarkGetGroups - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "618 times"
+          },
+          {
+            "name": "BenchmarkGetGroups",
+            "value": 1909356,
+            "unit": "ns/op\t   37705 B/op\t     118 allocs/op",
+            "extra": "646 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroups - ns/op",
+            "value": 1909356,
+            "unit": "ns/op",
+            "extra": "646 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroups - B/op",
+            "value": 37705,
+            "unit": "B/op",
+            "extra": "646 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroups - allocs/op",
+            "value": 118,
+            "unit": "allocs/op",
+            "extra": "646 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull",
+            "value": 1829659,
+            "unit": "ns/op\t   40217 B/op\t     127 allocs/op",
+            "extra": "585 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull - ns/op",
+            "value": 1829659,
+            "unit": "ns/op",
+            "extra": "585 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull - B/op",
+            "value": 40217,
+            "unit": "B/op",
+            "extra": "585 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull - allocs/op",
+            "value": 127,
+            "unit": "allocs/op",
+            "extra": "585 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull",
+            "value": 1831854,
+            "unit": "ns/op\t   41880 B/op\t     128 allocs/op",
+            "extra": "639 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull - ns/op",
+            "value": 1831854,
+            "unit": "ns/op",
+            "extra": "639 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull - B/op",
+            "value": 41880,
+            "unit": "B/op",
+            "extra": "639 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsFull - allocs/op",
+            "value": 128,
+            "unit": "allocs/op",
+            "extra": "639 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief",
+            "value": 1578569,
+            "unit": "ns/op\t   40139 B/op\t     127 allocs/op",
+            "extra": "746 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief - ns/op",
+            "value": 1578569,
+            "unit": "ns/op",
+            "extra": "746 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief - B/op",
+            "value": 40139,
+            "unit": "B/op",
+            "extra": "746 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief - allocs/op",
+            "value": 127,
+            "unit": "allocs/op",
+            "extra": "746 times"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief",
+            "value": 1577351,
+            "unit": "ns/op\t   42475 B/op\t     128 allocs/op",
+            "extra": "784 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief - ns/op",
+            "value": 1577351,
+            "unit": "ns/op",
+            "extra": "784 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief - B/op",
+            "value": 42475,
+            "unit": "B/op",
+            "extra": "784 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupsBrief - allocs/op",
+            "value": 128,
+            "unit": "allocs/op",
+            "extra": "784 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroup",
+            "value": 1826972,
+            "unit": "ns/op\t   39779 B/op\t     129 allocs/op",
+            "extra": "559 times"
+          },
+          {
+            "name": "BenchmarkGetGroup - ns/op",
+            "value": 1826972,
+            "unit": "ns/op",
+            "extra": "559 times"
+          },
+          {
+            "name": "BenchmarkGetGroup - B/op",
+            "value": 39779,
+            "unit": "B/op",
+            "extra": "559 times"
+          },
+          {
+            "name": "BenchmarkGetGroup - allocs/op",
+            "value": 129,
+            "unit": "allocs/op",
+            "extra": "559 times"
+          },
+          {
+            "name": "BenchmarkGetGroup",
+            "value": 1811455,
+            "unit": "ns/op\t   39679 B/op\t     129 allocs/op",
+            "extra": "589 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroup - ns/op",
+            "value": 1811455,
+            "unit": "ns/op",
+            "extra": "589 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroup - B/op",
+            "value": 39679,
+            "unit": "B/op",
+            "extra": "589 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroup - allocs/op",
+            "value": 129,
+            "unit": "allocs/op",
+            "extra": "589 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath",
+            "value": 1472243,
+            "unit": "ns/op\t   40830 B/op\t     126 allocs/op",
+            "extra": "813 times"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath - ns/op",
+            "value": 1472243,
+            "unit": "ns/op",
+            "extra": "813 times"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath - B/op",
+            "value": 40830,
+            "unit": "B/op",
+            "extra": "813 times"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath - allocs/op",
+            "value": 126,
+            "unit": "allocs/op",
+            "extra": "813 times"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath",
+            "value": 1439675,
+            "unit": "ns/op\t   40913 B/op\t     126 allocs/op",
+            "extra": "843 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath - ns/op",
+            "value": 1439675,
+            "unit": "ns/op",
+            "extra": "843 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath - B/op",
+            "value": 40913,
+            "unit": "B/op",
+            "extra": "843 times\n2 procs"
+          },
+          {
+            "name": "BenchmarkGetGroupByPath - allocs/op",
+            "value": 126,
+            "unit": "allocs/op",
+            "extra": "843 times\n2 procs"
           }
         ]
       }
