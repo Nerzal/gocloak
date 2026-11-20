@@ -8,7 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Nerzal/gocloak/v14"
+	"github.com/Nerzal/gocloak/v15"
 )
 
 // coverageSetup returns a debug client, the test config and a fresh admin access token.

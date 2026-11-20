@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/Nerzal/gocloak/v14"
+	"github.com/Nerzal/gocloak/v15"
 )
 
 // idOfMember returns the ID of an organization member.

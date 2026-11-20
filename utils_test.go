@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/Nerzal/gocloak/v14"
+	"github.com/Nerzal/gocloak/v15"
 )
 
 func TestPString(t *testing.T) {

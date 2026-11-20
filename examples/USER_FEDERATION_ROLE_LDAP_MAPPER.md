@@ -76,7 +76,7 @@ func prepareRoleLdapMapper(name, idUserFederation string) (mapper gocloak.Compon
 		ProviderID:      new("role-ldap-mapper"),
 		ProviderType:    new("org.keycloak.storage.ldap.mappers.LDAPStorageMapper"),
 		ParentID:        new(idUserFederation),
-		ComponentConfig: &mapperConfig,
+		ComponentConfig: mapperConfig,
 	}
 
 	return mapper
@@ -125,7 +125,7 @@ func (tkc *Tkc) newUserFederation(ctx context.Context) (userFederation gocloak.C
 		ProviderID:      new("ldap"),
 		ProviderType:    new("org.keycloak.storage.UserStorageProvider"),
 		ParentID:        new(idRealm),
-		ComponentConfig: &userFederationConfig,
+		ComponentConfig: userFederationConfig,
 	}
 
 	return userFederation, nil
@@ -189,7 +189,7 @@ func (tkc *Tkc) RunCreateUserFederation() error {
 		} else {
 			// set ID of user federation for update exactly existing user federation
 			userFederation.ID = comps[0].ID
-			if updateErr := tkc.client.UpdateComponent(ctx, tkc.token.AccessToken, tkc.baseConfig.Realm, userFederation); updateErr != nil {
+			if updateErr := tkc.client.UpdateComponent(ctx, tkc.token.AccessToken, tkc.realm, userFederation); updateErr != nil {
 				return updateErr
 			} else {
 				// do change sync only after update exiting one

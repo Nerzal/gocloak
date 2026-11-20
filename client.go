@@ -22,7 +22,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
 
-	"github.com/Nerzal/gocloak/v14/pkg/jwx"
+	"github.com/Nerzal/gocloak/v15/pkg/jwx"
 )
 
 // GoCloak provides functionalities to talk to Keycloak.

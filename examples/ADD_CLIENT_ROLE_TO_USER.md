@@ -83,7 +83,7 @@ func (tkc *Tkc) addClientRolesToUser(idUser string, clientRoles map[string][]str
 		if mappedClientRoles, exist := userMappedClientRoles.ClientMappings[client]; exist {
 		SearchForMappedRoles:
 			for _, role := range roles {
-				for _, mappedClientRole := range *mappedClientRoles.Mappings {
+				for _, mappedClientRole := range mappedClientRoles.Mappings {
 					if role == *mappedClientRole.Name {
 						// when role already mapped, continue with next role
 						continue SearchForMappedRoles
@@ -112,6 +112,6 @@ func (tkc *Tkc) addClientRolesToUser(idUser string, clientRoles map[string][]str
 	// cancel ctx
 	cancel()
 
-	return nil
+	return addErr
 }
 ```
