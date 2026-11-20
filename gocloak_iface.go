@@ -15,61 +15,120 @@ type GoCloakIface interface {
 	// GetServerVersion returns the server version from the serverinfo endpoint.
 	// If the version is already set, it will return the cached version.
 	// Otherwise, it will fetch the version from the serverinfo endpoint and cache it.
-	// Safe for concurrent use.
+	// Safe for concurrent use: concurrent callers share one request and its result; a failure is not cached,
+	// so callers do not queue up behind each other while serverinfo fails.
 	// Input: ctx [context.Context], token [string] admin token.
 	// Output: [string] server version, [error] if serverinfo fails or has no version
 	// (e.g. admins of non-master realms; use SetServerVersion then).
 	GetServerVersion(ctx context.Context, token string) (string, error)
-	// GetRequest returns a request for calling endpoints.
+	// GetRequest returns a base request bound to ctx with tracing headers and HTTPErrorResponse as error result.
+	// Input: ctx [context.Context].
+	// Output: [*resty.Request] base request.
 	GetRequest(ctx context.Context) *resty.Request
 	// GetRequestWithBearerAuthNoCache returns a JSON base request configured with an auth token and no-cache header.
+	// Input: ctx [context.Context], token [string] bearer token.
+	// Output: [*resty.Request] prepared request.
 	GetRequestWithBearerAuthNoCache(ctx context.Context, token string) *resty.Request
 	// GetRequestWithBearerAuth returns a JSON base request configured with an auth token.
+	// Input: ctx [context.Context], token [string] bearer token.
+	// Output: [*resty.Request] prepared request.
 	GetRequestWithBearerAuth(ctx context.Context, token string) *resty.Request
 	// GetRequestWithBearerAuthXMLHeader returns an XML base request configured with an auth token.
+	// Input: ctx [context.Context], token [string] bearer token.
+	// Output: [*resty.Request] prepared request.
 	GetRequestWithBearerAuthXMLHeader(ctx context.Context, token string) *resty.Request
 	// GetRequestWithBasicAuth returns a form data base request configured with basic auth.
+	// Basic auth is only set when both clientID and clientSecret are given (public clients need none).
+	// Input: ctx [context.Context], clientID [string], clientSecret [string].
+	// Output: [*resty.Request] prepared request.
 	GetRequestWithBasicAuth(ctx context.Context, clientID, clientSecret string) *resty.Request
-	// RestyClient returns the internal resty g.
-	// This can be used to configure the g.
+	// RestyClient returns the internal resty client, e.g. to configure TLS, proxies, timeouts or debug mode.
+	// Output: [*resty.Client].
 	RestyClient() *resty.Client
-	// SetRestyClient overwrites the internal resty g.
+	// SetRestyClient replaces the internal resty client with restyClient [*resty.Client]; its timeout settings replace the default.
 	SetRestyClient(restyClient *resty.Client)
-	// GetServerInfo fetches the server info.
+	// GetServerInfo fetches the server info from GET /admin/serverinfo.
+	// Input: ctx [context.Context], accessToken [string] admin token.
+	// Output: [*ServerInfoRepresentation] server info, [error] if the call fails.
 	GetServerInfo(ctx context.Context, accessToken string) (*ServerInfoRepresentation, error)
-	// GetUserInfo calls the UserInfo endpoint
+	// GetUserInfo calls the OIDC UserInfo endpoint.
+	// Input: ctx [context.Context], accessToken [string] user token, realm [string].
+	// Output: [*UserInfo] user info, [error] if the call fails.
 	GetUserInfo(ctx context.Context, accessToken, realm string) (*UserInfo, error)
-	// GetRawUserInfo calls the UserInfo endpoint and returns a raw json object
+	// GetRawUserInfo calls the OIDC UserInfo endpoint and returns the raw JSON object.
+	// Input: ctx [context.Context], accessToken [string] user token, realm [string].
+	// Output: [map[string]any] user info claims, [error] if the call fails.
 	GetRawUserInfo(ctx context.Context, accessToken, realm string) (map[string]any, error)
 	// GetCerts fetches certificates for the given realm from the public /open-id-connect/certs endpoint.
-	// Results are cached for Config.CertsInvalidateTime.
+	// Results are cached for Config.CertsInvalidateTime; afterwards the cached certs are served for up to
+	// another interval while they are refreshed in the background.
 	// Input: ctx [context.Context], realm [string].
 	// Output: [*CertResponse] certs, [error] if fetching fails.
 	GetCerts(ctx context.Context, realm string) (*CertResponse, error)
-	// GetIssuer gets the issuer of the given realm
+	// GetIssuer fetches the issuer info of the given realm from the public realm endpoint.
+	// Input: ctx [context.Context], realm [string].
+	// Output: [*IssuerResponse] issuer info, [error] if the call fails.
 	GetIssuer(ctx context.Context, realm string) (*IssuerResponse, error)
-	// RetrospectToken calls the openid-connect introspect endpoint
+	// RetrospectToken introspects a requesting party token via the OIDC token introspect endpoint.
+	// Input: ctx [context.Context], accessToken [string] token to introspect, clientID [string], clientSecret [string],
+	// realm [string].
+	// Output: [*IntroSpectTokenResult] introspection result, [error] if the call fails.
 	RetrospectToken(ctx context.Context, accessToken, clientID, clientSecret, realm string) (*IntroSpectTokenResult, error)
-	// DecodeAccessToken decodes the accessToken
+	// DecodeAccessToken verifies accessToken [string] against the signature keys of realm [string] and decodes its claims.
+	// Only signature, exp and nbf are checked. ID tokens of the realm are signed with the same keys and pass too, so
+	// callers must check typ ("Bearer"), aud and azp themselves. realm must come from trusted configuration, because
+	// certs are cached per realm without eviction.
+	// Input: ctx [context.Context], accessToken [string] optionally prefixed with "Bearer ", realm [string].
+	// Output: [*jwt.Token], [*jwt.MapClaims], [error] if verification fails.
 	DecodeAccessToken(ctx context.Context, accessToken, realm string) (*jwt.Token, *jwt.MapClaims, error)
-	// DecodeAccessTokenCustomClaims decodes the accessToken and writes claims into the given claims
+	// DecodeAccessTokenCustomClaims works like DecodeAccessToken but decodes the claims into claims [jwt.Claims].
+	// The same limits apply: check typ, aud and azp yourself and pass only a trusted realm.
+	// Input: ctx [context.Context], accessToken [string], realm [string], claims [jwt.Claims].
+	// Output: [*jwt.Token], [error] if verification fails.
 	DecodeAccessTokenCustomClaims(ctx context.Context, accessToken, realm string, claims jwt.Claims) (*jwt.Token, error)
-	// GetToken uses TokenOptions to fetch a token.
+	// ValidateAccessToken verifies accessToken [string] like DecodeAccessToken and additionally checks typ, aud and azp,
+	// so ID tokens and tokens issued to other clients are rejected. At least one of validation.Audience and
+	// validation.AuthorizedParty must be set.
+	// Input: ctx [context.Context], accessToken [string] optionally prefixed with "Bearer ", realm [string] trusted realm,
+	// validation [TokenValidation] expected claims. Output: [*jwt.Token], [*jwt.MapClaims], [error] if a check fails.
+	ValidateAccessToken(ctx context.Context, accessToken, realm string, validation TokenValidation) (*jwt.Token, *jwt.MapClaims, error)
+	// ValidateAccessTokenCustomClaims works like ValidateAccessToken but decodes the claims into claims [jwt.Claims].
+	// Input: ctx [context.Context], accessToken [string] optionally prefixed with "Bearer ", realm [string] trusted realm,
+	// claims [jwt.Claims] target, validation [TokenValidation] expected claims.
+	// Output: [*jwt.Token], [error] if verification or a check fails.
+	ValidateAccessTokenCustomClaims(ctx context.Context, accessToken, realm string, claims jwt.Claims, validation TokenValidation) (*jwt.Token, error)
+	// GetToken fetches a token from the OIDC token endpoint using the given TokenOptions.
+	// Basic auth is used when a client secret is set, which then requires a client ID.
+	// Input: ctx [context.Context], realm [string], options [TokenOptions].
+	// Output: [*JWT] token, [error] if the call fails.
 	GetToken(ctx context.Context, realm string, options TokenOptions) (*JWT, error)
-	// GetRequestingPartyToken returns a requesting party token with permissions granted by the server
+	// GetRequestingPartyToken returns a requesting party token with the permissions granted by the server.
+	// Input: ctx [context.Context], token [string] access token, realm [string], options [RequestingPartyTokenOptions].
+	// Output: [*JWT] RPT, [error] if the call fails.
 	GetRequestingPartyToken(ctx context.Context, token, realm string, options RequestingPartyTokenOptions) (*JWT, error)
-	// GetRequestingPartyPermissions returns a requesting party permissions granted by the server
+	// GetRequestingPartyPermissions returns the requesting party permissions granted by the server.
+	// Input: ctx [context.Context], token [string] access token, realm [string], options [RequestingPartyTokenOptions].
+	// Output: [[]RequestingPartyPermission] granted permissions, [error] if the call fails.
 	GetRequestingPartyPermissions(ctx context.Context, token, realm string, options RequestingPartyTokenOptions) ([]RequestingPartyPermission, error)
-	// GetRequestingPartyPermissionDecision returns a requesting party permission decision granted by the server
+	// GetRequestingPartyPermissionDecision returns the requesting party permission decision of the server.
+	// Input: ctx [context.Context], token [string] access token, realm [string], options [RequestingPartyTokenOptions].
+	// Output: [*RequestingPartyPermissionDecision] decision, [error] if the call fails.
 	GetRequestingPartyPermissionDecision(ctx context.Context, token, realm string, options RequestingPartyTokenOptions) (*RequestingPartyPermissionDecision, error)
-	// RefreshToken refreshes the given token.
-	// May return a *APIError with further details about the issue.
+	// RefreshToken exchanges the given refresh token for a new token.
+	// Input: ctx [context.Context], refreshToken [string], clientID [string], clientSecret [string], realm [string].
+	// Output: [*JWT] new token, [error] *APIError with details if the call fails.
 	RefreshToken(ctx context.Context, refreshToken, clientID, clientSecret, realm string) (*JWT, error)
-	// LoginAdmin performs a login with Admin client
+	// LoginAdmin performs a password login with the admin-cli client.
+	// Input: ctx [context.Context], username [string], password [string], realm [string].
+	// Output: [*JWT] token, [error] if the login fails.
 	LoginAdmin(ctx context.Context, username, password, realm string) (*JWT, error)
-	// LoginAdminOtp performs a login with Admin client and OTP token
+	// LoginAdminOtp performs a password login with the admin-cli client and an OTP token.
+	// Input: ctx [context.Context], username [string], password [string], totp [string] OTP code, realm [string].
+	// Output: [*JWT] token, [error] if the login fails.
 	LoginAdminOtp(ctx context.Context, username, password, totp, realm string) (*JWT, error)
-	// LoginClient performs a login with client credentials
+	// LoginClient performs a login with client credentials.
+	// Input: ctx [context.Context], clientID [string], clientSecret [string], realm [string], scopes [...string] optional.
+	// Output: [*JWT] token, [error] if the login fails.
 	LoginClient(ctx context.Context, clientID, clientSecret, realm string, scopes ...string) (*JWT, error)
 	// LoginClientTokenExchange exchanges the presented access token for a token of the requesting client
 	// (standard token exchange, enabled per client via "standard.token.exchange.enabled").
@@ -79,637 +138,1347 @@ type GoCloakIface interface {
 	// Input: ctx [context.Context], clientID [string], token [string] subject access token, clientSecret [string],
 	// realm [string], targetClient [string] optional audience, userID [string] optional subject. Output: [*JWT], [error].
 	LoginClientTokenExchange(ctx context.Context, clientID, token, clientSecret, realm, targetClient, userID string) (*JWT, error)
-	// DirectNakedImpersonationTokenExchange performs "Direct Naked Impersonation".
+	// DirectNakedImpersonationTokenExchange performs "Direct Naked Impersonation" and returns a token for userID.
 	// Only available with the legacy token exchange v1 (preview feature "token-exchange"); standard token exchange
 	// in Keycloak 26.2+ rejects requests without subject_token.
+	// Input: ctx [context.Context], clientID [string], clientSecret [string], realm [string], userID [string].
+	// Output: [*JWT] token of the impersonated user, [error] if the exchange fails.
 	DirectNakedImpersonationTokenExchange(ctx context.Context, clientID, clientSecret, realm, userID string) (*JWT, error)
-	// LoginClientSignedJWT performs a login with client credentials and signed jwt claims
+	// LoginClientSignedJWT logs in clientID [string] with a client assertion signed by key [any] using signedMethod
+	// [jwt.SigningMethod]. A nil expiresAt [*jwt.NumericDate] defaults to now + 30 seconds.
+	// Input: ctx [context.Context], clientID [string], realm [string], key [any], signedMethod [jwt.SigningMethod],
+	// expiresAt [*jwt.NumericDate] or nil. Output: [*JWT], [error].
 	LoginClientSignedJWT(ctx context.Context, clientID, realm string, key any, signedMethod jwt.SigningMethod, expiresAt *jwt.NumericDate) (*JWT, error)
-	// Login performs a login with user credentials and a client
+	// Login performs a password login with user credentials and a client, requesting the "openid" scope.
+	// Input: ctx [context.Context], clientID [string], clientSecret [string], realm [string], username [string],
+	// password [string].
+	// Output: [*JWT] token, [error] if the login fails.
 	Login(ctx context.Context, clientID, clientSecret, realm, username, password string) (*JWT, error)
-	// LoginOtp performs a login with user credentials and otp token
+	// LoginOtp performs a password login with user credentials, a client and an OTP token.
+	// Input: ctx [context.Context], clientID [string], clientSecret [string], realm [string], username [string],
+	// password [string], totp [string] OTP code.
+	// Output: [*JWT] token, [error] if the login fails.
 	LoginOtp(ctx context.Context, clientID, clientSecret, realm, username, password, totp string) (*JWT, error)
-	// Logout logs out users with refresh token
+	// Logout ends the session of the given refresh token via the OIDC logout endpoint, using client basic auth.
+	// Input: ctx [context.Context], clientID [string], clientSecret [string], realm [string], refreshToken [string].
+	// Output: [error] if the call fails.
 	Logout(ctx context.Context, clientID, clientSecret, realm, refreshToken string) error
-	// LogoutPublicClient performs a logout using a public client and the accessToken.
+	// LogoutPublicClient ends the session of the given refresh token via the OIDC logout endpoint for a public client,
+	// authenticating with the access token.
+	// Input: ctx [context.Context], clientID [string], realm [string], accessToken [string], refreshToken [string].
+	// Output: [error] if the call fails.
 	LogoutPublicClient(ctx context.Context, clientID, realm, accessToken, refreshToken string) error
-	// LogoutAllSessions logs out all sessions of a user given an id.
+	// LogoutAllSessions logs out all sessions of the user with the given ID.
+	// Input: ctx [context.Context], accessToken [string] admin token, realm [string], userID [string].
+	// Output: [error] if the call fails.
 	LogoutAllSessions(ctx context.Context, accessToken, realm, userID string) error
-	// RevokeUserConsents revokes the given user consent.
+	// RevokeUserConsents revokes the consent and offline tokens the user granted to the given client.
+	// Input: ctx [context.Context], accessToken [string] admin token, realm [string], userID [string],
+	// clientID [string].
+	// Output: [error] if the call fails.
 	RevokeUserConsents(ctx context.Context, accessToken, realm, userID, clientID string) error
-	// LogoutUserSession logs out a single sessions of a user given a session id
+	// LogoutUserSession deletes a single user session by its session ID.
+	// Input: ctx [context.Context], accessToken [string] admin token, realm [string], session [string] session ID.
+	// Output: [error] if the call fails.
 	LogoutUserSession(ctx context.Context, accessToken, realm, session string) error
-	// ExecuteActionsEmail executes an actions email
+	// ExecuteActionsEmail sends the user an email with links to perform the given required actions.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], params [ExecuteActionsEmail]
+	// (UserID required).
+	// Output: [error] if the user ID is missing or the call fails.
 	ExecuteActionsEmail(ctx context.Context, token, realm string, params ExecuteActionsEmail) error
 	// SendVerifyEmail sends a verification e-mail to a user.
 	// Input: ctx [context.Context], token [string], realm [string], userID [string],
 	// params [...SendVerificationMailParams] optional, only the first is used. Output: [error].
 	SendVerifyEmail(ctx context.Context, token, realm, userID string, params ...SendVerificationMailParams) error
-	// CreateGroup creates a new group.
+	// CreateGroup creates a new top-level group.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], group [Group].
+	// Output: [string] ID of the created group, [error] if the call fails.
 	CreateGroup(ctx context.Context, token, realm string, group Group) (string, error)
-	// CreateChildGroup creates a new child group
+	// CreateChildGroup creates a new child group below the given group.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], groupID [string] parent group,
+	// group [Group].
+	// Output: [string] ID of the created group, [error] if the call fails.
 	CreateChildGroup(ctx context.Context, token, realm, groupID string, group Group) (string, error)
 	// CreateComponent creates the given component.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], component [Component].
+	// Output: [string] ID of the created component, [error] if the call fails.
 	CreateComponent(ctx context.Context, token, realm string, component Component) (string, error)
 	// CreateClient creates the given client.
+	// Input: ctx [context.Context], accessToken [string] admin token, realm [string], newClient [Client].
+	// Output: [string] ID of the created client, [error] if the call fails.
 	CreateClient(ctx context.Context, accessToken, realm string, newClient Client) (string, error)
-	// CreateClientRepresentation creates a new client representation
+	// CreateClientRepresentation registers a new client via the default client registration endpoint.
+	// Input: ctx [context.Context], token [string] initial access or bearer token, realm [string], newClient [Client].
+	// Output: [*Client] registered client, [error] if the call fails.
 	CreateClientRepresentation(ctx context.Context, token, realm string, newClient Client) (*Client, error)
-	// CreateClientRole creates a new role for a client
+	// CreateClientRole creates a new role for a client.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], role [Role].
+	// Output: [string] last segment of the Location header (the role name), [error] if the call fails.
 	CreateClientRole(ctx context.Context, token, realm, idOfClient string, role Role) (string, error)
-	// CreateClientScope creates a new client scope
+	// CreateClientScope creates a new client scope.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], scope [ClientScope].
+	// Output: [string] ID of the created client scope, [error] if the call fails.
 	CreateClientScope(ctx context.Context, token, realm string, scope ClientScope) (string, error)
-	// CreateClientScopeProtocolMapper creates a new protocolMapper under the given client scope
+	// CreateClientScopeProtocolMapper creates a new protocol mapper under the given client scope.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], scopeID [string],
+	// protocolMapper [ProtocolMappers].
+	// Output: [string] ID of the created protocol mapper, [error] if the call fails.
 	CreateClientScopeProtocolMapper(ctx context.Context, token, realm, scopeID string, protocolMapper ProtocolMappers) (string, error)
 	// UpdateGroup updates the given group.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], updatedGroup [Group] (ID required).
+	// Output: [error] if the ID is missing or the call fails.
 	UpdateGroup(ctx context.Context, token, realm string, updatedGroup Group) error
-	// UpdateGroupManagementPermissions updates the given group management permissions
+	// UpdateGroupManagementPermissions updates the management permissions of the given group.
+	// Input: ctx [context.Context], accessToken [string] admin token, realm [string], idOfGroup [string],
+	// managementPermissions [ManagementPermissionRepresentation].
+	// Output: [*ManagementPermissionRepresentation] updated permissions, [error] if the call fails.
 	UpdateGroupManagementPermissions(ctx context.Context, accessToken, realm string, idOfGroup string, managementPermissions ManagementPermissionRepresentation) (*ManagementPermissionRepresentation, error)
-	// UpdateClient updates the given client
+	// UpdateClient updates the given client.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], updatedClient [Client] (ID required).
+	// Output: [error] if the ID is missing or the call fails.
 	UpdateClient(ctx context.Context, token, realm string, updatedClient Client) error
-	// UpdateClientRepresentation updates the given client representation
+	// UpdateClientRepresentation updates the given client via the default client registration endpoint.
+	// Input: ctx [context.Context], accessToken [string] registration token, realm [string],
+	// updatedClient [Client] (ID required; addressed by ClientID).
+	// Output: [*Client] updated client, [error] if the ID is missing or the call fails.
 	UpdateClientRepresentation(ctx context.Context, accessToken, realm string, updatedClient Client) (*Client, error)
-	// UpdateClientManagementPermissions updates the given client management permissions
+	// UpdateClientManagementPermissions updates the management permissions of the given client.
+	// Input: ctx [context.Context], accessToken [string] admin token, realm [string], idOfClient [string],
+	// managementPermissions [ManagementPermissionRepresentation].
+	// Output: [*ManagementPermissionRepresentation] updated permissions, [error] if the call fails.
 	UpdateClientManagementPermissions(ctx context.Context, accessToken, realm string, idOfClient string, managementPermissions ManagementPermissionRepresentation) (*ManagementPermissionRepresentation, error)
-	// UpdateRole updates the given role.
+	// UpdateRole updates the given client role, addressed by its name.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], role [Role].
+	// Output: [error] if the call fails.
 	UpdateRole(ctx context.Context, token, realm, idOfClient string, role Role) error
 	// UpdateClientScope updates the given client scope.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], scope [ClientScope] (ID required).
+	// Output: [error] if the ID is missing or the call fails.
 	UpdateClientScope(ctx context.Context, token, realm string, scope ClientScope) error
-	// UpdateClientScopeProtocolMapper updates the given protocol mapper for a client scope
+	// UpdateClientScopeProtocolMapper updates the given protocol mapper of a client scope.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], scopeID [string],
+	// protocolMapper [ProtocolMappers] (ID required).
+	// Output: [error] if the ID is missing or the call fails.
 	UpdateClientScopeProtocolMapper(ctx context.Context, token, realm, scopeID string, protocolMapper ProtocolMappers) error
-	// DeleteGroup deletes the group with the given groupID.
+	// DeleteGroup deletes the group with the given ID.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], groupID [string].
+	// Output: [error] if the call fails.
 	DeleteGroup(ctx context.Context, token, realm, groupID string) error
-	// DeleteClient deletes a given client
+	// DeleteClient deletes the given client.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string].
+	// Output: [error] if the call fails.
 	DeleteClient(ctx context.Context, token, realm, idOfClient string) error
-	// DeleteComponent deletes the component with the given id.
+	// DeleteComponent deletes the component with the given ID.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], componentID [string].
+	// Output: [error] if the call fails.
 	DeleteComponent(ctx context.Context, token, realm, componentID string) error
-	// DeleteClientRepresentation deletes a given client representation.
+	// DeleteClientRepresentation deletes the given client via the default client registration endpoint.
+	// Input: ctx [context.Context], accessToken [string] registration token, realm [string], clientID [string].
+	// Output: [error] if the call fails.
 	DeleteClientRepresentation(ctx context.Context, accessToken, realm, clientID string) error
-	// DeleteClientRole deletes a given role.
+	// DeleteClientRole deletes the given client role.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], roleName [string].
+	// Output: [error] if the call fails.
 	DeleteClientRole(ctx context.Context, token, realm, idOfClient, roleName string) error
-	// DeleteClientScope deletes the scope with the given id.
+	// DeleteClientScope deletes the client scope with the given ID.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], scopeID [string].
+	// Output: [error] if the call fails.
 	DeleteClientScope(ctx context.Context, token, realm, scopeID string) error
-	// DeleteClientScopeProtocolMapper deletes the given protocol mapper from the client scope
+	// DeleteClientScopeProtocolMapper deletes the given protocol mapper from the client scope.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], scopeID [string],
+	// protocolMapperID [string].
+	// Output: [error] if the call fails.
 	DeleteClientScopeProtocolMapper(ctx context.Context, token, realm, scopeID, protocolMapperID string) error
-	// GetClient returns a client
+	// GetClient fetches the client with the given ID.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string].
+	// Output: [*Client] client, [error] if the call fails.
 	GetClient(ctx context.Context, token, realm, idOfClient string) (*Client, error)
-	// GetClientRepresentation returns a client representation
+	// GetClientRepresentation fetches a client via the default client registration endpoint.
+	// Input: ctx [context.Context], accessToken [string] registration token, realm [string], clientID [string].
+	// Output: [*Client] client, [error] if the call fails.
 	GetClientRepresentation(ctx context.Context, accessToken, realm, clientID string) (*Client, error)
-	// GetAdapterConfiguration returns a adapter configuration
+	// GetAdapterConfiguration fetches the installation adapter configuration of a client.
+	// Input: ctx [context.Context], accessToken [string] registration token, realm [string], clientID [string].
+	// Output: [*AdapterConfiguration] adapter configuration, [error] if the call fails.
 	GetAdapterConfiguration(ctx context.Context, accessToken, realm, clientID string) (*AdapterConfiguration, error)
-	// GetClientsDefaultScopes returns a list of the client's default scopes
+	// GetClientsDefaultScopes returns the default client scopes of the given client.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string].
+	// Output: [[]*ClientScope] default scopes, [error] if the call fails.
 	GetClientsDefaultScopes(ctx context.Context, token, realm, idOfClient string) ([]*ClientScope, error)
-	// AddDefaultScopeToClient adds a client scope to the list of client's default scopes
+	// AddDefaultScopeToClient adds a client scope to the default scopes of the given client.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], scopeID [string].
+	// Output: [error] if the call fails.
 	AddDefaultScopeToClient(ctx context.Context, token, realm, idOfClient, scopeID string) error
-	// RemoveDefaultScopeFromClient removes a client scope from the list of client's default scopes
+	// RemoveDefaultScopeFromClient removes a client scope from the default scopes of the given client.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], scopeID [string].
+	// Output: [error] if the call fails.
 	RemoveDefaultScopeFromClient(ctx context.Context, token, realm, idOfClient, scopeID string) error
-	// GetClientsOptionalScopes returns a list of the client's optional scopes
+	// GetClientsOptionalScopes returns the optional client scopes of the given client.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string].
+	// Output: [[]*ClientScope] optional scopes, [error] if the call fails.
 	GetClientsOptionalScopes(ctx context.Context, token, realm, idOfClient string) ([]*ClientScope, error)
-	// AddOptionalScopeToClient adds a client scope to the list of client's optional scopes
+	// AddOptionalScopeToClient adds a client scope to the optional scopes of the given client.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], scopeID [string].
+	// Output: [error] if the call fails.
 	AddOptionalScopeToClient(ctx context.Context, token, realm, idOfClient, scopeID string) error
-	// RemoveOptionalScopeFromClient deletes a client scope from the list of client's optional scopes
+	// RemoveOptionalScopeFromClient removes a client scope from the optional scopes of the given client.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], scopeID [string].
+	// Output: [error] if the call fails.
 	RemoveOptionalScopeFromClient(ctx context.Context, token, realm, idOfClient, scopeID string) error
-	// GetDefaultOptionalClientScopes returns a list of default realm optional scopes
+	// GetDefaultOptionalClientScopes returns the realm's default optional client scopes.
+	// Input: ctx [context.Context], token [string] admin token, realm [string].
+	// Output: [[]*ClientScope] default optional scopes, [error] if the call fails.
 	GetDefaultOptionalClientScopes(ctx context.Context, token, realm string) ([]*ClientScope, error)
-	// GetDefaultDefaultClientScopes returns a list of default realm default scopes
+	// GetDefaultDefaultClientScopes returns the realm-wide client scopes assigned to new clients as default scopes.
+	// Input: ctx [context.Context], token [string] admin token, realm [string].
+	// Output: [[]*ClientScope] default scopes, [error] if the call fails.
 	GetDefaultDefaultClientScopes(ctx context.Context, token, realm string) ([]*ClientScope, error)
-	// GetClientScope returns a clientscope
+	// GetClientScope fetches the client scope with the given ID.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], scopeID [string].
+	// Output: [*ClientScope] client scope, [error] if the call fails.
 	GetClientScope(ctx context.Context, token, realm, scopeID string) (*ClientScope, error)
-	// GetClientScopes returns all client scopes
+	// GetClientScopes returns all client scopes of the realm.
+	// Input: ctx [context.Context], token [string] admin token, realm [string].
+	// Output: [[]*ClientScope] client scopes, [error] if the call fails.
 	GetClientScopes(ctx context.Context, token, realm string) ([]*ClientScope, error)
-	// GetClientScopeProtocolMappers returns all protocol mappers of a client scope
+	// GetClientScopeProtocolMappers returns all protocol mappers of a client scope.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], scopeID [string].
+	// Output: [[]*ProtocolMappers] protocol mappers, [error] if the call fails.
 	GetClientScopeProtocolMappers(ctx context.Context, token, realm, scopeID string) ([]*ProtocolMappers, error)
-	// GetClientScopeProtocolMapper returns a protocol mapper of a client scope
+	// GetClientScopeProtocolMapper fetches one protocol mapper of a client scope.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], scopeID [string],
+	// protocolMapperID [string].
+	// Output: [*ProtocolMappers] protocol mapper, [error] if the call fails.
 	GetClientScopeProtocolMapper(ctx context.Context, token, realm, scopeID, protocolMapperID string) (*ProtocolMappers, error)
-	// GetClientScopeMappings returns all scope mappings for the client
+	// GetClientScopeMappings returns all realm and client scope mappings of the given client.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string].
+	// Output: [*MappingsRepresentation] scope mappings, [error] if the call fails.
 	GetClientScopeMappings(ctx context.Context, token, realm, idOfClient string) (*MappingsRepresentation, error)
-	// GetRealmRoleGroups returns groups associated with the realm role
+	// GetRealmRoleGroups returns the groups that have the given realm role.
+	// Input: ctx [context.Context], token [string] admin token, roleName [string], realm [string].
+	// Output: [[]*Group] groups, [error] if the call fails.
 	GetRealmRoleGroups(ctx context.Context, token, roleName, realm string) ([]*Group, error)
-	// GetClientScopeMappingsRealmRoles returns realm-level roles associated with the client’s scope
+	// GetClientScopeMappingsRealmRoles returns the realm-level roles in the client's scope mappings.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string].
+	// Output: [[]*Role] realm roles, [error] if the call fails.
 	GetClientScopeMappingsRealmRoles(ctx context.Context, token, realm, idOfClient string) ([]*Role, error)
-	// GetClientScopeMappingsRealmRolesAvailable returns realm-level roles that are available to attach to this client’s scope
+	// GetClientScopeMappingsRealmRolesAvailable returns the realm-level roles that can still be added to the client's
+	// scope mappings.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string].
+	// Output: [[]*Role] available realm roles, [error] if the call fails.
 	GetClientScopeMappingsRealmRolesAvailable(ctx context.Context, token, realm, idOfClient string) ([]*Role, error)
-	// CreateClientScopeMappingsRealmRoles create realm-level roles to the client’s scope
+	// CreateClientScopeMappingsRealmRoles adds realm-level roles to the client's scope mappings.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], roles [[]Role].
+	// Output: [error] if the call fails.
 	CreateClientScopeMappingsRealmRoles(ctx context.Context, token, realm, idOfClient string, roles []Role) error
-	// DeleteClientScopeMappingsRealmRoles deletes realm-level roles from the client’s scope
+	// DeleteClientScopeMappingsRealmRoles removes realm-level roles from the client's scope mappings.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], roles [[]Role].
+	// Output: [error] if the call fails.
 	DeleteClientScopeMappingsRealmRoles(ctx context.Context, token, realm, idOfClient string, roles []Role) error
-	// GetClientScopeMappingsClientRoles returns roles associated with a client’s scope
+	// GetClientScopeMappingsClientRoles returns the roles of the selected client in the client's scope mappings.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string],
+	// idOfSelectedClient [string] client owning the roles.
+	// Output: [[]*Role] client roles, [error] if the call fails.
 	GetClientScopeMappingsClientRoles(ctx context.Context, token, realm, idOfClient, idOfSelectedClient string) ([]*Role, error)
-	// GetClientScopeMappingsClientRolesAvailable returns available roles associated with a client’s scope
+	// GetClientScopeMappingsClientRolesAvailable returns the roles of the selected client that can still be added to
+	// the client's scope mappings.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string],
+	// idOfSelectedClient [string] client owning the roles.
+	// Output: [[]*Role] available client roles, [error] if the call fails.
 	GetClientScopeMappingsClientRolesAvailable(ctx context.Context, token, realm, idOfClient, idOfSelectedClient string) ([]*Role, error)
-	// CreateClientScopeMappingsClientRoles creates client-level roles from the client’s scope
+	// CreateClientScopeMappingsClientRoles adds roles of the selected client to the client's scope mappings.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string],
+	// idOfSelectedClient [string] client owning the roles, roles [[]Role].
+	// Output: [error] if the call fails.
 	CreateClientScopeMappingsClientRoles(ctx context.Context, token, realm, idOfClient, idOfSelectedClient string, roles []Role) error
-	// DeleteClientScopeMappingsClientRoles deletes client-level roles from the client’s scope
+	// DeleteClientScopeMappingsClientRoles removes roles of the selected client from the client's scope mappings.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string],
+	// idOfSelectedClient [string] client owning the roles, roles [[]Role].
+	// Output: [error] if the call fails.
 	DeleteClientScopeMappingsClientRoles(ctx context.Context, token, realm, idOfClient, idOfSelectedClient string, roles []Role) error
-	// GetClientSecret returns a client's secret
+	// GetClientSecret fetches the secret of the given client.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string].
+	// Output: [*CredentialRepresentation] client secret, [error] if the call fails.
 	GetClientSecret(ctx context.Context, token, realm, idOfClient string) (*CredentialRepresentation, error)
 	// GetClientServiceAccount retrieves the service account [User] of the client identified by idOfClient [string].
-	// It reads [Client.ServiceAccountUserID] and loads that user; Keycloak releases before 27 do not
-	// expose that field, so the legacy service-account-user endpoint is used for them.
+	// It uses the service-account-user endpoint (one call, needs view-clients only). Keycloak 27 removed that
+	// endpoint; on 404 it reads [Client.ServiceAccountUserID] and loads that user, which also needs view-users.
+	// Input: ctx [context.Context], token [string], realm [string], idOfClient [string].
+	// Output: [*User] service account user, [error] if the client has none or a request fails.
 	GetClientServiceAccount(ctx context.Context, token, realm, idOfClient string) (*User, error)
-	// RegenerateClientSecret triggers the creation of the new client secret.
+	// RegenerateClientSecret generates a new secret for the given client.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string].
+	// Output: [*CredentialRepresentation] new client secret, [error] if the call fails.
 	RegenerateClientSecret(ctx context.Context, token, realm, idOfClient string) (*CredentialRepresentation, error)
-	// GetClientOfflineSessions returns offline sessions associated with the client
+	// GetClientOfflineSessions returns the offline sessions of the given client.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string],
+	// params [...GetClientUserSessionsParams] optional, only the first is used.
+	// Output: [[]*UserSessionRepresentation] offline sessions, [error] if the call fails.
 	GetClientOfflineSessions(ctx context.Context, token, realm, idOfClient string, params ...GetClientUserSessionsParams) ([]*UserSessionRepresentation, error)
-	// GetClientUserSessions returns user sessions associated with the client
+	// GetClientUserSessions returns the user sessions of the given client.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string],
+	// params [...GetClientUserSessionsParams] optional, only the first is used.
+	// Output: [[]*UserSessionRepresentation] user sessions, [error] if the call fails.
 	GetClientUserSessions(ctx context.Context, token, realm, idOfClient string, params ...GetClientUserSessionsParams) ([]*UserSessionRepresentation, error)
-	// CreateClientProtocolMapper creates a protocol mapper in client scope
+	// CreateClientProtocolMapper creates a protocol mapper on the given client.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string],
+	// mapper [ProtocolMapperRepresentation].
+	// Output: [string] ID of the created protocol mapper, [error] if the call fails.
 	CreateClientProtocolMapper(ctx context.Context, token, realm, idOfClient string, mapper ProtocolMapperRepresentation) (string, error)
-	// UpdateClientProtocolMapper updates a protocol mapper in client scope
+	// UpdateClientProtocolMapper updates a protocol mapper of the given client.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], mapperID [string],
+	// mapper [ProtocolMapperRepresentation].
+	// Output: [error] if the call fails.
 	UpdateClientProtocolMapper(ctx context.Context, token, realm, idOfClient, mapperID string, mapper ProtocolMapperRepresentation) error
-	// DeleteClientProtocolMapper deletes a protocol mapper in client scope
+	// DeleteClientProtocolMapper deletes a protocol mapper of the given client.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], mapperID [string].
+	// Output: [error] if the call fails.
 	DeleteClientProtocolMapper(ctx context.Context, token, realm, idOfClient, mapperID string) error
-	// GetKeyStoreConfig get keystoreconfig of the realm
+	// GetKeyStoreConfig returns the keys of the realm.
+	// Input: ctx [context.Context], token [string] admin token, realm [string].
+	// Output: [*KeyStoreConfig] realm keys, [error] if the call fails.
 	GetKeyStoreConfig(ctx context.Context, token, realm string) (*KeyStoreConfig, error)
-	// GetComponents get all components in realm
+	// GetComponents returns all components of the realm.
+	// Input: ctx [context.Context], token [string] admin token, realm [string].
+	// Output: [[]*Component] components, [error] if the call fails.
 	GetComponents(ctx context.Context, token, realm string) ([]*Component, error)
-	// GetComponentsWithParams get all components in realm with query params
+	// GetComponentsWithParams returns the components of the realm filtered by the given query params.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], params [GetComponentsParams].
+	// Output: [[]*Component] components, [error] if the call fails.
 	GetComponentsWithParams(ctx context.Context, token, realm string, params GetComponentsParams) ([]*Component, error)
-	// GetComponent get exactly one component by ID
+	// GetComponent fetches exactly one component by its ID.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], componentID [string].
+	// Output: [*Component] component, [error] if the call fails.
 	GetComponent(ctx context.Context, token, realm string, componentID string) (*Component, error)
-	// UpdateComponent updates the given component
+	// UpdateComponent updates the given component.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], component [Component] (ID required).
+	// Output: [error] if the ID is missing or the call fails.
 	UpdateComponent(ctx context.Context, token, realm string, component Component) error
-	// GetDefaultGroups returns a list of default groups
+	// GetDefaultGroups returns the realm's default groups.
+	// Input: ctx [context.Context], token [string] admin token, realm [string].
+	// Output: [[]*Group] default groups, [error] if the call fails.
 	GetDefaultGroups(ctx context.Context, token, realm string) ([]*Group, error)
-	// AddDefaultGroup adds group to the list of default groups
+	// AddDefaultGroup adds a group to the realm's default groups.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], groupID [string].
+	// Output: [error] if the call fails.
 	AddDefaultGroup(ctx context.Context, token, realm, groupID string) error
-	// RemoveDefaultGroup removes group from the list of default groups
+	// RemoveDefaultGroup removes a group from the realm's default groups.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], groupID [string].
+	// Output: [error] if the call fails.
 	RemoveDefaultGroup(ctx context.Context, token, realm, groupID string) error
-	// GetRoleMappingByGroupID gets the role mappings by group
+	// GetRoleMappingByGroupID returns the realm and client role mappings of the given group.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], groupID [string].
+	// Output: [*MappingsRepresentation] role mappings, [error] if the call fails.
 	GetRoleMappingByGroupID(ctx context.Context, token, realm, groupID string) (*MappingsRepresentation, error)
-	// GetRoleMappingByUserID gets the role mappings by user
+	// GetRoleMappingByUserID returns the realm and client role mappings of the given user.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], userID [string].
+	// Output: [*MappingsRepresentation] role mappings, [error] if the call fails.
 	GetRoleMappingByUserID(ctx context.Context, token, realm, userID string) (*MappingsRepresentation, error)
-	// GetGroup get group with id in realm
+	// GetGroup fetches the group with the given ID.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], groupID [string].
+	// Output: [*Group] group, [error] if the call fails.
 	GetGroup(ctx context.Context, token, realm, groupID string) (*Group, error)
-	// GetChildGroups get child groups of group with id in realm
+	// GetChildGroups returns the child groups of the given group.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], groupID [string],
+	// params [GetChildGroupsParams].
+	// Output: [[]*Group] child groups, [error] if the call fails.
 	GetChildGroups(ctx context.Context, token, realm, groupID string, params GetChildGroupsParams) ([]*Group, error)
-	// GetGroupByPath get group with path in realm
+	// GetGroupByPath fetches a group by its path (e.g. "/parent/child"); each group name is escaped.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], groupPath [string].
+	// Output: [*Group] group, [error] if the call fails.
 	GetGroupByPath(ctx context.Context, token, realm, groupPath string) (*Group, error)
-	// GetGroups get all groups in realm
+	// GetGroups returns the groups of the realm filtered by the given query params.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], params [GetGroupsParams].
+	// Output: [[]*Group] groups, [error] if the call fails.
 	GetGroups(ctx context.Context, token, realm string, params GetGroupsParams) ([]*Group, error)
-	// GetGroupManagementPermissions returns whether group Authorization permissions have been initialized or not and a reference
-	// to the managed permissions
+	// GetGroupManagementPermissions returns whether group Authorization permissions have been initialized or not and a
+	// reference to the managed permissions.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfGroup [string].
+	// Output: [*ManagementPermissionRepresentation] permissions, [error] if the call fails.
 	GetGroupManagementPermissions(ctx context.Context, token, realm string, idOfGroup string) (*ManagementPermissionRepresentation, error)
-	// GetGroupsByRole gets groups assigned with a specific role of a realm
+	// GetGroupsByRole returns the groups that have the given realm role.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], roleName [string].
+	// Output: [[]*Group] groups, [error] if the call fails.
 	GetGroupsByRole(ctx context.Context, token, realm string, roleName string) ([]*Group, error)
-	// GetGroupsByClientRole gets groups with specified roles assigned of given client within a realm
+	// GetGroupsByClientRole returns the groups that have the given client role.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], roleName [string],
+	// clientID [string] ID of the client (not its clientId).
+	// Output: [[]*Group] groups, [error] if the call fails.
 	GetGroupsByClientRole(ctx context.Context, token, realm string, roleName string, clientID string) ([]*Group, error)
-	// GetGroupsCount gets the groups count in the realm
+	// GetGroupsCount returns the number of groups in the realm matching the given query params.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], params [GetGroupsParams].
+	// Output: [int] group count, [error] if the call fails.
 	GetGroupsCount(ctx context.Context, token, realm string, params GetGroupsParams) (int, error)
-	// GetGroupMembers get a list of users of group with id in realm
+	// GetGroupMembers returns the users that are members of the given group.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], groupID [string],
+	// params [GetGroupsParams].
+	// Output: [[]*User] members, [error] if the call fails.
 	GetGroupMembers(ctx context.Context, token, realm, groupID string, params GetGroupsParams) ([]*User, error)
-	// GetClientRoles get all roles for the given client in realm
+	// GetClientRoles returns the roles of the given client.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string],
+	// params [GetRoleParams].
+	// Output: [[]*Role] client roles, [error] if the call fails.
 	GetClientRoles(ctx context.Context, token, realm, idOfClient string, params GetRoleParams) ([]*Role, error)
-	// GetClientRoleByID gets role for the given client in realm using role ID
+	// GetClientRoleByID fetches a role by its ID via the roles-by-id endpoint.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], roleID [string].
+	// Output: [*Role] role, [error] if the call fails.
 	GetClientRoleByID(ctx context.Context, token, realm, roleID string) (*Role, error)
-	// GetClientRolesByUserID returns all client roles assigned to the given user
+	// GetClientRolesByUserID returns the roles of the given client that are directly assigned to the user.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], userID [string].
+	// Output: [[]*Role] client roles, [error] if the call fails.
 	GetClientRolesByUserID(ctx context.Context, token, realm, idOfClient, userID string) ([]*Role, error)
-	// GetClientRolesByGroupID returns all client roles assigned to the given group
+	// GetClientRolesByGroupID returns the roles of the given client that are directly assigned to the group.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], groupID [string].
+	// Output: [[]*Role] client roles, [error] if the call fails.
 	GetClientRolesByGroupID(ctx context.Context, token, realm, idOfClient, groupID string) ([]*Role, error)
-	// GetCompositeClientRolesByRoleID returns all client composite roles associated with the given client role
+	// GetCompositeClientRolesByRoleID returns the composite roles of the given client contained in the given role.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], roleID [string].
+	// Output: [[]*Role] composite client roles, [error] if the call fails.
 	GetCompositeClientRolesByRoleID(ctx context.Context, token, realm, idOfClient, roleID string) ([]*Role, error)
-	// GetCompositeClientRolesByUserID returns all client roles and composite roles assigned to the given user
+	// GetCompositeClientRolesByUserID returns the effective roles of the given client for the user, including
+	// composite roles.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], userID [string].
+	// Output: [[]*Role] effective client roles, [error] if the call fails.
 	GetCompositeClientRolesByUserID(ctx context.Context, token, realm, idOfClient, userID string) ([]*Role, error)
-	// GetAvailableClientRolesByUserID returns all available client roles to the given user
+	// GetAvailableClientRolesByUserID returns the roles of the given client that can still be assigned to the user.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], userID [string].
+	// Output: [[]*Role] available client roles, [error] if the call fails.
 	GetAvailableClientRolesByUserID(ctx context.Context, token, realm, idOfClient, userID string) ([]*Role, error)
-	// GetAvailableClientRolesByGroupID returns all available roles to the given group
+	// GetAvailableClientRolesByGroupID returns the roles of the given client that can still be assigned to the group.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], groupID [string].
+	// Output: [[]*Role] available client roles, [error] if the call fails.
 	GetAvailableClientRolesByGroupID(ctx context.Context, token, realm, idOfClient, groupID string) ([]*Role, error)
-	// GetCompositeClientRolesByGroupID returns all client roles and composite roles assigned to the given group
+	// GetCompositeClientRolesByGroupID returns the effective roles of the given client for the group, including
+	// composite roles.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], groupID [string].
+	// Output: [[]*Role] effective client roles, [error] if the call fails.
 	GetCompositeClientRolesByGroupID(ctx context.Context, token, realm, idOfClient, groupID string) ([]*Role, error)
-	// GetClientRole get a role for the given client in a realm by role name
+	// GetClientRole fetches a role of the given client by its name.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], roleName [string].
+	// Output: [*Role] client role, [error] if the call fails.
 	GetClientRole(ctx context.Context, token, realm, idOfClient, roleName string) (*Role, error)
-	// GetClients gets all clients in realm
+	// GetClients returns the clients of the realm filtered by the given query params.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], params [GetClientsParams].
+	// Output: [[]*Client] clients, [error] if the call fails.
 	GetClients(ctx context.Context, token, realm string, params GetClientsParams) ([]*Client, error)
-	// GetClientManagementPermissions returns whether client Authorization permissions have been initialized or not and a reference
-	// to the managed permissions
+	// GetClientManagementPermissions returns whether client Authorization permissions have been initialized or not and a
+	// reference to the managed permissions.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string].
+	// Output: [*ManagementPermissionRepresentation] permissions, [error] if the call fails.
 	GetClientManagementPermissions(ctx context.Context, token, realm string, idOfClient string) (*ManagementPermissionRepresentation, error)
-	// CreateRealmRole creates a role in a realm
+	// CreateRealmRole creates a role in the realm.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], role [Role].
+	// Output: [string] last segment of the Location header (the role name), [error] if the call fails.
 	CreateRealmRole(ctx context.Context, token string, realm string, role Role) (string, error)
-	// GetRealmRole returns a role from a realm by role's name
+	// GetRealmRole fetches a realm role by its name.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], roleName [string].
+	// Output: [*Role] realm role, [error] if the call fails.
 	GetRealmRole(ctx context.Context, token, realm, roleName string) (*Role, error)
-	// GetRealmRoleByID returns a role from a realm by role's ID
+	// GetRealmRoleByID fetches a role by its ID via the roles-by-id endpoint.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], roleID [string].
+	// Output: [*Role] role, [error] if the call fails.
 	GetRealmRoleByID(ctx context.Context, token, realm, roleID string) (*Role, error)
-	// GetRealmRoles get all roles of the given realm.
+	// GetRealmRoles returns the roles of the realm filtered by the given query params.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], params [GetRoleParams].
+	// Output: [[]*Role] realm roles, [error] if the call fails.
 	GetRealmRoles(ctx context.Context, token, realm string, params GetRoleParams) ([]*Role, error)
-	// GetRealmRolesByUserID returns all roles assigned to the given user
+	// GetRealmRolesByUserID returns the realm roles directly assigned to the given user.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], userID [string].
+	// Output: [[]*Role] realm roles, [error] if the call fails.
 	GetRealmRolesByUserID(ctx context.Context, token, realm, userID string) ([]*Role, error)
-	// GetRealmRolesByGroupID returns all roles assigned to the given group
+	// GetRealmRolesByGroupID returns the realm roles directly assigned to the given group.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], groupID [string].
+	// Output: [[]*Role] realm roles, [error] if the call fails.
 	GetRealmRolesByGroupID(ctx context.Context, token, realm, groupID string) ([]*Role, error)
-	// UpdateRealmRole updates a role in a realm
+	// UpdateRealmRole updates a realm role addressed by its name.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], roleName [string], role [Role].
+	// Output: [error] if the call fails.
 	UpdateRealmRole(ctx context.Context, token, realm, roleName string, role Role) error
-	// UpdateRealmRoleByID updates a role in a realm by role's ID
+	// UpdateRealmRoleByID updates a role addressed by its ID via the roles-by-id endpoint.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], roleID [string], role [Role].
+	// Output: [error] if the call fails.
 	UpdateRealmRoleByID(ctx context.Context, token, realm, roleID string, role Role) error
-	// DeleteRealmRole deletes a role in a realm by role's name
+	// DeleteRealmRole deletes a realm role by its name.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], roleName [string].
+	// Output: [error] if the call fails.
 	DeleteRealmRole(ctx context.Context, token, realm, roleName string) error
-	// AddRealmRoleToUser adds realm-level role mappings
+	// AddRealmRoleToUser adds realm-level role mappings to the given user.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], userID [string], roles [[]Role].
+	// Output: [error] if the call fails.
 	AddRealmRoleToUser(ctx context.Context, token, realm, userID string, roles []Role) error
-	// DeleteRealmRoleFromUser deletes realm-level role mappings
+	// DeleteRealmRoleFromUser removes realm-level role mappings from the given user.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], userID [string], roles [[]Role].
+	// Output: [error] if the call fails.
 	DeleteRealmRoleFromUser(ctx context.Context, token, realm, userID string, roles []Role) error
-	// AddRealmRoleToGroup adds realm-level role mappings
+	// AddRealmRoleToGroup adds realm-level role mappings to the given group.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], groupID [string], roles [[]Role].
+	// Output: [error] if the call fails.
 	AddRealmRoleToGroup(ctx context.Context, token, realm, groupID string, roles []Role) error
-	// DeleteRealmRoleFromGroup deletes realm-level role mappings
+	// DeleteRealmRoleFromGroup removes realm-level role mappings from the given group.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], groupID [string], roles [[]Role].
+	// Output: [error] if the call fails.
 	DeleteRealmRoleFromGroup(ctx context.Context, token, realm, groupID string, roles []Role) error
-	// AddRealmRoleComposite adds a role to the composite.
+	// AddRealmRoleComposite adds the given roles as composites of a realm role.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], roleName [string] composite role,
+	// roles [[]Role].
+	// Output: [error] if the call fails.
 	AddRealmRoleComposite(ctx context.Context, token, realm, roleName string, roles []Role) error
-	// DeleteRealmRoleComposite deletes a role from the composite.
+	// DeleteRealmRoleComposite removes the given roles from the composites of a realm role.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], roleName [string] composite role,
+	// roles [[]Role].
+	// Output: [error] if the call fails.
 	DeleteRealmRoleComposite(ctx context.Context, token, realm, roleName string, roles []Role) error
-	// GetCompositeRealmRoles returns all realm composite roles associated with the given realm role
+	// GetCompositeRealmRoles returns the composite roles of the given realm role.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], roleName [string].
+	// Output: [[]*Role] composite roles, [error] if the call fails.
 	GetCompositeRealmRoles(ctx context.Context, token, realm, roleName string) ([]*Role, error)
-	// GetCompositeRolesByRoleID returns all realm composite roles associated with the given client role
+	// GetCompositeRolesByRoleID returns all composite roles (realm and client) of the role with the given ID.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], roleID [string].
+	// Output: [[]*Role] composite roles, [error] if the call fails.
 	GetCompositeRolesByRoleID(ctx context.Context, token, realm, roleID string) ([]*Role, error)
-	// GetCompositeRealmRolesByRoleID returns all realm composite roles associated with the given client role
+	// GetCompositeRealmRolesByRoleID returns the realm composite roles of the role with the given ID.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], roleID [string].
+	// Output: [[]*Role] composite realm roles, [error] if the call fails.
 	GetCompositeRealmRolesByRoleID(ctx context.Context, token, realm, roleID string) ([]*Role, error)
-	// GetCompositeRealmRolesByUserID returns all realm roles and composite roles assigned to the given user
+	// GetCompositeRealmRolesByUserID returns the effective realm roles of the user, including composite roles.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], userID [string].
+	// Output: [[]*Role] effective realm roles, [error] if the call fails.
 	GetCompositeRealmRolesByUserID(ctx context.Context, token, realm, userID string) ([]*Role, error)
-	// GetCompositeRealmRolesByGroupID returns all realm roles and composite roles assigned to the given group
+	// GetCompositeRealmRolesByGroupID returns the effective realm roles of the group, including composite roles.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], groupID [string].
+	// Output: [[]*Role] effective realm roles, [error] if the call fails.
 	GetCompositeRealmRolesByGroupID(ctx context.Context, token, realm, groupID string) ([]*Role, error)
-	// GetAvailableRealmRolesByUserID returns all available realm roles to the given user
+	// GetAvailableRealmRolesByUserID returns the realm roles that can still be assigned to the user.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], userID [string].
+	// Output: [[]*Role] available realm roles, [error] if the call fails.
 	GetAvailableRealmRolesByUserID(ctx context.Context, token, realm, userID string) ([]*Role, error)
-	// GetAvailableRealmRolesByGroupID returns all available realm roles to the given group
+	// GetAvailableRealmRolesByGroupID returns the realm roles that can still be assigned to the group.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], groupID [string].
+	// Output: [[]*Role] available realm roles, [error] if the call fails.
 	GetAvailableRealmRolesByGroupID(ctx context.Context, token, realm, groupID string) ([]*Role, error)
-	// GetRealm returns top-level representation of the realm
+	// GetRealm returns the top-level representation of the realm.
+	// Input: ctx [context.Context], token [string] admin token, realm [string].
+	// Output: [*RealmRepresentation] realm, [error] if realm is empty or the call fails.
 	GetRealm(ctx context.Context, token, realm string) (*RealmRepresentation, error)
-	// GetRealms returns top-level representation of all realms
+	// GetRealms returns the top-level representation of all realms.
+	// Input: ctx [context.Context], token [string] admin token.
+	// Output: [[]*RealmRepresentation] realms, [error] if the call fails.
 	GetRealms(ctx context.Context, token string) ([]*RealmRepresentation, error)
-	// CreateRealm creates a realm
+	// CreateRealm creates the given realm.
+	// Input: ctx [context.Context], token [string] admin token, realm [RealmRepresentation].
+	// Output: [string] last segment of the Location header (the realm name), [error] if the call fails.
 	CreateRealm(ctx context.Context, token string, realm RealmRepresentation) (string, error)
-	// UpdateRealm updates a given realm
+	// UpdateRealm updates the given realm, addressed by its Realm name.
+	// Input: ctx [context.Context], token [string] admin token, realm [RealmRepresentation].
+	// Output: [error] if the call fails.
 	UpdateRealm(ctx context.Context, token string, realm RealmRepresentation) error
-	// DeleteRealm removes a realm
+	// DeleteRealm deletes the given realm.
+	// Input: ctx [context.Context], token [string] admin token, realm [string].
+	// Output: [error] if the call fails.
 	DeleteRealm(ctx context.Context, token, realm string) error
-	// ClearRealmCache clears realm cache
+	// ClearRealmCache clears the realm cache.
+	// Input: ctx [context.Context], token [string] admin token, realm [string].
+	// Output: [error] if the call fails.
 	ClearRealmCache(ctx context.Context, token, realm string) error
-	// ClearUserCache clears realm cache
+	// ClearUserCache clears the user cache of the realm.
+	// Input: ctx [context.Context], token [string] admin token, realm [string].
+	// Output: [error] if the call fails.
 	ClearUserCache(ctx context.Context, token, realm string) error
-	// ClearKeysCache clears realm cache
+	// ClearKeysCache clears the keys cache of the realm.
+	// Input: ctx [context.Context], token [string] admin token, realm [string].
+	// Output: [error] if the call fails.
 	ClearKeysCache(ctx context.Context, token, realm string) error
-	// GetAuthenticationFlows get all authentication flows from a realm
+	// GetAuthenticationFlows returns all authentication flows of the realm.
+	// Input: ctx [context.Context], token [string] admin token, realm [string].
+	// Output: [[]*AuthenticationFlowRepresentation] flows, [error] if the call fails.
 	GetAuthenticationFlows(ctx context.Context, token, realm string) ([]*AuthenticationFlowRepresentation, error)
-	// GetAuthenticationFlow get an authentication flow with the given ID
+	// GetAuthenticationFlow fetches the authentication flow with the given ID.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], authenticationFlowID [string].
+	// Output: [*AuthenticationFlowRepresentation] flow, [error] if the call fails.
 	GetAuthenticationFlow(ctx context.Context, token, realm string, authenticationFlowID string) (*AuthenticationFlowRepresentation, error)
-	// CreateAuthenticationFlow creates a new Authentication flow in a realm
+	// CreateAuthenticationFlow creates a new authentication flow in the realm.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], flow [AuthenticationFlowRepresentation].
+	// Output: [error] if the call fails.
 	CreateAuthenticationFlow(ctx context.Context, token, realm string, flow AuthenticationFlowRepresentation) error
-	// UpdateAuthenticationFlow a given Authentication Flow
+	// UpdateAuthenticationFlow updates the authentication flow with the given ID.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], flow [AuthenticationFlowRepresentation],
+	// authenticationFlowID [string].
+	// Output: [*AuthenticationFlowRepresentation] updated flow, [error] if the call fails.
 	UpdateAuthenticationFlow(ctx context.Context, token, realm string, flow AuthenticationFlowRepresentation, authenticationFlowID string) (*AuthenticationFlowRepresentation, error)
-	// DeleteAuthenticationFlow deletes a flow in a realm with the given ID
+	// DeleteAuthenticationFlow deletes the authentication flow with the given ID.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], flowID [string].
+	// Output: [error] if the call fails.
 	DeleteAuthenticationFlow(ctx context.Context, token, realm, flowID string) error
-	// CreateAuthenticatorConfig creates a new authenticator configuration and returns its ID
+	// CreateAuthenticatorConfig creates a new authenticator configuration.
+	// Input: ctx [context.Context], token [string] admin token, realm [string],
+	// config [AuthenticatorConfigRepresentation].
+	// Output: [string] ID of the created configuration, [error] if the call fails.
 	CreateAuthenticatorConfig(ctx context.Context, token, realm string, config AuthenticatorConfigRepresentation) (string, error)
-	// GetAuthenticatorConfigDescription gets the configuration description for an authenticator provider
+	// GetAuthenticatorConfigDescription fetches the configuration description of an authenticator provider.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], providerID [string].
+	// Output: [*AuthenticatorConfigInfoRepresentation] config description, [error] if the call fails.
 	GetAuthenticatorConfigDescription(ctx context.Context, token, realm, providerID string) (*AuthenticatorConfigInfoRepresentation, error)
-	// GetAuthenticatorConfig gets an authenticator configuration by ID
+	// GetAuthenticatorConfig fetches an authenticator configuration by its ID.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], configID [string].
+	// Output: [*AuthenticatorConfigRepresentation] configuration, [error] if the call fails.
 	GetAuthenticatorConfig(ctx context.Context, token, realm, configID string) (*AuthenticatorConfigRepresentation, error)
-	// UpdateAuthenticatorConfig updates an authenticator configuration by ID
+	// UpdateAuthenticatorConfig updates an authenticator configuration by its ID.
+	// Input: ctx [context.Context], token [string] admin token, realm [string],
+	// config [AuthenticatorConfigRepresentation], configID [string].
+	// Output: [error] if the call fails.
 	UpdateAuthenticatorConfig(ctx context.Context, token, realm string, config AuthenticatorConfigRepresentation, configID string) error
-	// DeleteAuthenticatorConfig deletes an authenticator configuration by ID
+	// DeleteAuthenticatorConfig deletes an authenticator configuration by its ID.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], configID [string].
+	// Output: [error] if the call fails.
 	DeleteAuthenticatorConfig(ctx context.Context, token, realm, configID string) error
-	// GetAuthenticationExecutions retrieves all executions of a given flow
+	// GetAuthenticationExecutions returns all executions of the flow with the given alias.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], flow [string] flow alias.
+	// Output: [[]*ModifyAuthenticationExecutionRepresentation] executions, [error] if the call fails.
 	GetAuthenticationExecutions(ctx context.Context, token, realm, flow string) ([]*ModifyAuthenticationExecutionRepresentation, error)
-	// CreateAuthenticationExecution creates a new execution for the given flow name in the given realm
+	// CreateAuthenticationExecution adds a new authenticator execution to the flow with the given alias.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], flow [string] flow alias,
+	// execution [CreateAuthenticationExecutionRepresentation].
+	// Output: [error] if the call fails.
 	CreateAuthenticationExecution(ctx context.Context, token, realm, flow string, execution CreateAuthenticationExecutionRepresentation) error
-	// UpdateAuthenticationExecution updates an authentication execution for the given flow in the given realm
+	// UpdateAuthenticationExecution updates an execution of the flow with the given alias.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], flow [string] flow alias,
+	// execution [ModifyAuthenticationExecutionRepresentation].
+	// Output: [error] if the call fails.
 	UpdateAuthenticationExecution(ctx context.Context, token, realm, flow string, execution ModifyAuthenticationExecutionRepresentation) error
-	// DeleteAuthenticationExecution delete a single execution with the given ID
+	// DeleteAuthenticationExecution deletes the execution with the given ID.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], executionID [string].
+	// Output: [error] if the call fails.
 	DeleteAuthenticationExecution(ctx context.Context, token, realm, executionID string) error
-	// CreateAuthenticationExecutionConfig creates a new configuration for an authentication execution and returns its ID
+	// CreateAuthenticationExecutionConfig creates a new configuration for an authentication execution.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], executionID [string],
+	// config [AuthenticatorConfigRepresentation].
+	// Output: [string] ID of the created configuration, [error] if the call fails.
 	CreateAuthenticationExecutionConfig(ctx context.Context, token, realm, executionID string, config AuthenticatorConfigRepresentation) (string, error)
-	// GetAuthenticationExecutionConfig gets the configuration for an authentication execution
+	// GetAuthenticationExecutionConfig fetches a configuration of an authentication execution.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], executionID [string], configID [string].
+	// Output: [*AuthenticatorConfigRepresentation] configuration, [error] if the call fails.
 	GetAuthenticationExecutionConfig(ctx context.Context, token, realm, executionID, configID string) (*AuthenticatorConfigRepresentation, error)
-	// CreateAuthenticationExecutionFlow creates a new execution for the given flow name in the given realm
+	// CreateAuthenticationExecutionFlow adds a new sub-flow execution to the flow with the given alias.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], flow [string] flow alias,
+	// executionFlow [CreateAuthenticationExecutionFlowRepresentation].
+	// Output: [error] if the call fails.
 	CreateAuthenticationExecutionFlow(ctx context.Context, token, realm, flow string, executionFlow CreateAuthenticationExecutionFlowRepresentation) error
-	// CreateUser creates the given user in the given realm and returns it's userID
+	// CreateUser creates the given user in the given realm.
 	// Note: Keycloak has not documented what members of the User object are actually being accepted, when creating a user.
 	// Things like RealmRoles must be attached using followup calls to the respective functions.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], user [User].
+	// Output: [string] ID of the created user, [error] if the call fails.
 	CreateUser(ctx context.Context, token, realm string, user User) (string, error)
-	// DeleteUser delete a given user
+	// DeleteUser deletes the given user.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], userID [string].
+	// Output: [error] if the call fails.
 	DeleteUser(ctx context.Context, token, realm, userID string) error
-	// GetUserByID fetches a user from the given realm with the given userID
+	// GetUserByID fetches the user with the given ID.
+	// Input: ctx [context.Context], accessToken [string] admin token, realm [string], userID [string].
+	// Output: [*User] user, [error] if userID is empty or the call fails.
 	GetUserByID(ctx context.Context, accessToken, realm, userID string) (*User, error)
-	// GetUserCount gets the user count in the realm
+	// GetUserCount returns the number of users in the realm matching the given query params.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], params [GetUsersParams].
+	// Output: [int] user count, [error] if the call fails.
 	GetUserCount(ctx context.Context, token string, realm string, params GetUsersParams) (int, error)
-	// GetUserGroups get all groups for user
+	// GetUserGroups returns the groups the given user is a member of.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], userID [string],
+	// params [GetGroupsParams].
+	// Output: [[]*Group] groups, [error] if the call fails.
 	GetUserGroups(ctx context.Context, token, realm, userID string, params GetGroupsParams) ([]*Group, error)
-	// GetUserProfileConfig retrieves the user profile configuration for a realm
+	// GetUserProfileConfig fetches the user profile configuration of the realm.
+	// Input: ctx [context.Context], token [string] admin token, realm [string].
+	// Output: [*UserProfileConfig] user profile configuration, [error] if the call fails.
 	GetUserProfileConfig(ctx context.Context, token, realm string) (*UserProfileConfig, error)
-	// GetUsers get all users in realm
-	// Default number of results per page is 100, use GetUsersParams to specify it explicitly or to set offset for pagination
+	// GetUsers returns the users of the realm matching the given query params.
+	// Default number of results per page is 100, use GetUsersParams to specify it explicitly or to set offset for
+	// pagination.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], params [GetUsersParams].
+	// Output: [[]*User] users, [error] if the call fails.
 	GetUsers(ctx context.Context, token, realm string, params GetUsersParams) ([]*User, error)
-	// GetUsersByRoleName returns all users have a given role
+	// GetUsersByRoleName returns the users that have the given realm role.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], roleName [string],
+	// params [GetUsersByRoleParams].
+	// Output: [[]*User] users, [error] if the call fails.
 	GetUsersByRoleName(ctx context.Context, token, realm, roleName string, params GetUsersByRoleParams) ([]*User, error)
-	// GetUsersByClientRoleName returns all users have a given client role
+	// GetUsersByClientRoleName returns the users that have the given client role.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], roleName [string],
+	// params [GetUsersByRoleParams].
+	// Output: [[]*User] users, [error] if the call fails.
 	GetUsersByClientRoleName(ctx context.Context, token, realm, idOfClient, roleName string, params GetUsersByRoleParams) ([]*User, error)
 	// SetPassword sets a new password for the user with the given id. Needs elevated privileges.
 	// Input: ctx [context.Context], token [string], realm [string], userID [string], password [string],
 	// temporary [bool] user must change it on next login. Output: [error].
 	SetPassword(ctx context.Context, token, realm, userID, password string, temporary bool) error
-	// UpdateUser updates a given user
+	// UpdateUser updates the given user.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], user [User] (ID required).
+	// Output: [error] if the ID is missing or the call fails.
 	UpdateUser(ctx context.Context, token, realm string, user User) error
-	// UpdateUserProfileConfig updates the user profile configuration for a realm
+	// UpdateUserProfileConfig updates the user profile configuration of the realm.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], config [UserProfileConfig].
+	// Output: [error] if the call fails.
 	UpdateUserProfileConfig(ctx context.Context, token, realm string, config UserProfileConfig) error
-	// AddUserToGroup puts given user to given group
+	// AddUserToGroup adds the given user to the given group.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], userID [string], groupID [string].
+	// Output: [error] if the call fails.
 	AddUserToGroup(ctx context.Context, token, realm, userID, groupID string) error
-	// DeleteUserFromGroup deletes given user from given group
+	// DeleteUserFromGroup removes the given user from the given group.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], userID [string], groupID [string].
+	// Output: [error] if the call fails.
 	DeleteUserFromGroup(ctx context.Context, token, realm, userID, groupID string) error
-	// GetUserSessions returns user sessions associated with the user
+	// GetUserSessions returns the sessions of the given user.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], userID [string].
+	// Output: [[]*UserSessionRepresentation] sessions, [error] if the call fails.
 	GetUserSessions(ctx context.Context, token, realm, userID string) ([]*UserSessionRepresentation, error)
-	// GetUserOfflineSessionsForClient returns offline sessions associated with the user and client
+	// GetUserOfflineSessionsForClient returns the offline sessions of the given user for the given client.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], userID [string], idOfClient [string].
+	// Output: [[]*UserSessionRepresentation] offline sessions, [error] if the call fails.
 	GetUserOfflineSessionsForClient(ctx context.Context, token, realm, userID, idOfClient string) ([]*UserSessionRepresentation, error)
-	// AddClientRolesToUser adds client-level role mappings
+	// AddClientRolesToUser adds client-level role mappings to the given user.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], userID [string],
+	// roles [[]Role].
+	// Output: [error] if the call fails.
 	AddClientRolesToUser(ctx context.Context, token, realm, idOfClient, userID string, roles []Role) error
-	// AddClientRolesToGroup adds a client role to the group
+	// AddClientRolesToGroup adds client-level role mappings to the given group.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], groupID [string],
+	// roles [[]Role].
+	// Output: [error] if the call fails.
 	AddClientRolesToGroup(ctx context.Context, token, realm, idOfClient, groupID string, roles []Role) error
-	// DeleteClientRolesFromUser adds client-level role mappings
+	// DeleteClientRolesFromUser removes client-level role mappings from the given user.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], userID [string],
+	// roles [[]Role].
+	// Output: [error] if the call fails.
 	DeleteClientRolesFromUser(ctx context.Context, token, realm, idOfClient, userID string, roles []Role) error
-	// DeleteClientRoleFromGroup removes a client role from the group
+	// DeleteClientRoleFromGroup removes client-level role mappings from the given group.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], groupID [string],
+	// roles [[]Role].
+	// Output: [error] if the call fails.
 	DeleteClientRoleFromGroup(ctx context.Context, token, realm, idOfClient, groupID string, roles []Role) error
-	// AddClientRoleComposite adds roles as composite
+	// AddClientRoleComposite adds the given roles as composites of the role with the given ID.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], roleID [string], roles [[]Role].
+	// Output: [error] if the call fails.
 	AddClientRoleComposite(ctx context.Context, token, realm, roleID string, roles []Role) error
-	// DeleteClientRoleComposite deletes composites from a role
+	// DeleteClientRoleComposite removes the given roles from the composites of the role with the given ID.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], roleID [string], roles [[]Role].
+	// Output: [error] if the call fails.
 	DeleteClientRoleComposite(ctx context.Context, token, realm, roleID string, roles []Role) error
-	// GetUserFederatedIdentities gets all user federated identities
+	// GetUserFederatedIdentities returns the federated identities linked to the given user.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], userID [string].
+	// Output: [[]*FederatedIdentityRepresentation] federated identities, [error] if the call fails.
 	GetUserFederatedIdentities(ctx context.Context, token, realm, userID string) ([]*FederatedIdentityRepresentation, error)
-	// CreateUserFederatedIdentity creates an user federated identity
+	// CreateUserFederatedIdentity links the given user to an identity provider.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], userID [string], providerID [string],
+	// federatedIdentityRep [FederatedIdentityRepresentation].
+	// Output: [error] if the call fails.
 	CreateUserFederatedIdentity(ctx context.Context, token, realm, userID, providerID string, federatedIdentityRep FederatedIdentityRepresentation) error
-	// DeleteUserFederatedIdentity deletes an user federated identity
+	// DeleteUserFederatedIdentity removes the link between the given user and an identity provider.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], userID [string], providerID [string].
+	// Output: [error] if the call fails.
 	DeleteUserFederatedIdentity(ctx context.Context, token, realm, userID, providerID string) error
-	// GetUserBruteForceDetectionStatus fetches a user status regarding brute force protection
+	// GetUserBruteForceDetectionStatus fetches the brute force protection status of the given user.
+	// Input: ctx [context.Context], accessToken [string] admin token, realm [string], userID [string].
+	// Output: [*BruteForceStatus] status, [error] if the call fails.
 	GetUserBruteForceDetectionStatus(ctx context.Context, accessToken, realm, userID string) (*BruteForceStatus, error)
-	// CreateIdentityProvider creates an identity provider in a realm
+	// CreateIdentityProvider creates an identity provider in the realm.
+	// Input: ctx [context.Context], token [string] admin token, realm [string],
+	// providerRep [IdentityProviderRepresentation].
+	// Output: [string] last segment of the Location header (the provider alias), [error] if the call fails.
 	CreateIdentityProvider(ctx context.Context, token string, realm string, providerRep IdentityProviderRepresentation) (string, error)
-	// GetIdentityProviders returns list of identity providers in a realm
+	// GetIdentityProviders returns all identity providers of the realm.
+	// Input: ctx [context.Context], token [string] admin token, realm [string].
+	// Output: [[]*IdentityProviderRepresentation] identity providers, [error] if the call fails.
 	GetIdentityProviders(ctx context.Context, token, realm string) ([]*IdentityProviderRepresentation, error)
-	// GetIdentityProvider gets the identity provider in a realm
+	// GetIdentityProvider fetches the identity provider with the given alias.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], alias [string].
+	// Output: [*IdentityProviderRepresentation] identity provider, [error] if the call fails.
 	GetIdentityProvider(ctx context.Context, token, realm, alias string) (*IdentityProviderRepresentation, error)
-	// UpdateIdentityProvider updates the identity provider in a realm
+	// UpdateIdentityProvider updates the identity provider with the given alias.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], alias [string],
+	// providerRep [IdentityProviderRepresentation].
+	// Output: [error] if the call fails.
 	UpdateIdentityProvider(ctx context.Context, token, realm, alias string, providerRep IdentityProviderRepresentation) error
-	// DeleteIdentityProvider deletes the identity provider in a realm
+	// DeleteIdentityProvider deletes the identity provider with the given alias.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], alias [string].
+	// Output: [error] if the call fails.
 	DeleteIdentityProvider(ctx context.Context, token, realm, alias string) error
-	// ExportIDPPublicBrokerConfig exports the broker config for a given alias
+	// ExportIDPPublicBrokerConfig exports the public broker configuration of the identity provider with the given alias.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], alias [string].
+	// Output: [*string] raw exported configuration (e.g. SAML XML), [error] if the call fails.
 	ExportIDPPublicBrokerConfig(ctx context.Context, token, realm, alias string) (*string, error)
-	// ImportIdentityProviderConfig parses and returns the identity provider config at a given URL
+	// ImportIdentityProviderConfig lets Keycloak fetch and parse the identity provider metadata at the given URL.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], fromURL [string] metadata URL,
+	// providerID [string] e.g. "oidc" or "saml".
+	// Output: [map[string]string] parsed provider config, [error] if the call fails.
 	ImportIdentityProviderConfig(ctx context.Context, token, realm, fromURL, providerID string) (map[string]string, error)
-	// ImportIdentityProviderConfigFromFile parses and returns the identity provider config from a given file
+	// ImportIdentityProviderConfigFromFile uploads an identity provider metadata file for Keycloak to parse.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], providerID [string],
+	// fileName [string], fileBody [io.Reader] file content.
+	// Output: [map[string]string] parsed provider config, [error] if the call fails.
 	ImportIdentityProviderConfigFromFile(ctx context.Context, token, realm, providerID, fileName string, fileBody io.Reader) (map[string]string, error)
-	// CreateIdentityProviderMapper creates an instance of an identity provider mapper associated with the given alias
+	// CreateIdentityProviderMapper creates a mapper for the identity provider with the given alias.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], alias [string],
+	// mapper [IdentityProviderMapper].
+	// Output: [string] ID of the created mapper, [error] if the call fails.
 	CreateIdentityProviderMapper(ctx context.Context, token, realm, alias string, mapper IdentityProviderMapper) (string, error)
-	// DeleteIdentityProviderMapper deletes an instance of an identity provider mapper associated with the given alias and mapper ID
+	// DeleteIdentityProviderMapper deletes a mapper of the identity provider with the given alias.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], alias [string], mapperID [string].
+	// Output: [error] if the call fails.
 	DeleteIdentityProviderMapper(ctx context.Context, token, realm, alias, mapperID string) error
-	// GetIdentityProviderMappers returns list of mappers associated with an identity provider
+	// GetIdentityProviderMappers returns the mappers of the identity provider with the given alias.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], alias [string].
+	// Output: [[]*IdentityProviderMapper] mappers, [error] if the call fails.
 	GetIdentityProviderMappers(ctx context.Context, token, realm, alias string) ([]*IdentityProviderMapper, error)
 	// GetIdentityProviderMapperByID gets the mapper of an identity provider.
 	// Input: ctx [context.Context], token [string], realm [string], alias [string] identity provider alias,
 	// mapperID [string]. Output: [*IdentityProviderMapper], [error].
 	GetIdentityProviderMapperByID(ctx context.Context, token, realm, alias, mapperID string) (*IdentityProviderMapper, error)
-	// UpdateIdentityProviderMapper updates mapper of an identity provider
+	// UpdateIdentityProviderMapper updates a mapper of the identity provider with the given alias.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], alias [string],
+	// mapper [IdentityProviderMapper] (ID required).
+	// Output: [error] if the ID is missing or the call fails.
 	UpdateIdentityProviderMapper(ctx context.Context, token, realm, alias string, mapper IdentityProviderMapper) error
-	// GetResource returns a client's resource with the given id, using access token from admin
+	// GetResource fetches a resource of the client's resource server, using an admin token.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], resourceID [string].
+	// Output: [*ResourceRepresentation] resource, [error] if the call fails.
 	GetResource(ctx context.Context, token, realm, idOfClient, resourceID string) (*ResourceRepresentation, error)
-	// GetResourceClient returns a client's resource with the given id, using access token from client
+	// GetResourceClient fetches a resource via the protection API, using a client token.
+	// Input: ctx [context.Context], token [string] client (PAT) token, realm [string], resourceID [string].
+	// Output: [*ResourceRepresentation] resource, [error] if the call fails.
 	GetResourceClient(ctx context.Context, token, realm, resourceID string) (*ResourceRepresentation, error)
-	// GetResources returns resources associated with the client, using access token from admin
+	// GetResources returns the resources of the client's resource server, using an admin token.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string],
+	// params [GetResourceParams].
+	// Output: [[]*ResourceRepresentation] resources, [error] if the call fails.
 	GetResources(ctx context.Context, token, realm, idOfClient string, params GetResourceParams) ([]*ResourceRepresentation, error)
-	// GetResourcesClient returns resources associated with the client, using access token from client
+	// GetResourcesClient returns the full resources via the protection API (deep=true), using a client token.
+	// Input: ctx [context.Context], token [string] client (PAT) token, realm [string], params [GetResourceParams].
+	// Output: [[]*ResourceRepresentation] resources, [error] if the call fails.
 	GetResourcesClient(ctx context.Context, token, realm string, params GetResourceParams) ([]*ResourceRepresentation, error)
-	// GetResourceServer returns resource server settings.
+	// GetResourceServer returns the resource server settings of the given client.
 	// The access token must have the realm view_clients role on its service
 	// account to be allowed to call this endpoint.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string].
+	// Output: [*ResourceServerRepresentation] settings, [error] if the call fails.
 	GetResourceServer(ctx context.Context, token, realm, idOfClient string) (*ResourceServerRepresentation, error)
-	// UpdateResource updates a resource associated with the client, using access token from admin
+	// UpdateResource updates a resource of the client's resource server, using an admin token.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string],
+	// resource [ResourceRepresentation] (ID required).
+	// Output: [error] if the ID is missing or the call fails.
 	UpdateResource(ctx context.Context, token, realm, idOfClient string, resource ResourceRepresentation) error
-	// UpdateResourceClient updates a resource associated with the client, using access token from client
+	// UpdateResourceClient updates a resource via the protection API, using a client token.
+	// Input: ctx [context.Context], token [string] client (PAT) token, realm [string],
+	// resource [ResourceRepresentation] (ID required).
+	// Output: [error] if the ID is missing or the call fails.
 	UpdateResourceClient(ctx context.Context, token, realm string, resource ResourceRepresentation) error
-	// CreateResource creates a resource associated with the client, using access token from admin
+	// CreateResource creates a resource on the client's resource server, using an admin token.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string],
+	// resource [ResourceRepresentation].
+	// Output: [*ResourceRepresentation] created resource, [error] if the call fails.
 	CreateResource(ctx context.Context, token, realm string, idOfClient string, resource ResourceRepresentation) (*ResourceRepresentation, error)
-	// CreateResourceClient creates a resource associated with the client, using access token from client
+	// CreateResourceClient creates a resource via the protection API, using a client token.
+	// Input: ctx [context.Context], token [string] client (PAT) token, realm [string], resource [ResourceRepresentation].
+	// Output: [*ResourceRepresentation] created resource, [error] if the call fails.
 	CreateResourceClient(ctx context.Context, token, realm string, resource ResourceRepresentation) (*ResourceRepresentation, error)
-	// DeleteResource deletes a resource associated with the client (using an admin token)
+	// DeleteResource deletes a resource of the client's resource server, using an admin token.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], resourceID [string].
+	// Output: [error] if the call fails.
 	DeleteResource(ctx context.Context, token, realm, idOfClient, resourceID string) error
-	// DeleteResourceClient deletes a resource associated with the client (using a client token)
+	// DeleteResourceClient deletes a resource via the protection API, using a client token.
+	// Input: ctx [context.Context], token [string] client (PAT) token, realm [string], resourceID [string].
+	// Output: [error] if the call fails.
 	DeleteResourceClient(ctx context.Context, token, realm, resourceID string) error
-	// GetScope returns a client's scope with the given id
+	// GetScope fetches an authorization scope of the client's resource server.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], scopeID [string].
+	// Output: [*ScopeRepresentation] scope, [error] if the call fails.
 	GetScope(ctx context.Context, token, realm, idOfClient, scopeID string) (*ScopeRepresentation, error)
-	// GetScopes returns scopes associated with the client
+	// GetScopes returns the authorization scopes of the client's resource server.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string],
+	// params [GetScopeParams].
+	// Output: [[]*ScopeRepresentation] scopes, [error] if the call fails.
 	GetScopes(ctx context.Context, token, realm, idOfClient string, params GetScopeParams) ([]*ScopeRepresentation, error)
-	// CreateScope creates a scope associated with the client
+	// CreateScope creates an authorization scope on the client's resource server.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string],
+	// scope [ScopeRepresentation].
+	// Output: [*ScopeRepresentation] created scope, [error] if the call fails.
 	CreateScope(ctx context.Context, token, realm, idOfClient string, scope ScopeRepresentation) (*ScopeRepresentation, error)
-	// GetPermissionScope gets the permission scope associated with the client
+	// GetPermissionScope fetches a scope-based permission of the client's resource server.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string],
+	// idOfScope [string] permission ID.
+	// Output: [*PolicyRepresentation] permission, [error] if the call fails.
 	GetPermissionScope(ctx context.Context, token, realm, idOfClient string, idOfScope string) (*PolicyRepresentation, error)
-	// UpdatePermissionScope updates a permission scope associated with the client
+	// UpdatePermissionScope updates a scope-based permission of the client's resource server.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string],
+	// idOfScope [string] permission ID, policy [PolicyRepresentation].
+	// Output: [error] if the call fails.
 	UpdatePermissionScope(ctx context.Context, token, realm, idOfClient string, idOfScope string, policy PolicyRepresentation) error
-	// UpdateScope updates a scope associated with the client
+	// UpdateScope updates an authorization scope of the client's resource server.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string],
+	// scope [ScopeRepresentation] (ID required).
+	// Output: [error] if the ID is missing or the call fails.
 	UpdateScope(ctx context.Context, token, realm, idOfClient string, scope ScopeRepresentation) error
-	// DeleteScope deletes a scope associated with the client
+	// DeleteScope deletes an authorization scope of the client's resource server.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], scopeID [string].
+	// Output: [error] if the call fails.
 	DeleteScope(ctx context.Context, token, realm, idOfClient, scopeID string) error
-	// GetPolicy returns a client's policy with the given id
+	// GetPolicy fetches a policy of the client's resource server.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], policyID [string].
+	// Output: [*PolicyRepresentation] policy, [error] if the call fails.
 	GetPolicy(ctx context.Context, token, realm, idOfClient, policyID string) (*PolicyRepresentation, error)
-	// GetPolicies returns policies associated with the client
+	// GetPolicies returns the policies of the client's resource server.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string],
+	// params [GetPolicyParams].
+	// Output: [[]*PolicyRepresentation] policies, [error] if the call fails.
 	GetPolicies(ctx context.Context, token, realm, idOfClient string, params GetPolicyParams) ([]*PolicyRepresentation, error)
-	// CreatePolicy creates a policy associated with the client
+	// CreatePolicy creates a policy of the given type on the client's resource server.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string],
+	// policy [PolicyRepresentation] (Type required).
+	// Output: [*PolicyRepresentation] created policy, [error] if the type is missing or the call fails.
 	CreatePolicy(ctx context.Context, token, realm, idOfClient string, policy PolicyRepresentation) (*PolicyRepresentation, error)
-	// UpdatePolicy updates a policy associated with the client
+	// UpdatePolicy updates a policy of the client's resource server.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string],
+	// policy [PolicyRepresentation] (ID and Type required).
+	// Output: [error] if ID or type is missing or the call fails.
 	UpdatePolicy(ctx context.Context, token, realm, idOfClient string, policy PolicyRepresentation) error
-	// DeletePolicy deletes a policy associated with the client
+	// DeletePolicy deletes a policy of the client's resource server.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], policyID [string].
+	// Output: [error] if the call fails.
 	DeletePolicy(ctx context.Context, token, realm, idOfClient, policyID string) error
-	// GetAuthorizationPolicyAssociatedPolicies returns a client's associated policies of specific policy with the given policy id, using access token from admin
+	// GetAuthorizationPolicyAssociatedPolicies returns the policies associated with the given policy.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], policyID [string].
+	// Output: [[]*PolicyRepresentation] associated policies, [error] if the call fails.
 	GetAuthorizationPolicyAssociatedPolicies(ctx context.Context, token, realm, idOfClient, policyID string) ([]*PolicyRepresentation, error)
-	// GetAuthorizationPolicyResources returns a client's resources of specific policy with the given policy id, using access token from admin
+	// GetAuthorizationPolicyResources returns the resources the given policy applies to.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], policyID [string].
+	// Output: [[]*PolicyResourceRepresentation] resources, [error] if the call fails.
 	GetAuthorizationPolicyResources(ctx context.Context, token, realm, idOfClient, policyID string) ([]*PolicyResourceRepresentation, error)
-	// GetAuthorizationPolicyScopes returns a client's scopes of specific policy with the given policy id, using access token from admin
+	// GetAuthorizationPolicyScopes returns the scopes the given policy applies to.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], policyID [string].
+	// Output: [[]*PolicyScopeRepresentation] scopes, [error] if the call fails.
 	GetAuthorizationPolicyScopes(ctx context.Context, token, realm, idOfClient, policyID string) ([]*PolicyScopeRepresentation, error)
-	// GetResourcePolicy updates a permission for a specific resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+	// GetResourcePolicy fetches a UMA permission (policy) via the protection API, using a token obtained by
+	// Resource Owner Password Credentials Grant or Token exchange.
+	// Input: ctx [context.Context], token [string] resource owner token, realm [string], permissionID [string].
+	// Output: [*ResourcePolicyRepresentation] permission, [error] if the call fails.
 	GetResourcePolicy(ctx context.Context, token, realm, permissionID string) (*ResourcePolicyRepresentation, error)
-	// GetResourcePolicies returns resources associated with the client, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+	// GetResourcePolicies returns the UMA permissions (policies) via the protection API, using a token obtained by
+	// Resource Owner Password Credentials Grant or Token exchange.
+	// Input: ctx [context.Context], token [string] resource owner token, realm [string],
+	// params [GetResourcePoliciesParams].
+	// Output: [[]*ResourcePolicyRepresentation] permissions, [error] if the call fails.
 	GetResourcePolicies(ctx context.Context, token, realm string, params GetResourcePoliciesParams) ([]*ResourcePolicyRepresentation, error)
-	// CreateResourcePolicy associates a permission with a specific resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+	// CreateResourcePolicy associates a UMA permission with a specific resource, using a token obtained by
+	// Resource Owner Password Credentials Grant or Token exchange.
+	// Input: ctx [context.Context], token [string] resource owner token, realm [string], resourceID [string],
+	// policy [ResourcePolicyRepresentation].
+	// Output: [*ResourcePolicyRepresentation] created permission, [error] if the call fails.
 	CreateResourcePolicy(ctx context.Context, token, realm, resourceID string, policy ResourcePolicyRepresentation) (*ResourcePolicyRepresentation, error)
-	// UpdateResourcePolicy updates a permission for a specific resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+	// UpdateResourcePolicy updates a UMA permission of a specific resource, using a token obtained by
+	// Resource Owner Password Credentials Grant or Token exchange.
+	// Input: ctx [context.Context], token [string] resource owner token, realm [string], permissionID [string],
+	// policy [ResourcePolicyRepresentation].
+	// Output: [error] if the call fails.
 	UpdateResourcePolicy(ctx context.Context, token, realm, permissionID string, policy ResourcePolicyRepresentation) error
-	// DeleteResourcePolicy deletes a permission for a specific resource, using token obtained by Resource Owner Password Credentials Grant or Token exchange
+	// DeleteResourcePolicy deletes a UMA permission of a specific resource, using a token obtained by
+	// Resource Owner Password Credentials Grant or Token exchange.
+	// Input: ctx [context.Context], token [string] resource owner token, realm [string], permissionID [string].
+	// Output: [error] if the call fails.
 	DeleteResourcePolicy(ctx context.Context, token, realm, permissionID string) error
-	// GetPermission returns a client's permission with the given id
+	// GetPermission fetches a permission of the client's resource server.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string],
+	// permissionID [string].
+	// Output: [*PermissionRepresentation] permission, [error] if the call fails.
 	GetPermission(ctx context.Context, token, realm, idOfClient, permissionID string) (*PermissionRepresentation, error)
-	// GetDependentPermissions returns a client's permission with the given policy id
+	// GetDependentPermissions returns the permissions that depend on the given policy.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], policyID [string].
+	// Output: [[]*PermissionRepresentation] dependent permissions, [error] if the call fails.
 	GetDependentPermissions(ctx context.Context, token, realm, idOfClient, policyID string) ([]*PermissionRepresentation, error)
-	// GetPermissionResources returns a client's resource attached for the given permission id
+	// GetPermissionResources returns the resources attached to the given permission.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string],
+	// permissionID [string].
+	// Output: [[]*PermissionResource] resources, [error] if the call fails.
 	GetPermissionResources(ctx context.Context, token, realm, idOfClient, permissionID string) ([]*PermissionResource, error)
-	// GetScopePermissions returns permissions associated with the client scope
+	// GetScopePermissions returns the permissions associated with the given authorization scope.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string], idOfScope [string].
+	// Output: [[]*PolicyRepresentation] permissions, [error] if the call fails.
 	GetScopePermissions(ctx context.Context, token, realm, idOfClient, idOfScope string) ([]*PolicyRepresentation, error)
-	// GetPermissionScopes returns a client's scopes configured for the given permission id
+	// GetPermissionScopes returns the scopes configured for the given permission.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string],
+	// permissionID [string].
+	// Output: [[]*PermissionScope] scopes, [error] if the call fails.
 	GetPermissionScopes(ctx context.Context, token, realm, idOfClient, permissionID string) ([]*PermissionScope, error)
-	// GetPermissions returns permissions associated with the client
+	// GetPermissions returns the permissions of the client's resource server.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string],
+	// params [GetPermissionParams].
+	// Output: [[]*PermissionRepresentation] permissions, [error] if the call fails.
 	GetPermissions(ctx context.Context, token, realm, idOfClient string, params GetPermissionParams) ([]*PermissionRepresentation, error)
-	// CreatePermissionTicket creates a permission ticket, using access token from client
+	// CreatePermissionTicket creates a permission ticket via the protection API, using a client token.
+	// Input: ctx [context.Context], token [string] client (PAT) token, realm [string],
+	// permissions [[]CreatePermissionTicketParams].
+	// Output: [*PermissionTicketResponseRepresentation] ticket, [error] if params are invalid or the call fails.
 	CreatePermissionTicket(ctx context.Context, token, realm string, permissions []CreatePermissionTicketParams) (*PermissionTicketResponseRepresentation, error)
-	// GrantUserPermission lets resource owner grant permission for specific resource ID to specific user ID
+	// GrantUserPermission lets the resource owner grant a user permission on a resource scope.
+	// Input: ctx [context.Context], token [string] client (PAT) token, realm [string],
+	// permission [PermissionGrantParams] (RequesterID, ResourceID and ScopeName required).
+	// Output: [*PermissionGrantResponseRepresentation] granted ticket, [error] if params are invalid or the call fails.
 	GrantUserPermission(ctx context.Context, token, realm string, permission PermissionGrantParams) (*PermissionGrantResponseRepresentation, error)
-	// UpdateUserPermission updates user permissions.
+	// UpdateUserPermission updates a permission ticket of a user.
+	// Input: ctx [context.Context], token [string] client (PAT) token, realm [string],
+	// permission [PermissionGrantParams] (grant fields and Granted required).
+	// Output: [*PermissionGrantResponseRepresentation] updated ticket, or nil if the permission was revoked
+	// (204 No Content), [error] if params are invalid or the call fails.
 	UpdateUserPermission(ctx context.Context, token, realm string, permission PermissionGrantParams) (*PermissionGrantResponseRepresentation, error)
-	// GetUserPermissions gets granted permissions according query parameters
+	// GetUserPermissions returns the permission tickets matching the given query params.
+	// Input: ctx [context.Context], token [string] client (PAT) token, realm [string],
+	// params [GetUserPermissionParams].
+	// Output: [[]*PermissionGrantResponseRepresentation] tickets, [error] if the call fails.
 	GetUserPermissions(ctx context.Context, token, realm string, params GetUserPermissionParams) ([]*PermissionGrantResponseRepresentation, error)
-	// DeleteUserPermission revokes permissions according query parameters
+	// DeleteUserPermission revokes a permission by deleting its permission ticket.
+	// Input: ctx [context.Context], token [string] client (PAT) token, realm [string], ticketID [string].
+	// Output: [error] if the call fails.
 	DeleteUserPermission(ctx context.Context, token, realm, ticketID string) error
-	// CreatePermission creates a permission associated with the client
+	// CreatePermission creates a permission of the given type on the client's resource server.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string],
+	// permission [PermissionRepresentation] (Type required).
+	// Output: [*PermissionRepresentation] created permission, [error] if the type is missing or the call fails.
 	CreatePermission(ctx context.Context, token, realm, idOfClient string, permission PermissionRepresentation) (*PermissionRepresentation, error)
-	// UpdatePermission updates a permission associated with the client
+	// UpdatePermission updates a permission of the client's resource server.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string],
+	// permission [PermissionRepresentation] (ID and Type required).
+	// Output: [error] if ID or type is missing or the call fails.
 	UpdatePermission(ctx context.Context, token, realm, idOfClient string, permission PermissionRepresentation) error
-	// DeletePermission deletes a policy associated with the client
+	// DeletePermission deletes a permission of the client's resource server.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClient [string],
+	// permissionID [string].
+	// Output: [error] if the call fails.
 	DeletePermission(ctx context.Context, token, realm, idOfClient, permissionID string) error
-	// GetCredentialRegistrators returns credentials registrators
+	// GetCredentialRegistrators returns the credential registrators of the realm.
+	// Input: ctx [context.Context], token [string] admin token, realm [string].
+	// Output: [[]string] registrator names, [error] if the call fails.
 	GetCredentialRegistrators(ctx context.Context, token, realm string) ([]string, error)
-	// GetConfiguredUserStorageCredentialTypes returns credential types, which are provided by the user storage where user is stored
+	// GetConfiguredUserStorageCredentialTypes returns the credential types provided by the user storage where the
+	// user is stored.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], userID [string].
+	// Output: [[]string] credential types, [error] if the call fails.
 	GetConfiguredUserStorageCredentialTypes(ctx context.Context, token, realm, userID string) ([]string, error)
-	// GetCredentials returns credentials available for a given user
+	// GetCredentials returns the credentials of the given user.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], userID [string].
+	// Output: [[]*CredentialRepresentation] credentials, [error] if the call fails.
 	GetCredentials(ctx context.Context, token, realm, userID string) ([]*CredentialRepresentation, error)
-	// DeleteCredentials deletes the given credential for a given user
+	// DeleteCredentials deletes the given credential of the user.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], userID [string], credentialID [string].
+	// Output: [error] if the call fails.
 	DeleteCredentials(ctx context.Context, token, realm, userID, credentialID string) error
-	// UpdateCredentialUserLabel updates label for the given credential for the given user
+	// UpdateCredentialUserLabel sets the user label of the given credential.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], userID [string], credentialID [string],
+	// userLabel [string].
+	// Output: [error] if the call fails.
 	UpdateCredentialUserLabel(ctx context.Context, token, realm, userID, credentialID, userLabel string) error
-	// DisableAllCredentialsByType disables all credentials for a user of a specific type
+	// DisableAllCredentialsByType disables all credentials of the given types for the user.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], userID [string],
+	// types [[]string] credential types.
+	// Output: [error] if the call fails.
 	DisableAllCredentialsByType(ctx context.Context, token, realm, userID string, types []string) error
-	// MoveCredentialBehind move a credential to a position behind another credential
+	// MoveCredentialBehind moves a credential to the position behind another credential.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], userID [string], credentialID [string],
+	// newPreviousCredentialID [string].
+	// Output: [error] if the call fails.
 	MoveCredentialBehind(ctx context.Context, token, realm, userID, credentialID, newPreviousCredentialID string) error
-	// MoveCredentialToFirst move a credential to a first position in the credentials list of the user
+	// MoveCredentialToFirst moves a credential to the first position in the user's credential list.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], userID [string], credentialID [string].
+	// Output: [error] if the call fails.
 	MoveCredentialToFirst(ctx context.Context, token, realm, userID, credentialID string) error
-	// GetEvents returns events
+	// GetEvents returns the user events of the realm matching the given query params.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], params [GetEventsParams].
+	// Output: [[]*EventRepresentation] events, [error] if the call fails.
 	GetEvents(ctx context.Context, token string, realm string, params GetEventsParams) ([]*EventRepresentation, error)
-	// GetAdminEvents returns admin events
+	// GetAdminEvents returns the admin events of the realm matching the given query params.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], params [GetAdminEventsParams].
+	// Output: [[]*AdminEventRepresentation] admin events, [error] if the call fails.
 	GetAdminEvents(ctx context.Context, token string, realm string, params GetAdminEventsParams) ([]*AdminEventRepresentation, error)
-	// GetClientScopesScopeMappingsRealmRolesAvailable returns realm-level roles that are available to attach to this client scope
+	// GetClientScopesScopeMappingsRealmRolesAvailable returns the realm-level roles that can still be added to the
+	// client scope's scope mappings.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], clientScopeID [string].
+	// Output: [[]*Role] available realm roles, [error] if the call fails.
 	GetClientScopesScopeMappingsRealmRolesAvailable(ctx context.Context, token, realm, clientScopeID string) ([]*Role, error)
-	// GetClientScopesScopeMappingsRealmRoles returns roles associated with a client-scope
+	// GetClientScopesScopeMappingsRealmRoles returns the realm-level roles in the client scope's scope mappings.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], clientScopeID [string].
+	// Output: [[]*Role] realm roles, [error] if the call fails.
 	GetClientScopesScopeMappingsRealmRoles(ctx context.Context, token, realm, clientScopeID string) ([]*Role, error)
-	// DeleteClientScopesScopeMappingsRealmRoles deletes realm-level roles from the client-scope
+	// DeleteClientScopesScopeMappingsRealmRoles removes realm-level roles from the client scope's scope mappings.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], clientScopeID [string], roles [[]Role].
+	// Output: [error] if the call fails.
 	DeleteClientScopesScopeMappingsRealmRoles(ctx context.Context, token, realm, clientScopeID string, roles []Role) error
-	// CreateClientScopesScopeMappingsRealmRoles creates realm-level roles to the client scope
+	// CreateClientScopesScopeMappingsRealmRoles adds realm-level roles to the client scope's scope mappings.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], clientScopeID [string], roles [[]Role].
+	// Output: [error] if the call fails.
 	CreateClientScopesScopeMappingsRealmRoles(ctx context.Context, token, realm, clientScopeID string, roles []Role) error
-	// RegisterRequiredAction creates a required action for a given realm
+	// RegisterRequiredAction registers a required action provider in the realm.
+	// Input: ctx [context.Context], token [string] admin token, realm [string],
+	// requiredAction [RequiredActionProviderRepresentation].
+	// Output: [error] if the call fails.
 	RegisterRequiredAction(ctx context.Context, token string, realm string, requiredAction RequiredActionProviderRepresentation) error
-	// GetUnregisteredRequiredActions gets a list of unregistered required actions for a given realm
+	// GetUnregisteredRequiredActions returns the required action providers that are not yet registered in the realm.
+	// Input: ctx [context.Context], token [string] admin token, realm [string].
+	// Output: [[]*UnregisteredRequiredActionProviderRepresentation] unregistered actions, [error] if the call fails.
 	GetUnregisteredRequiredActions(ctx context.Context, token string, realm string) ([]*UnregisteredRequiredActionProviderRepresentation, error)
-	// GetRequiredActions gets a list of required actions for a given realm
+	// GetRequiredActions returns the registered required actions of the realm.
+	// Input: ctx [context.Context], token [string] admin token, realm [string].
+	// Output: [[]*RequiredActionProviderRepresentation] required actions, [error] if the call fails.
 	GetRequiredActions(ctx context.Context, token string, realm string) ([]*RequiredActionProviderRepresentation, error)
-	// GetRequiredAction gets a required action for a given realm
+	// GetRequiredAction fetches the required action with the given alias.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], alias [string].
+	// Output: [*RequiredActionProviderRepresentation] required action, [error] if alias is empty or the call fails.
 	GetRequiredAction(ctx context.Context, token string, realm string, alias string) (*RequiredActionProviderRepresentation, error)
-	// UpdateRequiredAction updates a required action for a given realm
+	// UpdateRequiredAction updates a required action, addressed by its ProviderID.
+	// Input: ctx [context.Context], token [string] admin token, realm [string],
+	// requiredAction [RequiredActionProviderRepresentation] (ProviderID required).
+	// Output: [error] if the provider ID is missing or the call fails.
 	UpdateRequiredAction(ctx context.Context, token string, realm string, requiredAction RequiredActionProviderRepresentation) error
-	// DeleteRequiredAction updates a required action for a given realm
+	// DeleteRequiredAction deletes the required action with the given alias.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], alias [string].
+	// Output: [error] if alias is empty or the call fails.
 	DeleteRequiredAction(ctx context.Context, token string, realm string, alias string) error
-	// CreateClientScopesScopeMappingsClientRoles attaches a client role to a client scope (not client's scope)
+	// CreateClientScopesScopeMappingsClientRoles attaches client roles to a client scope (not client's scope).
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClientScope [string],
+	// idOfClient [string] client owning the roles, roles [[]Role].
+	// Output: [error] if the call fails.
 	CreateClientScopesScopeMappingsClientRoles(ctx context.Context, token, realm, idOfClientScope, idOfClient string, roles []Role) error
 	// GetClientScopesScopeMappingsClientRolesAvailable returns available (i.e. not attached via
 	// CreateClientScopesScopeMappingsClientRoles) client roles for a specific client, for a client scope
 	// (not client's scope).
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClientScope [string],
+	// idOfClient [string] client owning the roles.
+	// Output: [[]*Role] available client roles, [error] if the call fails.
 	GetClientScopesScopeMappingsClientRolesAvailable(ctx context.Context, token, realm, idOfClientScope, idOfClient string) ([]*Role, error)
 	// GetClientScopesScopeMappingsClientRoles returns attached client roles for a specific client, for a client scope
 	// (not client's scope).
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClientScope [string],
+	// idOfClient [string] client owning the roles.
+	// Output: [[]*Role] attached client roles, [error] if the call fails.
 	GetClientScopesScopeMappingsClientRoles(ctx context.Context, token, realm, idOfClientScope, idOfClient string) ([]*Role, error)
 	// DeleteClientScopesScopeMappingsClientRoles removes attachment of client roles from a client scope
 	// (not client's scope).
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfClientScope [string],
+	// idOfClient [string] client owning the roles, roles [[]Role].
+	// Output: [error] if the call fails.
 	DeleteClientScopesScopeMappingsClientRoles(ctx context.Context, token, realm, idOfClientScope, idOfClient string, roles []Role) error
-	// RevokeToken revokes the passed token. The token can either be an access or refresh token.
+	// RevokeToken revokes the passed token via the OIDC revoke endpoint. The token can either be an access or
+	// refresh token.
+	// Input: ctx [context.Context], realm [string], clientID [string], clientSecret [string],
+	// refreshToken [string] token to revoke.
+	// Output: [error] if the call fails.
 	RevokeToken(ctx context.Context, realm, clientID, clientSecret, refreshToken string) error
-	// UpdateUsersManagementPermissions updates the management permissions for users
+	// UpdateUsersManagementPermissions updates the realm's users management permissions.
+	// Input: ctx [context.Context], accessToken [string] admin token, realm [string],
+	// managementPermissions [ManagementPermissionRepresentation].
+	// Output: [*ManagementPermissionRepresentation] updated permissions, [error] if the call fails.
 	UpdateUsersManagementPermissions(ctx context.Context, accessToken, realm string, managementPermissions ManagementPermissionRepresentation) (*ManagementPermissionRepresentation, error)
-	// GetUsersManagementPermissions returns the management permissions for users
+	// GetUsersManagementPermissions returns the realm's users management permissions.
+	// Input: ctx [context.Context], accessToken [string] admin token, realm [string].
+	// Output: [*ManagementPermissionRepresentation] permissions, [error] if the call fails.
 	GetUsersManagementPermissions(ctx context.Context, accessToken, realm string) (*ManagementPermissionRepresentation, error)
-	// CreateOrganization creates a new Organization
+	// CreateOrganization creates a new organization.
+	// Input: ctx [context.Context], token [string] admin token, realm [string],
+	// organization [OrganizationRepresentation].
+	// Output: [string] ID of the created organization, [error] if the call fails.
 	CreateOrganization(ctx context.Context, token, realm string, organization OrganizationRepresentation) (string, error)
-	// GetOrganizations returns a paginated list of organizations filtered according to the specified parameters
+	// GetOrganizations returns a paginated list of organizations filtered according to the specified parameters.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], params [GetOrganizationsParams].
+	// Output: [[]*OrganizationRepresentation] organizations, [error] if the call fails.
 	GetOrganizations(ctx context.Context, token, realm string, params GetOrganizationsParams) ([]*OrganizationRepresentation, error)
-	// GetOrganizationByID returns the organization representation of the organization with provided ID
+	// GetOrganizationByID fetches the organization with the given ID.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string].
+	// Output: [*OrganizationRepresentation] organization, [error] if the call fails.
 	GetOrganizationByID(ctx context.Context, token, realm, idOfOrganization string) (*OrganizationRepresentation, error)
-	// UpdateOrganization updates the given organization
+	// UpdateOrganization updates the given organization.
+	// Input: ctx [context.Context], token [string] admin token, realm [string],
+	// organization [OrganizationRepresentation] (ID required).
+	// Output: [error] if the ID is missing or the call fails.
 	UpdateOrganization(ctx context.Context, token, realm string, organization OrganizationRepresentation) error
-	// DeleteOrganization deletes a given organization
+	// DeleteOrganization deletes the organization with the given ID.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string].
+	// Output: [error] if the call fails.
 	DeleteOrganization(ctx context.Context, token, realm, idOfOrganization string) error
-	// InviteUserToOrganization invites an existing user or sends a registration link to a new user, based on the provided e-mail address.
-	// If the user with the given e-mail address exists, it sends an invitation link, otherwise it sends a registration link.
-	// An invitation email will be sent to the user so SMTP settings are required in keycloak
+	// InviteUserToOrganization invites an existing user or sends a registration link to a new user, based on the
+	// provided e-mail address.
+	// If the user with the given e-mail address exists, it sends an invitation link, otherwise it sends a registration
+	// link. An invitation email will be sent to the user so SMTP settings are required in keycloak
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string],
+	// user [OrganizationInviteUserParams] (Email required).
+	// Output: [error] if the email is missing or the call fails.
 	InviteUserToOrganization(ctx context.Context, token, realm string, idOfOrganization string, user OrganizationInviteUserParams) error
-	// InviteUserToOrganizationByID invites an existing user to the organization, using the specified user id
+	// InviteUserToOrganizationByID invites an existing user to the organization, using the specified user id.
 	// An invitation email will be sent to the user so SMTP settings are required in keycloak
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string],
+	// idOfUser [string].
+	// Output: [error] if the call fails.
 	InviteUserToOrganizationByID(ctx context.Context, token, realm, idOfOrganization, idOfUser string) error
-	// AddUserToOrganization adds the user with the specified id as a member of the organization
-	// Adds, or associates, an existing user with the organization. If no user is found, or if it is already associated with the organization, an error response is returned
+	// AddUserToOrganization adds the user with the specified id as a member of the organization.
+	// If no user is found, or if it is already associated with the organization, an error response is returned.
 	// No invitation email is sent to the user
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string],
+	// idOfUser [string].
+	// Output: [error] if the call fails.
 	AddUserToOrganization(ctx context.Context, token, realm, idOfOrganization, idOfUser string) error
-	// GetOrganizationMemberCount returns number of members in the organization.
+	// GetOrganizationMemberCount returns the number of members in the organization.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string].
+	// Output: [int] member count, [error] if the call fails.
 	GetOrganizationMemberCount(ctx context.Context, token, realm, idOfOrganization string) (int, error)
-	// GetOrganizationMembers returns a paginated list of organization members filtered according to the specified parameters
+	// GetOrganizationMembers returns a paginated list of organization members filtered according to the specified
+	// parameters.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string],
+	// params [GetMembersParams].
+	// Output: [[]*MemberRepresentation] members, [error] if the call fails.
 	GetOrganizationMembers(ctx context.Context, token, realm, idOfOrganization string, params GetMembersParams) ([]*MemberRepresentation, error)
-	// GetOrganizationMemberByID returns the member of the organization with the specified id
-	// Searches for auser with the given id. If one is found, and is currently a member of the organization, returns it.
-	// Otherwise,an error response with status NOT_FOUND is returned
+	// GetOrganizationMemberByID returns the member of the organization with the specified id.
+	// If the user is not a member of the organization, an error response with status NOT_FOUND is returned.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string],
+	// idOfUser [string].
+	// Output: [*MemberRepresentation] member, [error] if the call fails.
 	GetOrganizationMemberByID(ctx context.Context, token, realm, idOfOrganization, idOfUser string) (*MemberRepresentation, error)
-	// GetMemberAssociatedOrganizations returns the organizations associated with the user that has the specified id
+	// GetMemberAssociatedOrganizations returns the organizations associated with the user that has the specified id.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfUser [string],
+	// briefRepresentation [bool].
+	// Output: [[]*OrganizationRepresentation] organizations, [error] if the call fails.
 	GetMemberAssociatedOrganizations(ctx context.Context, token, realm, idOfUser string, briefRepresentation bool) ([]*OrganizationRepresentation, error)
-	// GetOrganizationMemberOrganizations returns organizations for a given user in a given organization
+	// GetOrganizationMemberOrganizations returns the organizations of the given member, queried via the given
+	// organization.
+	// Input: ctx [context.Context], accessToken [string] admin token, realm [string], idOfOrganization [string],
+	// idOfUser [string].
+	// Output: [[]*OrganizationRepresentation] organizations, [error] if an ID is empty or the call fails.
 	GetOrganizationMemberOrganizations(ctx context.Context, accessToken, realm, idOfOrganization, idOfUser string) ([]*OrganizationRepresentation, error)
-	// RemoveUserFromOrganization removes the user with the specified id from the organization
+	// RemoveUserFromOrganization removes the user with the specified id from the organization.
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string],
+	// idOfUser [string].
+	// Output: [error] if the call fails.
 	RemoveUserFromOrganization(ctx context.Context, token, realm, idOfOrganization, idOfUser string) error
-	// AddIdentityProviderToOrganization adds the identity provider with the specified alias to the organization
+	// AddIdentityProviderToOrganization adds the identity provider with the specified alias to the organization.
 	// POST /admin/realms/{realm}/organizations/{id}/identity-providers
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string],
+	// identityProviderAlias [string].
+	// Output: [error] if the call fails.
 	AddIdentityProviderToOrganization(ctx context.Context, token, realm string, idOfOrganization, identityProviderAlias string) error
-	// GetOrganizationIdentityProviders returns all identity providers associated with the organization
+	// GetOrganizationIdentityProviders returns all identity providers associated with the organization.
 	// GET /admin/realms/{realm}/organizations/{id}/identity-providers
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string].
+	// Output: [[]*IdentityProviderRepresentation] identity providers, [error] if the call fails.
 	GetOrganizationIdentityProviders(ctx context.Context, token, realm, idOfOrganization string) ([]*IdentityProviderRepresentation, error)
-	// GetOrganizationIdentityProvider returns the identity provider with the specified alias associated with the organization
+	// GetOrganizationIdentityProvider returns the identity provider with the specified alias associated with the
+	// organization.
 	// GET /admin/realms/{realm}/organizations/{id}/identity-providers/{alias}
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string],
+	// alias [string].
+	// Output: [*IdentityProviderRepresentation] identity provider, [error] if the call fails.
 	GetOrganizationIdentityProvider(ctx context.Context, token, realm, idOfOrganization, alias string) (*IdentityProviderRepresentation, error)
-	// RemoveIdentityProviderFromOrganization removes the identity provider with the specified alias from the organization
+	// RemoveIdentityProviderFromOrganization removes the identity provider with the specified alias from the
+	// organization.
 	// DELETE /admin/realms/{realm}/organizations/{id}/identity-providers/{alias}
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string],
+	// alias [string].
+	// Output: [error] if the call fails.
 	RemoveIdentityProviderFromOrganization(ctx context.Context, token, realm, idOfOrganization, alias string) error
-	// GetOrganizationCount returns the number of organizations in the realm
+	// GetOrganizationCount returns the number of organizations in the realm.
 	// GET /admin/realms/{realm}/organizations/count
+	// Input: ctx [context.Context], token [string] admin token, realm [string], params [GetOrganizationCountParams].
+	// Output: [int64] organization count, [error] if the call fails.
 	GetOrganizationCount(ctx context.Context, token, realm string, params GetOrganizationCountParams) (int64, error)
-	// GetOrganizationMemberGroups returns the groups the member with the specified id belongs to within the organization
+	// GetOrganizationMemberGroups returns the groups the member with the specified id belongs to within the
+	// organization.
 	// GET /admin/realms/{realm}/organizations/{id}/members/{member-id}/groups
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string],
+	// idOfUser [string], briefRepresentation [bool].
+	// Output: [[]*Group] groups, [error] if the call fails.
 	GetOrganizationMemberGroups(ctx context.Context, token, realm, idOfOrganization, idOfUser string, briefRepresentation bool) ([]*Group, error)
-	// GetOrganizationInvitations returns a list of pending invitations for the organization
+	// GetOrganizationInvitations returns a list of pending invitations for the organization.
 	// GET /admin/realms/{realm}/organizations/{id}/invitations
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string],
+	// params [GetOrganizationInvitationsParams].
+	// Output: [[]*OrganizationInvitationRepresentation] invitations, [error] if the call fails.
 	GetOrganizationInvitations(ctx context.Context, token, realm, idOfOrganization string, params GetOrganizationInvitationsParams) ([]*OrganizationInvitationRepresentation, error)
-	// GetOrganizationInvitationByID returns the invitation with the specified id for the organization
+	// GetOrganizationInvitationByID returns the invitation with the specified id for the organization.
 	// GET /admin/realms/{realm}/organizations/{id}/invitations/{invitation-id}
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string],
+	// idOfInvitation [string].
+	// Output: [*OrganizationInvitationRepresentation] invitation, [error] if the call fails.
 	GetOrganizationInvitationByID(ctx context.Context, token, realm, idOfOrganization, idOfInvitation string) (*OrganizationInvitationRepresentation, error)
-	// DeleteOrganizationInvitation removes the invitation with the specified id from the organization
+	// DeleteOrganizationInvitation removes the invitation with the specified id from the organization.
 	// DELETE /admin/realms/{realm}/organizations/{id}/invitations/{invitation-id}
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string],
+	// idOfInvitation [string].
+	// Output: [error] if the call fails.
 	DeleteOrganizationInvitation(ctx context.Context, token, realm, idOfOrganization, idOfInvitation string) error
 	// ResendOrganizationInvitation resends the invitation with the specified id.
 	// Keycloak replaces the invitation on resend: the old id is gone afterwards and the new invitation
 	// has to be looked up again, e.g. via GetOrganizationInvitations filtered by email.
 	// POST /admin/realms/{realm}/organizations/{id}/invitations/{invitation-id}/resend
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string],
+	// idOfInvitation [string].
+	// Output: [error] if the call fails.
 	ResendOrganizationInvitation(ctx context.Context, token, realm, idOfOrganization, idOfInvitation string) error
-	// AddOrganizationGroup creates a new top-level group in the organization
+	// AddOrganizationGroup creates a new top-level group in the organization.
 	// POST /admin/realms/{realm}/organizations/{id}/groups
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string],
+	// group [Group].
+	// Output: [string] ID of the created group, [error] if the call fails.
 	AddOrganizationGroup(ctx context.Context, token, realm, idOfOrganization string, group Group) (string, error)
-	// GetOrganizationGroups returns the groups associated with the organization
+	// GetOrganizationGroups returns the groups associated with the organization.
 	// GET /admin/realms/{realm}/organizations/{id}/groups
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string],
+	// params [GetOrganizationGroupsParams].
+	// Output: [[]*Group] groups, [error] if the call fails.
 	GetOrganizationGroups(ctx context.Context, token, realm, idOfOrganization string, params GetOrganizationGroupsParams) ([]*Group, error)
-	// GetOrganizationGroupByPath returns the organization group matching the given path
+	// GetOrganizationGroupByPath returns the organization group matching the given path.
 	// GET /admin/realms/{realm}/organizations/{id}/groups/group-by-path/{path}
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string],
+	// groupPath [string], subGroupsCount [bool].
+	// Output: [*Group] group, [error] if the call fails.
 	GetOrganizationGroupByPath(ctx context.Context, token, realm, idOfOrganization, groupPath string, subGroupsCount bool) (*Group, error)
-	// GetOrganizationGroupByID returns the organization group with the specified id
+	// GetOrganizationGroupByID returns the organization group with the specified id.
 	// GET /admin/realms/{realm}/organizations/{id}/groups/{group-id}
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string],
+	// idOfGroup [string].
+	// Output: [*Group] group, [error] if the call fails.
 	GetOrganizationGroupByID(ctx context.Context, token, realm, idOfOrganization, idOfGroup string) (*Group, error)
-	// UpdateOrganizationGroup updates the organization group with the specified id
+	// UpdateOrganizationGroup updates the organization group with the specified id.
 	// PUT /admin/realms/{realm}/organizations/{id}/groups/{group-id}
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string],
+	// group [Group] (ID required).
+	// Output: [error] if the ID is missing or the call fails.
 	UpdateOrganizationGroup(ctx context.Context, token, realm, idOfOrganization string, group Group) error
-	// DeleteOrganizationGroup removes the organization group with the specified id
+	// DeleteOrganizationGroup removes the organization group with the specified id.
 	// DELETE /admin/realms/{realm}/organizations/{id}/groups/{group-id}
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string],
+	// idOfGroup [string].
+	// Output: [error] if the call fails.
 	DeleteOrganizationGroup(ctx context.Context, token, realm, idOfOrganization, idOfGroup string) error
-	// GetOrganizationGroupSubgroups returns the subgroups of the specified organization group
+	// GetOrganizationGroupSubgroups returns the subgroups of the specified organization group.
 	// GET /admin/realms/{realm}/organizations/{id}/groups/{group-id}/children
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string],
+	// idOfGroup [string], params [GetOrganizationGroupSubgroupsParams].
+	// Output: [[]*Group] subgroups, [error] if the call fails.
 	GetOrganizationGroupSubgroups(ctx context.Context, token, realm, idOfOrganization, idOfGroup string, params GetOrganizationGroupSubgroupsParams) ([]*Group, error)
-	// AddOrganizationSubgroup adds a subgroup to the specified organization group
+	// AddOrganizationSubgroup adds a subgroup to the specified organization group.
 	// POST /admin/realms/{realm}/organizations/{id}/groups/{group-id}/children
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string],
+	// idOfGroup [string] parent group, group [Group].
+	// Output: [string] ID of the created subgroup, [error] if the call fails.
 	AddOrganizationSubgroup(ctx context.Context, token, realm, idOfOrganization, idOfGroup string, group Group) (string, error)
-	// GetOrganizationGroupMembers returns the members of the specified organization group
+	// GetOrganizationGroupMembers returns the members of the specified organization group.
 	// GET /admin/realms/{realm}/organizations/{id}/groups/{group-id}/members
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string],
+	// idOfGroup [string], params [GetOrganizationMembersParams].
+	// Output: [[]*MemberRepresentation] members, [error] if the call fails.
 	GetOrganizationGroupMembers(ctx context.Context, token, realm, idOfOrganization, idOfGroup string, params GetOrganizationMembersParams) ([]*MemberRepresentation, error)
-	// AddMemberToOrganizationGroup adds the user with the specified id to the organization group
+	// AddMemberToOrganizationGroup adds the user with the specified id to the organization group.
 	// PUT /admin/realms/{realm}/organizations/{id}/groups/{group-id}/members/{user-id}
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string],
+	// idOfGroup [string], idOfUser [string].
+	// Output: [error] if the call fails.
 	AddMemberToOrganizationGroup(ctx context.Context, token, realm, idOfOrganization, idOfGroup, idOfUser string) error
-	// RemoveMemberFromOrganizationGroup removes the user with the specified id from the organization group
+	// RemoveMemberFromOrganizationGroup removes the user with the specified id from the organization group.
 	// DELETE /admin/realms/{realm}/organizations/{id}/groups/{group-id}/members/{user-id}
+	// Input: ctx [context.Context], token [string] admin token, realm [string], idOfOrganization [string],
+	// idOfGroup [string], idOfUser [string].
+	// Output: [error] if the call fails.
 	RemoveMemberFromOrganizationGroup(ctx context.Context, token, realm, idOfOrganization, idOfGroup, idOfUser string) error
 }

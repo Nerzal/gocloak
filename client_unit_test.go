@@ -19,6 +19,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -26,12 +27,12 @@ import (
 // Input: kid [string], key [*rsa.PublicKey]. Output: [CertResponseKey].
 func jwkFor(kid string, key *rsa.PublicKey) CertResponseKey {
 	return CertResponseKey{
-		Kid: new(kid),
-		Kty: new("RSA"),
-		Alg: new("RS256"),
-		Use: new("sig"),
-		N:   new(base64.RawURLEncoding.EncodeToString(key.N.Bytes())),
-		E:   new(base64.RawURLEncoding.EncodeToString(big.NewInt(int64(key.E)).Bytes())),
+		Kid: kid,
+		Kty: "RSA",
+		Alg: "RS256",
+		Use: "sig",
+		N:   base64.RawURLEncoding.EncodeToString(key.N.Bytes()),
+		E:   base64.RawURLEncoding.EncodeToString(big.NewInt(int64(key.E)).Bytes()),
 	}
 }
 
@@ -227,7 +228,7 @@ func serverInfoServer(t *testing.T, version string) (*httptest.Server, *atomic.I
 		}
 		fetches.Add(1)
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(ServerInfoRepresentation{SystemInfo: &SystemInfoRepresentation{Version: new(version)}})
+		_ = json.NewEncoder(w).Encode(ServerInfoRepresentation{SystemInfo: SystemInfoRepresentation{Version: version}})
 	}))
 	t.Cleanup(server.Close)
 	return server, &fetches
@@ -286,10 +287,25 @@ func TestUnit_GetPolicies_SendsTypeAsQuery(t *testing.T) {
 	require.Equal(t, []string{"/admin/realms/r/clients/c/authz/resource-server/policy?type=role"}, requests)
 }
 
-// TestUnit_GetCerts_KeepsKnownKeysWhenRefreshFails checks that expired certs are still used while Keycloak is
-// unreachable and that the next refresh waits for another interval.
+// ageCerts moves the cached certs of realm back in time and forgets a recent fetch error.
+// Input: t [*testing.T], client [*GoCloak], realm [string], age [time.Duration]. Output: none.
+func ageCerts(t *testing.T, client *GoCloak, realm string, age time.Duration) {
+	t.Helper()
+	rc := client.realmCertsFor(realm)
+	rc.mu.Lock()
+	defer rc.mu.Unlock()
+	require.NotNil(t, rc.state)
+	state := *rc.state
+	state.fetchedAt = time.Now().Add(-age)
+	rc.state = &state
+	rc.errAt = time.Time{}
+}
+
+// TestUnit_GetCerts_StaleKeysAreBounded checks that expired certs are served while a background refresh runs,
+// that a failed refresh is not retried on every call, and that the old keys stop being trusted after
+// certsStaleFactor * CertsInvalidateTime, so a revoked key cannot stay valid while Keycloak is unreachable.
 // Input: t [*testing.T]. Output: none.
-func TestUnit_GetCerts_KeepsKnownKeysWhenRefreshFails(t *testing.T) {
+func TestUnit_GetCerts_StaleKeysAreBounded(t *testing.T) {
 	t.Parallel()
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	require.NoError(t, err)
@@ -313,18 +329,160 @@ func TestUnit_GetCerts_KeepsKnownKeysWhenRefreshFails(t *testing.T) {
 	_, _, err = client.DecodeAccessToken(ctx, token, "r")
 	require.NoError(t, err)
 
-	// let the cache entry expire, then take Keycloak down
-	value, _ := client.certsCache.Load("r")
-	entry, _ := value.(certsCacheEntry)
-	entry.fetchedAt = time.Now().Add(-2 * time.Hour)
-	client.certsCache.Store("r", entry)
+	// expired but within the stale window: served at once, refreshed in the background
+	ageCerts(t, client, "r", 90*time.Minute)
 	down.Store(true)
-
 	_, _, err = client.DecodeAccessToken(ctx, token, "r")
-	require.NoError(t, err, "known keys must still validate while Keycloak is down")
+	require.NoError(t, err, "known keys must still validate during the stale window")
+	require.Eventually(t, func() bool {
+		_, recentErr := client.realmCertsFor("r").load()
+		return recentErr != nil
+	}, 5*time.Second, 10*time.Millisecond, "background refresh must run and fail")
 	_, _, err = client.DecodeAccessToken(ctx, token, "r")
 	require.NoError(t, err)
 	require.Equal(t, int32(2), fetches.Load(), "a failed refresh must not be retried on every call")
+
+	// beyond the stale window the old keys are no longer trusted
+	ageCerts(t, client, "r", 3*time.Hour)
+	_, _, err = client.DecodeAccessToken(ctx, token, "r")
+	require.Error(t, err)
+	_, _, err = client.DecodeAccessToken(ctx, token, "r")
+	require.Error(t, err)
+	require.Equal(t, int32(3), fetches.Load(), "a failed fetch must be reported to waiting callers without refetching")
+
+	// Keycloak back: the next fetch after the retry interval succeeds
+	down.Store(false)
+	ageCerts(t, client, "r", 3*time.Hour)
+	_, _, err = client.DecodeAccessToken(ctx, token, "r")
+	require.NoError(t, err)
+}
+
+// TestUnit_GetCerts_CanceledCallerStillFillsCache checks that a canceled caller returns at once while the detached
+// fetch still fills the cache, so one disconnected client cannot be mistaken for a Keycloak outage.
+// Input: t [*testing.T]. Output: none.
+func TestUnit_GetCerts_CanceledCallerStillFillsCache(t *testing.T) {
+	t.Parallel()
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(CertResponse{Keys: []CertResponseKey{jwkFor("k", &key.PublicKey)}})
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	_, err = client.GetCerts(ctx, "r")
+	require.ErrorIs(t, err, context.Canceled) // the canceled caller leaves at once on a cold cache
+
+	// the detached fetch still fills the cache, its result is not a stored error
+	certs, err := client.GetCerts(context.Background(), "r")
+	require.NoError(t, err)
+	require.Len(t, certs.Keys, 1)
+}
+
+// TestUnit_GetCerts_RespectsCallerDeadline checks that a caller with a short deadline is not blocked by a hanging
+// Keycloak for the full cert fetch timeout.
+// Input: t [*testing.T]. Output: none.
+func TestUnit_GetCerts_RespectsCallerDeadline(t *testing.T) {
+	t.Parallel()
+	release := make(chan struct{})
+	server := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		select {
+		case <-release:
+		case <-r.Context().Done():
+		}
+	}))
+	defer server.Close()
+	defer close(release)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+	start := time.Now()
+	_, err := NewClient(server.URL).GetCerts(ctx, "r")
+	require.ErrorIs(t, err, context.DeadlineExceeded)
+	require.Less(t, time.Since(start), time.Second)
+}
+
+// TestUnit_ValidateAccessToken checks that typ, aud and azp are enforced on top of the signature.
+// Input: t [*testing.T]. Output: none.
+func TestUnit_ValidateAccessToken(t *testing.T) {
+	t.Parallel()
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(CertResponse{Keys: []CertResponseKey{jwkFor("k", &key.PublicKey)}})
+	}))
+	defer server.Close()
+	client := NewClient(server.URL)
+
+	sign := func(claims jwt.MapClaims) string {
+		token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+		token.Header["kid"] = "k"
+		signed, err := token.SignedString(key)
+		require.NoError(t, err)
+		return signed
+	}
+	valid := jwt.MapClaims{"typ": "Bearer", "aud": []string{"account", "api"}, "azp": "web"}
+	want := TokenValidation{Audience: "api", AuthorizedParty: "web"}
+
+	tests := []struct {
+		name       string
+		claims     jwt.MapClaims
+		validation TokenValidation
+		wantErr    bool
+	}{
+		{"valid", valid, want, false},
+		{"string audience", jwt.MapClaims{"typ": "Bearer", "aud": "api"}, TokenValidation{Audience: "api"}, false},
+		{"id token", jwt.MapClaims{"typ": "ID", "aud": "api", "azp": "web"}, want, true},
+		{"missing typ", jwt.MapClaims{"aud": "api", "azp": "web"}, want, true},
+		{"wrong audience", jwt.MapClaims{"typ": "Bearer", "aud": "other", "azp": "web"}, want, true},
+		{"wrong azp", jwt.MapClaims{"typ": "Bearer", "aud": "api", "azp": "evil"}, want, true},
+		{"custom type", jwt.MapClaims{"typ": "Custom", "azp": "web"}, TokenValidation{AuthorizedParty: "web", Type: "Custom"}, false},
+		{"nothing to check", valid, TokenValidation{}, true},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			_, claims, err := client.ValidateAccessToken(context.Background(), "Bearer "+sign(tc.claims), "r", tc.validation)
+			if tc.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			require.NotNil(t, claims)
+		})
+	}
+}
+
+// TestUnit_FormDataKeepsOptions checks that FormData does not modify the caller's options.
+// Input: t [*testing.T]. Output: none.
+func TestUnit_FormDataKeepsOptions(t *testing.T) {
+	t.Parallel()
+	options := TokenOptions{Scopes: []string{"a", "b"}}
+	require.Equal(t, "a b", options.FormData()["scope"])
+	require.Empty(t, options.Scope)
+	require.Empty(t, options.ResponseType)
+
+	rpt := RequestingPartyTokenOptions{}
+	require.Equal(t, "true", rpt.FormData()["response_include_resource_name"])
+	require.Empty(t, rpt.GrantType)
+	require.Nil(t, rpt.ResponseIncludeResourceName)
+}
+
+// TestUnit_EmptySlicesAreSent checks that empty, non-nil slices and maps are sent, so lists can be cleared on update,
+// while nil ones are omitted.
+// Input: t [*testing.T]. Output: none.
+func TestUnit_EmptySlicesAreSent(t *testing.T) {
+	t.Parallel()
+	out, err := json.Marshal(User{RequiredActions: []string{}, Attributes: map[string][]string{}})
+	require.NoError(t, err)
+	require.JSONEq(t, `{"requiredActions":[],"attributes":{}}`, string(out))
+
+	out, err = json.Marshal(User{})
+	require.NoError(t, err)
+	require.JSONEq(t, `{}`, string(out))
 }
 
 // TestUnit_RequiredFieldsDoNotPanic checks that missing required pointers return an error instead of panicking.
@@ -333,7 +491,7 @@ func TestUnit_RequiredFieldsDoNotPanic(t *testing.T) {
 	t.Parallel()
 	client := NewClient("http://127.0.0.1:0")
 
-	_, err := client.GetToken(context.Background(), "r", TokenOptions{ClientSecret: new("secret"), GrantType: new("client_credentials")})
+	_, err := client.GetToken(context.Background(), "r", TokenOptions{ClientSecret: "secret", GrantType: "client_credentials"})
 	require.EqualError(t, err, "client id required when a client secret is set")
 
 	err = client.ExecuteActionsEmail(context.Background(), "token", "r", ExecuteActionsEmail{Actions: []string{"UPDATE_PASSWORD"}})
@@ -497,16 +655,28 @@ func TestUnit_GetID(t *testing.T) {
 	}
 }
 
-func TestUnit_FindUsedKey(t *testing.T) {
+// TestUnit_ParseSigningKeys checks that only parsable signature keys with a kid are kept, so encryption keys
+// published in the same JWKS can never verify a token signature.
+// Input: t [*testing.T]. Output: none.
+func TestUnit_ParseSigningKeys(t *testing.T) {
 	t.Parallel()
-	keys := []CertResponseKey{{Kid: nil}, {Kid: new("a"), Kty: new("RSA")}, {Kid: new("b"), Kty: new("EC")}}
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
 
-	key := findUsedKey("b", keys)
-	require.NotNil(t, key)
-	require.Equal(t, "EC", PString(key.Kty))
-	require.Nil(t, findUsedKey("c", keys))
-	require.Nil(t, findUsedKey("", keys))
-	require.Nil(t, findUsedKey("a", nil))
+	sig := jwkFor("sig", &key.PublicKey)
+	noUse := jwkFor("no-use", &key.PublicKey)
+	noUse.Use = ""
+	enc := jwkFor("enc", &key.PublicKey)
+	enc.Use = "enc"
+	noKid := jwkFor("", &key.PublicKey)
+	noKid.Kid = ""
+	broken := CertResponseKey{Kid: "broken", Kty: "RSA"}
+
+	keys := parseSigningKeys(&CertResponse{Keys: []CertResponseKey{sig, noUse, enc, noKid, broken}})
+	require.Len(t, keys, 2)
+	require.Contains(t, keys, "sig")
+	require.Contains(t, keys, "no-use")
+	require.Equal(t, "RS256", keys["sig"].alg)
 }
 
 func TestUnit_MakeURL(t *testing.T) {
@@ -558,11 +728,16 @@ func TestUnit_LoginClientSignedJWT_AudienceIsPublicIssuer(t *testing.T) {
 	require.NoError(t, err)
 
 	var audience []string
+	var expiry *jwt.NumericDate
+	var issuerFetches atomic.Int32
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
 		case "/realms/r":
+			issuerFetches.Add(1)
 			_, _ = w.Write([]byte(`{"realm":"r","token-service":"https://auth.example.com/realms/r/protocol/openid-connect"}`))
+		case "/realms/empty":
+			_, _ = w.Write([]byte(`{"realm":"empty"}`))
 		case "/realms/r/protocol/openid-connect/token":
 			claims := jwt.RegisteredClaims{}
 			_, _, err := jwt.NewParser().ParseUnverified(r.FormValue("client_assertion"), &claims)
@@ -570,7 +745,7 @@ func TestUnit_LoginClientSignedJWT_AudienceIsPublicIssuer(t *testing.T) {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
-			audience = claims.Audience
+			audience, expiry = claims.Audience, claims.ExpiresAt
 			_, _ = w.Write([]byte(`{"access_token":"x"}`))
 		default:
 			http.NotFound(w, r)
@@ -578,10 +753,23 @@ func TestUnit_LoginClientSignedJWT_AudienceIsPublicIssuer(t *testing.T) {
 	}))
 	defer server.Close()
 
-	_, err = NewClient(server.URL).LoginClientSignedJWT(context.Background(), "client", "r", key, jwt.SigningMethodRS256,
-		jwt.NewNumericDate(time.Now().Add(time.Minute)))
-	require.NoError(t, err)
+	client := NewClient(server.URL)
+	expiresAt := jwt.NewNumericDate(time.Now().Add(time.Minute))
+	for range 2 {
+		_, err = client.LoginClientSignedJWT(context.Background(), "client", "r", key, jwt.SigningMethodRS256, expiresAt)
+		require.NoError(t, err)
+	}
 	require.Equal(t, []string{"https://auth.example.com/realms/r"}, audience)
+	require.Equal(t, int32(1), issuerFetches.Load(), "the issuer must be cached per realm")
+
+	// without an expiry the assertion still carries exp, Keycloak rejects it otherwise
+	_, err = client.LoginClientSignedJWT(context.Background(), "client", "r", key, jwt.SigningMethodRS256, nil)
+	require.NoError(t, err)
+	require.NotNil(t, expiry)
+	require.WithinDuration(t, time.Now().Add(signedJWTDefaultLifetime), expiry.Time, 5*time.Second)
+
+	_, err = client.LoginClientSignedJWT(context.Background(), "client", "empty", key, jwt.SigningMethodRS256, expiresAt)
+	require.ErrorContains(t, err, "no token-service")
 }
 
 // TestUnit_UpdateRequiresID checks that update methods reject a missing ID before sending a request.
@@ -614,6 +802,8 @@ func TestUnit_GetClientServiceAccount_UsesServiceAccountUserID(t *testing.T) {
 		switch r.URL.Path {
 		case "/admin/realms/realm/clients/client-id":
 			_, _ = w.Write([]byte(`{"id":"client-id","serviceAccountUserId":"sa-id"}`))
+		case "/admin/realms/legacy/clients/client-id/service-account-user":
+			_, _ = w.Write([]byte(`{"id":"legacy-sa-id"}`))
 		case "/admin/realms/realm/users/sa-id":
 			_, _ = w.Write([]byte(`{"id":"sa-id","username":"service-account-client"}`))
 		default:
@@ -630,4 +820,95 @@ func TestUnit_GetClientServiceAccount_UsesServiceAccountUserID(t *testing.T) {
 
 	_, err = client.GetClientServiceAccount(context.Background(), "token", "realm", "missing")
 	require.Error(t, err)
+
+	// Keycloak < 27: the legacy endpoint answers in one call
+	user, err = client.GetClientServiceAccount(context.Background(), "token", "legacy", "client-id")
+	require.NoError(t, err)
+	require.Equal(t, "legacy-sa-id", PString(user.ID))
+}
+
+// TestUnit_GetCerts_SharesOneFetch checks that concurrent callers on a cold cache share one cert fetch.
+// Input: t [*testing.T]. Output: none.
+func TestUnit_GetCerts_SharesOneFetch(t *testing.T) {
+	t.Parallel()
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+	var fetches atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		fetches.Add(1)
+		time.Sleep(50 * time.Millisecond) // keep the fetch running while the others arrive
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(CertResponse{Keys: []CertResponseKey{jwkFor("k", &key.PublicKey)}})
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL)
+	var wg sync.WaitGroup
+	for range 20 {
+		wg.Go(func() {
+			_, err := client.GetCerts(context.Background(), "r")
+			assert.NoError(t, err)
+		})
+	}
+	wg.Wait()
+	require.Equal(t, int32(1), fetches.Load())
+}
+
+// TestUnit_ValidateAccessToken_LeewayAndCustomClaims checks the clock skew leeway and that typ, aud and azp are
+// checked for custom claim structs too.
+// Input: t [*testing.T]. Output: none.
+func TestUnit_ValidateAccessToken_LeewayAndCustomClaims(t *testing.T) {
+	t.Parallel()
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(CertResponse{Keys: []CertResponseKey{jwkFor("k", &key.PublicKey)}})
+	}))
+	defer server.Close()
+	client := NewClient(server.URL)
+
+	sign := func(claims jwt.MapClaims) string {
+		token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+		token.Header["kid"] = "k"
+		signed, err := token.SignedString(key)
+		require.NoError(t, err)
+		return signed
+	}
+	ctx := context.Background()
+
+	// expired 5s ago: rejected without leeway, accepted with 10s
+	expired := sign(jwt.MapClaims{"typ": "Bearer", "azp": "web", "exp": time.Now().Add(-5 * time.Second).Unix()})
+	_, _, err = client.ValidateAccessToken(ctx, expired, "r", TokenValidation{AuthorizedParty: "web"})
+	require.ErrorIs(t, err, jwt.ErrTokenExpired)
+	_, _, err = client.ValidateAccessToken(ctx, expired, "r", TokenValidation{AuthorizedParty: "web", Leeway: 10 * time.Second})
+	require.NoError(t, err)
+
+	// custom claims without typ/azp fields: the checks still read them from the verified payload
+	var claims jwt.RegisteredClaims
+	_, err = client.ValidateAccessTokenCustomClaims(ctx, sign(jwt.MapClaims{"typ": "ID", "azp": "web", "sub": "u"}), "r",
+		&claims, TokenValidation{AuthorizedParty: "web"})
+	require.ErrorContains(t, err, "unexpected token type")
+	_, err = client.ValidateAccessTokenCustomClaims(ctx, sign(jwt.MapClaims{"typ": "Bearer", "azp": "web", "sub": "u"}), "r",
+		&claims, TokenValidation{AuthorizedParty: "web"})
+	require.NoError(t, err)
+	require.Equal(t, "u", claims.Subject)
+}
+
+// TestUnit_PKCE checks the S256 challenge against RFC 7636 Appendix B, the verifier format and that the verifier is
+// sent in the code exchange only when set.
+// Input: t [*testing.T]. Output: none.
+func TestUnit_PKCE(t *testing.T) {
+	t.Parallel()
+	require.Equal(t, "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM", PKCEChallenge("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"))
+
+	verifier, challenge := NewPKCE()
+	require.Len(t, verifier, 43)
+	require.Regexp(t, `^[A-Za-z0-9\-._~]+$`, verifier)
+	require.Equal(t, PKCEChallenge(verifier), challenge)
+	other, _ := NewPKCE()
+	require.NotEqual(t, verifier, other)
+
+	require.Equal(t, "x", (&TokenOptions{CodeVerifier: "x"}).FormData()["code_verifier"])
+	require.NotContains(t, (&TokenOptions{}).FormData(), "code_verifier")
 }

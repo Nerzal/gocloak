@@ -184,14 +184,14 @@ func Test_OrganizationInvitations(t *testing.T) {
 	firstName := GetRandomName("FirstName")
 	lastName := GetRandomName("LastName")
 	err := client.InviteUserToOrganization(ctx, token.AccessToken, cfg.GoCloak.Realm, orgID,
-		gocloak.OrganizationInviteUserParams{Email: &email, FirstName: &firstName, LastName: &lastName})
+		gocloak.OrganizationInviteUserParams{Email: email, FirstName: firstName, LastName: lastName})
 	require.NoError(t, err, "InviteUserToOrganization failed")
 
 	invitations, err := client.GetOrganizationInvitations(ctx, token.AccessToken, cfg.GoCloak.Realm, orgID,
 		gocloak.GetOrganizationInvitationsParams{Email: &email})
 	require.NoError(t, err, "GetOrganizationInvitations failed")
 	require.Len(t, invitations, 1)
-	invitationID := gocloak.PString(invitations[0].ID)
+	invitationID := invitations[0].ID
 	require.NotEmpty(t, invitationID)
 	t.Cleanup(func() {
 		_ = client.DeleteOrganizationInvitation(ctx, token.AccessToken, cfg.GoCloak.Realm, orgID, invitationID)
@@ -199,13 +199,13 @@ func Test_OrganizationInvitations(t *testing.T) {
 
 	invitation, err := client.GetOrganizationInvitationByID(ctx, token.AccessToken, cfg.GoCloak.Realm, orgID, invitationID)
 	require.NoError(t, err, "GetOrganizationInvitationByID failed")
-	require.Equal(t, invitationID, gocloak.PString(invitation.ID))
-	require.Equal(t, orgID, gocloak.PString(invitation.OrganizationID))
-	require.Equal(t, email, gocloak.PString(invitation.Email))
-	require.Equal(t, firstName, gocloak.PString(invitation.FirstName))
-	require.Equal(t, lastName, gocloak.PString(invitation.LastName))
+	require.Equal(t, invitationID, invitation.ID)
+	require.Equal(t, orgID, invitation.OrganizationID)
+	require.Equal(t, email, invitation.Email)
+	require.Equal(t, firstName, invitation.FirstName)
+	require.Equal(t, lastName, invitation.LastName)
 	require.NotNil(t, invitation.Status)
-	require.Equal(t, gocloak.InvitationStatusPending, *invitation.Status)
+	require.Equal(t, gocloak.InvitationStatusPending, invitation.Status)
 
 	err = client.ResendOrganizationInvitation(ctx, token.AccessToken, cfg.GoCloak.Realm, orgID, invitationID)
 	require.NoError(t, err, "ResendOrganizationInvitation failed")
@@ -217,7 +217,7 @@ func Test_OrganizationInvitations(t *testing.T) {
 		gocloak.GetOrganizationInvitationsParams{Email: &email})
 	require.NoError(t, err, "GetOrganizationInvitations failed")
 	require.Len(t, invitations, 1)
-	invitationID = gocloak.PString(invitations[0].ID) // the cleanup closure picks up the new ID
+	invitationID = invitations[0].ID // the cleanup closure picks up the new ID
 	require.NotEmpty(t, invitationID)
 
 	err = client.DeleteOrganizationInvitation(ctx, token.AccessToken, cfg.GoCloak.Realm, orgID, invitationID)

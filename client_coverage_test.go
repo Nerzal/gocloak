@@ -463,7 +463,7 @@ func Test_DirectNakedImpersonationTokenExchange(t *testing.T) {
 	policy, err := client.CreatePolicy(ctx, token, cfg.GoCloak.Realm, idOfRealmManagement, gocloak.PolicyRepresentation{
 		Name:                       GetRandomNameP("impersonation-policy"),
 		Type:                       new("client"),
-		Logic:                      new(gocloak.Positive),
+		Logic:                      gocloak.Positive,
 		ClientPolicyRepresentation: gocloak.ClientPolicyRepresentation{Clients: []string{idOfClient}},
 	})
 	require.NoError(t, err, "CreatePolicy failed")
@@ -515,7 +515,7 @@ func Test_ErrorPaths(t *testing.T) {
 	t.Run("CreateUserFederatedIdentity unknown user", func(t *testing.T) {
 		t.Parallel()
 		err := client.CreateUserFederatedIdentity(ctx, token, cfg.GoCloak.Realm, "00000000-0000-0000-0000-000000000000", "google",
-			gocloak.FederatedIdentityRepresentation{UserID: new("external"), UserName: new("external")})
+			gocloak.FederatedIdentityRepresentation{UserID: "external", UserName: "external"})
 		requireAPIErrorCode(t, err, http.StatusNotFound)
 	})
 	t.Run("CreateUserFederatedIdentity unknown provider", func(t *testing.T) {
@@ -524,7 +524,7 @@ func Test_ErrorPaths(t *testing.T) {
 		t.Cleanup(tearDown)
 		// Keycloak 26 answers 204 for an unknown provider alias but links nothing.
 		err := client.CreateUserFederatedIdentity(ctx, token, cfg.GoCloak.Realm, userID, GetRandomName("missing-idp"),
-			gocloak.FederatedIdentityRepresentation{UserID: new("external"), UserName: new("external")})
+			gocloak.FederatedIdentityRepresentation{UserID: "external", UserName: "external"})
 		require.NoError(t, err, "CreateUserFederatedIdentity failed")
 		identities, err := client.GetUserFederatedIdentities(ctx, token, cfg.GoCloak.Realm, userID)
 		require.NoError(t, err, "GetUserFederatedIdentities failed")

@@ -76,12 +76,45 @@ go get github.com/Nerzal/gocloak/v14
   panic("Inspection failed:"+ err.Error())
  }
 
- if !*rptResult.Active {
+ if !rptResult.Active {
   panic("Token is not active")
  }
 
  permissions := rptResult.Permissions
  // Do something with the permissions ;)
+```
+
+### Validate Access Token
+
+`ValidateAccessToken` verifies the signature with the realm's cached certs and checks `typ`, `aud` and `azp`,
+so ID tokens and tokens issued to other clients are rejected. `DecodeAccessToken` only checks signature and expiry.
+
+```go
+ _, claims, err := client.ValidateAccessToken(ctx, accessToken, realm, gocloak.TokenValidation{
+  Audience:        "my-api",  // must be in aud
+  AuthorizedParty: "web-app", // must equal azp
+ })
+ if err != nil {
+  // reject the request
+ }
+```
+
+### Authorization Code Flow with PKCE
+
+```go
+ // before redirecting to Keycloak, keep the verifier in the user's session
+ verifier, challenge := gocloak.NewPKCE()
+ // add code_challenge=<challenge>&code_challenge_method=S256 to the authorization URL
+
+ // in the redirect handler
+ token, err := client.GetToken(ctx, realm, gocloak.TokenOptions{
+  ClientID:     clientID,
+  ClientSecret: clientSecret, // empty for public clients
+  GrantType:    "authorization_code",
+  Code:         code,
+  RedirectURI:  redirectURI,
+  CodeVerifier: verifier,
+ })
 ```
 
 ### Get Client id
@@ -91,7 +124,7 @@ Client has 2 identity fields- `id` and `clientId` and both are unique in one rea
 - `id` is generated automatically by Keycloak.
 - `clientId` is configured by users in `Add client` page.
 
-To get the `clientId` from `id`, use `GetClients` method with `GetClientsParams{ClientID: &clientName}`.
+To get the `clientId` from `id`, use `GetClients` method with `GetClientsParams{ClientID: new(clientName)}`.
 
 ```go
  clients, err := c.Client.GetClients(
@@ -99,7 +132,7 @@ To get the `clientId` from `id`, use `GetClients` method with `GetClientsParams{
   c.JWT.AccessToken,
   c.Realm,
   gocloak.GetClientsParams{
-   ClientID: &clientName,
+   ClientID: new(clientName),
   },
  )
  if err != nil {

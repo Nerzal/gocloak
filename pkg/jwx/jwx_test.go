@@ -55,7 +55,7 @@ func TestDecodeAccessTokenECDSACustomClaims(t *testing.T) {
 			testClaims := jwt.MapClaims{}
 			x := b64(pk.X.Bytes())
 			y := b64(pk.Y.Bytes())
-			_, err = DecodeAccessTokenECDSACustomClaims("Bearer "+token, &x, &y, &tc.curveStr, testClaims)
+			_, err = DecodeAccessTokenECDSACustomClaims("Bearer "+token, x, y, tc.curveStr, testClaims)
 			require.NoError(t, err)
 			require.Equal(t, claims, testClaims)
 		})
@@ -72,16 +72,16 @@ func TestDecodeAccessTokenECDSACustomClaims_Errors(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		x, y, c *string
+		x, y, c string
 		errText string
 	}{
-		{"nil x", nil, &y, &crv, "missing x, y or crv"},
-		{"nil y", &x, nil, &crv, "missing x, y or crv"},
-		{"nil crv", &x, &y, nil, "missing x, y or crv"},
-		{"unknown curve", &x, &y, &unknown, "unknown curve"},
-		{"bad base64", &badB64, &y, &crv, "illegal base64"},
-		{"coordinate too long", &tooLong, &y, &crv, "coordinate too long"},
-		{"point not on curve", &one, &one, &crv, "could not decode public key"},
+		{"empty x", "", y, crv, "missing x, y or crv"},
+		{"empty y", x, "", crv, "missing x, y or crv"},
+		{"empty crv", x, y, "", "missing x, y or crv"},
+		{"unknown curve", x, y, unknown, "unknown curve"},
+		{"bad base64", badB64, y, crv, "illegal base64"},
+		{"coordinate too long", tooLong, y, crv, "coordinate too long"},
+		{"point not on curve", one, one, crv, "could not decode public key"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -107,17 +107,17 @@ func TestDecodeAccessTokenRSACustomClaims(t *testing.T) {
 	tests := []struct {
 		name    string
 		token   string
-		e, n    *string
+		e, n    string
 		errText string // empty means success
 	}{
-		{name: "valid", token: rsaToken, e: &e, n: &n},
-		{name: "bearer prefix", token: "Bearer " + rsaToken, e: &e, n: &n},
-		{name: "exponent out of range", token: rsaToken, e: &hugeE, n: &n, errText: "rsa exponent out of range"},
-		{name: "bad base64 n", token: rsaToken, e: &e, n: &badB64, errText: "illegal base64"},
-		{name: "bad base64 e", token: rsaToken, e: &badB64, n: &n, errText: "illegal base64"},
-		{name: "nil e", token: rsaToken, n: &n, errText: "missing e or n"},
-		{name: "nil n", token: rsaToken, e: &e, errText: "missing e or n"},
-		{name: "HS256 token rejected", token: hsToken, e: &e, n: &n, errText: "unexpected signing method"},
+		{name: "valid", token: rsaToken, e: e, n: n},
+		{name: "bearer prefix", token: "Bearer " + rsaToken, e: e, n: n},
+		{name: "exponent out of range", token: rsaToken, e: hugeE, n: n, errText: "rsa exponent out of range"},
+		{name: "bad base64 n", token: rsaToken, e: e, n: badB64, errText: "illegal base64"},
+		{name: "bad base64 e", token: rsaToken, e: badB64, n: n, errText: "illegal base64"},
+		{name: "empty e", token: rsaToken, n: n, errText: "missing e or n"},
+		{name: "empty n", token: rsaToken, e: e, errText: "missing e or n"},
+		{name: "HS256 token rejected", token: hsToken, e: e, n: n, errText: "unexpected signing method"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {

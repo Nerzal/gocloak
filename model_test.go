@@ -203,7 +203,7 @@ func TestRequestingPartyTokenOptionsFormData(t *testing.T) {
 		{
 			name: "With grant type and response include resource name",
 			input: &gocloak.RequestingPartyTokenOptions{
-				GrantType:                   new("custom_grant_type"),
+				GrantType:                   "custom_grant_type",
 				ResponseIncludeResourceName: new(false),
 			},
 			expected: map[string]string{
@@ -214,9 +214,9 @@ func TestRequestingPartyTokenOptionsFormData(t *testing.T) {
 		{
 			name: "With various field types",
 			input: &gocloak.RequestingPartyTokenOptions{
-				Ticket:                        new("ticket123"),
-				PermissionResourceMatchingURI: new(true),
-				ResponsePermissionsLimit:      new(uint32(10)),
+				Ticket:                        "ticket123",
+				PermissionResourceMatchingURI: true,
+				ResponsePermissionsLimit:      10,
 			},
 			expected: map[string]string{
 				"grant_type":                       "urn:ietf:params:oauth:grant-type:uma-ticket",
@@ -247,16 +247,13 @@ func prettyJSON(t *testing.T, v any) string {
 func TestPrettyJSON(t *testing.T) {
 	// nested structs
 	actions := []string{"someAction", "anotherAction"}
-	access := gocloak.AccessRepresentation{
-		Manage:      new(true),
-		Impersonate: new(false),
-	}
+	access := gocloak.AccessRepresentation{Manage: true}
 	v := gocloak.PermissionTicketDescriptionRepresentation{
-		ID:               new("someID"),
-		CreatedTimeStamp: new(int64(1607702613)),
-		Enabled:          new(true),
+		ID:               "someID",
+		CreatedTimeStamp: 1607702613,
+		Enabled:          true,
 		RequiredActions:  actions,
-		Access:           &access,
+		Access:           access,
 	}
 
 	str := prettyJSON(t, &v)
@@ -270,7 +267,6 @@ func TestPrettyJSON(t *testing.T) {
 		"anotherAction"
 	],
 	"access": {
-		"impersonate": false,
 		"manage": true
 	}
 }`
@@ -465,9 +461,9 @@ func TestModel_GetGroupsParamsMarshal(t *testing.T) {
 func TestModel_TokenOptionsFormData(t *testing.T) {
 	t.Parallel()
 	opts := gocloak.TokenOptions{
-		ClientID:      new("client"),
-		ClientSecret:  new("secret"),
-		GrantType:     new("password"),
+		ClientID:      "client",
+		ClientSecret:  "secret",
+		GrantType:     "password",
 		Scopes:        []string{"openid", "profile"},
 		ResponseTypes: []string{"code", "id_token"},
 	}
@@ -477,9 +473,9 @@ func TestModel_TokenOptionsFormData(t *testing.T) {
 		"scope":         "openid profile",
 		"response_type": "code id_token",
 	}, opts.FormData())
-	// FormData writes the joined values back into the receiver
-	assert.Equal(t, "openid profile", gocloak.PString(opts.Scope))
-	assert.Equal(t, "code id_token", gocloak.PString(opts.ResponseType))
+	// FormData leaves the receiver unchanged
+	assert.Empty(t, opts.Scope)
+	assert.Empty(t, opts.ResponseType)
 
 	empty := gocloak.TokenOptions{}
 	assert.Equal(t, map[string]string{"response_type": "token"}, empty.FormData())
@@ -487,7 +483,7 @@ func TestModel_TokenOptionsFormData(t *testing.T) {
 
 func TestModel_OrganizationInviteUserParamsFormData(t *testing.T) {
 	t.Parallel()
-	params := gocloak.OrganizationInviteUserParams{Email: new("a@b.c"), FirstName: new("A")}
+	params := gocloak.OrganizationInviteUserParams{Email: "a@b.c", FirstName: "A"}
 	assert.Equal(t, map[string]string{"email": "a@b.c", "firstName": "A"}, params.FormData())
 	assert.Empty(t, (&gocloak.OrganizationInviteUserParams{}).FormData())
 }

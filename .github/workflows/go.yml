@@ -42,12 +42,10 @@ jobs:
   tests:
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
-    permissions:
-      contents: write # benchmark results are pushed to gh-pages
     strategy:
       fail-fast: false
       matrix:
-        go: [oldstable, stable]
+        go: [stable]
         keycloak: ["26.8.2"]
         include:
           # early warning for the next Keycloak release, does not fail the build
@@ -86,16 +84,36 @@ jobs:
           files: ./coverage.txt
           token: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: Store Benchmark Result
+      - name: Upload Benchmark Log
         if: matrix.go == 'stable' && matrix.keycloak != 'nightly' && github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: benchmark-action/github-action-benchmark@v1
+        uses: actions/upload-artifact@v7
         with:
-          tool: "go"
-          output-file-path: test.log
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          auto-push: true
+          name: benchmark-log
+          path: test.log
 
       - name: GoReportCard
         if: matrix.go == 'stable' && matrix.keycloak != 'nightly' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         continue-on-error: true
         run: curl --fail --request POST "https://goreportcard.com/checks" --data "repo=github.com/Nerzal/gocloak"
+
+  # only job with write access, so test code from pull requests never runs with a token that can push
+  benchmark:
+    needs: tests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # benchmark results are pushed to gh-pages
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: benchmark-log
+
+      - name: Store Benchmark Result
+        uses: benchmark-action/github-action-benchmark@4322e5726e6334590d251fc4f92bec0efafc45dc # v1
+        with:
+          tool: "go"
+          output-file-path: test.log
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
