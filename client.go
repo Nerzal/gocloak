@@ -64,6 +64,7 @@ func makeURL(path ...string) string {
 // versionCall is a running serverinfo request; done is closed once version and err are set.
 type versionCall struct {
 	done    chan struct{}
+	token   string // token the request is made with; only callers with the same token join it
 	version string
 	err     error
 }
@@ -72,8 +73,8 @@ type versionCall struct {
 // If the version is already set, it will return the cached version.
 // Otherwise, it will fetch the version from the serverinfo endpoint and cache it.
 // Safe for concurrent use: concurrent callers share one request and its result; a failure is not cached,
-// so callers do not queue up behind each other while serverinfo fails. A shared request uses the token of the
-// caller that started it, so a concurrent caller may get that caller's error (e.g. an expired token) once.
+// so callers do not queue up behind each other while serverinfo fails. Only callers with the same token share a
+// request, so one caller's expired token never fails another caller.
 // Input: ctx [context.Context], token [string] admin token.
 // Output: [string] server version, [error] if serverinfo fails or has no version
 // (e.g. admins of non-master realms; use SetServerVersion then).
@@ -84,9 +85,14 @@ func (g *GoCloak) GetServerVersion(ctx context.Context, token string) (string, e
 		return g.Config.version, nil
 	}
 	call := g.versionCall
-	if call == nil {
-		call = &versionCall{done: make(chan struct{})}
+	switch {
+	case call == nil:
+		call = &versionCall{done: make(chan struct{}), token: token}
 		g.versionCall = call
+		go g.fetchServerVersion(context.WithoutCancel(ctx), token, call)
+	case call.token != token:
+		// a request with another token is running: fetch with our own token, without replacing the shared call
+		call = &versionCall{done: make(chan struct{}), token: token}
 		go g.fetchServerVersion(context.WithoutCancel(ctx), token, call)
 	}
 	g.versionLock.Unlock()
@@ -119,7 +125,9 @@ func (g *GoCloak) fetchServerVersion(ctx context.Context, token string, call *ve
 	if call.err == nil {
 		g.Config.version = call.version
 	}
-	g.versionCall = nil
+	if g.versionCall == call {
+		g.versionCall = nil
+	}
 	g.versionLock.Unlock()
 	close(call.done)
 }
@@ -675,7 +683,6 @@ func (g *GoCloak) getCachedCerts(ctx context.Context, realm string, maxAge time.
 // GetCerts fetches certificates for the given realm from the public /open-id-connect/certs endpoint.
 // Results are cached for Config.CertsInvalidateTime; afterwards the cached certs are served for up to
 // another interval while they are refreshed in the background.
-// The returned value is shared with the cache and must be treated as read-only.
 // Input: ctx [context.Context], realm [string].
 // Output: [*CertResponse] certs, [error] if fetching fails.
 func (g *GoCloak) GetCerts(ctx context.Context, realm string) (*CertResponse, error) {
@@ -683,7 +690,8 @@ func (g *GoCloak) GetCerts(ctx context.Context, realm string) (*CertResponse, er
 	if err != nil {
 		return nil, err
 	}
-	return state.certs, nil
+	// copy, so callers modifying the result cannot change the cached certs
+	return &CertResponse{Keys: slices.Clone(state.certs.Keys)}, nil
 }
 
 // GetIssuer fetches the issuer info of the given realm from the public realm endpoint.

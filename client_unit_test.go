@@ -270,6 +270,66 @@ func TestUnit_GetServerVersion_Caching(t *testing.T) {
 		require.Equal(t, "26.0.0", version)
 		require.Equal(t, int32(2), fetches.Load())
 	})
+
+	t.Run("running request with another token is not shared", func(t *testing.T) {
+		t.Parallel()
+		badStarted, releaseBad := make(chan struct{}), make(chan struct{})
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Header.Get("Authorization") == "Bearer expired" {
+				close(badStarted)
+				<-releaseBad
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"systemInfo":{"version":"26.0.0"}}`))
+		}))
+		defer server.Close()
+		client := NewClient(server.URL)
+
+		badErr := make(chan error, 1)
+		go func() {
+			_, err := client.GetServerVersion(context.Background(), "expired")
+			badErr <- err
+		}()
+		<-badStarted
+
+		version, err := client.GetServerVersion(context.Background(), "valid")
+		require.NoError(t, err)
+		require.Equal(t, "26.0.0", version)
+
+		close(releaseBad)
+		require.Error(t, <-badErr)
+		// the failed request must not reset the cached version
+		version, err = client.GetServerVersion(context.Background(), "expired")
+		require.NoError(t, err)
+		require.Equal(t, "26.0.0", version)
+	})
+}
+
+// TestUnit_GetCerts_ReturnsCopy checks that modifying the result of GetCerts does not change the cached certs.
+// Input: t [*testing.T]. Output: none.
+func TestUnit_GetCerts_ReturnsCopy(t *testing.T) {
+	t.Parallel()
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(CertResponse{Keys: []CertResponseKey{jwkFor("k", &key.PublicKey)}})
+	}))
+	defer server.Close()
+	client := NewClient(server.URL)
+	ctx := context.Background()
+
+	certs, err := client.GetCerts(ctx, "r")
+	require.NoError(t, err)
+	certs.Keys[0].Kid = "changed"
+	certs.Keys = append(certs.Keys, CertResponseKey{Kid: "added"})
+
+	certs, err = client.GetCerts(ctx, "r")
+	require.NoError(t, err)
+	require.Len(t, certs.Keys, 1)
+	require.Equal(t, "k", certs.Keys[0].Kid)
 }
 
 // TestUnit_GetPolicies_SendsTypeAsQuery checks that the policy type is a query parameter and that no

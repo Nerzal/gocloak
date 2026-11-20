@@ -16,8 +16,8 @@ type GoCloakIface interface {
 	// If the version is already set, it will return the cached version.
 	// Otherwise, it will fetch the version from the serverinfo endpoint and cache it.
 	// Safe for concurrent use: concurrent callers share one request and its result; a failure is not cached,
-	// so callers do not queue up behind each other while serverinfo fails. A shared request uses the token of the
-	// caller that started it, so a concurrent caller may get that caller's error (e.g. an expired token) once.
+	// so callers do not queue up behind each other while serverinfo fails. Only callers with the same token share a
+	// request, so one caller's expired token never fails another caller.
 	// Input: ctx [context.Context], token [string] admin token.
 	// Output: [string] server version, [error] if serverinfo fails or has no version
 	// (e.g. admins of non-master realms; use SetServerVersion then).
@@ -63,7 +63,6 @@ type GoCloakIface interface {
 	// GetCerts fetches certificates for the given realm from the public /open-id-connect/certs endpoint.
 	// Results are cached for Config.CertsInvalidateTime; afterwards the cached certs are served for up to
 	// another interval while they are refreshed in the background.
-	// The returned value is shared with the cache and must be treated as read-only.
 	// Input: ctx [context.Context], realm [string].
 	// Output: [*CertResponse] certs, [error] if fetching fails.
 	GetCerts(ctx context.Context, realm string) (*CertResponse, error)
