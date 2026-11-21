@@ -10,13 +10,15 @@ gocloak is a Go client for the Keycloak admin REST API and its OpenID Connect en
 clients, verifies tokens, and manages realms, users, groups, roles, clients, identity providers, organizations and
 authorization resources. It is based on [go-keycloak](https://github.com/PhilippHeuer/go-keycloak).
 
-gocloak needs Go 1.26 or newer and supports current Keycloak releases. CI runs the integration tests against
+gocloak needs Go 1.27 or newer and supports current Keycloak releases. CI runs the integration tests against
 Keycloak 26.8.2 and the nightly build.
 
 Questions go to the [issue tracker](https://github.com/Nerzal/gocloak/issues) or to
 [#gocloak](https://gophers.slack.com/app_redirect?channel=gocloak) on the
-[Gophers Slack](https://invite.slack.golangbridge.org/). For the echo framework there is
-[gocloak-echo](https://github.com/Nerzal/gocloak-echo).
+[Gophers Slack](https://invite.slack.golangbridge.org/).
+
+Built on gocloak: [gocloak-mcp](https://github.com/Nerzal/gocloak-mcp) (Keycloak MCP server) and
+[gocloak-auth-proxy](https://github.com/Nerzal/gocloak-auth-proxy) (authentication proxy for Keycloak).
 
 ## Installation
 
@@ -193,7 +195,8 @@ options.
 Requests go through a [resty](https://github.com/go-resty/resty) client and time out after 30 seconds. A deadline on
 the `ctx` you pass also ends the request. Response bodies are limited to 100 MiB (`SetResponseBodyLimit`), and
 redirects are only followed within the same scheme, host and port, so credentials never go to another server
-(`SetRedirectPolicy` replaces this). `RestyClient()` returns the client for timeouts, proxies, TLS and retries:
+(`SetRedirectPolicy` replaces this). Up to 100 idle connections per host are kept for reuse (`Transport()`).
+`RestyClient()` returns the client for timeouts, proxies, TLS and retries:
 
 ```go
 restyClient := client.RestyClient()
@@ -210,6 +213,43 @@ client.RestyClient().SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 
 `RestyClient().SetDebug(true)` logs every request and response, including passwords, client secrets and tokens.
 Keep it out of production too.
+
+### Performance
+
+A single call is dominated by Keycloak: about 1 ms for one user and 40 ms for 1000 users on a local Keycloak, while
+gocloak itself spends microseconds. What matters on the client side is CPU and garbage under load. The measurements
+behind this section are in [benchmarks/PERFORMANCE.md](benchmarks/PERFORMANCE.md).
+
+- **Go 1.27** runs `encoding/json` on the new v2 engine, which decodes Keycloak responses noticeably faster and with
+  about 40 % fewer allocations. You get this just by building with Go 1.27.
+- **Connection reuse.** gocloak keeps 100 idle connections per host. resty's default of `GOMAXPROCS+1` means only
+  2 connections in a container with a CPU limit of 1, so concurrent requests kept opening new connections and TLS
+  handshakes, which costs Keycloak CPU too. Talking to Keycloak over TLS with HTTP/2 avoids the problem altogether.
+- **Large responses.** `gocloak.SetDirectBodyRead()` reads response bodies in one allocation sized from
+  `Content-Length` instead of resty's growing buffer, about 40 % fewer allocated bytes for 1000 users. The body
+  limit still applies. For these calls resty skips its response middleware, so `OnAfterResponse` hooks on
+  `RestyClient()` do not run and `SetDebug` does not log response bodies; leave it off if you rely on them.
+- **Ask for less.** Reuse tokens instead of logging in per request, verify access tokens locally with
+  `ValidateAccessToken` instead of introspecting them, and use `BriefRepresentation` and `Max` for lists.
+- **Own structs for big lists.** The models use pointers so that `false`, `0` and `""` can be sent on updates. If
+  you only read a few fields of many users, decode into your own struct; that skips most allocations:
+
+```go
+type userRow struct {
+	ID       string `json:"id"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+}
+
+var rows []userRow
+resp, err := client.GetRequestWithBearerAuth(ctx, token.AccessToken).
+	SetQueryParams(map[string]string{"briefRepresentation": "true", "max": "1000"}).
+	SetResult(&rows).
+	Get("https://keycloak.example.com/admin/realms/myrealm/users")
+if err == nil && resp.IsError() {
+	err = fmt.Errorf("get users: %s", resp.Status())
+}
+```
 
 ### Tracing
 
@@ -293,6 +333,11 @@ export GOCLOAK_TEST_CONFIG=/path/to/config.json
 
 Tests delete everything they create. Only the test user from the config file stays.
 
+Benchmarks live in their own module under [benchmarks/](benchmarks/), so their dependencies (fasthttp, benchstat)
+stay out of gocloak's `go.mod`. `./ab.sh ref main` compares a change against `main` by running both builds
+alternately, which keeps the comparison fair on a busy machine; `./run.sh` and `./profile.sh` run the full suites
+and pprof profiles. [benchmarks/PERFORMANCE.md](benchmarks/PERFORMANCE.md) has the results.
+
 Lint with `golangci-lint run` (configuration in `.golangci.yml`). `gocloak_iface.go` is generated from `client.go`;
 after changing a method, run `make generate-gocloak-interface` instead of editing it by hand.
 
@@ -307,5 +352,7 @@ Keycloak resources. Some older notes are in the [wiki](https://github.com/Nerzal
 
 ## Related projects
 
-- [gocloak-echo](https://github.com/Nerzal/gocloak-echo) for the echo framework
+- [gocloak-mcp](https://github.com/Nerzal/gocloak-mcp), a Keycloak MCP server (stdio and streamable HTTP)
+- [gocloak-auth-proxy](https://github.com/Nerzal/gocloak-auth-proxy), a Keycloak authentication proxy for forward auth,
+  reverse proxying and browser SSO
 - [GocloakSession](https://github.com/Clarilab/gocloaksession)
