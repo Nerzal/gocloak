@@ -85,8 +85,9 @@ errors and canceled contexts have `Code` 0 and wrap the original error, so `erro
 
 ### Validate an access token
 
-`ValidateAccessToken` checks the signature against the realm's public keys, then `exp`, `nbf`, `typ`, `aud` and `azp`.
-ID tokens and tokens issued to other clients fail.
+`ValidateAccessToken` checks the signature against the realm's public keys, then `exp`, `nbf`, `iss`, `typ`, `aud` and
+`azp`. ID tokens, tokens of other realms and tokens issued to other clients fail. Only the path of `iss` is compared
+(`.../realms/my-realm`), so a public hostname that differs from the base URL is fine.
 
 ```go
 _, claims, err := client.ValidateAccessToken(ctx, accessToken, "my-realm", gocloak.TokenValidation{
@@ -191,7 +192,9 @@ options.
 ### HTTP client, timeouts and TLS
 
 Requests go through a [resty](https://github.com/go-resty/resty) client and time out after 30 seconds. A deadline on
-the `ctx` you pass also ends the request. `RestyClient()` returns the client for timeouts, proxies, TLS and retries:
+the `ctx` you pass also ends the request. Response bodies are limited to 100 MiB (`SetResponseBodyLimit`), and
+redirects are only followed within the same scheme, host and port, so credentials never go to another server
+(`SetRedirectPolicy` replaces this). `RestyClient()` returns the client for timeouts, proxies, TLS and retries:
 
 ```go
 restyClient := client.RestyClient()

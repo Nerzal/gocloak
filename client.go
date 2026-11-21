@@ -201,6 +201,7 @@ func getRequestingParty[T any](ctx context.Context, g *GoCloak, token, realm str
 // Output: [error] *APIError, or nil if the request succeeded.
 func checkForError(resp *resty.Response, err error, errMessage string) error {
 	if err != nil {
+		err = redactURLError(err)
 		return &APIError{
 			Code:    0,
 			Message: fmt.Sprintf("%s: %v", errMessage, err),
@@ -233,6 +234,21 @@ func checkForError(resp *resty.Response, err error, errMessage string) error {
 	}
 
 	return nil
+}
+
+// redactURLError removes the query string from the URL of a transport error, so search parameters like email or
+// username do not end up in logs. Other errors are returned unchanged; errors.Is/As still reach the cause.
+// Input: err [error]. Output: [error] err with redacted URL.
+func redactURLError(err error) error {
+	var urlErr *url.Error
+	if !errors.As(err, &urlErr) {
+		return err
+	}
+	redacted, _, found := strings.Cut(urlErr.URL, "?")
+	if !found {
+		return err
+	}
+	return &url.Error{Op: urlErr.Op, URL: redacted + "?REDACTED", Err: urlErr.Err}
 }
 
 // doRequest sends req with the given HTTP method to url and decodes the JSON response into a new T.
@@ -314,13 +330,37 @@ func injectTracingHeaders(ctx context.Context, req *resty.Request) *resty.Reques
 // defaultRequestTimeout bounds every request, so a hanging Keycloak cannot block callers without a context deadline.
 const defaultRequestTimeout = 30 * time.Second
 
+// defaultResponseBodyLimit bounds the size of a response body, so a misbehaving server cannot exhaust memory.
+// It is far above what Keycloak returns for normal admin and token calls.
+const defaultResponseBodyLimit = 100 << 20 // 100 MiB
+
+// maxRedirects is the number of redirects followed, matching the net/http default.
+const maxRedirects = 10
+
+// sameOriginRedirectPolicy follows at most maxRedirects redirects and only to the scheme, host and port of the
+// original request. Go re-sends form bodies (passwords, refresh tokens, client assertions) on 307/308 and keeps the
+// Authorization header when only the port changes, so a redirect to another origin could leak credentials.
+var sameOriginRedirectPolicy = resty.RedirectPolicyFunc(func(req *http.Request, via []*http.Request) error {
+	if len(via) >= maxRedirects {
+		return fmt.Errorf("stopped after %d redirects", maxRedirects)
+	}
+	if origin := via[0].URL; req.URL.Scheme != origin.Scheme || req.URL.Host != origin.Host {
+		return fmt.Errorf("redirect to another origin (%s://%s) is not allowed", req.URL.Scheme, req.URL.Host)
+	}
+	return nil
+})
+
 // NewClient creates a client for the Keycloak at basePath [string], configured by options [...func(*GoCloak)].
-// Requests time out after 30 seconds; change it via RestyClient().SetTimeout.
+// Requests time out after 30 seconds, response bodies are limited to 100 MiB and redirects are only followed to the
+// same origin; change these via RestyClient().SetTimeout, SetResponseBodyLimit and SetRedirectPolicy.
 // Output: [*GoCloak].
 func NewClient(basePath string, options ...func(*GoCloak)) *GoCloak {
 	c := GoCloak{
-		basePath:    strings.TrimRight(basePath, urlSeparator),
-		restyClient: resty.New().SetTimeout(defaultRequestTimeout),
+		basePath: strings.TrimRight(basePath, urlSeparator),
+		restyClient: resty.New().
+			SetTimeout(defaultRequestTimeout).
+			SetResponseBodyLimit(defaultResponseBodyLimit).
+			SetRedirectPolicy(sameOriginRedirectPolicy),
 	}
 
 	c.Config.CertsInvalidateTime = 10 * time.Minute
@@ -557,7 +597,7 @@ var certsMinRefreshInterval = 30 * time.Second
 var certsErrorRetryInterval = 5 * time.Second
 
 // realmCertsFor returns the cache of realm [string], creating it if needed.
-// Entries are never removed, so realm must come from trusted configuration, not from token claims or request input.
+// Entries of realms whose certs were never fetched successfully are removed after the failed fetch.
 // Input: realm [string]. Output: [*realmCerts].
 func (g *GoCloak) realmCertsFor(realm string) *realmCerts {
 	value, _ := g.certsCache.LoadOrStore(realm, &realmCerts{})
@@ -615,6 +655,10 @@ func (g *GoCloak) runCertsFetch(ctx context.Context, realm string, rc *realmCert
 	if err != nil {
 		rc.err, rc.errAt = err, time.Now()
 		call.err = err
+		if rc.state == nil {
+			// never fetched successfully (e.g. unknown realm): drop the entry, so random realm names cannot fill the cache
+			g.certsCache.CompareAndDelete(realm, rc)
+		}
 	} else {
 		rc.state = &certsState{certs: certs, keys: parseSigningKeys(certs), fetchedAt: time.Now()}
 		rc.err = nil
@@ -690,8 +734,13 @@ func (g *GoCloak) GetCerts(ctx context.Context, realm string) (*CertResponse, er
 	if err != nil {
 		return nil, err
 	}
-	// copy, so callers modifying the result cannot change the cached certs
-	return &CertResponse{Keys: slices.Clone(state.certs.Keys)}, nil
+	// deep copy, so callers modifying the result cannot change the cached certs
+	keys := slices.Clone(state.certs.Keys)
+	for i := range keys {
+		keys[i].KeyOps = slices.Clone(keys[i].KeyOps)
+		keys[i].X5c = slices.Clone(keys[i].X5c)
+	}
+	return &CertResponse{Keys: keys}, nil
 }
 
 // GetIssuer fetches the issuer info of the given realm from the public realm endpoint.
@@ -753,8 +802,8 @@ func (g *GoCloak) decodeAccessTokenWithClaims(ctx context.Context, accessToken, 
 
 // DecodeAccessToken verifies accessToken [string] against the signature keys of realm [string] and decodes its claims.
 // Only signature, exp and nbf are checked. ID tokens of the realm are signed with the same keys and pass too, so
-// callers must check typ ("Bearer"), aud and azp themselves. realm must come from trusted configuration, because
-// certs are cached per realm without eviction.
+// callers must check iss, typ ("Bearer"), aud and azp themselves, or use ValidateAccessToken. Prefer a realm from
+// trusted configuration: every successfully fetched realm stays in the certs cache.
 // Input: ctx [context.Context], accessToken [string] optionally prefixed with "Bearer ", realm [string].
 // Output: [*jwt.Token], [*jwt.MapClaims], [error] if verification fails.
 func (g *GoCloak) DecodeAccessToken(ctx context.Context, accessToken, realm string) (*jwt.Token, *jwt.MapClaims, error) {
@@ -767,7 +816,7 @@ func (g *GoCloak) DecodeAccessToken(ctx context.Context, accessToken, realm stri
 }
 
 // DecodeAccessTokenCustomClaims works like DecodeAccessToken but decodes the claims into claims [jwt.Claims].
-// The same limits apply: check typ, aud and azp yourself and pass only a trusted realm.
+// The same limits apply: check iss, typ, aud and azp yourself, or use ValidateAccessTokenCustomClaims.
 // Input: ctx [context.Context], accessToken [string], realm [string], claims [jwt.Claims].
 // Output: [*jwt.Token], [error] if verification fails.
 func (g *GoCloak) DecodeAccessTokenCustomClaims(ctx context.Context, accessToken, realm string, claims jwt.Claims) (*jwt.Token, error) {
@@ -775,7 +824,8 @@ func (g *GoCloak) DecodeAccessTokenCustomClaims(ctx context.Context, accessToken
 }
 
 // ValidateAccessToken verifies accessToken [string] like DecodeAccessToken and additionally requires exp and checks
-// typ, aud and azp, so ID tokens, tokens without expiry and tokens issued to other clients are rejected. At least one of validation.Audience and
+// iss, typ, aud and azp, so ID tokens, tokens without expiry, tokens of other realms and tokens issued to other
+// clients are rejected. At least one of validation.Audience and
 // validation.AuthorizedParty must be set.
 // Input: ctx [context.Context], accessToken [string] optionally prefixed with "Bearer ", realm [string] trusted realm,
 // validation [TokenValidation] expected claims. Output: [*jwt.Token], [*jwt.MapClaims], [error] if a check fails.
@@ -813,10 +863,25 @@ func (g *GoCloak) ValidateAccessTokenCustomClaims(ctx context.Context, accessTok
 			return nil, fmt.Errorf("%s: %w", errMessage, err)
 		}
 	}
+	if err := checkTokenIssuer(mapClaims, realm); err != nil {
+		return nil, fmt.Errorf("%s: %w", errMessage, err)
+	}
 	if err := checkTokenClaims(mapClaims, validation); err != nil {
 		return nil, fmt.Errorf("%s: %w", errMessage, err)
 	}
 	return token, nil
+}
+
+// checkTokenIssuer checks that the iss claim of claims [jwt.MapClaims] names realm [string]. Only the path is
+// compared, because the public hostname in iss may differ from the configured base URL. This rejects tokens of other
+// realms even if realms share a signing key.
+// Input: claims [jwt.MapClaims], realm [string]. Output: [error] if iss is missing or names another realm.
+func checkTokenIssuer(claims jwt.MapClaims, realm string) error {
+	iss, _ := claims["iss"].(string)
+	if strings.HasSuffix(iss, "/realms/"+realm) || strings.HasSuffix(iss, "/realms/"+url.PathEscape(realm)) {
+		return nil
+	}
+	return fmt.Errorf("token issuer %q does not belong to realm %q", iss, realm)
 }
 
 // checkTokenClaims checks typ, aud and azp of claims [jwt.MapClaims] against validation [TokenValidation].

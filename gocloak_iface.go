@@ -77,18 +77,19 @@ type GoCloakIface interface {
 	RetrospectToken(ctx context.Context, accessToken, clientID, clientSecret, realm string) (*IntroSpectTokenResult, error)
 	// DecodeAccessToken verifies accessToken [string] against the signature keys of realm [string] and decodes its claims.
 	// Only signature, exp and nbf are checked. ID tokens of the realm are signed with the same keys and pass too, so
-	// callers must check typ ("Bearer"), aud and azp themselves. realm must come from trusted configuration, because
-	// certs are cached per realm without eviction.
+	// callers must check iss, typ ("Bearer"), aud and azp themselves, or use ValidateAccessToken. Prefer a realm from
+	// trusted configuration: every successfully fetched realm stays in the certs cache.
 	// Input: ctx [context.Context], accessToken [string] optionally prefixed with "Bearer ", realm [string].
 	// Output: [*jwt.Token], [*jwt.MapClaims], [error] if verification fails.
 	DecodeAccessToken(ctx context.Context, accessToken, realm string) (*jwt.Token, *jwt.MapClaims, error)
 	// DecodeAccessTokenCustomClaims works like DecodeAccessToken but decodes the claims into claims [jwt.Claims].
-	// The same limits apply: check typ, aud and azp yourself and pass only a trusted realm.
+	// The same limits apply: check iss, typ, aud and azp yourself, or use ValidateAccessTokenCustomClaims.
 	// Input: ctx [context.Context], accessToken [string], realm [string], claims [jwt.Claims].
 	// Output: [*jwt.Token], [error] if verification fails.
 	DecodeAccessTokenCustomClaims(ctx context.Context, accessToken, realm string, claims jwt.Claims) (*jwt.Token, error)
 	// ValidateAccessToken verifies accessToken [string] like DecodeAccessToken and additionally requires exp and checks
-	// typ, aud and azp, so ID tokens, tokens without expiry and tokens issued to other clients are rejected. At least one of validation.Audience and
+	// iss, typ, aud and azp, so ID tokens, tokens without expiry, tokens of other realms and tokens issued to other
+	// clients are rejected. At least one of validation.Audience and
 	// validation.AuthorizedParty must be set.
 	// Input: ctx [context.Context], accessToken [string] optionally prefixed with "Bearer ", realm [string] trusted realm,
 	// validation [TokenValidation] expected claims. Output: [*jwt.Token], [*jwt.MapClaims], [error] if a check fails.
