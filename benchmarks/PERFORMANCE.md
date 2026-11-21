@@ -14,6 +14,7 @@ runs both builds alternately round by round. Separate runs minutes apart produce
 | Go 1.27 (`encoding/json` on the v2 engine) | decoding −28 to −70 %, allocations −40 %; `GetUsers(1000)` −27 % | minimum Go version in v15.1.0 |
 | `SetDirectBodyRead()` | `GetUsers(1000)`: −39 % allocated bytes, −22 % time; small responses unchanged | opt-in option |
 | v15.0 on Go 1.26 → v15.1 on Go 1.27, all defaults | `GetUsers(1000)` −24 % time, −44 % allocations; geomean −21 % time, −27 % allocations | |
+| Calling `encoding/json/v2` directly instead of `encoding/json` | small single objects and encoding faster, lists unchanged; different encoding semantics | rejected |
 | Switching to fasthttp or plain net/http | live: within noise (0 to −10 % on small calls) | rejected |
 
 A single call is dominated by Keycloak: about 0.9 ms for one user and 40 ms for 1000 users against a warm local
@@ -72,6 +73,15 @@ Why: pprof shows the v1 engine spending about 21 % of its CPU in `encoding/json.
 the whole input before decoding it in a second pass. The v2 engine (`encoding/json/jsontext`) reads in one pass.
 Encoding small structs got slower; request bodies are small and Keycloak takes milliseconds, so it does not show up
 end to end. The full integration test suite passes against Keycloak on Go 1.27.
+
+gocloak keeps the `encoding/json` API and does not call `encoding/json/v2` directly. Both APIs on the v2 engine
+(single run, not interleaved, n=8): the v2 API decodes a user or the JWKS 28 to 43 % faster, lists of users, groups
+and clients and the realm export show no significant difference, and encoding gets 13 % faster with 45 to 57 % fewer
+allocations. `TestJSONv2Equivalence` shows that the v2 API decodes every payload exactly like v1, but encoding
+differs: nil slices become `[]` instead of `null`, `omitempty` omits different values, and field names match
+case-sensitively. On PUT, Keycloak treats a missing field as "keep", so those differences can change what an update
+does. With `json.DefaultOptionsV1()` v2 behaves like v1 again and keeps no advantage. Callers who want the v2 API for
+request bodies anyway can set it via `RestyClient().SetJSONMarshaler`.
 
 ## Reading response bodies
 
