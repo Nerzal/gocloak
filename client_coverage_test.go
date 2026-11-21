@@ -203,9 +203,9 @@ func Test_GetScopePermissions(t *testing.T) {
 	tearDownScope, scopeID := CreateScope(t, client, gocloakClientID)
 	t.Cleanup(tearDownScope)
 	tearDownPolicy, policyID := CreatePolicy(t, client, gocloakClientID, gocloak.PolicyRepresentation{
-		Name:                       GetRandomNameP("PolicyName"),
-		Type:                       new("client"),
-		ClientPolicyRepresentation: gocloak.ClientPolicyRepresentation{Clients: []string{gocloakClientID}},
+		Name:    GetRandomNameP("PolicyName"),
+		Type:    new("client"),
+		Clients: []string{gocloakClientID},
 	})
 	t.Cleanup(tearDownPolicy)
 	tearDownPermission, permissionID := CreatePermission(t, client, gocloakClientID, gocloak.PermissionRepresentation{
@@ -227,9 +227,9 @@ func Test_GetPoliciesFilteredByType(t *testing.T) {
 	ctx := context.Background()
 	policyName := GetRandomName("PolicyName")
 	tearDown, policyID := CreatePolicy(t, client, gocloakClientID, gocloak.PolicyRepresentation{
-		Name:                       &policyName,
-		Type:                       new("client"),
-		ClientPolicyRepresentation: gocloak.ClientPolicyRepresentation{Clients: []string{gocloakClientID}},
+		Name:    &policyName,
+		Type:    new("client"),
+		Clients: []string{gocloakClientID},
 	})
 	t.Cleanup(tearDown)
 
@@ -461,10 +461,10 @@ func Test_DirectNakedImpersonationTokenExchange(t *testing.T) {
 
 	idOfRealmManagement := gocloak.PString(GetClientByClientID(t, client, "realm-management").ID)
 	policy, err := client.CreatePolicy(ctx, token, cfg.GoCloak.Realm, idOfRealmManagement, gocloak.PolicyRepresentation{
-		Name:                       GetRandomNameP("impersonation-policy"),
-		Type:                       new("client"),
-		Logic:                      gocloak.Positive,
-		ClientPolicyRepresentation: gocloak.ClientPolicyRepresentation{Clients: []string{idOfClient}},
+		Name:    GetRandomNameP("impersonation-policy"),
+		Type:    new("client"),
+		Logic:   gocloak.Positive,
+		Clients: []string{idOfClient},
 	})
 	require.NoError(t, err, "CreatePolicy failed")
 	t.Cleanup(func() {
