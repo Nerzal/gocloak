@@ -1,6 +1,5 @@
 # gocloak
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/Nerzal/gocloak)](https://goreportcard.com/report/github.com/Nerzal/gocloak)
 [![Go Reference](https://pkg.go.dev/badge/github.com/Nerzal/gocloak/v15.svg)](https://pkg.go.dev/github.com/Nerzal/gocloak/v15)
 [![Build Status](https://github.com/Nerzal/gocloak/workflows/Tests/badge.svg)](https://github.com/Nerzal/gocloak/actions?query=branch%3Amain+event%3Apush)
 [![GitHub release](https://img.shields.io/github/tag/Nerzal/gocloak.svg)](https://github.com/Nerzal/gocloak/releases/)
