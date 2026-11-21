@@ -15,8 +15,11 @@ Keycloak 26.8.2 and the nightly build.
 
 Questions go to the [issue tracker](https://github.com/Nerzal/gocloak/issues) or to
 [#gocloak](https://gophers.slack.com/app_redirect?channel=gocloak) on the
-[Gophers Slack](https://invite.slack.golangbridge.org/). For the echo framework there is
-[gocloak-echo](https://github.com/Nerzal/gocloak-echo).
+[Gophers Slack](https://invite.slack.golangbridge.org/).
+
+Built on gocloak: [gocloak-mcp](https://github.com/Nerzal/gocloak-mcp) (read-only Keycloak MCP server),
+[gocloak-auth-proxy](https://github.com/Nerzal/gocloak-auth-proxy) (authentication proxy for Keycloak) and
+[gocloak-echo](https://github.com/Nerzal/gocloak-echo) (echo framework).
 
 ## Installation
 
@@ -350,5 +353,8 @@ Keycloak resources. Some older notes are in the [wiki](https://github.com/Nerzal
 
 ## Related projects
 
+- [gocloak-mcp](https://github.com/Nerzal/gocloak-mcp), a read-only Keycloak MCP server (stdio and streamable HTTP)
+- [gocloak-auth-proxy](https://github.com/Nerzal/gocloak-auth-proxy), a Keycloak authentication proxy for forward auth,
+  reverse proxying and browser SSO
 - [gocloak-echo](https://github.com/Nerzal/gocloak-echo) for the echo framework
 - [GocloakSession](https://github.com/Clarilab/gocloaksession)
