@@ -6,11 +6,14 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"path"
 	"strings"
 	"testing"
+	"testing/iotest"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/require"
@@ -151,6 +154,53 @@ func TestUnit_ReadBodyPrealloc(t *testing.T) {
 	})
 	// the buffer, plus small fixed allocations (reader wrappers); resty's appends need dozens for 512 KiB
 	require.LessOrEqual(t, allocs, 5.0)
+}
+
+// TestUnit_ReadBody checks readBody's limit handling and error paths.
+// Input: t [*testing.T]. Output: none.
+func TestUnit_ReadBody(t *testing.T) {
+	t.Parallel()
+	response := func(body io.Reader, contentLength int64, encoding string) *http.Response {
+		header := http.Header{}
+		if encoding != "" {
+			header.Set("Content-Encoding", encoding)
+		}
+		return &http.Response{Body: io.NopCloser(body), ContentLength: contentLength, Header: header}
+	}
+
+	got, err := readBody(response(strings.NewReader("abc"), -1, ""), 0)
+	require.NoError(t, err, "no limit")
+	require.Equal(t, "abc", string(got))
+
+	got, err = readBody(response(strings.NewReader("abc"), 3, ""), 3)
+	require.NoError(t, err, "exactly at the limit")
+	require.Equal(t, "abc", string(got))
+
+	_, err = readBody(response(strings.NewReader("abcd"), -1, ""), 3)
+	require.ErrorIs(t, err, resty.ErrResponseBodyTooLarge, "unknown length over the limit")
+
+	_, err = readBody(response(strings.NewReader("abc"), 1<<40, ""), 1<<20)
+	require.ErrorIs(t, err, resty.ErrResponseBodyTooLarge, "announced length over the limit")
+
+	_, err = readBody(response(strings.NewReader("not gzip"), 8, "gzip"), 0)
+	require.Error(t, err, "invalid gzip")
+
+	readErr := errors.New("connection reset")
+	_, err = readBody(response(iotest.ErrReader(readErr), -1, ""), 100)
+	require.ErrorIs(t, err, readErr, "read error")
+}
+
+// TestUnit_DirectBodyReadTransportError checks that a transport error with SetDirectBodyRead becomes an *APIError
+// like without it.
+// Input: t [*testing.T]. Output: none.
+func TestUnit_DirectBodyReadTransportError(t *testing.T) {
+	t.Parallel()
+	server := httptest.NewServer(http.NotFoundHandler())
+	server.Close()
+	_, err := NewClient(server.URL, SetDirectBodyRead()).GetUserByID(context.Background(), "token", "r", "u")
+	var apiErr *APIError
+	require.ErrorAs(t, err, &apiErr)
+	require.Equal(t, 0, apiErr.Code)
 }
 
 // readCloser adds a no-op Close to a reader.
