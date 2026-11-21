@@ -1481,10 +1481,8 @@ func Test_GroupPermissions(t *testing.T) {
 		Description: new("Policy Description"),
 		Type:        new("client"),
 		Logic:       gocloak.Positive,
-		ClientPolicyRepresentation: gocloak.ClientPolicyRepresentation{
-			Clients: []string{
-				gocloakClientID,
-			},
+		Clients: []string{
+			gocloakClientID,
 		},
 	})
 	defer tearDownPolicy()
@@ -5718,10 +5716,8 @@ func Test_CreateListGetUpdateDeletePolicy(t *testing.T) {
 		Description: new("Policy Description"),
 		Type:        new("client"),
 		Logic:       gocloak.Negative,
-		ClientPolicyRepresentation: gocloak.ClientPolicyRepresentation{
-			Clients: []string{
-				gocloakClientID,
-			},
+		Clients: []string{
+			gocloakClientID,
 		},
 	})
 	// Delete
@@ -5791,10 +5787,8 @@ func Test_CreateListGetUpdateDeletePolicy(t *testing.T) {
 			Description: createdPolicy.Description,
 			Type:        createdPolicy.Type,
 			Logic:       createdPolicy.Logic,
-			ClientPolicyRepresentation: gocloak.ClientPolicyRepresentation{
-				Clients: []string{
-					gocloakClientID,
-				},
+			Clients: []string{
+				gocloakClientID,
 			},
 		},
 	)
@@ -5822,10 +5816,8 @@ func Test_ErrorsGetAuthorizationPolicyAssociatedPolicies(t *testing.T) {
 		Description: new("Policy Description"),
 		Type:        new("client"),
 		Logic:       gocloak.Positive,
-		ClientPolicyRepresentation: gocloak.ClientPolicyRepresentation{
-			Clients: []string{
-				gocloakClientID,
-			},
+		Clients: []string{
+			gocloakClientID,
 		},
 	})
 
@@ -5874,10 +5866,8 @@ func Test_GetAuthorizationPolicyAssociatedPolicies(t *testing.T) {
 		Description: new("Policy Description"),
 		Type:        new("client"),
 		Logic:       gocloak.Positive,
-		ClientPolicyRepresentation: gocloak.ClientPolicyRepresentation{
-			Clients: []string{
-				gocloakClientID,
-			},
+		Clients: []string{
+			gocloakClientID,
 		},
 	})
 	defer parentPolicy()
@@ -5924,10 +5914,8 @@ func Test_ErrorsGetAuthorizationPolicyResources(t *testing.T) {
 		Description: new("Policy Description"),
 		Type:        new("client"),
 		Logic:       gocloak.Positive,
-		ClientPolicyRepresentation: gocloak.ClientPolicyRepresentation{
-			Clients: []string{
-				gocloakClientID,
-			},
+		Clients: []string{
+			gocloakClientID,
 		},
 	})
 
@@ -5974,10 +5962,8 @@ func Test_GetAuthorizationPolicyResources(t *testing.T) {
 		Description: new("Policy Description"),
 		Type:        new("client"),
 		Logic:       gocloak.Positive,
-		ClientPolicyRepresentation: gocloak.ClientPolicyRepresentation{
-			Clients: []string{
-				gocloakClientID,
-			},
+		Clients: []string{
+			gocloakClientID,
 		},
 	})
 
@@ -6042,10 +6028,8 @@ func Test_GetAuthorizationPolicyScopes(t *testing.T) {
 		Description: new("Policy Description"),
 		Type:        new("client"),
 		Logic:       gocloak.Positive,
-		ClientPolicyRepresentation: gocloak.ClientPolicyRepresentation{
-			Clients: []string{
-				gocloakClientID,
-			},
+		Clients: []string{
+			gocloakClientID,
 		},
 	})
 
@@ -6203,11 +6187,9 @@ func Test_RolePolicy(t *testing.T) {
 		Description: new("Role Policy"),
 		Type:        new("role"),
 		Logic:       gocloak.Negative,
-		RolePolicyRepresentation: gocloak.RolePolicyRepresentation{
-			Roles: []gocloak.RoleDefinition{
-				{
-					ID: roles[0].ID,
-				},
+		Roles: []gocloak.RoleDefinition{
+			{
+				ID: roles[0].ID,
 			},
 		},
 	})
@@ -6224,10 +6206,8 @@ func Test_ClientPolicy(t *testing.T) {
 		Name:        GetRandomNameP("PolicyName"),
 		Description: new("Client Policy"),
 		Type:        new("client"),
-		ClientPolicyRepresentation: gocloak.ClientPolicyRepresentation{
-			Clients: []string{
-				gocloakClientID,
-			},
+		Clients: []string{
+			gocloakClientID,
 		},
 	})
 	// Delete
@@ -6240,23 +6220,21 @@ func Test_TimePolicy(t *testing.T) {
 
 	// Create
 	tearDown, _ := CreatePolicy(t, client, gocloakClientID, gocloak.PolicyRepresentation{
-		Name:        GetRandomNameP("PolicyName"),
-		Description: new("Time Policy"),
-		Type:        new("time"),
-		TimePolicyRepresentation: gocloak.TimePolicyRepresentation{
-			NotBefore:    new("2019-12-30 12:00:00"),
-			NotOnOrAfter: new("2020-12-30 12:00:00"),
-			DayMonth:     new("1"),
-			DayMonthEnd:  new("31"),
-			Month:        new("1"),
-			MonthEnd:     new("12"),
-			Year:         new("1900"),
-			YearEnd:      new("2100"),
-			Hour:         new("1"),
-			HourEnd:      new("24"),
-			Minute:       new("0"),
-			MinuteEnd:    new("60"),
-		},
+		Name:         GetRandomNameP("PolicyName"),
+		Description:  new("Time Policy"),
+		Type:         new("time"),
+		NotBefore:    new("2019-12-30 12:00:00"),
+		NotOnOrAfter: new("2020-12-30 12:00:00"),
+		DayMonth:     new("1"),
+		DayMonthEnd:  new("31"),
+		Month:        new("1"),
+		MonthEnd:     new("12"),
+		Year:         new("1900"),
+		YearEnd:      new("2100"),
+		Hour:         new("1"),
+		HourEnd:      new("24"),
+		Minute:       new("0"),
+		MinuteEnd:    new("60"),
 	})
 	// Delete
 	defer tearDown()
@@ -6274,10 +6252,8 @@ func Test_UserPolicy(t *testing.T) {
 		Name:        GetRandomNameP("PolicyName"),
 		Description: new("User Policy"),
 		Type:        new("user"),
-		UserPolicyRepresentation: gocloak.UserPolicyRepresentation{
-			Users: []string{
-				userID,
-			},
+		Users: []string{
+			userID,
 		},
 	})
 	// Delete
@@ -6292,10 +6268,8 @@ func Test_AggregatedPolicy(t *testing.T) {
 		Name:        GetRandomNameP("PolicyName"),
 		Description: new("Client Policy"),
 		Type:        new("client"),
-		ClientPolicyRepresentation: gocloak.ClientPolicyRepresentation{
-			Clients: []string{
-				gocloakClientID,
-			},
+		Clients: []string{
+			gocloakClientID,
 		},
 	})
 	defer tearDownClient()
@@ -6305,10 +6279,8 @@ func Test_AggregatedPolicy(t *testing.T) {
 		Description: new("JS Policy"),
 		Type:        new("client"),
 		Logic:       gocloak.Positive,
-		ClientPolicyRepresentation: gocloak.ClientPolicyRepresentation{
-			Clients: []string{
-				gocloakClientID,
-			},
+		Clients: []string{
+			gocloakClientID,
 		},
 	})
 	// Delete
@@ -6342,11 +6314,9 @@ func Test_GroupPolicy(t *testing.T) {
 		Name:        GetRandomNameP("PolicyName"),
 		Description: new("Group Policy"),
 		Type:        new("group"),
-		GroupPolicyRepresentation: gocloak.GroupPolicyRepresentation{
-			Groups: []gocloak.GroupDefinition{
-				{
-					ID: new(groupID),
-				},
+		Groups: []gocloak.GroupDefinition{
+			{
+				ID: new(groupID),
 			},
 		},
 	})
@@ -6601,10 +6571,8 @@ func Test_CreateListGetUpdateDeletePermission(t *testing.T) {
 		Description: new("Client Policy"),
 		Type:        new("client"),
 		Logic:       gocloak.Positive,
-		ClientPolicyRepresentation: gocloak.ClientPolicyRepresentation{
-			Clients: []string{
-				gocloakClientID,
-			},
+		Clients: []string{
+			gocloakClientID,
 		},
 	})
 	// Delete
